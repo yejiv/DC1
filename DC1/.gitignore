@@ -77,3 +77,4 @@ DerivedDataCache/*
 
 # AI
 .claude/*
+*.md
