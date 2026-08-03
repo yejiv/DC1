@@ -9,25 +9,25 @@ public class DC1 : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicIncludePaths.AddRange(new string[]
-        {
-                "DC1",
-        });
+		{
+            "DC1",
+		});
 
         PublicDependencyModuleNames.AddRange(new string[] { 
-            "Core", 
-            "CoreUObject", 
-            "Engine", 
-            "InputCore", 
-            "EnhancedInput",
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"EnhancedInput",
+
             "GameplayAbilities",
             "GameplayTags",
             "GameplayTasks",
-        });
-
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+            "UMG",
+		});
 
 		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
