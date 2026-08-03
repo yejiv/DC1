@@ -4,9 +4,9 @@
 #include "InputAction.h"
 #include "InputMappingContext.h"
 
-const UInputMappingContext* UDC1InputData::FindInputMappingContextbyTag(const FGameplayTag& Tag)
+const UInputMappingContext* UDC1InputData::FindInputMappingContextbyTag(const FGameplayTag& Tag) const
 {
-	for (FDC1InputMappingContext& IMC : InputMappingContexts)
+	for (const FDC1InputMappingContext& IMC : InputMappingContexts)
 	{
 		if (IMC.InputMappingContext && IMC.IMCTag == Tag)
 		{
@@ -19,9 +19,9 @@ const UInputMappingContext* UDC1InputData::FindInputMappingContextbyTag(const FG
 	return nullptr;
 }
 
-const UInputAction* UDC1InputData::FindInputActionbyTag(const FGameplayTag& Tag)
+const UInputAction* UDC1InputData::FindInputActionbyTag(const FGameplayTag& Tag) const
 {
-	for (FDC1InputAction& IA : InputActions)
+	for (const FDC1InputAction& IA : InputActions)
 	{
 		if (IA.InputAction && IA.IATag == Tag)
 		{

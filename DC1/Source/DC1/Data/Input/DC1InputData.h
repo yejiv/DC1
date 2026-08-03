@@ -41,8 +41,8 @@ class DC1_API UDC1InputData : public UDataAsset
 	GENERATED_BODY()
 	
 public:
-	const UInputMappingContext*	FindInputMappingContextbyTag(const FGameplayTag& Tag);
-	const UInputAction*				FindInputActionbyTag(const FGameplayTag& Tag);
+	const UInputMappingContext*	FindInputMappingContextbyTag(const FGameplayTag& Tag) const;
+	const UInputAction*				FindInputActionbyTag(const FGameplayTag& Tag) const;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "IMC")
