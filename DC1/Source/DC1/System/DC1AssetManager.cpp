@@ -120,7 +120,7 @@ void UDC1AssetManager::LoadAsyncByLabel(const FGameplayTag& LabelTag, FAsyncLabe
         return;
     }
 
-    const FAssetSet* AssetSet = AssetData->FindAssetSetByLabel(LabelTag);
+    const FAssetSet* AssetSet = AssetData->GetAssetSetByLabel(LabelTag);
     if (nullptr == AssetSet)
     {
         UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetSet"));
@@ -241,7 +241,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     // 제거할 Tag 목록 수집
     TArray<FGameplayTag> TagsToRemove;
 
-    const FAssetSet* AssetSet = LoadedAssetData->FindAssetSetByLabel(Label);
+    const FAssetSet* AssetSet = LoadedAssetData->GetAssetSetByLabel(Label);
     if (nullptr == AssetSet)
     {
         UE_LOG(LogTemp, Warning, TEXT("Can't Find AssetSet"));
