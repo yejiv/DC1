@@ -23,10 +23,12 @@ public:
 private:
 	virtual void BeginPlay() override;
 	
-private:
-
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HeadMesh = { nullptr };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HairMesh = { nullptr };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HairEquipMesh = { nullptr };
 
 	TObjectPtr<USpringArmComponent>		SpringArm = { nullptr };

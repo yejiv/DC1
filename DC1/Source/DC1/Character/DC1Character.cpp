@@ -40,3 +40,8 @@ void ADC1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 }
 
+void ADC1Character::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
+{
+	Super::AddMovementInput(WorldDirection, ScaleValue * SpeedRate, bForce);
+}
+

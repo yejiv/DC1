@@ -32,7 +32,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Move
+	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1.0f, bool bForce = false) override;
+
 protected:
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
 
+protected:
+	float SpeedRate = { 1.f };
 };
