@@ -43,8 +43,7 @@ public:
 
 public:
 	FSoftObjectPath		GetAssetPathByTag(const FGameplayTag& AssetTag);
-	const FAssetSet&	GetAssetSetByLabel(const FGameplayTag& Label);
-	const FAssetSet*	FindAssetSetByLabel(const FGameplayTag& Label) const;
+	const FAssetSet*	GetAssetSetByLabel(const FGameplayTag& Label) const;
 
 private:
 	UPROPERTY(EditDefaultsOnly)

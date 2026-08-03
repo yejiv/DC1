@@ -10,11 +10,13 @@ UDC1AssetManager::UDC1AssetManager()
 
 UDC1AssetManager& UDC1AssetManager::Get()
 {
+    check(GEngine);
     if (UDC1AssetManager* SingleTon = Cast<UDC1AssetManager>(GEngine->AssetManager))
     {
         return *SingleTon;
     }
 
+    UE_LOG(LogTemp, Fatal, TEXT("Checked AssetManagerClassName"));
     return *(NewObject<UDC1AssetManager>());
 }
 
@@ -181,7 +183,7 @@ void UDC1AssetManager::ReleaseByPath(const FSoftObjectPath& AssetPath)
     UDC1AssetManager& AssetManager = Get();
 
     FGameplayTag* FoundTag = AssetManager.NameToTag.Find(AssetName);
-    if (nullptr != FoundTag && true == FoundTag->IsValid())
+    if (nullptr == FoundTag || false == FoundTag->IsValid())
     {
         UE_LOG(LogTemp, Warning, TEXT("ReleaseByPath: None Loaded Asset, Path - [%s]"), *AssetPath.ToString());
         return;
@@ -232,7 +234,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     UDC1AssetData* LoadedAssetData = AssetManager.LoadedPrimaryAssetData;
     if (false == ::IsValid(LoadedAssetData))
     {
-        UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetData"));
+        UE_LOG(LogTemp, Warning, TEXT("Can't Find AssetData"));
         return;
     }
 
@@ -242,7 +244,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     const FAssetSet* AssetSet = LoadedAssetData->FindAssetSetByLabel(Label);
     if (nullptr == AssetSet)
     {
-        UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetSet"));
+        UE_LOG(LogTemp, Warning, TEXT("Can't Find AssetSet"));
         return;
     }
     for (const FAssetEntry& AssetEntry : AssetSet->AssetEntries)
