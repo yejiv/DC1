@@ -21,7 +21,7 @@ public:
 	static UDC1AssetManager& Get();
 
 	template<typename AssetType>
-	static AssetType*	GetAssetByTag(const FGameplayTag& AssetTag);
+	static const AssetType*	GetAssetByTag(const FGameplayTag& AssetTag);
 
 public:
 	void				LoadAssetsToLabel(const FGameplayTag& LabelTag, FAsyncLabelLoadCompletedDelegate CompletedDelegate = {});
@@ -55,9 +55,16 @@ private:
 };
 
 template<typename AssetType>
-inline AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& AssetTag)
+inline const AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& AssetTag)
 {
-	UDC1AssetData* AssetData = Get().LoadedPrimaryAssetData;
+	UDC1AssetManager& AssetManager = Get();
+
+	if (TObjectPtr<const UObject>* Cached = AssetManager.TagToLoadedDataAsset.Find(AssetTag))
+	{
+		return Cast<AssetType>(Cached->Get());
+	}
+
+	UDC1AssetData* AssetData = AssetManager.LoadedPrimaryAssetData;
 	if (false == ::IsValid(AssetData))
 	{
 		return nullptr;

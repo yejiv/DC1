@@ -22,8 +22,6 @@ void UDC1AssetData::PreSave(FObjectPreSaveContext ObjectSaveContext)
         const FAssetSet& AssetSet = Pair.Value;
         for (FAssetEntry AssetEntry : AssetSet.AssetEntries)
         {
-            FSoftObjectPath& AssetPath = AssetEntry.AssetPath;
-
             AssetTagToPath.Emplace(AssetEntry.AssetTag, AssetEntry.AssetPath);
             for (const FGameplayTag& Label : AssetEntry.AssetLabels)
             {
@@ -38,22 +36,20 @@ FSoftObjectPath UDC1AssetData::GetAssetPathByTag(const FGameplayTag& AssetTag)
     FSoftObjectPath* AssetPath = AssetTagToPath.Find(AssetTag);
     if (nullptr == AssetPath)
     {
-
         UE_LOG(LogTemp, Warning, TEXT("Can't Find Asset Path from Asset Tag [%s]."), *AssetTag.ToString());
         return FSoftObjectPath();
     }
     return *AssetPath;
 }
 
-const FAssetSet& UDC1AssetData::GetAssetSetByLabel(const FGameplayTag& Label)
+const FAssetSet* UDC1AssetData::GetAssetSetByLabel(const FGameplayTag& Label) const
 {
-    FAssetSet* AssetSet = AssetLabelToSet.Find(Label);
-    ensureAlwaysMsgf(AssetSet, TEXT("Can't Find Asset Path from Asset Tag [%s]."), *Label.ToString());
+    const FAssetSet* AssetSet = AssetLabelToSet.Find(Label);
+    if (nullptr == AssetSet)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Can't Find Asset Path from Asset Tag [%s]."), *Label.ToString());
+        return nullptr;
+    }
 
-    return *(AssetSet);
-}
-
-const FAssetSet* UDC1AssetData::FindAssetSetByLabel(const FGameplayTag& Label) const
-{
-    return AssetLabelToSet.Find(Label);
+    return AssetSet;
 }
