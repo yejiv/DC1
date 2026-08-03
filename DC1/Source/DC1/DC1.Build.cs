@@ -7,8 +7,22 @@ public class DC1 : ModuleRules
 	public DC1(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+
+        PublicIncludePaths.AddRange(new string[]
+        {
+                "DC1",
+        });
+
+        PublicDependencyModuleNames.AddRange(new string[] { 
+            "Core", 
+            "CoreUObject", 
+            "Engine", 
+            "InputCore", 
+            "EnhancedInput",
+            "GameplayAbilities",
+            "GameplayTags",
+            "GameplayTasks",
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
