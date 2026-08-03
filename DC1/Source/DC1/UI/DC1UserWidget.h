@@ -6,9 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "DC1UserWidget.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class DC1_API UDC1UserWidget : public UUserWidget
 {
