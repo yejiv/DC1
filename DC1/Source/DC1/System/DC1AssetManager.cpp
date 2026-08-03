@@ -20,7 +20,7 @@ UDC1AssetManager& UDC1AssetManager::Get()
 
 void UDC1AssetManager::LoadAssetsToLabel(const FGameplayTag& LabelTag, FAsyncLabelLoadCompletedDelegate CompletedDelegate)
 {
-    if (LoadedAssetData)
+    if (LoadedPrimaryAssetData)
     {
         LoadAsyncByLabel(LabelTag, MoveTemp(CompletedDelegate));
     }
@@ -38,7 +38,7 @@ void UDC1AssetManager::LoadAssetsToLabel(const FGameplayTag& LabelTag, FAsyncLab
 
         if (AssetData)
         {
-            LoadedAssetData = AssetData;
+            LoadedPrimaryAssetData = AssetData;
             LoadAsyncByLabel(LabelTag, MoveTemp(CompletedDelegate));
         }
         else
@@ -89,7 +89,7 @@ void UDC1AssetManager::LoadAsyncByTag(const FGameplayTag& AssetTag, FAsyncLoadCo
         return;
     }
 
-    UDC1AssetData* AssetData = Get().LoadedAssetData;
+    UDC1AssetData* AssetData = Get().LoadedPrimaryAssetData;
     if (false == ::IsValid(AssetData))
     {
         UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetData"));
@@ -111,7 +111,7 @@ void UDC1AssetManager::LoadAsyncByLabel(const FGameplayTag& LabelTag, FAsyncLabe
     TArray<FSoftObjectPath> PathsToLoad;
     TArray<FAssetEntry> EntriesToLoad;
 
-    const UDC1AssetData* AssetData = Get().LoadedAssetData;
+    const UDC1AssetData* AssetData = Get().LoadedPrimaryAssetData;
     if (false == ::IsValid(AssetData))
     {
         UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetData"));
@@ -187,7 +187,7 @@ void UDC1AssetManager::ReleaseByPath(const FSoftObjectPath& AssetPath)
         return;
     }
 
-    AssetManager.TagToLoadedAsset.Remove(*FoundTag);
+    AssetManager.TagToLoadedDataAsset.Remove(*FoundTag);
     AssetManager.NameToTag.Remove(AssetName);
 }
 
@@ -201,13 +201,13 @@ void UDC1AssetManager::ReleaseByTag(const FGameplayTag& AssetTag)
 
     UDC1AssetManager& AssetManager = Get();
 
-    if (false == AssetManager.TagToLoadedAsset.Contains(AssetTag))
+    if (false == AssetManager.TagToLoadedDataAsset.Contains(AssetTag))
     {
         UE_LOG(LogTemp, Warning, TEXT("ReleaseByTag: None Loaded Asset, Tag - [%s]"), *AssetTag.ToString());
         return;
     }
 
-    AssetManager.TagToLoadedAsset.Remove(AssetTag);
+    AssetManager.TagToLoadedDataAsset.Remove(AssetTag);
 
     // NameToTag는 Value(Tag)로 찾아야 하므로 순회 삭제
     for (auto It = AssetManager.NameToTag.CreateIterator(); It; ++It)
@@ -229,7 +229,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     }
 
     UDC1AssetManager& AssetManager = Get();
-    UDC1AssetData* LoadedAssetData = AssetManager.LoadedAssetData;
+    UDC1AssetData* LoadedAssetData = AssetManager.LoadedPrimaryAssetData;
     if (false == ::IsValid(LoadedAssetData))
     {
         UE_LOG(LogWindows, Fatal, TEXT("Can't Find AssetData"));
@@ -252,7 +252,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     // TagToLoadedAsset 제거
     for (const FGameplayTag& Tag : TagsToRemove)
     {
-        AssetManager.TagToLoadedAsset.Remove(Tag);
+        AssetManager.TagToLoadedDataAsset.Remove(Tag);
     }
 
     // NameToTag에서 Value가 일치하는 항목 순회 삭제
@@ -275,8 +275,8 @@ void UDC1AssetManager::ReleaseAll()
 
     UDC1AssetManager& AssetManager = Get();
 
-    AssetManager.LoadedAssetData = nullptr;
-    AssetManager.TagToLoadedAsset.Reset();
+    AssetManager.LoadedPrimaryAssetData = nullptr;
+    AssetManager.TagToLoadedDataAsset.Reset();
     AssetManager.NameToTag.Reset();
 }
 
@@ -301,9 +301,9 @@ void UDC1AssetManager::AddLoadedAsset(const FName& AssetName, const FGameplayTag
             NameToTag.Emplace(AssetName, AssetTag);
         }
 
-        if (false == TagToLoadedAsset.Contains(AssetTag))
+        if (false == TagToLoadedDataAsset.Contains(AssetTag))
         {
-            TagToLoadedAsset.Emplace(AssetTag, Asset);
+            TagToLoadedDataAsset.Emplace(AssetTag, Asset);
         }
     }
 }

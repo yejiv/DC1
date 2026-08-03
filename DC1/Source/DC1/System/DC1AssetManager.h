@@ -43,13 +43,13 @@ private:
 private:
 	// Cached AssetData
 	UPROPERTY()
-	TObjectPtr<UDC1AssetData> LoadedAssetData;
+	TObjectPtr<UDC1AssetData> LoadedPrimaryAssetData;
 
 	UPROPERTY()
 	TMap<FName, FGameplayTag> NameToTag;
 
 	UPROPERTY()
-	TMap<FGameplayTag, TObjectPtr<const UObject>> TagToLoadedAsset;
+	TMap<FGameplayTag, TObjectPtr<const UObject>> TagToLoadedDataAsset;
 
 	TSharedPtr<FStreamableHandle> ActiveLoadHandle;
 };
@@ -57,7 +57,7 @@ private:
 template<typename AssetType>
 inline AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& AssetTag)
 {
-	UDC1AssetData* AssetData = Get().LoadedAssetData;
+	UDC1AssetData* AssetData = Get().LoadedPrimaryAssetData;
 	if (false == ::IsValid(AssetData))
 	{
 		return nullptr;
@@ -70,7 +70,7 @@ inline AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& AssetTag)
 		LoadedAsset = Cast<AssetType>(AssetPath.ResolveObject());
 		if (false == ::IsValid(LoadedAsset))
 		{
-			UE_LOG(TEXT("Attempted sync loading because asset hadn't loaded yet [%s]."), *AssetTag.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Attempted sync loading because asset hadn't loaded yet [%s]."), *AssetTag.ToString());
 			LoadedAsset = Cast<AssetType>(AssetPath.TryLoad());
 		}
 	}
