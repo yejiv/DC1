@@ -7,7 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 
-#include "Data/DA/DC1UIData.h"
+#include "Data/DA/UI/DC1UIData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
@@ -76,7 +76,7 @@ TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGamep
 {
     if (false == ::IsValid(CachedUIData))
     {
-        CachedUIData = UDC1AssetManager::GetAssetByTag<UDC1UIData>(DC1AssetTags::Asset_UIData);
+        CachedUIData = UDC1AssetManager::GetAssetByTag<UDC1UIData>(DC1AssetTags::Asset_UI_WidgetData);
         if(false == ::IsValid(CachedUIData))
         {
             UE_LOG(LogTemp, Warning, TEXT("Failed to Caching UIData"));

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Data/DA/DC1UIData.h"
+#include "Data/DA/UI/DC1UIData.h"
 
 TSubclassOf<UDC1UserWidget> UDC1UIData::FindUserWidgetClassByTag(const FGameplayTag& UITag) const
 {

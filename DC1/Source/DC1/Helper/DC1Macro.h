@@ -1,6 +1,5 @@
 #pragma once
 
-
 // UButton Cliked Add Dynamic Helper Macro
 #define BIND_BUTTON_CLICKED(Button, Func)						\
 	do													\
