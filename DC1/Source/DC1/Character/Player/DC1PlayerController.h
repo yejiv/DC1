@@ -7,7 +7,7 @@
 #include "InputActionValue.h"
 #include "DC1PlayerController.generated.h"
 
-class ADC1Character;
+class ADC1Player;
 /**
  * 
  */
@@ -31,13 +31,16 @@ public:
 private:
 	void OnMove(const FInputActionValue& Value);
 	void OnTurn(const FInputActionValue& Value);
+	void OnSprint(const FInputActionValue& Value);
+	void RestoreSprint(const FInputActionValue& Value);
+	void OnToggleMove(const FInputActionValue& Value);
 
 private:
 	// InputMappingContext SetUp
 	void SetUp_IMC();
 
 private:
-	TObjectPtr<ADC1Character> ControlObject = { nullptr };
+	TObjectPtr<ADC1Player> ControlObject = { nullptr };
 
 private:
 	bool	IsTurn = { true };

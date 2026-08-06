@@ -9,7 +9,9 @@
 #include "Components/EditableTextBox.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/PlayerController.h"
+
+#include "Controller/DC1LogoController.h"
+
 #include "Helper/DC1Macro.h"
 
 void UDC1TitleWidget::NativeConstruct()
@@ -69,8 +71,8 @@ void UDC1TitleWidget::OnConnectClicked()
 		return;
 	}
 	
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (false == ::IsValid(PC))
+	ADC1LogoController* LogoController = Cast<ADC1LogoController>(UGameplayStatics::GetPlayerController(this, 0));
+	if (false == ::IsValid(LogoController))
 	{
 		return;
 	}
@@ -81,5 +83,5 @@ void UDC1TitleWidget::OnConnectClicked()
 		return;
 	}
 
-	PC->ClientTravel(IP, TRAVEL_Absolute);
+	LogoController->TravelToServer(IP);
 }
