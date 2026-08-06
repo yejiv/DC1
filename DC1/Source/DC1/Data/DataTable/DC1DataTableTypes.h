@@ -10,6 +10,6 @@ struct FDC1LoadingTipRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (MultiLine = "true"))
 	FText Tip;
 };

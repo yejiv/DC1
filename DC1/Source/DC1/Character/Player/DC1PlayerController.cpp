@@ -11,7 +11,9 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"
 
-#include "Character/Player/DC1Player.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
+
+#include "Character/DC1Character.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -29,6 +31,19 @@ void ADC1PlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	SetUp_IMC();
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	FTimerHandle FadeOutTimerHandle;
+	GetWorldTimerManager().SetTimer(FadeOutTimerHandle, FTimerDelegate::CreateWeakLambda(UIManager, [UIManager]()
+		{
+			UIManager->FadeOut(2.f);
+		}), 2.f, false);
 }
 
 void ADC1PlayerController::SetupInputComponent()
