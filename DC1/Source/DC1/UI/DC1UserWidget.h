@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "DC1UserWidget.generated.h"
 
+class UButton;
+
 UCLASS()
 class DC1_API UDC1UserWidget : public UUserWidget
 {
@@ -19,8 +21,8 @@ public:
 	void Deactivate();
 
 protected:
-	void NativeOnActivated();
-	void NativeOnDeactivated();
+	void			NativeOnActivated();
+	void			NativeOnDeactivated();
 
 protected:
 	// [ IntroAnim ] Animation 바인딩 (없어도 됨)

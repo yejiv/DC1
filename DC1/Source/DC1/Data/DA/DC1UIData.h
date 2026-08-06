@@ -14,9 +14,9 @@ class DC1_API UDC1UIData : public UDataAsset
 	GENERATED_BODY()
 	
 public:
-	const TSubclassOf<UDC1UserWidget> FindUserWidgetClassByTag(const FGameplayTag& UITag);
+	TSubclassOf<UDC1UserWidget> FindUserWidgetClassByTag(const FGameplayTag& UITag) const;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
-	TMap<FGameplayTag, TSubclassOf<UDC1UserWidget>>  UserWidgetEntires;
+	TMap<FGameplayTag, TSubclassOf<UDC1UserWidget>>  UserWidgetEntries;
 };

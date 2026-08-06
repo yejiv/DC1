@@ -12,4 +12,8 @@ namespace DC1AssetTags
 #pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_InputData);
 #pragma endregion
+
+#pragma region UI
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_UIData);
+#pragma endregion
 }
