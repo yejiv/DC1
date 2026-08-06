@@ -16,7 +16,7 @@ void UDC1UserWidget::Activate()
 
 void UDC1UserWidget::Deactivate()
 {
-	if (false == ::IsValid(OutroAnim))
+	if (true == ::IsValid(OutroAnim))
 	{
 		PlayAnimation(OutroAnim);
 	}

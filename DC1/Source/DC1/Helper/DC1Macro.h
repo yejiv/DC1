@@ -20,3 +20,4 @@ DECLARE_LOG_CATEGORY_EXTERN(LogDC1Fatal, Fatal, All);
 			Button->OnClicked.AddDynamic(this, Func);	\
 		}												\
 	} while (0)		
+

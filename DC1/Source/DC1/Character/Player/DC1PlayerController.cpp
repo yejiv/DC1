@@ -6,7 +6,7 @@
 #include "EnhancedInputComponent.h"
 
 #include "System/DC1AssetManager.h"
-#include "Data/Input/DC1InputData.h"
+#include "Data/DA/Input/DC1InputData.h"
 
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"

@@ -12,6 +12,11 @@ namespace DC1AssetTags
 #pragma endregion
 
 #pragma region UI
-	UE_DEFINE_GAMEPLAY_TAG(Asset_UIData, "Asset.UIData");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_UI_WidgetData, "Asset.UI.WidgetData");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_UI_LoadingData, "Asset.UI.LoadingData");
+#pragma endregion
+
+#pragma region DataTable
+	UE_DEFINE_GAMEPLAY_TAG(Asset_DataTableData, "Asset.DataTableData");
 #pragma endregion
 }

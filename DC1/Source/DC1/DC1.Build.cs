@@ -13,17 +13,21 @@ public class DC1 : ModuleRules
             "DC1",
 		});
 
-        PublicDependencyModuleNames.AddRange(new string[] { 
-			"Core", 
-			"CoreUObject", 
-			"Engine", 
-			"InputCore", 
+        PublicDependencyModuleNames.AddRange(new string[] {
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
 			"EnhancedInput",
 
             "GameplayAbilities",
             "GameplayTags",
             "GameplayTasks",
             "UMG",
+
+            "AIModule",
+            "StateTreeModule",
+            "GameplayStateTreeModule",
 		});
 
 		// Uncomment if you are using Slate UI
