@@ -7,9 +7,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Engine/SkeletalMesh.h"
-
-#include "Helper/DC1Macro.h"
 
 ADC1Player::ADC1Player()
 	: Super()
@@ -29,10 +26,8 @@ ADC1Player::ADC1Player()
 	// HairMesh & HairEquipMesh
 	HairMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HairMesh");
 	HairMesh->SetupAttachment(BodyMesh);
-	HairMesh->SetLeaderPoseComponent(BodyMesh);
 	HairEquipMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HairEquipMesh");
 	HairEquipMesh->SetupAttachment(BodyMesh);
-	HairEquipMesh->SetLeaderPoseComponent(BodyMesh);
 
 	// SpringArm
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
@@ -45,6 +40,14 @@ ADC1Player::ADC1Player()
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetRelativeLocation(FVector(0.f, 50.f, 0.f));
 	Camera->bUsePawnControlRotation = false;
+}
+
+void ADC1Player::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	HairMesh->SetLeaderPoseComponent(GetMesh());
+	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
 }
 
 void ADC1Player::BeginPlay()

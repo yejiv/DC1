@@ -21,6 +21,7 @@ public:
 	ADC1Player();
 
 private:
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	
 public:
