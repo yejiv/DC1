@@ -73,9 +73,9 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 
 	const FVector Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
-
-	ControlObject->AddMovementInput(Forward);
-	ControlObject->AddMovementInput(Right);
+	
+	ControlObject->AddMovementInput(Forward * MoveVector.X);
+	ControlObject->AddMovementInput(Right * MoveVector.Y);
 }
 
 void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
@@ -87,7 +87,7 @@ void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
 
 	const FVector2D LookVector = Value.Get<FVector2D>();
 	AddYawInput(LookVector.X);
-	AddPitchInput(LookVector.Y);
+	AddPitchInput(-1.f * LookVector.Y);
 }
 
 void ADC1PlayerController::SetUp_IMC()

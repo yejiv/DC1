@@ -30,7 +30,8 @@ public:
 	TObjectPtr<USkeletalMeshComponent>	HairMesh = { nullptr };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HairEquipMesh = { nullptr };
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USpringArmComponent>		SpringArm = { nullptr };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UCameraComponent>			Camera = { nullptr };
 };
