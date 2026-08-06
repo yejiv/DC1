@@ -17,5 +17,7 @@ namespace DC1InputTags
 #pragma region Default
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Turn);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Sprint);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Toggle_Move);
 #pragma endregion
 }

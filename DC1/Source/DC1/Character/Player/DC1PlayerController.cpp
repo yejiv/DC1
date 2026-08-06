@@ -11,7 +11,7 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"
 
-#include "Character/DC1Character.h"
+#include "Character/Player/DC1Player.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -44,11 +44,21 @@ void ADC1PlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::OnMove);
 		}
-
 		// Turn
 		if (const UInputAction* TurnAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Turn))
 		{
 			EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &ThisClass::OnTurn);
+		}
+		// Sprint
+		if (const UInputAction* SprintAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Sprint))
+		{
+			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ThisClass::OnSprint);
+			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::RestoreSprint);
+		}
+		// ToggleMove
+		if (const UInputAction* ToggleMoveAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Toggle_Move))
+		{
+			EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
 		}
 	}
 }
@@ -57,7 +67,7 @@ void ADC1PlayerController::OnPossess(APawn* aPawn)
 {
 	Super::OnPossess(aPawn);
 
-	ControlObject = Cast<ADC1Character>(aPawn);
+	ControlObject = Cast<ADC1Player>(aPawn);
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -88,6 +98,33 @@ void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
 	const FVector2D LookVector = Value.Get<FVector2D>();
 	AddYawInput(LookVector.X);
 	AddPitchInput(-1.f * LookVector.Y);
+}
+
+void ADC1PlayerController::OnSprint(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+	ControlObject->SetSprint(true);
+}
+
+void ADC1PlayerController::RestoreSprint(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+	ControlObject->SetSprint(false);
+}
+
+void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+	ControlObject->ToggleMove();
 }
 
 void ADC1PlayerController::SetUp_IMC()

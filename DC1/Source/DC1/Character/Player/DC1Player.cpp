@@ -42,6 +42,18 @@ ADC1Player::ADC1Player()
 	Camera->bUsePawnControlRotation = false;
 }
 
+void ADC1Player::ToggleMove()
+{
+	IsWalk = !IsWalk;
+	UpdateMoveSpeed();
+}
+
+void ADC1Player::SetSprint(bool Sprint)
+{
+	IsSprint = Sprint;
+	UpdateMoveSpeed();
+}
+
 void ADC1Player::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -53,4 +65,22 @@ void ADC1Player::PostInitializeComponents()
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UpdateMoveSpeed();
+}
+
+void ADC1Player::UpdateMoveSpeed()
+{
+	float Speed = {};
+
+	if (true == IsSprint)
+	{
+		Speed = SprintSpeed;
+	}
+	else
+	{
+		Speed = IsWalk ? WalkSpeed : JogSpeed;
+	}
+
+	GetCharacterMovement()->MaxWalkSpeed = Speed * SpeedRate;
 }
