@@ -74,3 +74,10 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# AI
+.claude/*
+*.md
+
+# Server bat
+*.bat
