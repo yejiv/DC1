@@ -8,6 +8,9 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1AbilitySystemComponent.h"
+
 ADC1Player::ADC1Player()
 	: Super()
 {
@@ -42,6 +45,15 @@ ADC1Player::ADC1Player()
 	Camera->bUsePawnControlRotation = false;
 }
 
+UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
+{
+	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+	{
+		return PS->GetAbilitySystemComponent();
+	}
+	return nullptr;
+}
+
 void ADC1Player::ToggleMove()
 {
 	IsWalk = !IsWalk;
@@ -69,6 +81,27 @@ void ADC1Player::BeginPlay()
 	UpdateMoveSpeed();
 }
 
+void ADC1Player::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	InitializeAbilitySystem();
+}
+
+void ADC1Player::UnPossessed()
+{
+	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+	{
+		PS->GetAbilitySystemComponent()->SetAvatarActor(nullptr);
+	}
+	Super::UnPossessed();
+}
+
+void ADC1Player::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	InitializeAbilitySystem();
+}
+
 void ADC1Player::UpdateMoveSpeed()
 {
 	float Speed = {};
@@ -83,4 +116,15 @@ void ADC1Player::UpdateMoveSpeed()
 	}
 
 	GetCharacterMovement()->MaxWalkSpeed = Speed * SpeedRate;
+}
+
+void ADC1Player::InitializeAbilitySystem()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS))
+	{
+		return;
+	}
+	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent());
+	ASC->InitAbilityActorInfo(PS, this);
 }

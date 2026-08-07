@@ -10,20 +10,17 @@ ADC1Character::ADC1Character()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+}
 
-	// Add Component
-	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>("AbilitySystemComponent");
+UAbilitySystemComponent* ADC1Character::GetAbilitySystemComponent() const
+{
+	return nullptr;
 }
 
 // Called when the game starts or when spawned
 void ADC1Character::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-UAbilitySystemComponent* ADC1Character::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
 }
 
 // Called every frame
