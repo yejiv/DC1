@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/DC1UserWidget.h"
+#include "UI/Button/DC1UserButton.h"
 #include "DC1TitleButton.generated.h"
 
 
@@ -13,30 +13,19 @@ class UImage;
 class UMaterialInstanceDynamic;
 
 UCLASS()
-class DC1_API UDC1TitleButton : public UDC1UserWidget
+class DC1_API UDC1TitleButton : public UDC1UserButton
 {
 	GENERATED_BODY()
-	
-public:
-	FSimpleMulticastDelegate OnClickedDelegate;
 
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	UFUNCTION()
-	void HandleClicked();
-
-	UFUNCTION()
-	void HandleHovered();
-
-	UFUNCTION()
-	void HandleUnhovered();
+protected:
+	virtual void HandleHovered() override;
+	virtual void HandleUnhovered() override;
 
 protected:
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UButton>				TitleButton;
-
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>			TextLabel;
 

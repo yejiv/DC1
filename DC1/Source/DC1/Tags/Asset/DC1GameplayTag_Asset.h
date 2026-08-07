@@ -22,3 +22,9 @@ namespace DC1AssetTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_DataTableData);
 #pragma endregion
 }
+
+
+namespace DC1DataTableTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_UI_LoadingTip);
+}

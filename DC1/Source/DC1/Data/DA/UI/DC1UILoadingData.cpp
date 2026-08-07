@@ -3,17 +3,16 @@
 
 #include "Data/DA/UI/DC1UILoadingData.h"
 
-UMaterialInterface* UDC1UILoadingData::GetRandomSpinnerMaterial() const
+const FUILoadingEntry* UDC1UILoadingData::GetRandomSprites() const
 {
-    if (true == SpinnerMaterials.IsEmpty())
+    if (true == LoadingEntries.IsEmpty())
     {
         UE_LOG(LogTemp, Warning, TEXT("Empty UI Loading Data"));
         
         return nullptr;
     }
 
-    int32 RandomNum = FMath::RandRange(0, SpinnerMaterials.Num() - 1);
-    UMaterialInterface* RadmonMaterialInterface = SpinnerMaterials[RandomNum];
-
-    return RadmonMaterialInterface;
+    int32 RandomNum = FMath::RandRange(0, LoadingEntries.Num() - 1);
+    
+    return &LoadingEntries[RandomNum];
 }

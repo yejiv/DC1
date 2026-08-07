@@ -4,54 +4,46 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "Enum/DC1Enums.h"
 #include "DC1FadeWidget.generated.h"
 
-class UMaterialInterface;
-class UTextBlock;
-
-UENUM(BlueprintType)
-enum class EDC1FadeType : uint8
-{
-	None = 0 UMETA(DisplayName = "None"), // 검정 화면
-	Spinner = 1 UMETA(DisplayName = "Spinner"), // 검정 화면 + 스프라이트 애니메이션
-	Loading = 2 UMETA(DisplayName = "Loading"), // 검정 화면 + 스프라이트 애니메이션 + Tip
-};
+struct FUILoadingEntry;
+class UDC1FadeImage;
+class UDC1FadeText;
 
 UCLASS()
 class DC1_API UDC1FadeWidget : public UDC1UserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
 	bool			IsFading() const { return bIsFading; }
-
-public:
-	void			FadeIn(float InDuration, EDC1FadeType InType, FSimpleDelegate OnComplete = FSimpleDelegate());
-	void			FadeOut(float InDuration, FSimpleDelegate OnComplete = FSimpleDelegate());
-
-	void			SetTipText(const FText& InTip);
 
 protected:
 	virtual void	NativeConstruct() override;
 	virtual void	NativeTick(const FGeometry& MyGeomtry, float InDeltaTime) override;
 
+public:
+	void			SetFadeType(EDC1FadeType InType, const FUILoadingEntry* InLoadingEntry = nullptr, const FText* InText = nullptr);
+	void			FadeIn(float InDuration, FSimpleDelegate OnComplete = FSimpleDelegate());
+	void			FadeOut(float InDuration, FSimpleDelegate OnComplete = FSimpleDelegate());
+
 private:
 	void			StartFade(float InTargetAlpha, float InDuration, FSimpleDelegate OnComplete);
 	void			FinishFade();
-	void			ApplyContent(EDC1FadeType InType);
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TArray<TObjectPtr<UMaterialInterface>>		SpinnerMaterials;
+	TObjectPtr<UDC1FadeImage>	FadeImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>	TipText;
+	TObjectPtr<UDC1FadeText>	FadeText;
 
 	float			StartAlpha = 0.f;
 	float			TargetAlpha = 0.f;
 	float			FadeDuration = 0.f;
 	float			Elapsed = 0.f;
-	bool			bIsFading;
+	bool			bIsFading = false;
 
 	FSimpleDelegate	CompleteDelegate;
 };

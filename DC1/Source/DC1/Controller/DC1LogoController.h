@@ -16,4 +16,7 @@ class DC1_API ADC1LogoController : public APlayerController
 	
 protected:
 	virtual void BeginPlay() override;
+
+public:
+	void TravelToServer(const FString& IP);
 };
