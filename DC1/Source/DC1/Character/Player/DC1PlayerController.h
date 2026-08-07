@@ -26,7 +26,8 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void SetupInputComponent() override;
-	virtual void OnPossess(APawn* aPawn) override;
+	// 서버 Possess/UnPossess, 클라이언트 OnRep_Pawn 모두 이 함수를 거친다
+	virtual void SetPawn(APawn* InPawn) override;
 
 private:
 	void OnMove(const FInputActionValue& Value);

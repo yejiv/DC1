@@ -1,6 +1,6 @@
 @echo off
-set ENGINE=E:\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe
-set PROJECT=F:\UE_Projects\DC1\DC1\DC1.uproject
+set ENGINE=C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe
+set PROJECT=C:\Hilde\DC1\DC1\DC1.uproject
 set MAP=/Game/Maps/DevMap
 set PORT=7777
 echo Starting Dedicated Server on %MAP% port %PORT% ...
