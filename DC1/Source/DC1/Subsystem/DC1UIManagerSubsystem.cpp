@@ -32,10 +32,22 @@ void UDC1UIManagerSubsystem::Deinitialize()
 
 UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bool IsPop)
 {
-    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(UITag);
-    if (false == ::IsValid(WidgetClass))
+    bool IsCreated = false;
+
+    TObjectPtr<UDC1UserWidget>* FoundWidget = CreatedWidget.Find(UITag);
+    if (nullptr != FoundWidget)
     {
-        return nullptr;
+        IsCreated = true;
+    }
+
+    TSubclassOf<UDC1UserWidget> WidgetClass = nullptr;
+    if (false == IsCreated)
+    {
+        WidgetClass = FindWidgetClass(UITag);
+        if (false == ::IsValid(WidgetClass))
+        {
+            return nullptr;
+        }
     }
 
     if (true == IsPop)
@@ -43,7 +55,7 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bo
         PopScreen();
     }
 
-    return PushScreenInternal(WidgetClass);
+    return IsCreated ? PushScreenInternal(FoundWidget->Get()) : PushScreenInternal(UITag, WidgetClass);
 }
 
 void UDC1UIManagerSubsystem::PopScreen()
@@ -115,6 +127,8 @@ void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDel
                 PopScreen();
             }
 
+            CreatedWidget.Empty();
+
             OnReadyToTravel.ExecuteIfBound();
         }));
 
@@ -140,13 +154,24 @@ UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& UITag,
     return NewWidget;
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(TSubclassOf<UDC1UserWidget> WidgetClass)
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* Widget)
 {
-    if (false == ::IsValid(WidgetClass))
+    if (false == ::IsValid(Widget))
     {
         return nullptr;
     }
 
+    Widget->AddToViewport(ScreenStack.Num());
+    ScreenStack.Add(Widget);
+    Widget->Activate();
+
+    UpdateInputMode();
+
+    return Widget;
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& UITag, TSubclassOf<UDC1UserWidget> WidgetClass)
+{
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
     if (false == ::IsValid(PC))
     {
@@ -154,7 +179,11 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(TSubclassOf<UDC1UserW
     }
 
     UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, WidgetClass);
-    if (false == ::IsValid(NewWidget))
+    if (true == ::IsValid(NewWidget))
+    {
+        CreatedWidget.Add(UITag, NewWidget);
+    }
+    else
     {
         return nullptr;
     }
@@ -267,6 +296,8 @@ void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* LoadedWorld)
 {
     ScreenStack.Empty();
     FadeWidget = nullptr;
+
+    CreatedWidget.Empty();
 
     if (false == bIsTraveling)
     {
