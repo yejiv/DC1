@@ -21,12 +21,19 @@ public:
 	ADC1Player();
 
 public:
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
 
 private:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+	virtual void OnRep_PlayerState() override;
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -42,6 +49,7 @@ public:
 
 private:
 	void	UpdateMoveSpeed();
+	void	InitializeAbilitySystem();
 
 private:
 	bool	IsWalk = { false };

@@ -2,8 +2,8 @@
 
 
 #include "UI/Title/DC1TitleWidget.h"
-#include "UI/Title/DC1TitleButton.h"
-#include "UI/Title/DC1BracketButton.h"
+#include "UI/Button/Title/DC1TitleButton.h"
+#include "UI/Button/AnimButton/DC1BracketButton.h"
 
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"

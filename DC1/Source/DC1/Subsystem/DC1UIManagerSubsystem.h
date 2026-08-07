@@ -37,7 +37,10 @@ public:
 
 private:
 	UDC1UserWidget*				CreateOverlay(const FGameplayTag& UITag, int32 ZOrder);
-	UDC1UserWidget*				PushScreenInternal(TSubclassOf<UDC1UserWidget> WidgetClass);
+	UDC1UserWidget*				PushScreenInternal(UDC1UserWidget* CreatedWidget);
+	UDC1UserWidget*				PushScreenInternal(const FGameplayTag& UITag, TSubclassOf<UDC1UserWidget> WidgetClass);
+
+
 	TSubclassOf<UDC1UserWidget> FindWidgetClass(const FGameplayTag& UITag);
 	void						UpdateInputMode();
 	
@@ -46,13 +49,16 @@ private:
 	
 private:
 	UPROPERTY()
-	TArray<TObjectPtr<UDC1UserWidget>> ScreenStack;
+	TArray<TObjectPtr<UDC1UserWidget>>	ScreenStack;
 	
 	UPROPERTY()
 	TObjectPtr<const UDC1UIData>		CachedUIData;
 
 	UPROPERTY()
 	TObjectPtr<UDC1FadeWidget>			FadeWidget;
+
+	UPROPERTY()
+	TMap<FGameplayTag, TObjectPtr<UDC1UserWidget>> CreatedWidget;
 
 	EDC1FadeType						PendingFadeType = EDC1FadeType::Default;
 	const FUILoadingEntry*				PendingLoadingEntry = nullptr;
