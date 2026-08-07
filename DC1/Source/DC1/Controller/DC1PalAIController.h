@@ -21,13 +21,18 @@ class DC1_API ADC1PalAIController : public AAIController
 public:
 	ADC1PalAIController();
 
-	// AIPerception은 리스너의 팀 에이전트로 컨트롤러를 먼저 잡는다.
-	// 진영 원본은 Pawn 하나로 유지하기 위해 넘긴다.
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
+	void					UpdateTarget();
+
+	void					ApplyPerceptionSettings();
+
+	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
+	const FVector&			GetLastKnownTargetLocation() const { return LastKnownTargetLocation; }
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
-	TObjectPtr<AActor> CurrentTarget = { nullptr };
+	TObjectPtr<AActor>		CurrentTarget = { nullptr };
 
 protected:
 	virtual void BeginPlay() override;
@@ -42,4 +47,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "AI|Perception")
 	TObjectPtr<UAISenseConfig_Sight> SightConfig = { nullptr };
+
+	// 현재 감지 중인 적들. 죽으면 UpdateTarget에서 걸러짐.
+	TArray<TWeakObjectPtr<AActor>>	SensedTargets;
+
+	FVector							LastKnownTargetLocation = { FVector::ZeroVector };
+	float							LastSeenTime = { 0.f };
+
+	// 놓친 뒤 추격 유지하는 시간
+	float							TargetMemoryDuration = { 3.f };
 };

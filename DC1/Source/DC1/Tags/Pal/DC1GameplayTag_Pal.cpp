@@ -4,14 +4,8 @@
 
 namespace DC1PalTags
 {
-#pragma region State
-	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Idle, "Pal.State.Idle");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Chase, "Pal.State.Chase");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Attack, "Pal.State.Attack");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Dead, "Pal.State.Dead");
-#pragma endregion
-
-#pragma region Ability
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Ability_Attack_Melee, "Pal.Ability.Attack.Melee");
+#pragma region Species
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Alpaca, "Pal.Species.Alpaca");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Anubis, "Pal.Species.Anubis");
 #pragma endregion
 }
