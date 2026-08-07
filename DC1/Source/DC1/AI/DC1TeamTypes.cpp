@@ -16,7 +16,6 @@ ETeamAttitude::Type DC1Team::GetAttitude(EDC1Team InSelfTeam, EDC1Team InOtherTe
 		return ETeamAttitude::Hostile;
 	}
 
-	// 야생끼리는 서로 공격하지 않지만 서로 돕지도 않는다.
 	return (EDC1Team::Player == InSelfTeam) ? ETeamAttitude::Friendly : ETeamAttitude::Neutral;
 }
 
@@ -27,7 +26,7 @@ EDC1Team DC1Team::ResolveTeam(const AActor& InActor)
 		return FromGenericTeamId(TeamAgent->GetGenericTeamId());
 	}
 
-	// TODO : ADC1Character가 IGenericTeamAgentInterface를 구현하면 제거
+	// 임시적으로 플레이어 컨트롤러가 소유한 Pawn은 Player 팀으로 간주
 	if (const APawn* Pawn = Cast<const APawn>(&InActor))
 	{
 		if (Pawn->IsPlayerControlled())
