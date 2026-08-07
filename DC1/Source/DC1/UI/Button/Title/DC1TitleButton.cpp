@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Title/DC1TitleButton.h"
-#include "Components/Button.h"
+#include "UI/Button/Title/DC1TitleButton.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -15,13 +14,6 @@ void UDC1TitleButton::NativeConstruct()
 	{
 		TextLabel->SetText(Button_LabelText);
 		NormalColor = TextLabel->GetColorAndOpacity().GetSpecifiedColor();
-	}
-
-	if (true == ::IsValid(TitleButton))
-	{
-		TitleButton->OnClicked.AddDynamic(this, &ThisClass::HandleClicked);
-		TitleButton->OnHovered.AddDynamic(this, &ThisClass::HandleHovered);
-		TitleButton->OnUnhovered.AddDynamic(this, &ThisClass::HandleUnhovered);
 	}
 
 	if (true == ::IsValid(HoverImage))
@@ -53,11 +45,6 @@ void UDC1TitleButton::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	}
 
 	HoverMID->SetScalarParameterValue("Progress", HoverProgress);
-}
-
-void UDC1TitleButton::HandleClicked()
-{
-	OnClickedDelegate.Broadcast();
 }
 
 void UDC1TitleButton::HandleHovered()
