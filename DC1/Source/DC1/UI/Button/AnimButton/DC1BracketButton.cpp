@@ -42,7 +42,6 @@ void UDC1BracketButton::NativeConstruct()
 	}
 }
 
-
 void UDC1BracketButton::HandleHovered()
 {
 	if (true == ::IsValid(BracketImage))
