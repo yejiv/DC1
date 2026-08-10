@@ -13,7 +13,7 @@
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
-#include "Character/DC1Character.h"
+#include "Character/Player/DC1Player.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -78,11 +78,11 @@ void ADC1PlayerController::SetupInputComponent()
 	}
 }
 
-void ADC1PlayerController::OnPossess(APawn* aPawn)
+void ADC1PlayerController::SetPawn(APawn* InPawn)
 {
-	Super::OnPossess(aPawn);
+	Super::SetPawn(InPawn);
 
-	ControlObject = Cast<ADC1Player>(aPawn);
+	ControlObject = Cast<ADC1Player>(InPawn);
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -144,7 +144,6 @@ void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
 
 void ADC1PlayerController::SetUp_IMC()
 {
-
 	if (const UDC1InputData* InputData = UDC1AssetManager::GetAssetByTag<UDC1InputData>(DC1AssetTags::Asset_InputData))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))

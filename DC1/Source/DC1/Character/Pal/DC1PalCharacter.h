@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "Character/DC1Character.h"
 #include "GenericTeamAgentInterface.h"
+#include "GameplayTagContainer.h"
 #include "AI/DC1TeamTypes.h"
 #include "DC1PalCharacter.generated.h"
 
 class UDC1PalAttributeSet;
+class UDC1PalData;
 
 /**
  *
@@ -19,7 +21,7 @@ class DC1_API ADC1PalCharacter : public ADC1Character, public IGenericTeamAgentI
 	GENERATED_BODY()
 
 public:
-	ADC1PalCharacter();
+	ADC1PalCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -29,18 +31,30 @@ public:
 
 	EDC1Team GetTeam() const { return Team; }
 
-	// 서버 권위. 클라이언트에서 호출하면 무시된다.
+	// 클라이언트에서 호출하면 무시
 	void SetTeam(EDC1Team NewTeam);
 
+	const UDC1PalData* GetPalData() const { return PalData; }
+
 protected:
+	virtual void PostInitializeComponents() override;
+
 	virtual void OnTeamChanged();
 
 	UFUNCTION()
 	void OnRep_Team();
 
+	void ApplyPalData();
+
 protected:
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal", meta = (Categories = "Pal.Species"))
+	FGameplayTag SpeciesTag;
+
+	UPROPERTY(Transient)
+	TObjectPtr<const UDC1PalData> PalData = { nullptr };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Team, Category = "Pal|Team")
 	EDC1Team Team = { EDC1Team::Wild };

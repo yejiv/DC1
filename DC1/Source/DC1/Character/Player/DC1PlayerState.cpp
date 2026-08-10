@@ -8,6 +8,10 @@
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	SetNetUpdateFrequency(100.f);
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const

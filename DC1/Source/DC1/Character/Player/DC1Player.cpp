@@ -8,8 +8,12 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 
-ADC1Player::ADC1Player()
-	: Super()
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
+
+ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDC1CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -42,16 +46,23 @@ ADC1Player::ADC1Player()
 	Camera->bUsePawnControlRotation = false;
 }
 
+UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
+{
+	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+	{
+		return PS->GetAbilitySystemComponent();
+	}
+	return nullptr;
+}
+
 void ADC1Player::ToggleMove()
 {
-	IsWalk = !IsWalk;
-	UpdateMoveSpeed();
+	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();
 }
 
 void ADC1Player::SetSprint(bool Sprint)
 {
-	IsSprint = Sprint;
-	UpdateMoveSpeed();
+	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetSprint(Sprint);
 }
 
 void ADC1Player::PostInitializeComponents()
@@ -65,22 +76,36 @@ void ADC1Player::PostInitializeComponents()
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UpdateMoveSpeed();
 }
 
-void ADC1Player::UpdateMoveSpeed()
+void ADC1Player::PossessedBy(AController* NewController)
 {
-	float Speed = {};
+	Super::PossessedBy(NewController);
+	InitializeAbilitySystem();
+}
 
-	if (true == IsSprint)
+void ADC1Player::UnPossessed()
+{
+	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
 	{
-		Speed = SprintSpeed;
+		PS->GetAbilitySystemComponent()->SetAvatarActor(nullptr);
 	}
-	else
-	{
-		Speed = IsWalk ? WalkSpeed : JogSpeed;
-	}
+	Super::UnPossessed();
+}
 
-	GetCharacterMovement()->MaxWalkSpeed = Speed * SpeedRate;
+void ADC1Player::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	InitializeAbilitySystem();
+}
+
+void ADC1Player::InitializeAbilitySystem()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS))
+	{
+		return;
+	}
+	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent());
+	ASC->InitAbilityActorInfo(PS, this);
 }

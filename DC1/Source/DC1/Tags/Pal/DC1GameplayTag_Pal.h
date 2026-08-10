@@ -9,17 +9,9 @@
  */
 namespace DC1PalTags
 {
-#pragma region State
-	// 상태의 주인은 StateTree다. 진입/이탈 시 ASC에 게시만 하고, AI가 이 태그를 읽어 분기하지 않는다.
-	// 읽는 쪽은 GameplayEffect / GameplayAbility의 차단·조건 태그.
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_State_Idle);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_State_Chase);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_State_Attack);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_State_Dead);
-#pragma endregion
-
-#pragma region Ability
-	// 부모 Pal.Ability.Attack은 태그 계층에 자동 생성되므로 따로 선언하지 않는다.
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Ability_Attack_Melee);
+#pragma region Species
+	// 특정 종을 이름으로 참조하지 않음. 에디터 태그를 채우기위함.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Alpaca);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Anubis);
 #pragma endregion
 }
