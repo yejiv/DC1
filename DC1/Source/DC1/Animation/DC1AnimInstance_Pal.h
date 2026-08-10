@@ -25,6 +25,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Locomotion")
 	float				NormalizedSpeed = {};
 
+	UPROPERTY(EditDefaultsOnly, Category = "Locomotion")
+	float				BlendInterpSpeed = { 8.f };
+
 private:
 	float				MaxLocomotionSpeed = {};
 };
