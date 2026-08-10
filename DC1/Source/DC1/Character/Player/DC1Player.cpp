@@ -10,9 +10,10 @@
 
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
 
-ADC1Player::ADC1Player()
-	: Super()
+ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDC1CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -56,14 +57,12 @@ UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
 
 void ADC1Player::ToggleMove()
 {
-	IsWalk = !IsWalk;
-	UpdateMoveSpeed();
+	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();
 }
 
 void ADC1Player::SetSprint(bool Sprint)
 {
-	IsSprint = Sprint;
-	UpdateMoveSpeed();
+	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetSprint(Sprint);
 }
 
 void ADC1Player::PostInitializeComponents()
@@ -77,8 +76,6 @@ void ADC1Player::PostInitializeComponents()
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UpdateMoveSpeed();
 }
 
 void ADC1Player::PossessedBy(AController* NewController)
@@ -100,22 +97,6 @@ void ADC1Player::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 	InitializeAbilitySystem();
-}
-
-void ADC1Player::UpdateMoveSpeed()
-{
-	float Speed = {};
-
-	if (true == IsSprint)
-	{
-		Speed = SprintSpeed;
-	}
-	else
-	{
-		Speed = IsWalk ? WalkSpeed : JogSpeed;
-	}
-
-	GetCharacterMovement()->MaxWalkSpeed = Speed * SpeedRate;
 }
 
 void ADC1Player::InitializeAbilitySystem()
