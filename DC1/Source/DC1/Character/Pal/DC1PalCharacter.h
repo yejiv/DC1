@@ -9,6 +9,7 @@
 #include "AI/DC1TeamTypes.h"
 #include "DC1PalCharacter.generated.h"
 
+class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
 
@@ -31,10 +32,11 @@ public:
 
 	EDC1Team GetTeam() const { return Team; }
 
-	// 클라이언트에서 호출하면 무시
 	void SetTeam(EDC1Team NewTeam);
 
 	const UDC1PalData* GetPalData() const { return PalData; }
+
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
 	virtual void PostInitializeComponents() override;
@@ -47,6 +49,9 @@ protected:
 	void ApplyPalData();
 
 protected:
+	UPROPERTY(VisibleAnywhere, Category = "Ability")
+	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };
 

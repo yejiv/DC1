@@ -3,6 +3,7 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
 #include "Character/Pal/DC1PalAttributeSet.h"
+#include "Component/DC1AbilitySystemComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -18,6 +19,10 @@ ADC1PalCharacter::ADC1PalCharacter()
 {
 	AIControllerClass = ADC1PalAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	PalAttributeSet = CreateDefaultSubobject<UDC1PalAttributeSet>(TEXT("PalAttributeSet"));
 
@@ -63,13 +68,16 @@ void ADC1PalCharacter::ApplyPalData()
 		return;
 	}
 
-	// 메시 / AnimBP / 캡슐은 종별 BP(BP_Pal_*)가 갖는다. 여기서는 수치만 적용한다.
-
 	// Locomotion
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->MaxWalkSpeed = PalData->RunSpeed;
 		Movement->RotationRate = FRotator(0.f, PalData->RotationRateYaw, 0.f);
+	}
+
+	if (::IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
 	}
 
 	// Stats
@@ -86,6 +94,11 @@ void ADC1PalCharacter::ApplyPalData()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s: PalData applied [%s]."), *GetName(), *SpeciesTag.ToString());
+}
+
+UAbilitySystemComponent* ADC1PalCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 
 void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
