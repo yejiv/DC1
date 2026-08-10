@@ -9,6 +9,10 @@ namespace DC1Labels
 
 namespace DC1AssetTags
 {
+#pragma region Ability
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Ability_Player);
+#pragma endregion
+
 #pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_InputData);
 #pragma endregion

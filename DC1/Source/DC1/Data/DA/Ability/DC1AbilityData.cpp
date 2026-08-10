@@ -4,6 +4,7 @@
 #include "Data/DA/Ability/DC1AbilityData.h"
 
 #include "Component/DC1AbilitySystemComponent.h"
+#include "GameplayEffect.h"
 
 void UDC1AbilityData::GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC, FDC1AbilitySetGrantedHandles& OutHandles, UObject* SourceObject) const
 {
@@ -33,4 +34,21 @@ void UDC1AbilityData::GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC, FDC1A
 		if (true == Entry.IsPassive)
 			ASC->TryActivateAbility(SpecHandle);
 	}
+}
+
+TSubclassOf<UGameplayEffect> UDC1AbilityData::FindEffectByTag(const FGameplayTag& EffectTag) const
+{
+	if (const TSubclassOf<UGameplayEffect>* Found = Effects.Find(EffectTag))
+		return *Found;
+
+	for (const TObjectPtr<UDC1AbilityData>& Base : BaseAbilityData)
+	{
+		if (IsValid(Base))
+		{
+			if (TSubclassOf<UGameplayEffect> Found = Base->FindEffectByTag(EffectTag))
+				return Found;
+		}
+	}
+
+	return nullptr;
 }

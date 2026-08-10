@@ -12,6 +12,8 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 
+#include "Tags/DC1GamePlayTags.h"
+
 ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDC1CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
@@ -82,6 +84,9 @@ void ADC1Player::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
+
+	// Temp(Equip None)
+	Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent())->SetExclusiveStateTag(DC1StateTags::State_Weapon, DC1StateTags::State_Weapon_None);
 }
 
 void ADC1Player::UnPossessed()
@@ -107,5 +112,6 @@ void ADC1Player::InitializeAbilitySystem()
 		return;
 	}
 	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent());
-	ASC->InitAbilityActorInfo(PS, this);
+	//ASC->InitAbilityActorInfo(PS, this);
+	ASC->InitAbilitySystem(PS, this, DC1AssetTags::Asset_Ability_Player);
 }

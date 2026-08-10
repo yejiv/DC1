@@ -8,12 +8,13 @@
 #include "System/DC1AssetManager.h"
 #include "Data/DA/Input/DC1InputData.h"
 
-#include "Tags/Asset/DC1GameplayTag_Asset.h"
-#include "Tags/Input/DC1GameplayTag_Input.h"
+#include "Tags/DC1GamePlayTags.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
 #include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1AbilitySystemComponent.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -76,6 +77,8 @@ void ADC1PlayerController::SetupInputComponent()
 			EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
 		}
 	}
+
+	SetUp_DebugInput(); // TODO : Debug region 제거 시 같이 삭제
 }
 
 void ADC1PlayerController::SetPawn(APawn* InPawn)
@@ -141,6 +144,47 @@ void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
 	}
 	ControlObject->ToggleMove();
 }
+
+#pragma region Debug
+// TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
+//        (.h 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
+void ADC1PlayerController::SetUp_DebugInput()
+{
+	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugWeaponNone);
+	InputComponent->BindKey(EKeys::NumPadTwo, IE_Pressed, this, &ThisClass::OnDebugWeaponMelee);
+	InputComponent->BindKey(EKeys::NumPadThree, IE_Pressed, this, &ThisClass::OnDebugWeaponBow);
+}
+
+void ADC1PlayerController::OnDebugWeaponNone()
+{
+	ServerSetWeaponState(DC1StateTags::State_Weapon_None);
+}
+
+void ADC1PlayerController::OnDebugWeaponMelee()
+{
+	ServerSetWeaponState(DC1StateTags::State_Weapon_Melee);
+}
+
+void ADC1PlayerController::OnDebugWeaponBow()
+{
+	ServerSetWeaponState(DC1StateTags::State_Weapon_Bow);
+}
+
+void ADC1PlayerController::ServerSetWeaponState_Implementation(FGameplayTag NewStateTag)
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[DebugWeapon] PlayerState X"));
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent()))
+	{
+		ASC->SetExclusiveStateTag(DC1StateTags::State_Weapon, NewStateTag);
+	}
+}
+#pragma endregion
 
 void ADC1PlayerController::SetUp_IMC()
 {

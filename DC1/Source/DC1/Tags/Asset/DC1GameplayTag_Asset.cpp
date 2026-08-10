@@ -7,6 +7,10 @@ namespace DC1Labels
 
 namespace DC1AssetTags
 {
+#pragma region Ability
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Ability_Player, "Asset.Ability.Player");
+#pragma endregion
+
 #pragma region Input
 	UE_DEFINE_GAMEPLAY_TAG(Asset_InputData, "Asset.InputData");
 #pragma endregion

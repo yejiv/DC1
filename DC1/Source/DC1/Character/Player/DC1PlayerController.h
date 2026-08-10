@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
+#include "GameplayTagContainer.h"
 #include "DC1PlayerController.generated.h"
 
 class ADC1Player;
@@ -39,6 +40,20 @@ private:
 private:
 	// InputMappingContext SetUp
 	void SetUp_IMC();
+
+#pragma region Debug
+	// TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
+	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
+private:
+	void SetUp_DebugInput();
+
+	void OnDebugWeaponNone();
+	void OnDebugWeaponMelee();
+	void OnDebugWeaponBow();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetWeaponState(FGameplayTag NewStateTag);
+#pragma endregion
 
 private:
 	TObjectPtr<ADC1Player> ControlObject = { nullptr };
