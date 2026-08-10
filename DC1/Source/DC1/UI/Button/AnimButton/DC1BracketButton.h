@@ -21,8 +21,8 @@ protected:
 	virtual void	NativeConstruct() override;
 
 protected:
-	virtual void HandleHovered() override;
-	virtual void HandleUnhovered() override;
+	virtual void	HandleHovered() override;
+	virtual void	HandleUnhovered() override;
 
 protected:
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))

@@ -22,6 +22,11 @@ class DC1_API UDC1UIManagerSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 	
 public:
+	FSimpleMulticastDelegate	OnScreenStackChanged;
+	
+	bool						HasActiveScreen() { return 0 < ScreenStack.Num(); };
+
+public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
@@ -32,6 +37,10 @@ public:
 
 	void						FadeIn(float InDuration, EDC1FadeType FadeType = EDC1FadeType::Default, FSimpleDelegate OnComplete = FSimpleDelegate());
 	void						FadeOut(float InDuration, FSimpleDelegate OnComplete = FSimpleDelegate());
+
+
+	void						RouteInputKey(const FKey& Key);
+
 
 	void						BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel);
 

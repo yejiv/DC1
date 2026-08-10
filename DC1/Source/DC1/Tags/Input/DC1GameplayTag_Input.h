@@ -10,6 +10,7 @@
 namespace DC1IMCTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Default);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_UI);
 }
 
 namespace DC1InputTags
@@ -19,5 +20,10 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Turn);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Sprint);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Toggle_Move);
+#pragma endregion
+
+
+#pragma region UI
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
 #pragma endregion
 }

@@ -14,8 +14,15 @@ void UDC1BracketButton::NativeConstruct()
 
 	if(true == ::IsValid(ButtonSizeBox))
 	{ 
-		ButtonSizeBox->SetWidthOverride(ButtonSizeX);
-		ButtonSizeBox->SetHeightOverride(ButtonSizeY);
+		if (0 < ButtonSizeX)
+		{
+			ButtonSizeBox->SetWidthOverride(ButtonSizeX);
+		}
+
+		if (0 < ButtonSizeY)
+		{
+			ButtonSizeBox->SetHeightOverride(ButtonSizeY);
+		}
 	}
 
 	if (true == ::IsValid(TextLabel))
@@ -28,7 +35,6 @@ void UDC1BracketButton::NativeConstruct()
 	{
 		BracketImage->SetOpacity(0.f);
 	}
-
 
 	if (true == ButtonBrushOverride)
 	{
