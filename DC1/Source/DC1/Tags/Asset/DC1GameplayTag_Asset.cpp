@@ -19,6 +19,10 @@ namespace DC1AssetTags
 #pragma region DataTable
 	UE_DEFINE_GAMEPLAY_TAG(Asset_DataTableData, "Asset.DataTableData");
 #pragma endregion
+
+#pragma region Pal
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Pal_Registry, "Asset.Pal.Registry");
+#pragma endregion
 }
 
 namespace DC1DataTableTags

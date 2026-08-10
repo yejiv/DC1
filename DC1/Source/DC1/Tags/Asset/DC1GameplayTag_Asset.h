@@ -21,6 +21,11 @@ namespace DC1AssetTags
 #pragma region DataTable
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_DataTableData);
 #pragma endregion
+
+#pragma region Pal
+	// 종 데이터는 여기에 등록하지 않는다. 레지스트리만 프리로드하고 종 데이터는 소프트 레퍼런스로 따라간다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Pal_Registry);
+#pragma endregion
 }
 
 
