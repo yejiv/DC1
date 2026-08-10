@@ -22,6 +22,7 @@ namespace DC1AssetTags
 
 #pragma region Pal
 	UE_DEFINE_GAMEPLAY_TAG(Asset_Pal_Registry, "Asset.Pal.Registry");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Ability_Pal, "Asset.Ability.Pal");
 #pragma endregion
 }
 

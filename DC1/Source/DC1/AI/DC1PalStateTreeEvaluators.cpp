@@ -2,7 +2,9 @@
 
 #include "AI/DC1PalStateTreeEvaluators.h"
 
+#include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
+#include "Data/DA/Pal/DC1PalData.h"
 
 #include "GameFramework/Pawn.h"
 #include "StateTreeExecutionContext.h"
@@ -35,6 +37,16 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	AIController->UpdateTarget();
 
 	InstanceData.LastKnownLocation = AIController->GetLastKnownTargetLocation();
+
+	// 사거리는 타겟 유무와 무관
+	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
+	{
+		if (const UDC1PalData* PalData = SelfPal->GetPalData())
+		{
+			InstanceData.AttackRange = PalData->AttackRange;
+			InstanceData.AttackExitRange = PalData->AttackExitRange;
+		}
+	}
 
 	AActor* Target = AIController->GetCurrentTarget();
 	if (false == ::IsValid(Target))
