@@ -45,5 +45,7 @@ void UDC1AnimInstance_Pal::NativeUpdateAnimation(float DeltaSeconds)
 		CachePalData();
 	}
 
-	NormalizedSpeed = (MaxLocomotionSpeed > 0.f) ? FMath::Clamp(GroundSpeed / MaxLocomotionSpeed, 0.f, 1.f) : 0.f;
+	const float TargetSpeed = (MaxLocomotionSpeed > 0.f) ? FMath::Clamp(GroundSpeed / MaxLocomotionSpeed, 0.f, 1.f) : 0.f;
+
+	NormalizedSpeed = FMath::FInterpTo(NormalizedSpeed, TargetSpeed, DeltaSeconds, BlendInterpSpeed);
 }
