@@ -14,8 +14,7 @@ class DC1_API ADC1Character : public ACharacter, public IAbilitySystemInterface
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	ADC1Character();
+	ADC1Character(const FObjectInitializer& ObjectInitializer);
 
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
@@ -31,7 +30,4 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-public:
-	// Move
-	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1.0f, bool bForce = false) override;
 };

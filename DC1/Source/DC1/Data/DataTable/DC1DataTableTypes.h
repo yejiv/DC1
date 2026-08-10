@@ -26,7 +26,7 @@ struct FDC1TechRow : public FTableRowBase
 
 	// 해당 테크가 어떤 분류에 속하는지
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FGameplayTag ClassificationTag;
+	FGameplayTag CategoryTag;
 
 	// 활성화 및 배치될 레벨 ( 플레이어 레벨 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -38,5 +38,5 @@ struct FDC1TechRow : public FTableRowBase
 
 	// 분류 이름 - ex) 건축물, 아이템
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText ClassificationName;
+	FText CategoryName;
 };

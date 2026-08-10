@@ -14,8 +14,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
 
-ADC1PalCharacter::ADC1PalCharacter()
-	: Super()
+ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	AIControllerClass = ADC1PalAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
