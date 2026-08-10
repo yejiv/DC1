@@ -6,6 +6,7 @@
 namespace DC1IMCTags
 {
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Default, "IMC.Default");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_UI, "IMC.UI");
 }
 
 namespace DC1InputTags
@@ -15,5 +16,9 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Turn, "Input.Default.Turn");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Sprint, "Input.Default.Sprint");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Toggle_Move, "Input.Default.Toggle.Move");
+#pragma endregion
+
+#pragma region UI
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_TechTree, "Input.UI.TechTree");
 #pragma endregion
 }

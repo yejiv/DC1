@@ -5,10 +5,9 @@
 
 #include "Component/DC1AbilitySystemComponent.h"
 
-// Sets default values
-ADC1Character::ADC1Character()
+ADC1Character::ADC1Character(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -36,9 +35,3 @@ void ADC1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
-
-void ADC1Character::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
-{
-	Super::AddMovementInput(WorldDirection, ScaleValue, bForce);
-}
-

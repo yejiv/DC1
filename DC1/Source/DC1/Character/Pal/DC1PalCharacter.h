@@ -21,7 +21,7 @@ class DC1_API ADC1PalCharacter : public ADC1Character, public IGenericTeamAgentI
 	GENERATED_BODY()
 
 public:
-	ADC1PalCharacter();
+	ADC1PalCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

@@ -32,4 +32,5 @@ namespace DC1AssetTags
 namespace DC1DataTableTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_UI_LoadingTip);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_UI_TechTree);
 }

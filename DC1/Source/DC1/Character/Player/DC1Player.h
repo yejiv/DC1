@@ -18,7 +18,7 @@ class DC1_API ADC1Player : public ADC1Character
 	GENERATED_BODY()
 
 public:
-	ADC1Player();
+	ADC1Player(const FObjectInitializer& ObjectInitializer);
 
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
@@ -48,19 +48,5 @@ public:
 	TObjectPtr<UCameraComponent>			Camera = { nullptr };
 
 private:
-	void	UpdateMoveSpeed();
 	void	InitializeAbilitySystem();
-
-private:
-	bool	IsWalk = { false };
-	bool	IsSprint = { false };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float	WalkSpeed = { 150.f };
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float	JogSpeed = { 300.f };
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float	SprintSpeed = { 650.f };
-
-	float	SpeedRate = { 1.f };
 };

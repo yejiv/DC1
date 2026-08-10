@@ -14,11 +14,15 @@ class DC1_API UDC1UserWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	virtual void HandleInputKey(const FKey& InputKey);
+
+public:
 	// Manager에서 활성화될 때 호출
 	void Activate();
 
 	// Manager에서 비활성화될 때 호출
 	void Deactivate();
+
 
 protected:
 	void			NativeOnActivated();
