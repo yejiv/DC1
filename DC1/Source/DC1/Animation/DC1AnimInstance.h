@@ -35,4 +35,6 @@ protected:
 	bool				IsFalling = { false };
 	UPROPERTY(BlueprintReadOnly)
 	float				GroundSpeed = {};
+	UPROPERTY(BlueprintReadOnly)
+	float				VelocityZ = {};
 };

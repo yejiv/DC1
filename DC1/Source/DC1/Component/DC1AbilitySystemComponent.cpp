@@ -35,6 +35,7 @@ void UDC1AbilitySystemComponent::InitAbilitySystem(AActor* Owner, AActor* Avatar
 	}
 
 	InitAbilityActorInfo(Owner, Avatar);
+	DataAssetTag = DataTag;
 	if (Owner->HasAuthority())
 	{
 		if (const UDC1AbilityData* AbilityData = UDC1AssetManager::GetAssetByTag<UDC1AbilityData>(DataTag))
@@ -54,6 +55,7 @@ void UDC1AbilitySystemComponent::UnInitializeAbilitySystem()
 	if (IsOwnerActorAuthoritative())
 	{
 		GrantedHandles.TakeFromAbilitySystem(this);
+		RemoveActiveEffects(FGameplayEffectQuery());
 	}
 	AbilityTagCache.Reset();
 	ClearActorInfo();
@@ -100,14 +102,9 @@ bool UDC1AbilitySystemComponent::HasAbilityByTag(const FGameplayTag& AbilityTag)
 
 void UDC1AbilitySystemComponent::SetExclusiveStateTag(const FGameplayTag& AxisRootTag, const FGameplayTag& NewStateTag)
 {
-	FGameplayTagContainer Container;
-	GetOwnedGameplayTags(Container);
+	if (!IsOwnerActorAuthoritative()) { return; }
 
-	for (const FGameplayTag& Tag : Container)
-	{
-		if (Tag.MatchesTag(AxisRootTag) && Tag != NewStateTag)
-			RemoveStateTag(Tag);
-	}
+	RemoveAxisStateTag(AxisRootTag);
 
 	if (NewStateTag.IsValid())
 		AddStateTag(NewStateTag);
@@ -115,12 +112,19 @@ void UDC1AbilitySystemComponent::SetExclusiveStateTag(const FGameplayTag& AxisRo
 
 void UDC1AbilitySystemComponent::AddStateTag(const FGameplayTag& StateTag)
 {
-	SetLooseGameplayTagCount(StateTag, 1);
+	if (const UDC1AbilityData* AbilityData = UDC1AssetManager::GetAssetByTag<UDC1AbilityData>(DataAssetTag))
+	{
+		FGameplayEffectSpecHandle handle = MakeOutgoingSpec(AbilityData->FindEffectByTag(StateTag), 1.f, MakeEffectContext());
+		if (handle.IsValid())
+		{
+			ApplyGameplayEffectSpecToSelf(*handle.Data.Get());
+		}
+	}
 }
 
-void UDC1AbilitySystemComponent::RemoveStateTag(const FGameplayTag& StateTag)
+void UDC1AbilitySystemComponent::RemoveAxisStateTag(const FGameplayTag& AxisRootTag)
 {
-	SetLooseGameplayTagCount(StateTag, 0);
+	RemoveActiveEffectsWithGrantedTags(AxisRootTag.GetSingleTagContainer());
 }
 
 void UDC1AbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)

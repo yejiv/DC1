@@ -41,9 +41,8 @@ void UDC1AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	FVector Velocity = MovementComponent->Velocity;
 	GroundSpeed = Velocity.Size2D();
+	VelocityZ = Velocity.Z;
 
 	IsMove = GroundSpeed > 0.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
 	IsFalling = MovementComponent->IsFalling();
-
-	
 }

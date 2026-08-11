@@ -16,6 +16,7 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Turn, "Input.Default.Turn");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Sprint, "Input.Default.Sprint");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Toggle_Move, "Input.Default.Toggle.Move");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Jump, "Input.Default.Jump");
 #pragma endregion
 
 #pragma region UI

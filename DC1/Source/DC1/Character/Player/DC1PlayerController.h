@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameplayTagContainer.h"
 #include "InputActionValue.h"
+#include "GameplayTagContainer.h"
 #include "DC1PlayerController.generated.h"
 
 class ADC1Player;
@@ -35,9 +36,25 @@ private:
 	void OnSprint(const FInputActionValue& Value);
 	void RestoreSprint(const FInputActionValue& Value);
 	void OnToggleMove(const FInputActionValue& Value);
+	void OnJump(const FInputActionValue& Value);
+	void StopJumping(const FInputActionValue& Value);
 
 private:
 	void OnUIChange();
+
+#pragma region Debug
+	// TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
+	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
+private:
+	void SetUp_DebugInput();
+
+	void OnDebugWeaponNone();
+	void OnDebugWeaponMelee();
+	void OnDebugWeaponBow();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetWeaponState(FGameplayTag NewStateTag);
+#pragma endregion
 
 private:
 	// InputMappingContext SetUp
@@ -52,7 +69,6 @@ private:
 	bool	IsTurn = { true };
 	bool	IsActiveScreen = { false };
 
-	
 #pragma region UI_TEST
 private:
 	void OpenTech();

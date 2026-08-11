@@ -10,6 +10,7 @@
 class UDC1AbilitySystemComponent;
 class UAttributeSet;
 class UGameplayAbility;
+class UGameplayEffect;
 struct FDC1AbilitySetGrantedHandles;
 
 USTRUCT(BlueprintType)
@@ -41,6 +42,8 @@ public:
 									FDC1AbilitySetGrantedHandles& OutHandles,
 									UObject* SourceObject = nullptr) const;
 
+	TSubclassOf<UGameplayEffect> FindEffectByTag(const FGameplayTag& EffectTag) const;
+
 public:
 	// 공용 AbilityData 설정 (Ex. Monster 공용)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Composition")
@@ -49,6 +52,10 @@ public:
 	// Abilities
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability")
 	TArray<FDC1AbilityEntry> Abilities;
+
+	// Effects
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
+	TMap<FGameplayTag, TSubclassOf<UGameplayEffect>> Effects;
 
 	// AttributeSets
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attribute")

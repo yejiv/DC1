@@ -32,7 +32,6 @@ public:
 	void UnInitializeAbilitySystem(); // Pool 반납, 해제
 	void RefreshAvatarActor(AActor* NewAvatarActor); // Respawn
 	void ClearAvatarActor();	// Unpossessed
-
 	// ----------- Ability 활성화 -------------
 public:
 	bool ActivateAbilityByTag(const FGameplayTag& AbilityTag);
@@ -43,8 +42,9 @@ public:
 	// ------------- State Tag ----------------
 public:
 	void SetExclusiveStateTag(const FGameplayTag& AxisRootTag, const FGameplayTag& NewStateTag);
+private:
 	void AddStateTag(const FGameplayTag& StateTag);
-	void RemoveStateTag(const FGameplayTag& StateTag);
+	void RemoveAxisStateTag(const FGameplayTag& AxisRootTag);
 
 	// ---------- Engine Override ------------
 public:
@@ -63,4 +63,6 @@ private:
 	// 정리용 Handle
 	UPROPERTY()
 	FDC1AbilitySetGrantedHandles GrantedHandles;
+
+	FGameplayTag DataAssetTag;
 };
