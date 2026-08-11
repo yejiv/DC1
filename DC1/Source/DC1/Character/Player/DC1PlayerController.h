@@ -36,6 +36,8 @@ private:
 	void OnSprint(const FInputActionValue& Value);
 	void RestoreSprint(const FInputActionValue& Value);
 	void OnToggleMove(const FInputActionValue& Value);
+	void OnJump(const FInputActionValue& Value);
+	void StopJumping(const FInputActionValue& Value);
 
 private:
 	void OnUIChange();
@@ -67,7 +69,6 @@ private:
 	bool	IsTurn = { true };
 	bool	IsActiveScreen = { false };
 
-	
 #pragma region UI_TEST
 private:
 	void OpenTech();

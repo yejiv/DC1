@@ -96,7 +96,12 @@ void ADC1PlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
 		}
-
+		// Jump
+		if (const UInputAction* JumpAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Jump))
+		{
+			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
+			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
+		}
 
 #pragma region UI_TEST
 		// Open TechTree
@@ -172,6 +177,26 @@ void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
 		return;
 	}
 	ControlObject->ToggleMove();
+}
+
+void ADC1PlayerController::OnJump(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	ControlObject->Jump();
+}
+
+void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	ControlObject->StopJumping();
 }
 
 #pragma region Debug

@@ -2,7 +2,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
-#include "Character/Pal/DC1PalAttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
