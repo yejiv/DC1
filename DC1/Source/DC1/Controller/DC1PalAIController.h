@@ -41,7 +41,7 @@ protected:
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-	// CurrentTarget 갱신은 전부 여기를 거친다. 타겟과 focus가 어긋나지 않게 한 곳에서 묶는다.
+	
 	void SetCurrentTarget(AActor* NewTarget);
 
 protected:

@@ -45,6 +45,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackExitRange = { 220.f };
 
+	// AttackPower 어트리뷰트의 초기값. 런타임 값은 어트리뷰트 쪽이 진실이다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };
 

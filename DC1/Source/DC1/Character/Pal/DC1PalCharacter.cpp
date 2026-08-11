@@ -81,11 +81,12 @@ void ADC1PalCharacter::ApplyPalData()
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
 	}
 
-	// Stats
+	// Stats. PalData는 초기값만 공급하고, 이후 진실은 어트리뷰트다.
 	if (::IsValid(PalAttributeSet))
 	{
 		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);
 		PalAttributeSet->InitHealth(PalData->MaxHealth);
+		PalAttributeSet->InitAttackPower(PalData->AttackPower);
 	}
 
 	// OnPossess때 PalData가 없어서 컨트롤러가 생성자 기본값을 씀. 다시 적용

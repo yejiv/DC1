@@ -2,7 +2,7 @@
 
 #include "AbilitySystem/Effects/DC1GameplayEffect_PalDamage.h"
 
-#include "Character/Pal/DC1PalAttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 UDC1GameplayEffect_PalDamage::UDC1GameplayEffect_PalDamage(const FObjectInitializer& ObjectInitializer)
