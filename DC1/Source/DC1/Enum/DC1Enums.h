@@ -1,11 +1,33 @@
-#pragma once
+ï»¿#pragma once
 
 #include "DC1Enums.generated.h"
 
 UENUM(BlueprintType)
 enum class EDC1FadeType : uint8
 {
-	Default = 0 UMETA(DisplayName = "Default"), // °ËÁ¤ È­¸é
-	Spinner = 1 UMETA(DisplayName = "Spinner"), // °ËÁ¤ È­¸é + ½ºÇÁ¶óÀÌÆ® ¾Ö´Ï¸ŞÀÌ¼Ç
-	Loading = 2 UMETA(DisplayName = "Loading"), // °ËÁ¤ È­¸é + ½ºÇÁ¶óÀÌÆ® ¾Ö´Ï¸ŞÀÌ¼Ç + Tip
+	Default = 0 UMETA(DisplayName = "Default"), // ê²€ì • í™”ë©´
+	Spinner = 1 UMETA(DisplayName = "Spinner"), // ê²€ì • í™”ë©´ + ìŠ¤í”„ë¼ì´íŠ¸ ì• ë‹ˆë©”ì´ì…˜
+	Loading = 2 UMETA(DisplayName = "Loading"), // ê²€ì • í™”ë©´ + ìŠ¤í”„ë¼ì´íŠ¸ ì• ë‹ˆë©”ì´ì…˜ + Tip
+};
+
+UENUM(BlueprintType)
+enum class EDC1ItemType : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Weapon = 1 UMETA(DisplayName = "Weapon"),
+	Armor = 2 UMETA(DisplayName = "Armor"),
+	Material = 3 UMETA(DisplayName = "Material"),
+	Consumable = 4 UMETA(DisplayName = "Consumable"),
+	Technology = 5 UMETA(DisplayName = "Technology"),
+	Food = 6 UMETA(DisplayName = "Food"),
+};
+
+UENUM(BlueprintType)
+enum class EDC1ItemRarity : uint8
+{
+	Common = 0 UMETA(DisplayName = "Common"),
+	Uncommon = 1 UMETA(DisplayName = "Uncommon"),
+	Rare = 2 UMETA(DisplayName = "Rare"),
+	Epic = 3 UMETA(DisplayName = "Epic"),
+	Legendary = 4 UMETA(DisplayName = "Legendary"),
 };

@@ -4,6 +4,7 @@
 
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
+#include "Enum/DC1Enums.h"
 #include "DC1DataTableTypes.generated.h"
 
 USTRUCT(BlueprintType)
@@ -39,4 +40,31 @@ struct FDC1TechRow : public FTableRowBase
 	// 분류 이름 - ex) 건축물, 아이템
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
+};
+
+USTRUCT(BlueprintType)
+struct FDC1ItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EDC1ItemType ItemType = EDC1ItemType::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EDC1ItemRarity ItemRarity = EDC1ItemRarity::Common;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Weight = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MaxStackCount = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UTexture2D> ItemIcon;
 };
