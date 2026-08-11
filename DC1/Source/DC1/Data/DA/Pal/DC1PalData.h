@@ -3,13 +3,11 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "GameplayTagContainer.h"
 #include "DC1PalData.generated.h"
 
-/**
- * 펠 1종의 게임플레이 수치.
- * 메시 / AnimBP / 캡슐 같은 비주얼 셋업은 종별 BP(BP_Pal_*)가 갖는다.
- * 뷰포트로 보면서 맞춰야 하는 값이라 DA에 숫자로 두면 조정이 안 된다.
- */
+class UAnimMontage;
+
 UCLASS()
 class DC1_API UDC1PalData : public UDataAsset
 {
@@ -17,7 +15,6 @@ class DC1_API UDC1PalData : public UDataAsset
 
 public:
 #pragma region Locomotion
-	// AnimBP의 NormalizedSpeed 정규화 기준이자 이동 최고 속도.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RunSpeed = { 400.f };
 
@@ -29,6 +26,35 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
 	float							MaxHealth = { 100.f };
 #pragma endregion
+
+#pragma region Ability
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Asset"))
+	FGameplayTag					AbilityDataTag;
+
+	// 어빌리티 태그 (종별 몽타주)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Ability"))
+	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>>	Montages;
+#pragma endregion
+
+#pragma region Combat
+	// 몸통 표면 간 거리 기준. (Evaluator의 DistanceToTarget 비슷)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	float							AttackRange = { 150.f };
+
+	// 진입보다 크게! 같은 값이면 사거리 경계에서 Chase와 Attack이 매 프레임 바뀜
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	float							AttackExitRange = { 220.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	float							AttackCooldown = { 2.f };
+#pragma endregion
+
+public:
+	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& AbilityTag) const
+	{
+		const TSoftObjectPtr<UAnimMontage>* Found = Montages.Find(AbilityTag);
+		return (nullptr != Found) ? *Found : nullptr;
+	}
 
 #pragma region AI
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
@@ -43,7 +69,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							StimulusMaxAge = { 5.f };
 
-	// 시야를 놓친 뒤 추격을 유지하는 시간.
+	// 추격 유지 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							TargetMemoryDuration = { 3.f };
 #pragma endregion

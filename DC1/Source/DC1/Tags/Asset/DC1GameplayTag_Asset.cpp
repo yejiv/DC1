@@ -7,6 +7,17 @@ namespace DC1Labels
 
 namespace DC1AssetTags
 {
+#pragma region Ability
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Ability_Player, "Asset.Ability.Player");
+#pragma endregion
+
+#pragma region Anim
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Anim_Player, "Asset.Anim.Player");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_AnimInstance_Weapon_None, "Asset.AnimInstance.Weapon.None");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_AnimInstance_Weapon_Melee, "Asset.AnimInstance.Weapon.Melee");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_AnimInstance_Weapon_Bow, "Asset.AnimInstance.Weapon.Bow");
+#pragma endregion
+
 #pragma region Input
 	UE_DEFINE_GAMEPLAY_TAG(Asset_InputData, "Asset.InputData");
 #pragma endregion
@@ -22,6 +33,7 @@ namespace DC1AssetTags
 
 #pragma region Pal
 	UE_DEFINE_GAMEPLAY_TAG(Asset_Pal_Registry, "Asset.Pal.Registry");
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Ability_Pal, "Asset.Ability.Pal");
 #pragma endregion
 }
 
