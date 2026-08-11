@@ -11,6 +11,8 @@
 #include "Tags/DC1GamePlayTags.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
+#include "UI/Tab/DC1TabWidget.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
 
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerState.h"
@@ -31,7 +33,7 @@ void ADC1PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetUp_IMC();
+	SetUp_IMC(DC1IMCTags::IMC_Default);
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -40,11 +42,29 @@ void ADC1PlayerController::BeginPlay()
 		return;
 	}
 
+	// UI ���濡 ���� IMC ���� ���ε�
+	UIManager->OnScreenStackChanged.AddUObject(this, &ThisClass::OnUIChange);
+
 	FTimerHandle FadeOutTimerHandle;
 	GetWorldTimerManager().SetTimer(FadeOutTimerHandle, FTimerDelegate::CreateWeakLambda(UIManager, [UIManager]()
 		{
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
+}
+
+void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	// IMC ���� ���ε� ���� 
+	UIManager->OnScreenStackChanged.RemoveAll(this);
 }
 
 void ADC1PlayerController::SetupInputComponent()
@@ -76,6 +96,15 @@ void ADC1PlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
 		}
+
+
+#pragma region UI_TEST
+		// Open TechTree
+		if (const UInputAction* UI_TechAction = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
+		{
+			EnhancedInputComponent->BindAction(UI_TechAction, ETriggerEvent::Started, this, &ThisClass::OpenTech);
+		}
+#pragma endregion
 	}
 
 	SetUp_DebugInput(); // TODO : Debug region 제거 시 같이 삭제
@@ -186,13 +215,76 @@ void ADC1PlayerController::ServerSetWeaponState_Implementation(FGameplayTag NewS
 }
 #pragma endregion
 
-void ADC1PlayerController::SetUp_IMC()
+void ADC1PlayerController::OnUIChange()
+{
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	bool IsActiveNow = UIManager->HasActiveScreen();
+	
+	if (IsActiveNow == IsActiveScreen)
+	{
+		return;
+	}
+
+	if (true == UIManager->HasActiveScreen())
+	{
+		SetUp_IMC(DC1IMCTags::IMC_UI);
+	}
+	else
+	{
+		SetUp_IMC(DC1IMCTags::IMC_Default);
+	}
+
+	IsActiveScreen = IsActiveNow;
+}
+
+void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
 {
 	if (const UDC1InputData* InputData = UDC1AssetManager::GetAssetByTag<UDC1InputData>(DC1AssetTags::Asset_InputData))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(InputData->FindInputMappingContextbyTag(DC1IMCTags::IMC_Default), 0);
+			if (true == CurrentIMCTag.IsValid())
+			{
+				Subsystem->RemoveMappingContext(InputData->FindInputMappingContextbyTag(CurrentIMCTag));
+			}
+
+			Subsystem->AddMappingContext(InputData->FindInputMappingContextbyTag(IMC_Tag), 0);
+
+			CurrentIMCTag = IMC_Tag;
 		}
 	}
 }
+
+#pragma region UI_TEST
+void ADC1PlayerController::OpenTech()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	if (IsOpen)
+	{
+		UIManager->PopScreen();
+	}
+	else
+	{
+		UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
+		if (nullptr != TabWidget)
+		{
+			TabWidget->SelectTab(DC1UITags::UI_Main_Tab_TechTree);
+		}
+	}
+
+	IsOpen = !IsOpen;
+}
+#pragma endregion

@@ -71,7 +71,7 @@ void UDC1UIManagerSubsystem::PopScreen()
         TopWidget->Deactivate();
         TopWidget->RemoveFromParent();
     }
-    
+
     UpdateInputMode();
 }
 
@@ -116,6 +116,20 @@ void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate OnComplet
     }
 
     FadeWidget->FadeOut(InDuration, OnComplete);
+}
+
+void UDC1UIManagerSubsystem::RouteInputKey(const FKey& Key)
+{
+    if (0 >= ScreenStack.Num())
+    {
+        return;
+    }
+
+    UDC1UserWidget* TopWidget = ScreenStack.Top();
+    if (true == ::IsValid(TopWidget))
+    {
+        TopWidget->HandleInputKey(Key);
+    }
 }
 
 void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel)
@@ -233,6 +247,8 @@ void UDC1UIManagerSubsystem::UpdateInputMode()
         PC->SetInputMode(InputMode);
         PC->SetShowMouseCursor(true);
     }
+
+    OnScreenStackChanged.Broadcast();
 }
 
 void UDC1UIManagerSubsystem::RollLoadingType(EDC1FadeType InType)

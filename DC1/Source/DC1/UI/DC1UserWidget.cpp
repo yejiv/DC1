@@ -24,6 +24,10 @@ void UDC1UserWidget::Deactivate()
 	NativeOnDeactivated();
 }
 
+void UDC1UserWidget::HandleInputKey(const FKey& InputKey)
+{
+}
+
 void UDC1UserWidget::NativeOnActivated()
 {
 }
