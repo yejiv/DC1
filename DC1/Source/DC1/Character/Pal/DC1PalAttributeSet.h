@@ -26,6 +26,10 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1PalAttributeSet, MaxHealth)
 
+	UPROPERTY(BlueprintReadOnly, Category = "Pal|Attributes|Meta") //PostGameplayEffectExecute에서 Health로 변환
+	FGameplayAttributeData Damage;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PalAttributeSet, Damage)
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

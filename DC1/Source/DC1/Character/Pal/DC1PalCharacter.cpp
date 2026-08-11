@@ -32,7 +32,8 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	bUseControllerRotationRoll = false;
 
 	UCharacterMovementComponent* Movement = GetCharacterMovement();
-	Movement->bOrientRotationToMovement = true;
+	Movement->bOrientRotationToMovement = false; // 회전은 AIController의 focus가 구동
+	Movement->bUseControllerDesiredRotation = true;
 	Movement->RotationRate = FRotator(0.f, 360.f, 0.f);
 	Movement->MaxWalkSpeed = 400.f;
 	Movement->bUseRVOAvoidance = true;

@@ -118,7 +118,7 @@ void ADC1PalAIController::UpdateTarget()
 	const UWorld* World = GetWorld();
 	if (false == ::IsValid(SelfPawn) || nullptr == World)
 	{
-		CurrentTarget = nullptr;
+		SetCurrentTarget(nullptr);
 		return;
 	}
 
@@ -150,7 +150,7 @@ void ADC1PalAIController::UpdateTarget()
 
 	if (nullptr != Closest)
 	{
-		CurrentTarget = Closest;
+		SetCurrentTarget(Closest);
 		LastKnownTargetLocation = Closest->GetActorLocation();
 		LastSeenTime = Now;
 		return;
@@ -162,7 +162,29 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	CurrentTarget = nullptr;
+	SetCurrentTarget(nullptr);
+}
+
+void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)
+{
+	// CurrentTarget 갱신은 타겟과 focus가 어긋나지 않게 전부 들어옴
+
+	if (CurrentTarget == NewTarget)
+	{
+		return;
+	}
+
+	CurrentTarget = NewTarget;
+
+	// 회전은 focus가 구동
+	if (true == ::IsValid(NewTarget))
+	{
+		SetFocus(NewTarget, EAIFocusPriority::Gameplay);
+	}
+	else
+	{
+		ClearFocus(EAIFocusPriority::Gameplay);
+	}
 }
 
 ETeamAttitude::Type ADC1PalAIController::GetTeamAttitudeTowards(const AActor& Other) const

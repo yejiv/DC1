@@ -33,6 +33,28 @@ void UDC1PalAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 {
 	Super::PostGameplayEffectExecute(Data);
 
+	if (GetDamageAttribute() == Data.EvaluatedData.Attribute)
+	{
+		const float LocalDamage = GetDamage();
+		SetDamage(0.f);
+
+		if (LocalDamage <= 0.f)
+		{
+			return;
+		}
+
+		SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
+
+		UE_LOG(LogTemp, Log, TEXT("[Pal] %s took %.1f damage from %s. Health = %.1f / %.1f"),
+			*GetNameSafe(Data.Target.GetAvatarActor()),
+			LocalDamage,
+			*GetNameSafe(Data.EffectSpec.GetContext().GetEffectCauser()),
+			GetHealth(), GetMaxHealth());
+
+		// Health <= 0 이면 여기서 사망 처리
+		return;
+	}
+
 	if (GetHealthAttribute() == Data.EvaluatedData.Attribute)
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));

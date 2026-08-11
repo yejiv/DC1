@@ -41,6 +41,11 @@ void UDC1AbilitySystemComponent::InitAbilitySystem(AActor* Owner, AActor* Avatar
 		{
 			AbilityData->GiveToAbilitySystem(this, GrantedHandles, GetOwner());
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[DC1] InitAbilitySystem: No AbilityData for tag [%s] on [%s]. No abilities granted."),
+				*DataTag.ToString(), *GetNameSafe(Owner));
+		}
 	}
 }
 

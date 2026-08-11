@@ -46,7 +46,11 @@ public:
 	float							AttackExitRange = { 220.f };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
-	float							AttackCooldown = { 2.f };
+	float							AttackPower = { 10.f };
+
+	// 스윙의 굵기. 실제 도달 거리는 AttackRange + 이 반경이다.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	float							AttackTraceRadius = { 50.f };
 #pragma endregion
 
 public:
