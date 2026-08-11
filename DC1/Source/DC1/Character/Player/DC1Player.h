@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/DC1Character.h"
+#include "GameplayTagContainer.h"
 #include "DC1Player.generated.h"
 
 class USkeletalMeshComponent;
@@ -30,6 +31,7 @@ public:
 private:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
@@ -49,4 +51,12 @@ public:
 
 private:
 	void	InitializeAbilitySystem();
+	void	Clear_Resource();
+
+private:
+	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
+
+private:
+	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;
+
 };

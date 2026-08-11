@@ -13,6 +13,13 @@ namespace DC1AssetTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Ability_Player);
 #pragma endregion
 
+#pragma region Anim
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Anim_Player);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_AnimInstance_Weapon_None);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_AnimInstance_Weapon_Melee);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_AnimInstance_Weapon_Bow);
+#pragma endregion
+
 #pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_InputData);
 #pragma endregion
