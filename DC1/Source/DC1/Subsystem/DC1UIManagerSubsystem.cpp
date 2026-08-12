@@ -242,7 +242,7 @@ void UDC1UIManagerSubsystem::UpdateInputMode()
     }
     else
     {
-        FInputModeUIOnly InputMode;
+        FInputModeGameAndUI InputMode;
         InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
         PC->SetInputMode(InputMode);
         PC->SetShowMouseCursor(true);

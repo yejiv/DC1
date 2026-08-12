@@ -26,7 +26,7 @@ class DC1_API UDC1TabWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void	NativeConstruct() override;
+	virtual void	NativeOnInitialized() override;
 	
 public:
 	virtual void	HandleInputKey(const FKey& InputKey) override;

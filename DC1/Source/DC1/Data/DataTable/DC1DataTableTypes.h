@@ -39,4 +39,11 @@ struct FDC1TechRow : public FTableRowBase
 	// 분류 이름 - ex) 건축물, 아이템
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UTexture2D> Icon;
+
+	// �ر� �ڽ�Ʈ
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 UnlockCost;
 };

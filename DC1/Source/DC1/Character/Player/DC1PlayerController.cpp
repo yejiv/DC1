@@ -42,7 +42,7 @@ void ADC1PlayerController::BeginPlay()
 		return;
 	}
 
-	// UI ���濡 ���� IMC ���� ���ε�
+	// UI Changed -> IMC Chage Binding
 	UIManager->OnScreenStackChanged.AddUObject(this, &ThisClass::OnUIChange);
 
 	FTimerHandle FadeOutTimerHandle;
@@ -63,7 +63,7 @@ void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		return;
 	}
 
-	// IMC ���� ���ε� ���� 
+	// Change IMC Binding Remove
 	UIManager->OnScreenStackChanged.RemoveAll(this);
 }
 
@@ -109,10 +109,22 @@ void ADC1PlayerController::SetupInputComponent()
 		}
 
 #pragma region UI_TEST
-		// Open TechTree
-		if (const UInputAction* UI_TechAction = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
+		// Open Inventory
+		if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
 		{
-			EnhancedInputComponent->BindAction(UI_TechAction, ETriggerEvent::Started, this, &ThisClass::OpenTech);
+			EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_Inventory.GetTag());
+		}
+
+		// Open HasPal
+		if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
+		{
+			EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_HasPal.GetTag());
+		}
+
+		// Open TechTree
+		if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
+		{
+			EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_TechTree.GetTag());
 		}
 #pragma endregion
 	}
@@ -125,6 +137,20 @@ void ADC1PlayerController::SetPawn(APawn* InPawn)
 	Super::SetPawn(InPawn);
 
 	ControlObject = Cast<ADC1Player>(InPawn);
+}
+
+bool ADC1PlayerController::InputKey(const FInputKeyEventArgs& Params)
+{
+	if (IE_Pressed == Params.Event && true == IsActiveScreen)
+	{
+		UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+		if (true == ::IsValid(UIManager))
+		{
+			UIManager->RouteInputKey(Params.Key);
+		}
+	}
+
+	return Super::InputKey(Params);
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -302,8 +328,9 @@ void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
 	}
 }
 
+
 #pragma region UI_TEST
-void ADC1PlayerController::OpenTech()
+void ADC1PlayerController::OpenTabWidget(FGameplayTag Tab)
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -312,19 +339,10 @@ void ADC1PlayerController::OpenTech()
 		return;
 	}
 
-	if (IsOpen)
+	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
+	if (nullptr != TabWidget)
 	{
-		UIManager->PopScreen();
+		TabWidget->SelectTab(Tab);
 	}
-	else
-	{
-		UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
-		if (nullptr != TabWidget)
-		{
-			TabWidget->SelectTab(DC1UITags::UI_Main_Tab_TechTree);
-		}
-	}
-
-	IsOpen = !IsOpen;
 }
 #pragma endregion

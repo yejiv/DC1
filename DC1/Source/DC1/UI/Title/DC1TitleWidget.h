@@ -24,6 +24,7 @@ class DC1_API UDC1TitleWidget : public UDC1UserWidget
 	GENERATED_BODY()
 	
 protected:
+	virtual void	NativeOnInitialized() override;
 	virtual void	NativeConstruct() override;
 
 private:

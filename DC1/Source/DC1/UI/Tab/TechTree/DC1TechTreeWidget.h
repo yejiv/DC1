@@ -9,6 +9,8 @@
 class UDataTable;
 class UScrollBox;
 class UDC1TechTreeRowWidget;
+class UDC1TechTreeButton;
+class UDC1TechTreeComponent;
 
 UCLASS()
 class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
@@ -16,18 +18,26 @@ class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void	NativeConstruct() override;
+	virtual void	NativeOnInitialized() override;
 
 private:
-	void			BuildTechTree();
+	UDC1TechTreeComponent*	GetTechTreeComponent();
+	
+	// DataTable 읽어서 Row, Slot 생성
+	void					BuildTechTree();
+
+	// TechTree Slot 상태 변화 ( Lock, Available, Unlock )
+	void					OnTechStateChanged();
+
+
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UScrollBox>				TechTreeScrollBox;
+	TObjectPtr<UScrollBox>					TechTreeScrollBox;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	TSubclassOf<UDC1TechTreeRowWidget>	RowWidgetClass;
+	TSubclassOf<UDC1TechTreeRowWidget>		RowWidgetClass;
 
 	UPROPERTY()
-	TObjectPtr<const UDataTable>		CachedDataTable;
+	TArray<TObjectPtr<UDC1TechTreeButton>>	TechSlots;
 };

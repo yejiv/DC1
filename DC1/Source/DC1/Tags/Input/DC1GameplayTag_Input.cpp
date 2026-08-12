@@ -21,6 +21,8 @@ namespace DC1InputTags
 #pragma endregion
 
 #pragma region UI
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Inventory, "Input.UI.Inventory");
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_HasPal, "Input.UI.HasPal");
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_TechTree, "Input.UI.TechTree");
 #pragma endregion
 }

@@ -18,7 +18,7 @@ public:
 	FSimpleMulticastDelegate OnClickedDelegate;
 
 protected:
-	virtual void NativeConstruct() override;
+	virtual void NativeOnInitialized() override;
 
 protected:
 	UFUNCTION()

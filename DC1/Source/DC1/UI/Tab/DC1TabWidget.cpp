@@ -8,9 +8,9 @@
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Components/WidgetSwitcher.h"
 
-void UDC1TabWidget::NativeConstruct()
+void UDC1TabWidget::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
 
 	for (const TPair<FGameplayTag, int32>& Pair : TabToSwitchIndex)
 	{

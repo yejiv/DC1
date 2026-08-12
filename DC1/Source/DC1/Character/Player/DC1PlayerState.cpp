@@ -5,6 +5,7 @@
 
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1TechTreeComponent.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -17,6 +18,9 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	PlayerSet = CreateDefaultSubobject<UDC1PlayerSet>(TEXT("PlayerSet"));
 
 	SetNetUpdateFrequency(100.f);
+
+	TechTreeComponent = CreateDefaultSubobject<UDC1TechTreeComponent>(TEXT("TechTreeComponent"));
+
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const
