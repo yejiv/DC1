@@ -17,12 +17,13 @@ void UDC1AbilityData::GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC, FDC1A
 			Base->GiveToAbilitySystem(ASC, OutHandles, SourceObject);
 	}
 
-	// AttributeSet
-
 	// Ability
 	for (const FDC1AbilityEntry& Entry : Abilities)
 	{
 		if (nullptr == Entry.AbilityClass) continue;
+
+		// BaseAbilityData 합성이나 재부여로 같은 항목이 두 번 들어오는 것을 막는다
+		if (true == ASC->HasAbility(Entry.AbilityClass, Entry.ActivationTag)) continue;
 
 		FGameplayAbilitySpec AbilitySpec(Entry.AbilityClass, Entry.AbilityLevel);
 		AbilitySpec.SourceObject = SourceObject;

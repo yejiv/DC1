@@ -27,6 +27,7 @@ public:
 public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
+	void PlayAbility(const FGameplayTag& AbilityTag);
 
 private:
 	virtual void PostInitializeComponents() override;

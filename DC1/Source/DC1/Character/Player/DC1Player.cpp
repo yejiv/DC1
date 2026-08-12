@@ -69,6 +69,14 @@ void ADC1Player::SetSprint(bool Sprint)
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetSprint(Sprint);
 }
 
+void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
+{
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent()))
+	{
+		ASC->ActivateAbilityByTag(AbilityTag);
+	}
+}
+
 void ADC1Player::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();

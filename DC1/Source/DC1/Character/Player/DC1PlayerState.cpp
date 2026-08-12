@@ -3,6 +3,7 @@
 
 #include "Character/Player/DC1PlayerState.h"
 
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
@@ -11,6 +12,10 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+
+	// ASC 오너의 서브오브젝트여야 GAS가 자동 등록한다
+	PlayerSet = CreateDefaultSubobject<UDC1PlayerSet>(TEXT("PlayerSet"));
+
 	SetNetUpdateFrequency(100.f);
 }
 

@@ -38,6 +38,7 @@ public:
 	void CancelAbilityByTag(const FGameplayTag& AbilityTag);
 
 	bool HasAbilityByTag(const FGameplayTag& AbilityTag);
+	bool HasAbility(const TSubclassOf<UGameplayAbility>& AbilityClass, const FGameplayTag& ActivationTag) const;
 
 	// ------------- State Tag ----------------
 public:

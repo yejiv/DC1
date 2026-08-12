@@ -38,6 +38,8 @@ private:
 	void OnToggleMove(const FInputActionValue& Value);
 	void OnJump(const FInputActionValue& Value);
 	void StopJumping(const FInputActionValue& Value);
+	void OnAttack(const FInputActionValue& Value);
+
 
 private:
 	void OnUIChange();

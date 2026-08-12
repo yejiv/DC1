@@ -19,6 +19,9 @@ public:
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+public:
+	virtual void SetAttackCollision(bool OnCollision) {}
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

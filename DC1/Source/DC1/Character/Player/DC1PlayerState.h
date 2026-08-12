@@ -8,6 +8,7 @@
 #include "DC1PlayerState.generated.h"
 
 class UDC1AbilitySystemComponent;
+class UDC1PlayerSet;
 /**
  * 
  */
@@ -25,4 +26,7 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UDC1PlayerSet> PlayerSet = { nullptr };
 };
