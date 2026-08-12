@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -31,7 +31,7 @@ public:
 	virtual void Deinitialize() override;
 
 public:
-	// IsPop == ÃÖ»óÀ§ UI¸¦ PopÇÏ°í Push ÇÒ °ÍÀÎ°¡
+	// IsPop == ìµœìƒìœ„ UIë¥¼ Popí•˜ê³  Push í•  ê²ƒì¸ê°€
 	UDC1UserWidget*				PushScreen(const FGameplayTag& UITag, bool IsPop = false);
 	void						PopScreen();
 

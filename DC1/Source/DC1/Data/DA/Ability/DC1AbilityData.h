@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -45,7 +45,7 @@ public:
 	TSubclassOf<UGameplayEffect> FindEffectByTag(const FGameplayTag& EffectTag) const;
 
 public:
-	// °ø¿ë AbilityData ¼³Á¤ (Ex. Monster °ø¿ë)
+	// ê³µìš© AbilityData ì„¤ì • (Ex. Monster ê³µìš©)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Composition")
 	TArray<TObjectPtr<UDC1AbilityData>> BaseAbilityData;
 

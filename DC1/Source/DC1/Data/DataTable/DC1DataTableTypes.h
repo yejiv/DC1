@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -20,23 +20,23 @@ struct FDC1TechRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	// DataTable¿¡¼­ Æ¯Á¤ Å×Å©¸¦ Ã£±â À§ÇÑ Key
+	// DataTableì—ì„œ íŠ¹ì • í…Œí¬ë¥¼ ì°¾ê¸° ìœ„í•œ Key
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName TechID;
 
-	// ÇØ´ç Å×Å©°¡ ¾î¶² ºĞ·ù¿¡ ¼ÓÇÏ´ÂÁö
+	// í•´ë‹¹ í…Œí¬ê°€ ì–´ë–¤ ë¶„ë¥˜ì— ì†í•˜ëŠ”ì§€
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag CategoryTag;
 
-	// È°¼ºÈ­ ¹× ¹èÄ¡µÉ ·¹º§ ( ÇÃ·¹ÀÌ¾î ·¹º§ )
+	// í™œì„±í™” ë° ë°°ì¹˜ë  ë ˆë²¨ ( í”Œë ˆì´ì–´ ë ˆë²¨ )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 RequiredLevel;
 
-	// Å×Å© ÀÌ¸§ - ex) ¿ø½ÃÀûÀÎ ÀÛ¾÷´ë
+	// í…Œí¬ ì´ë¦„ - ex) ì›ì‹œì ì¸ ì‘ì—…ëŒ€
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText	DisplayName;
 
-	// ºĞ·ù ÀÌ¸§ - ex) °ÇÃà¹°, ¾ÆÀÌÅÛ
+	// ë¶„ë¥˜ ì´ë¦„ - ex) ê±´ì¶•ë¬¼, ì•„ì´í…œ
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
 };
