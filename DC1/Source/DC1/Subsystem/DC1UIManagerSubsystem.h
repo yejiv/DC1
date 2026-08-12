@@ -40,8 +40,6 @@ public:
 
 
 	void						RouteInputKey(const FKey& Key);
-
-
 	void						BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel);
 
 private:

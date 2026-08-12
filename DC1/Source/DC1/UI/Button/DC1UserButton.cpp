@@ -4,9 +4,9 @@
 #include "UI/Button/DC1UserButton.h"
 #include "Components/Button.h"
 
-void UDC1UserButton::NativeConstruct()
+void UDC1UserButton::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
 
 	if (true == ::IsValid(UserButton))
 	{

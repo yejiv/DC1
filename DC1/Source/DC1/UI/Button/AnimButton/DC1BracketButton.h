@@ -18,6 +18,7 @@ class DC1_API UDC1BracketButton : public UDC1UserButton
 	GENERATED_BODY()
 	
 protected:
+	virtual void	NativeOnInitialized() override;
 	virtual void	NativeConstruct() override;
 
 protected:
