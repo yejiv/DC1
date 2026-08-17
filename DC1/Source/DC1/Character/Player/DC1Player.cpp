@@ -73,14 +73,23 @@ void ADC1Player::SetAttackCollision(bool OnCollision)
 {
 	if (nullptr == ActiveCollider) return;
 
+	// 한 몽타주에 주먹이 여러 번 들어있으면 창마다 새로 판정해야 한다
+	if (true == OnCollision)
+	{
+		HitTargetsInWindow.Reset();
+	}
+
 	ECollisionEnabled::Type CollisionType = OnCollision ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision;
 	ActiveCollider->SetCollisionEnabled(CollisionType);
 }
 
 void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// 물리적으로 말이 안 되는 것만 여기서 거른다. 팀 / 중복 판정은 GA가 한다.
+	// 물리적으로 말이 안 되는 것과 창 단위 중복만 여기서 거른다. 팀 판정은 GA가 한다.
 	if (false == ::IsValid(OtherActor) || this == OtherActor) return;
+
+	if (true == HitTargetsInWindow.Contains(OtherActor)) return;
+	HitTargetsInWindow.Add(OtherActor);
 
 	FGameplayEventData Payload;
 	Payload.Instigator = this;

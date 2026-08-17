@@ -4,7 +4,7 @@
 #include "AbilitySystem/Abilities/Player/DC1GA_Player_Attack.h"
 
 #include "Animation/AnimMontage.h"
-#include "AbilitySystemComponent.h"
+#include "Component/DC1AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
@@ -12,6 +12,9 @@
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/DC1Character.h"
 #include "Tags/DC1GamePlayTags.h"
+
+#include "System/DC1AssetManager.h"
+#include "Data/DA/Anim/DC1AnimData.h"
 
 UDC1GA_Player_Attack::UDC1GA_Player_Attack(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -29,9 +32,6 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		return;
 	}
 
-	// Hit Target Container Reset
-	HitTargets.Reset();
-
 	// Hit Event Bind
 	if (HitEventTag.IsValid())
 	{
@@ -43,18 +43,30 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 	}
 
 	// Montage Task Bind
-	UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AnimMontage);
-	if (nullptr == PlayMontageTask)
+	if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-		return;
+		UDC1AbilitySystemComponent* SourceASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+		FGameplayTag StateTag = SourceASC->GetExclusiveStateTag(DC1StateTags::State_Weapon);
+		if (nullptr == MappingStateToAnim.Find(StateTag))
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+		if (UAnimMontage* Montage = AnimData->FindMontageByTag(MappingStateToAnim[StateTag]))
+		{
+			UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage);
+			if (nullptr == PlayMontageTask)
+			{
+				EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+				return;
+			}
+			PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
+			PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageFinished);
+			PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
+			PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
+			PlayMontageTask->ReadyForActivation();
+		}
 	}
-
-	PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
-	PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageFinished);
-	PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
-	PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
-	PlayMontageTask->ReadyForActivation();
 }
 
 void UDC1GA_Player_Attack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -72,9 +84,9 @@ void UDC1GA_Player_Attack::OnHitReceived(FGameplayEventData Payload)
 {
 	if (nullptr == CurrentActorInfo || false == CurrentActorInfo->IsNetAuthority()) return;
 
+	// 판정 창 단위 중복 제거는 보내는 쪽(ADC1Player)이 한다
 	const AActor* HitTarget = Payload.Target;
-	if (nullptr == HitTarget || HitTargets.Contains(HitTarget)) return;
-	HitTargets.Add(HitTarget);
+	if (nullptr == HitTarget) return;
 
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(HitTarget);
@@ -87,7 +99,7 @@ void UDC1GA_Player_Attack::OnHitReceived(FGameplayEventData Payload)
 	if (false == Spec.IsValid()) return;
 
 	float AttackPower = SourceASC->GetNumericAttribute(UDC1PlayerSet::GetAttackPowerAttribute());
-	Spec.Data->SetSetByCallerMagnitude(DC1PlayerTags::SetByCaller_Damage, AttackPower);
+	Spec.Data->SetSetByCallerMagnitude(DC1PlayerTags::SetByCaller_Damage, -AttackPower);
 	SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
 }
 

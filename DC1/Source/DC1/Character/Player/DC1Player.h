@@ -71,6 +71,9 @@ private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
 
+	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
+	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
+
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;
 

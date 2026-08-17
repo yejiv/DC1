@@ -33,13 +33,12 @@ private:
 	virtual void		EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
-	TObjectPtr<UAnimMontage>	AnimMontage;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|EventTag")
 	FGameplayTag						HitEventTag;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Effect")
 	TSubclassOf<UGameplayEffect>	EffectClass;
 
-private:
-	TSet<TObjectPtr<const AActor>>		HitTargets;
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
+	TMap<FGameplayTag, FGameplayTag> MappingStateToAnim;
 };

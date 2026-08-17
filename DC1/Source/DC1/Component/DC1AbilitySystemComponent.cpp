@@ -127,6 +127,13 @@ void UDC1AbilitySystemComponent::SetExclusiveStateTag(const FGameplayTag& AxisRo
 		AddStateTag(NewStateTag);
 }
 
+FGameplayTag UDC1AbilitySystemComponent::GetExclusiveStateTag(const FGameplayTag& AxisRootTag)
+{
+	FGameplayTagContainer Owned;
+	GetOwnedGameplayTags(Owned);
+	return Owned.Filter(AxisRootTag.GetSingleTagContainer()).First();
+}
+
 void UDC1AbilitySystemComponent::AddStateTag(const FGameplayTag& StateTag)
 {
 	if (const UDC1AbilityData* AbilityData = UDC1AssetManager::GetAssetByTag<UDC1AbilityData>(DataAssetTag))
