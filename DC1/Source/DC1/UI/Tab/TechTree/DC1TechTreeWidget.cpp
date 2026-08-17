@@ -5,6 +5,7 @@
 
 #include "UI/Tab/TechTree/DC1TechTreeRowWidget.h"
 #include "UI/Button/AnimButton/Tab/DC1TechTreeButton.h"
+#include "UI/Tab/TechTree/DC1TechTreePointWidget.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "System/DC1AssetManager.h"
@@ -25,12 +26,16 @@ void UDC1TechTreeWidget::NativeOnInitialized()
 
 	BuildTechTree();
 
-
 	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
 	if (true == ::IsValid(TechComp))
 	{
 		TechComp->OnTechStateChange.AddUObject(this, &ThisClass::OnTechStateChanged);
 	}
+
+	int32 NumPoint = TechComp->GetTechPoints();
+	TechPointWidget->SetPoint(NumPoint);
+
+	AncientTechPointWidget->SetPoint(1);
 }
 
 UDC1TechTreeComponent* UDC1TechTreeWidget::GetTechTreeComponent()
@@ -150,4 +155,7 @@ void UDC1TechTreeWidget::OnTechStateChanged()
 		FName CurrentSlotID = TechSlot->GetTechID();
 		TechSlot->SetState(TechComp->GetTechState(CurrentSlotID));
 	}
+
+	int32 NumPoint = TechComp->GetTechPoints();
+	TechPointWidget->SetPoint(NumPoint);
 }

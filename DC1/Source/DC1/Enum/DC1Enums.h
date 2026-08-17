@@ -18,3 +18,11 @@ enum class EDC1TechSlotState : uint8
 	Available = 2,	// 해금 가능 ( 레벨 충족 + 코스트 충분 )
 	Unlocked = 3,	// 해금
 };
+
+UENUM()
+enum class EDC1TechPointState : uint8
+{
+	Default = 0,
+	HasPoint = 1,
+	NoPoint = 2,	
+};
