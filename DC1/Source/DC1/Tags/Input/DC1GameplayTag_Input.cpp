@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Tags/Input/DC1GameplayTag_Input.h"
@@ -16,9 +16,12 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Turn, "Input.Default.Turn");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Sprint, "Input.Default.Sprint");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Toggle_Move, "Input.Default.Toggle.Move");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Jump, "Input.Default.Jump");
 #pragma endregion
 
 #pragma region UI
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Inventory, "Input.UI.Inventory");
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_HasPal, "Input.UI.HasPal");
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_TechTree, "Input.UI.TechTree");
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Inventory, "Input.UI.Inventory");
 #pragma endregion

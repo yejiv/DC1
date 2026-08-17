@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
@@ -15,5 +15,9 @@ namespace DC1PalTags
 
 #pragma region State
 	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Attacking, "Pal.State.Attacking");
+#pragma endregion
+
+#pragma region Event
+	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Attack_Hit, "Event.Pal.Attack.Hit");
 #pragma endregion
 }

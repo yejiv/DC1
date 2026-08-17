@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AI/DC1PalStateTreeEvaluators.h"
 
@@ -49,18 +49,12 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	}
 
 	AActor* Target = AIController->GetCurrentTarget();
-	if (false == ::IsValid(Target))
-	{
-		return;
-	}
-
 	const APawn* SelfPawn = AIController->GetPawn();
-	if (false == ::IsValid(SelfPawn))
-	{
-		return;
-	}
 
-	InstanceData.Target = Target;
-	InstanceData.bHasTarget = true;
-	InstanceData.DistanceToTarget = DC1PalTargetEvaluator::GetSurfaceDistance2D(*SelfPawn, *Target);
+	if (true == ::IsValid(Target) && true == ::IsValid(SelfPawn))
+	{
+		InstanceData.Target = Target;
+		InstanceData.bHasTarget = true;
+		InstanceData.DistanceToTarget = DC1PalTargetEvaluator::GetSurfaceDistance2D(*SelfPawn, *Target);
+	}
 }

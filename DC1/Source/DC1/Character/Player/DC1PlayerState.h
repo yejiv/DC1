@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include "DC1PlayerState.generated.h"
 
 class UDC1AbilitySystemComponent;
+class UDC1TechTreeComponent;
 /**
  * 
  */
@@ -20,9 +21,13 @@ public:
 	ADC1PlayerState(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
+	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
-	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+	TObjectPtr<UDC1AbilitySystemComponent>	AbilitySystemComponent = { nullptr };
+
+	UPROPERTY(VisibleAnywhere, Category = "Tech")
+	TObjectPtr< UDC1TechTreeComponent>		TechTreeComponent = { nullptr };
 };

@@ -1,10 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
-#include "Enum/DC1Enums.h"
 #include "DC1DataTableTypes.generated.h"
 
 USTRUCT(BlueprintType)
@@ -21,50 +20,30 @@ struct FDC1TechRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	// DataTable¿¡¼­ Æ¯Á¤ Å×Å©¸¦ Ã£±â À§ÇÑ Key
+	// DataTableì—ì„œ íŠ¹ì • í…Œí¬ë¥¼ ì°¾ê¸° ìœ„í•œ Key
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName TechID;
 
-	// ÇØ´ç Å×Å©°¡ ¾î¶² ºĞ·ù¿¡ ¼ÓÇÏ´ÂÁö
+	// í•´ë‹¹ í…Œí¬ê°€ ì–´ë–¤ ë¶„ë¥˜ì— ì†í•˜ëŠ”ì§€
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag CategoryTag;
 
-	// È°¼ºÈ­ ¹× ¹èÄ¡µÉ ·¹º§ ( ÇÃ·¹ÀÌ¾î ·¹º§ )
+	// í™œì„±í™” ë° ë°°ì¹˜ë  ë ˆë²¨ ( í”Œë ˆì´ì–´ ë ˆë²¨ )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 RequiredLevel;
 
-	// Å×Å© ÀÌ¸§ - ex) ¿ø½ÃÀûÀÎ ÀÛ¾÷´ë
+	// í…Œí¬ ì´ë¦„ - ex) ì›ì‹œì ì¸ ì‘ì—…ëŒ€
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText	DisplayName;
 
-	// ºĞ·ù ÀÌ¸§ - ex) °ÇÃà¹°, ¾ÆÀÌÅÛ
+	// ë¶„ë¥˜ ì´ë¦„ - ex) ê±´ì¶•ë¬¼, ì•„ì´í…œ
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
-};
-
-USTRUCT(BlueprintType)
-struct FDC1ItemRow : public FTableRowBase
-{
-	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName ItemID;
+	TObjectPtr<UTexture2D> Icon;
 
+	// ï¿½Ø±ï¿½ ï¿½Ú½ï¿½Æ®
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EDC1ItemType ItemType = EDC1ItemType::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EDC1ItemRarity ItemRarity = EDC1ItemRarity::Common;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText DisplayName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Weight = 0.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 MaxStackCount = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSoftObjectPtr<UTexture2D> ItemIcon;
+	int32 UnlockCost;
 };

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AI/DC1PalStateTreeTasks.h"
 
@@ -29,6 +29,11 @@ EStateTreeRunStatus FDC1PalActivateAbilityTask::EnterState(FStateTreeExecutionCo
 
 	if (false == ASC->ActivateAbilityByTag(InstanceData.AbilityTag))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbilityTask: [%s] failed to activate [%s]. (Granted = %s)"),
+			*GetNameSafe(InstanceData.Actor),
+			*InstanceData.AbilityTag.ToString(),
+			ASC->HasAbilityByTag(InstanceData.AbilityTag) ? TEXT("true") : TEXT("false"));
+
 		return EStateTreeRunStatus::Failed;
 	}
 
@@ -66,3 +71,4 @@ void FDC1PalActivateAbilityTask::ExitState(FStateTreeExecutionContext& Context, 
 		ASC->CancelAbilityByTag(InstanceData.AbilityTag);
 	}
 }
+

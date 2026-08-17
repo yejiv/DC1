@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -26,13 +26,13 @@ class DC1_API UDC1AbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
 	
-	// ----------- ÃÊ±âÈ­ & ÇØÁ¦ ------------
+	// ----------- ì´ˆê¸°í™” & í•´ì œ ------------
 public:
 	void InitAbilitySystem(AActor* Owner, AActor* Avatar, const FGameplayTag& DataTag);
-	void UnInitializeAbilitySystem(); // Pool ¹Ý³³, ÇØÁ¦
+	void UnInitializeAbilitySystem(); // Pool ë°˜ë‚©, í•´ì œ
 	void RefreshAvatarActor(AActor* NewAvatarActor); // Respawn
 	void ClearAvatarActor();	// Unpossessed
-	// ----------- Ability È°¼ºÈ­ -------------
+	// ----------- Ability í™œì„±í™” -------------
 public:
 	bool ActivateAbilityByTag(const FGameplayTag& AbilityTag);
 	void CancelAbilityByTag(const FGameplayTag& AbilityTag);
@@ -57,10 +57,10 @@ private:
 	void RebuildAbilityTagCache();
 
 private:
-	// È°¼º¿ë Handle
+	// í™œì„±ìš© Handle
 	TMultiMap<FGameplayTag, FGameplayAbilitySpecHandle> AbilityTagCache;
 
-	// Á¤¸®¿ë Handle
+	// ì •ë¦¬ìš© Handle
 	UPROPERTY()
 	FDC1AbilitySetGrantedHandles GrantedHandles;
 

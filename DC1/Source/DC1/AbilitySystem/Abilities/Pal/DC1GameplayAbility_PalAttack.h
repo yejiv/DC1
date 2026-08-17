@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,6 +6,8 @@
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
 #include "GameplayTagContainer.h"
 #include "DC1GameplayAbility_PalAttack.generated.h"
+
+struct FGameplayEventData;
 
 UCLASS()
 class DC1_API UDC1GameplayAbility_PalAttack : public UDC1GameplayAbility
@@ -24,7 +26,17 @@ protected:
 	UFUNCTION()
 	void OnMontageAborted();
 
+	UFUNCTION()
+	void OnHitEventReceived(FGameplayEventData Payload);
+
+	// 서버에서만 호출
+	void PerformAttackTrace();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Pal", meta = (Categories = "Ability"))
 	FGameplayTag		MontageTag;
+
+	// 타격 이벤트.
+	UPROPERTY(EditDefaultsOnly, Category = "Pal", meta = (Categories = "Event"))
+	FGameplayTag		HitEventTag;
 };

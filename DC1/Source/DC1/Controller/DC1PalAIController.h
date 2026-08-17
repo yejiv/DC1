@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,6 +29,8 @@ public:
 	void					ApplyPerceptionSettings();
 
 	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
+
+	void					StopBehavior();
 	const FVector&			GetLastKnownTargetLocation() const { return LastKnownTargetLocation; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
@@ -40,6 +42,9 @@ protected:
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+	
+	void SetCurrentTarget(AActor* NewTarget);
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "AI")

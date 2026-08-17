@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "NativeGameplayTags.h"
 
@@ -27,9 +27,14 @@ namespace DC1TechTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Sphere);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Weapon);
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Pal_PalBox);
 #pragma endregion
 
-#pragma region CATEGORY_PAL
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Pal_PalBox);
+
+#pragma region CATEGORY_CRAFTING
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Body);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere);
 #pragma endregion
 }

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -24,6 +24,7 @@ class DC1_API UDC1TitleWidget : public UDC1UserWidget
 	GENERATED_BODY()
 	
 protected:
+	virtual void	NativeOnInitialized() override;
 	virtual void	NativeConstruct() override;
 
 private:

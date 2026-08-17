@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -20,10 +20,13 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Turn);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Sprint);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Toggle_Move);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Jump);
 #pragma endregion
 
 
 #pragma region UI
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_HasPal);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
 #pragma endregion

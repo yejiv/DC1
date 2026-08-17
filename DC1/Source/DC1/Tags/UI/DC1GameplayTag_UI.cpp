@@ -1,4 +1,4 @@
-#include "Tags/UI/DC1GameplayTag_UI.h"
+﻿#include "Tags/UI/DC1GameplayTag_UI.h"
 
 namespace DC1UITags
 {
@@ -24,9 +24,13 @@ namespace DC1TechTags
 	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_CraftAndRepair, "Build.Crafting.CraftAndRepair");
 	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Sphere, "Build.Crafting.Sphere");
 	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Weapon, "Build.Crafting.Weapon");
+	
+	UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalBox, "Build.Pal.PalBox");
 #pragma endregion
 
-#pragma region CATEGORY_PAL
-	UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalBox, "Build.Pal.PalBox");
+#pragma region CATEGORY_CRAFTING
+	UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon, "Crafting.Weapon");
+	UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body, "Crafting.Armor.Body");
+	UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere, "Crafting.Sphere");
 #pragma endregion
 }

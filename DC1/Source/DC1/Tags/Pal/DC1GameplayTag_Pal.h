@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -23,5 +23,10 @@ namespace DC1PalTags
 #pragma region State
 	//이 태그의 유무로 StateTree 태스크가 종료를 판단한다.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_State_Attacking);
+#pragma endregion
+
+#pragma region Event
+	// 공격 몽타주의 AnimNotify가 이 이벤트를 쏘면 어빌리티가 받아서 판정 트레이스를 돌린다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Attack_Hit);
 #pragma endregion
 }

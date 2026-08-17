@@ -10,6 +10,7 @@ enum class EDC1FadeType : uint8
 	Loading = 2 UMETA(DisplayName = "Loading"), // 검정 화면 + 스프라이트 애니메이션 + Tip
 };
 
+
 UENUM(BlueprintType)
 enum class EDC1ItemType : uint8
 {
@@ -30,4 +31,13 @@ enum class EDC1ItemRarity : uint8
 	Rare = 2 UMETA(DisplayName = "Rare"),
 	Epic = 3 UMETA(DisplayName = "Epic"),
 	Legendary = 4 UMETA(DisplayName = "Legendary"),
+
+UENUM()
+enum class EDC1TechSlotState : uint8
+{
+	Default = 0,
+	Locked = 1,		// 레벨 부족 || 코스트 부족
+	Available = 2,	// 해금 가능 ( 레벨 충족 + 코스트 충분 )
+	Unlocked = 3,	// 해금
+
 };

@@ -1,10 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UI/Tab/TechTree/DC1TechTreeWidget.h"
 
 #include "UI/Tab/TechTree/DC1TechTreeRowWidget.h"
+#include "UI/Button/AnimButton/Tab/DC1TechTreeButton.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "System/DC1AssetManager.h"
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DA/DataTable/DC1DataTableData.h"
@@ -12,13 +14,42 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1TechTreeComponent.h"
+
 #include "Components/ScrollBox.h"
 
-void UDC1TechTreeWidget::NativeConstruct()
+void UDC1TechTreeWidget::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
 
 	BuildTechTree();
+
+
+	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
+	if (true == ::IsValid(TechComp))
+	{
+		TechComp->OnTechStateChange.AddUObject(this, &ThisClass::OnTechStateChanged);
+	}
+}
+
+UDC1TechTreeComponent* UDC1TechTreeWidget::GetTechTreeComponent()
+{
+	ADC1PlayerState* PS = GetOwningPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(PS))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find PS"));
+		return nullptr;
+	}
+
+	UDC1TechTreeComponent* TechComp = PS->GetTechTreeComponent();
+	if (false == ::IsValid(TechComp))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find TechComp"));
+		return nullptr;
+	}
+
+	return TechComp;
 }
 
 void UDC1TechTreeWidget::BuildTechTree()
@@ -40,36 +71,40 @@ void UDC1TechTreeWidget::BuildTechTree()
 		return;
 	}
 
-	if (false == ::IsValid(CachedDataTable))
+	const UDataTable* TechTreeData = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_TechTree);
+	if (false == ::IsValid(TechTreeData))
 	{
-		CachedDataTable = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_TechTree);
-		if (false == ::IsValid(CachedDataTable))
-		{
-			return;
-		}
+		return;
 	}
-
-
+	
 	TArray<FDC1TechRow*> AllRows;
-	CachedDataTable->GetAllRows<FDC1TechRow>(TEXT("BuildTechTree"), AllRows);
+	TechTreeData->GetAllRows<FDC1TechRow>(TEXT("BuildTechTree"), AllRows);
 	if (true == AllRows.IsEmpty())
 	{
 		return;
 	}
 
-	TSet<int32> AddRowLevels;
-	for (const FDC1TechRow* Row : AllRows)
+	TMap<int32, TArray<FDC1TechRow*>> RowsByLevel;
+
+	for (FDC1TechRow* Row : AllRows)
 	{
 		int32 Level = Row->RequiredLevel;
-		AddRowLevels.Add(Level);
+		RowsByLevel.FindOrAdd(Level).Add(Row);
 	}
 
-	TArray<int32> Levels = AddRowLevels.Array();
+	TArray<int32> Levels;
+	RowsByLevel.GetKeys(Levels);
 	Levels.Sort();
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (false == ::IsValid(PC))
+	{
+		return;
+	}
 
 	for (int32 AddLevel : Levels)
 	{
-		UDC1TechTreeRowWidget* RowWidget = CreateWidget<UDC1TechTreeRowWidget>(GetWorld(), RowWidgetClass);
+		UDC1TechTreeRowWidget* RowWidget = CreateWidget<UDC1TechTreeRowWidget>(PC, RowWidgetClass);
 		if (false == ::IsValid(RowWidget))
 		{
 			continue;
@@ -77,5 +112,42 @@ void UDC1TechTreeWidget::BuildTechTree()
 
 		RowWidget->InitTier(AddLevel);
 		TechTreeScrollBox->AddChild(RowWidget);
+
+		for (const FDC1TechRow* Row : RowsByLevel[AddLevel])
+		{
+			UDC1TechTreeButton* TechSlot = RowWidget->AddTechSlot(*Row);
+			if (true == ::IsValid(TechSlot))
+			{
+
+				UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
+				if (true == ::IsValid(TechComp))
+				{
+					FName CurrentSlotID = Row->TechID;
+
+					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotID, TechComp]() {
+							TechComp->Server_UnlockTech(CurrentSlotID);
+						});
+
+					TechSlot->SetState(TechComp->GetTechState(CurrentSlotID));
+				}
+
+				TechSlots.Add(TechSlot);
+			}
+		}
+	}
+}
+
+void UDC1TechTreeWidget::OnTechStateChanged()
+{
+	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
+	if (false == ::IsValid(TechComp))
+	{
+		return;
+	}
+
+	for (UDC1TechTreeButton* TechSlot : TechSlots)
+	{
+		FName CurrentSlotID = TechSlot->GetTechID();
+		TechSlot->SetState(TechComp->GetTechState(CurrentSlotID));
 	}
 }
