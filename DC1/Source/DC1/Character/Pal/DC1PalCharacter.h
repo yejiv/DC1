@@ -48,6 +48,9 @@ protected:
 
 	void ApplyPalData();
 
+	// 래그돌, AI 정지, 퍼셉션 해제
+	virtual void OnDeath() override;
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
@@ -58,7 +61,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal", meta = (Categories = "Pal.Species"))
 	FGameplayTag SpeciesTag;
 
-	UPROPERTY(Transient)
+	UPROPERTY(Transient) //디스크에 저장X
 	TObjectPtr<const UDC1PalData> PalData = { nullptr };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Team, Category = "Pal|Team")
