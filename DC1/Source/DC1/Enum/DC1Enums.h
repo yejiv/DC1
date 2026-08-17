@@ -32,6 +32,8 @@ enum class EDC1ItemRarity : uint8
 	Epic = 3 UMETA(DisplayName = "Epic"),
 	Legendary = 4 UMETA(DisplayName = "Legendary"),
 
+};
+
 UENUM()
 enum class EDC1TechSlotState : uint8
 {

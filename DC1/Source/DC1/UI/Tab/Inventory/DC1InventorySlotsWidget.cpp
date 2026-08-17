@@ -72,7 +72,7 @@ void UDC1InventorySlotsWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel
 
 void UDC1InventorySlotsWidget::RefreshSlotCapacity(int32 NewTotalSlots)
 {
-	// 슬롯 개수가 늘어나거나 변경되었을 때 UI 다시 구성
+	// 슬롯 개수가 늘어나거나 변경되었을 때
 	CreateSlotWidgets(NewTotalSlots);
 	HandleInventoryUpdated();
 }
@@ -109,8 +109,8 @@ void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 			if (GridSlot)
 			{
 				//GridSlot->SetMargin(SlotMargin);
-				GridSlot->SetHorizontalAlignment(HAlign_Fill);
-				GridSlot->SetVerticalAlignment(VAlign_Fill);
+				GridSlot->SetHorizontalAlignment(HAlign_Center);
+				GridSlot->SetVerticalAlignment(VAlign_Center);
 			}
 
 			// NewSlotWidget->SetSlotIndex(Index);

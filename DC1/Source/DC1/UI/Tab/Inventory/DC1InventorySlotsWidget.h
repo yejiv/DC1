@@ -41,8 +41,8 @@ protected:
 	void HandleInventoryUpdated();
 
 private:
-	static constexpr int32 InventoryColumns = 5;
-	static constexpr int32 DefaultSlotCapacity = 35;
+	static constexpr int32 InventoryColumns = 6;
+	static constexpr int32 DefaultSlotCapacity = 45;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UScrollBox> InventoryScrollBox;

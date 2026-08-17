@@ -21,8 +21,8 @@ void UDC1InventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	SizeBox_Root->SetWidthOverride(50);
-	SizeBox_Root->SetHeightOverride(50);
+	SizeBox_Root->SetWidthOverride(70);
+	SizeBox_Root->SetHeightOverride(70);
 }
 
 
