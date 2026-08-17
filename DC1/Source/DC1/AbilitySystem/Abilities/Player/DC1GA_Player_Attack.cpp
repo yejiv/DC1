@@ -10,6 +10,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
+#include "Character/DC1Character.h"
 #include "Tags/DC1GamePlayTags.h"
 
 UDC1GA_Player_Attack::UDC1GA_Player_Attack(const FObjectInitializer& ObjectInitializer)
@@ -27,6 +28,9 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	// Hit Target Container Reset
+	HitTargets.Reset();
 
 	// Hit Event Bind
 	if (HitEventTag.IsValid())
@@ -51,9 +55,17 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 	PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
 	PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
 	PlayMontageTask->ReadyForActivation();
+}
 
-	// Hit Target Container Reset
-	HitTargets.Reset();
+void UDC1GA_Player_Attack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	// NotifyEnd를 못 타고 끝나는 경로(캔슬, 피격 중단, 사망)를 위한 안전망
+	if (ADC1Character* Character = Cast<ADC1Character>(GetAvatarActorFromActorInfo()))
+	{
+		Character->SetAttackCollision(false);
+	}
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
 void UDC1GA_Player_Attack::OnHitReceived(FGameplayEventData Payload)
