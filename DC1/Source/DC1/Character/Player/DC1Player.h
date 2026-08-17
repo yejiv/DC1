@@ -10,6 +10,8 @@
 class USkeletalMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
+class UPrimitiveComponent;
+class USphereComponent;
 /**
  * 
  */
@@ -23,10 +25,16 @@ public:
 
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual void SetAttackCollision(bool OnCollision) override;
+
+public:
+	UFUNCTION()
+	void OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
+	void PlayAbility(const FGameplayTag& AbilityTag);
 
 private:
 	virtual void PostInitializeComponents() override;
@@ -49,12 +57,22 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UCameraComponent>			Camera = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USphereComponent>			HandAttackCollider = { nullptr };
+
 private:
 	void	InitializeAbilitySystem();
 	void	Clear_Resource();
 
 private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
+
+private:
+	UPROPERTY()
+	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
+
+	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
+	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
 
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;

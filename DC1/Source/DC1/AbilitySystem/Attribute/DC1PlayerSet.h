@@ -13,5 +13,7 @@ UCLASS()
 class DC1_API UDC1PlayerSet : public UDC1AttributeSet
 {
 	GENERATED_BODY()
-	
+
+public:
+	UDC1PlayerSet();
 };

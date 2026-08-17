@@ -6,11 +6,14 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/SphereComponent.h"
 #include "Camera/CameraComponent.h"
 
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
 
 #include "Tags/DC1GamePlayTags.h"
 #include "System/DC1AssetManager.h"
@@ -48,6 +51,13 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	Camera->SetupAttachment(SpringArm);
 	Camera->SetRelativeLocation(FVector(0.f, 50.f, 0.f));
 	Camera->bUsePawnControlRotation = false;
+
+	// Collider
+	HandAttackCollider = CreateDefaultSubobject<USphereComponent>("HandAttackCollider");
+	HandAttackCollider->SetupAttachment(RootComponent);
+	HandAttackCollider->SetRelativeLocation(FVector(60.f, 0.f, 0.f));
+	HandAttackCollider->SetSphereRadius(50.f);
+	HandAttackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -59,6 +69,35 @@ UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
 	return nullptr;
 }
 
+void ADC1Player::SetAttackCollision(bool OnCollision)
+{
+	if (nullptr == ActiveCollider) return;
+
+	// 한 몽타주에 주먹이 여러 번 들어있으면 창마다 새로 판정해야 한다
+	if (true == OnCollision)
+	{
+		HitTargetsInWindow.Reset();
+	}
+
+	ECollisionEnabled::Type CollisionType = OnCollision ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision;
+	ActiveCollider->SetCollisionEnabled(CollisionType);
+}
+
+void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// 물리적으로 말이 안 되는 것과 창 단위 중복만 여기서 거른다. 팀 판정은 GA가 한다.
+	if (false == ::IsValid(OtherActor) || this == OtherActor) return;
+
+	if (true == HitTargetsInWindow.Contains(OtherActor)) return;
+	HitTargetsInWindow.Add(OtherActor);
+
+	FGameplayEventData Payload;
+	Payload.Instigator = this;
+	Payload.Target = OtherActor;
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, DC1PlayerTags::Event_Player_Hit, Payload);
+}
+
 void ADC1Player::ToggleMove()
 {
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();
@@ -67,6 +106,14 @@ void ADC1Player::ToggleMove()
 void ADC1Player::SetSprint(bool Sprint)
 {
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetSprint(Sprint);
+}
+
+void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
+{
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent()))
+	{
+		ASC->ActivateAbilityByTag(AbilityTag);
+	}
 }
 
 void ADC1Player::PostInitializeComponents()
@@ -80,6 +127,9 @@ void ADC1Player::PostInitializeComponents()
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ActiveCollider = HandAttackCollider;
+	HandAttackCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
 }
 
 void ADC1Player::EndPlay(const EEndPlayReason::Type EndPlayReason)

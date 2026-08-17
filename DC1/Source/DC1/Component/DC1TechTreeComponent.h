@@ -29,6 +29,7 @@ public:
 	int32					GetTechPoints() const { return TechPoints; }
 	const TArray<FName>&	GetUnlockedTechID() const { return UnlockedTechIDs; }
 	EDC1TechSlotState		GetTechState(const FName& TechID) const;
+
 public:
 	virtual void			BeginPlay() override;
 	virtual void			GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

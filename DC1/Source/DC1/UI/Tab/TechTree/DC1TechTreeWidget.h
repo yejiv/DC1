@@ -10,6 +10,7 @@ class UDataTable;
 class UScrollBox;
 class UDC1TechTreeRowWidget;
 class UDC1TechTreeButton;
+class UDC1TechTreePointWidget;
 class UDC1TechTreeComponent;
 
 UCLASS()
@@ -29,11 +30,15 @@ private:
 	// TechTree Slot 상태 변화 ( Lock, Available, Unlock )
 	void					OnTechStateChanged();
 
-
-
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UScrollBox>					TechTreeScrollBox;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDC1TechTreePointWidget>		TechPointWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDC1TechTreePointWidget>		AncientTechPointWidget;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
 	TSubclassOf<UDC1TechTreeRowWidget>		RowWidgetClass;

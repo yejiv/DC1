@@ -20,6 +20,9 @@ public:
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+public:
+	virtual void SetAttackCollision(bool OnCollision) {}
+
 protected:
 	// ASC가 준비된 뒤 자식 클래스가 호출 (펠 = 스폰 시, 플레이어 = PlayerState 확보 시)
 	void BindHealthWatcher();

@@ -100,6 +100,23 @@ bool UDC1AbilitySystemComponent::HasAbilityByTag(const FGameplayTag& AbilityTag)
 	return AbilityTagCache.Contains(AbilityTag);
 }
 
+bool UDC1AbilitySystemComponent::HasAbility(const TSubclassOf<UGameplayAbility>& AbilityClass, const FGameplayTag& ActivationTag) const
+{
+	if (nullptr == AbilityClass) return false;
+
+	// 같은 ActivationTag를 여러 어빌리티가 공유할 수 있으므로 클래스까지 같아야 중복이다
+	TArray<FGameplayAbilitySpecHandle> Handles;
+	AbilityTagCache.MultiFind(ActivationTag, Handles);
+
+	for (const FGameplayAbilitySpecHandle& handle : Handles)
+	{
+		const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(handle);
+		if (nullptr != Spec && nullptr != Spec->Ability && Spec->Ability->GetClass() == AbilityClass)
+			return true;
+	}
+	return false;
+}
+
 void UDC1AbilitySystemComponent::SetExclusiveStateTag(const FGameplayTag& AxisRootTag, const FGameplayTag& NewStateTag)
 {
 	if (!IsOwnerActorAuthoritative()) { return; }
@@ -108,6 +125,13 @@ void UDC1AbilitySystemComponent::SetExclusiveStateTag(const FGameplayTag& AxisRo
 
 	if (NewStateTag.IsValid())
 		AddStateTag(NewStateTag);
+}
+
+FGameplayTag UDC1AbilitySystemComponent::GetExclusiveStateTag(const FGameplayTag& AxisRootTag)
+{
+	FGameplayTagContainer Owned;
+	GetOwnedGameplayTags(Owned);
+	return Owned.Filter(AxisRootTag.GetSingleTagContainer()).First();
 }
 
 void UDC1AbilitySystemComponent::AddStateTag(const FGameplayTag& StateTag)
