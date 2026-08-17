@@ -8,7 +8,9 @@
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Tags/Anim/DC1GameplayTag_Anim.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
@@ -22,9 +24,9 @@ UDC1GameplayAbility_PalAttack::UDC1GameplayAbility_PalAttack(const FObjectInitia
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 
-	ActivationOwnedTags.AddTag(DC1PalTags::Pal_State_Attacking);
+	ActivationOwnedTags.AddTag(DC1StateTags::State_Pal_Attacking);
 
-	MontageTag = DC1PalTags::Ability_Pal_Attack;
+	MontageTag = DC1AnimTags::Anim_Pal_Attack;
 	HitEventTag = DC1PalTags::Event_Pal_Attack_Hit;
 }
 

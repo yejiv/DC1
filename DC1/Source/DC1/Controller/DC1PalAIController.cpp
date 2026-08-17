@@ -11,6 +11,9 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "Components/StateTreeAIComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 
 namespace DC1PalAIController
 {
@@ -20,10 +23,6 @@ namespace DC1PalAIController
 		return (nullptr != ASC) && ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
 	}
 }
-
-#include "Components/StateTreeAIComponent.h"
-#include "Perception/AIPerceptionComponent.h"
-#include "Perception/AISenseConfig_Sight.h"
 
 ADC1PalAIController::ADC1PalAIController()
 	: Super()
@@ -61,6 +60,11 @@ void ADC1PalAIController::BeginPlay()
 void ADC1PalAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+
+	if (::IsValid(InPawn))
+	{
+		HomeLocation = InPawn->GetActorLocation();
+	}
 
 	ApplyPerceptionSettings();
 

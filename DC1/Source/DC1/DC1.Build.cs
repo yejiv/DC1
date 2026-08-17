@@ -26,6 +26,7 @@ public class DC1 : ModuleRules
             "UMG",
 
             "AIModule",
+            "NavigationSystem",
             "StateTreeModule",
             "GameplayStateTreeModule",
 		});

@@ -2,10 +2,16 @@
 
 #include "AI/DC1PalStateTreeTasks.h"
 
+#include "Character/Pal/DC1PalCharacter.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Controller/DC1PalAIController.h"
+#include "Data/DA/Pal/DC1PalData.h"
 
 #include "AbilitySystemGlobals.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "NavigationSystem.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "StateTreeExecutionContext.h"
 
 namespace DC1PalTaskHelper
@@ -70,5 +76,85 @@ void FDC1PalActivateAbilityTask::ExitState(FStateTreeExecutionContext& Context, 
 	{
 		ASC->CancelAbilityByTag(InstanceData.AbilityTag);
 	}
+}
+
+
+EStateTreeRunStatus FDC1PalWanderTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Pal->GetWorld());
+	if (nullptr == NavSystem)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	FNavLocation Destination;
+	if (false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), PalData->WanderRadius, Destination))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->WalkSpeed;
+
+	AIController->SetFocalPoint(Destination.Location, EAIFocusPriority::Move);
+
+	const EPathFollowingRequestResult::Type Result = AIController->MoveToLocation(Destination.Location, InstanceData.AcceptanceRadius);
+
+	return (EPathFollowingRequestResult::Failed == Result)
+		? EStateTreeRunStatus::Failed
+		: EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalWanderTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	const ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	// 도착이든 중단이든 이동이 끝나면 배회 끝인 걸로
+	return (EPathFollowingStatus::Idle == AIController->GetMoveStatus())
+		? EStateTreeRunStatus::Succeeded
+		: EStateTreeRunStatus::Running;
+}
+
+void FDC1PalWanderTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return;
+	}
+
+	AIController->StopMovement();
+	AIController->ClearFocus(EAIFocusPriority::Move);
+
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData)
+	{
+		return;
+	}
+
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
 }
 

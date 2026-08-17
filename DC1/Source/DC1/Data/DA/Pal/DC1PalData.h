@@ -8,6 +8,39 @@
 
 class UAnimMontage;
 
+/**
+ * 재생할 때 하나를 랜덤으로 고른다.
+ */
+USTRUCT(BlueprintType)
+struct FDC1PalMontageSet
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
+	TArray<TSoftObjectPtr<UAnimMontage>>	Montages;
+
+	TSoftObjectPtr<UAnimMontage> PickRandomMontage() const
+	{
+		TArray<int32> ValidIndices;
+		ValidIndices.Reserve(Montages.Num());
+
+		for (int32 Index = 0; Index < Montages.Num(); ++Index)
+		{
+			if (false == Montages[Index].IsNull())
+			{
+				ValidIndices.Add(Index);
+			}
+		}
+
+		if (0 == ValidIndices.Num())
+		{
+			return nullptr;
+		}
+
+		return Montages[ValidIndices[FMath::RandRange(0, ValidIndices.Num() - 1)]];
+	}
+};
+
 UCLASS()
 class DC1_API UDC1PalData : public UDataAsset
 {
@@ -15,8 +48,13 @@ class DC1_API UDC1PalData : public UDataAsset
 
 public:
 #pragma region Locomotion
+	// 추격 속도. AnimInstance의 NormalizedSpeed 분모이기도 하다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RunSpeed = { 400.f };
+
+	// 배회 속도
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
+	float							WalkSpeed = { 150.f };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RotationRateYaw = { 360.f };
@@ -31,9 +69,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Asset"))
 	FGameplayTag					AbilityDataTag;
 
-	// 어빌리티 태그 (종별 몽타주)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Ability"))
-	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>>	Montages;
+	// 종별 몽타주. 키는 Anim.Pal.* 이다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Anim.Pal"))
+	TMap<FGameplayTag, FDC1PalMontageSet>	Montages;
+#pragma endregion
+
+#pragma region Idle
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Idle", meta = (Categories = "Anim.Pal.Idle"))
+	TArray<FGameplayTag>			IdleMontageTags;
 #pragma endregion
 
 #pragma region Combat
@@ -45,20 +88,24 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackExitRange = { 220.f };
 
-	// AttackPower 어트리뷰트의 초기값. 런타임 값은 어트리뷰트 쪽이 진실이다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };
 
-	// 스윙의 굵기. 실제 도달 거리는 AttackRange + 이 반경이다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackTraceRadius = { 50.f };
 #pragma endregion
 
 public:
-	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& AbilityTag) const
+	const FDC1PalMontageSet* FindMontageSetByTag(const FGameplayTag& MontageTag) const
 	{
-		const TSoftObjectPtr<UAnimMontage>* Found = Montages.Find(AbilityTag);
-		return (nullptr != Found) ? *Found : nullptr;
+		return Montages.Find(MontageTag);
+	}
+
+	// 변형이 여러 개면 매 호출마다 다른 것이 나올 수 있다.
+	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& MontageTag) const
+	{
+		const FDC1PalMontageSet* Found = FindMontageSetByTag(MontageTag);
+		return (nullptr != Found) ? Found->PickRandomMontage() : nullptr;
 	}
 
 #pragma region AI
@@ -77,5 +124,9 @@ public:
 	// 추격 유지 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							TargetMemoryDuration = { 3.f };
+
+	// 스폰 지점 기준 배회 반경
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Wander")
+	float							WanderRadius = { 800.f };
 #pragma endregion
 };
