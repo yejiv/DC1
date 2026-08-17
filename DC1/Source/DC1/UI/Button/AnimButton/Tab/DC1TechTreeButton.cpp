@@ -8,6 +8,7 @@
 #include "Animation/WidgetAnimation.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 
 void UDC1TechTreeButton::NativeOnInitialized()
 {
@@ -27,6 +28,11 @@ void UDC1TechTreeButton::NativeDestruct()
 
 void UDC1TechTreeButton::HandleHovered()
 {
+	if (SlotState == EDC1TechSlotState::Locked)
+	{
+		return;
+	}
+
 	Super::HandleHovered();
 	
 	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
@@ -37,6 +43,11 @@ void UDC1TechTreeButton::HandleHovered()
 
 void UDC1TechTreeButton::HandleUnhovered()
 {
+	if (SlotState == EDC1TechSlotState::Locked)
+	{
+		return;
+	}
+
 	Super::HandleUnhovered();
 
 	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
@@ -105,9 +116,9 @@ void UDC1TechTreeButton::ApplyState()
 
 	if (true == ::IsValid(LockedImage))
 	{
-		float LockedOpacity = IsLocked ? LockedImageOpacity : 0.f;
+		float LockOverImageOpacity = IsLocked ? LockedImageOpacity : 0.f;
 
-		LockedImage->SetOpacity(LockedOpacity);
+		LockedImage->SetOpacity(LockOverImageOpacity);
 	}
 
 	if (true == ::IsValid(AvailableImage))
@@ -142,5 +153,12 @@ void UDC1TechTreeButton::ApplyState()
 		float CostOpacity = IsAvailable ? 1.f : 0.f;
 
 		TextLabel->SetOpacity(CostOpacity);
+	}
+
+	if (true == ::IsValid(RootOverlay))
+	{
+		float OverlayOpacity = IsLocked ? LockedOpacity : 1.f;
+
+		RootOverlay->SetRenderOpacity(OverlayOpacity);
 	}
 }

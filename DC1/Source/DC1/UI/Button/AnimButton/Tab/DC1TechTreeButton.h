@@ -36,54 +36,60 @@ private:
 	TObjectPtr<UWidgetAnimation>	UnlockedAnim;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		LockedImage;
+	TObjectPtr<UPanelWidget>	RootOverlay;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		AvailableImage;
+	TObjectPtr<UImage>			LockedImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		TechIconImage;
+	TObjectPtr<UImage>			AvailableImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		IconBackImage;
+	TObjectPtr<UImage>			TechIconImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		TechNameBackImage;
+	TObjectPtr<UImage>			IconBackImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		ButtonHoverImage;
+	TObjectPtr<UImage>			TechNameBackImage;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage>			ButtonHoverImage;
 
 	//COST Text = BracketButton::TextLabel
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>	TechNameText;
+	TObjectPtr<UTextBlock>		TechNameText;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>	CategoryNameText;
+	TObjectPtr<UTextBlock>		CategoryNameText;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
-	FLinearColor			AvailableFontColor = FLinearColor::Blue;
+	FLinearColor				AvailableFontColor = FLinearColor::Blue;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
-	FLinearColor			UnlockedFontColor = FLinearColor::White;
+	FLinearColor				UnlockedFontColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor			UnlockedIconBackImageColor = FLinearColor::White;
+	FLinearColor				UnlockedIconBackImageColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor			AvailableIconBackImageColor = FLinearColor::White;
+	FLinearColor				AvailableIconBackImageColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor			UnlockedTechNameBackColor = FLinearColor::White;
+	FLinearColor				UnlockedTechNameBackColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor			LockedTechNameBackColor = FLinearColor::White;
+	FLinearColor				LockedTechNameBackColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float					LockedImageOpacity = 0.8f;
+	float						LockedOpacity = 0.3f;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float					AvailableImageOpacity = 0.5f;
+	float						LockedImageOpacity = 0.7f;
+
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	float						AvailableImageOpacity = 0.5f;
 
 	FName				TechID = NAME_None;
 	EDC1TechSlotState	SlotState = EDC1TechSlotState::Default;
