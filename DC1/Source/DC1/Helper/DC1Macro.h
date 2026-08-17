@@ -1,4 +1,4 @@
-#pragma once	
+﻿#pragma once	
 
 // Log
 DECLARE_LOG_CATEGORY_EXTERN(LogDC1, Log, All);

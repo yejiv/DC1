@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UI/Button/AnimButton/DC1BracketButton.h"
@@ -8,32 +8,34 @@
 #include "Components/SizeBox.h"
 #include "Animation/WidgetAnimation.h"
 
-void UDC1BracketButton::NativeConstruct()
+void UDC1BracketButton::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
 
-	if(true == ::IsValid(ButtonSizeBox))
-	{ 
-		if (0 < ButtonSizeX)
+	if (true == ::IsValid(TextLabel))
+	{
+		if (false == Button_LabelText.IsEmpty())
+		{
+			TextLabel->SetText(Button_LabelText);
+		}
+
+		if (0.f < FontSize)
+		{
+			TextLabel->SetFontSize(FontSize);
+		}
+	}
+
+	if (true == ::IsValid(ButtonSizeBox))
+	{
+		if (0.f < ButtonSizeX)
 		{
 			ButtonSizeBox->SetWidthOverride(ButtonSizeX);
 		}
 
-		if (0 < ButtonSizeY)
+		if (0.f < ButtonSizeY)
 		{
 			ButtonSizeBox->SetHeightOverride(ButtonSizeY);
 		}
-	}
-
-	if (true == ::IsValid(TextLabel))
-	{
-		TextLabel->SetText(Button_LabelText);
-		TextLabel->SetFontSize(FontSize);
-	}
-
-	if (true == ::IsValid(BracketImage))
-	{
-		BracketImage->SetOpacity(0.f);
 	}
 
 	if (true == ButtonBrushOverride)
@@ -45,6 +47,16 @@ void UDC1BracketButton::NativeConstruct()
 		Style.Pressed = PressedBrush;
 
 		UserButton->SetStyle(Style);
+	}
+}
+
+void UDC1BracketButton::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (true == ::IsValid(BracketImage))
+	{
+		BracketImage->SetOpacity(0.f);
 	}
 }
 

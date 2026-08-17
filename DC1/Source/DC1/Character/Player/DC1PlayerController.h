@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,6 +29,9 @@ public:
 	virtual void SetupInputComponent() override;
 	// 서버 Possess/UnPossess, 클라이언트 OnRep_Pawn 모두 이 함수를 거친다
 	virtual void SetPawn(APawn* InPawn) override;
+
+	// UI가 열려있는 상태에서 InputKey 전달
+	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 
 private:
 	void OnMove(const FInputActionValue& Value);
@@ -61,6 +64,7 @@ private:
 	void SetUp_IMC(const FGameplayTag& IMC_Tag);
 
 private:
+	UPROPERTY()
 	TObjectPtr<ADC1Player>	ControlObject = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
@@ -71,8 +75,6 @@ private:
 
 #pragma region UI_TEST
 private:
-	void OpenTech();
-private:
-	bool	IsOpen = { false };
+	void OpenTabWidget(FGameplayTag Tab);
 #pragma endregion
 };

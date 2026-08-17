@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -17,10 +17,10 @@ public:
 	virtual void HandleInputKey(const FKey& InputKey);
 
 public:
-	// Manager¿¡¼­ È°¼ºÈ­µÉ ¶§ È£Ãâ
+	// Managerì—ì„œ í™œì„±í™”ë  ë•Œ í˜¸ì¶œ
 	void Activate();
 
-	// Manager¿¡¼­ ºñÈ°¼ºÈ­µÉ ¶§ È£Ãâ
+	// Managerì—ì„œ ë¹„í™œì„±í™”ë  ë•Œ í˜¸ì¶œ
 	void Deactivate();
 
 
@@ -29,11 +29,11 @@ protected:
 	void			NativeOnDeactivated();
 
 protected:
-	// [ IntroAnim ] Animation ¹ÙÀÎµù (¾ø¾îµµ µÊ)
+	// [ IntroAnim ] Animation ë°”ì¸ë”© (ì—†ì–´ë„ ë¨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
 	TObjectPtr<UWidgetAnimation> IntroAnim;
 
-	// [ OutroAnim ] Animation ¹ÙÀÎµù (¾ø¾îµµ µÊ)
+	// [ OutroAnim ] Animation ë°”ì¸ë”© (ì—†ì–´ë„ ë¨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
 	TObjectPtr<UWidgetAnimation> OutroAnim;
 };

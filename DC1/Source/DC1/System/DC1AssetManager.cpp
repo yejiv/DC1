@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "System/DC1AssetManager.h"
@@ -211,13 +211,13 @@ void UDC1AssetManager::ReleaseByTag(const FGameplayTag& AssetTag)
 
     AssetManager.TagToLoadedDataAsset.Remove(AssetTag);
 
-    // NameToTag´Â Value(Tag)·Î Ã£¾Æ¾ß ÇÏ¹Ç·Î ¼øÈ¸ »èÁ¦
+    // NameToTagëŠ” Value(Tag)ë¡œ ì°¾ì•„ì•¼ í•˜ë¯€ë¡œ ìˆœíšŒ ì‚­ì œ
     for (auto It = AssetManager.NameToTag.CreateIterator(); It; ++It)
     {
         if (It.Value() == AssetTag)
         {
             It.RemoveCurrent();
-            break;  // Tag - Name 1:1 ¸ÅÇÎÀÌ¹Ç·Î Ã£À¸¸é Áï½Ã Á¾·á
+            break;  // Tag - Name 1:1 ë§¤í•‘ì´ë¯€ë¡œ ì°¾ìœ¼ë©´ ì¦‰ì‹œ ì¢…ë£Œ
         }
     }
 }
@@ -238,7 +238,7 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
         return;
     }
 
-    // Á¦°ÅÇÒ Tag ¸ñ·Ï ¼öÁı
+    // ì œê±°í•  Tag ëª©ë¡ ìˆ˜ì§‘
     TArray<FGameplayTag> TagsToRemove;
 
     const FAssetSet* AssetSet = LoadedAssetData->GetAssetSetByLabel(Label);
@@ -251,13 +251,13 @@ void UDC1AssetManager::ReleaseByLabel(const FGameplayTag& Label)
     {
         TagsToRemove.Add(AssetEntry.AssetTag);
     }
-    // TagToLoadedAsset Á¦°Å
+    // TagToLoadedAsset ì œê±°
     for (const FGameplayTag& Tag : TagsToRemove)
     {
         AssetManager.TagToLoadedDataAsset.Remove(Tag);
     }
 
-    // NameToTag¿¡¼­ Value°¡ ÀÏÄ¡ÇÏ´Â Ç×¸ñ ¼øÈ¸ »èÁ¦
+    // NameToTagì—ì„œ Valueê°€ ì¼ì¹˜í•˜ëŠ” í•­ëª© ìˆœíšŒ ì‚­ì œ
     for (auto It = AssetManager.NameToTag.CreateIterator(); It; ++It)
     {
         if (TagsToRemove.Contains(It.Value()))

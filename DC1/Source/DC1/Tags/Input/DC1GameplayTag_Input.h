@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -25,6 +25,8 @@ namespace DC1InputTags
 
 
 #pragma region UI
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_HasPal);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
 #pragma endregion
 }

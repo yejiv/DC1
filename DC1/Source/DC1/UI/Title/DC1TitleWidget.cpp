@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UI/Title/DC1TitleWidget.h"
@@ -14,9 +14,9 @@
 
 #include "Helper/DC1Macro.h"
 
-void UDC1TitleWidget::NativeConstruct()
+void UDC1TitleWidget::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
 
 	if (true == ::IsValid(StartButton))
 	{
@@ -27,7 +27,7 @@ void UDC1TitleWidget::NativeConstruct()
 	{
 		QuitButton->OnClickedDelegate.AddUObject(this, &UDC1TitleWidget::OnQuitClicked);
 	}
-	
+
 	if (true == ::IsValid(ReturnButton))
 	{
 		ReturnButton->OnClickedDelegate.AddUObject(this, &UDC1TitleWidget::OnReturnClicked);
@@ -37,6 +37,12 @@ void UDC1TitleWidget::NativeConstruct()
 	{
 		ConnectButton->OnClickedDelegate.AddUObject(this, &UDC1TitleWidget::OnConnectClicked);
 	}
+}
+
+void UDC1TitleWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
 }
 
 void UDC1TitleWidget::OnStartClicked()

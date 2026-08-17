@@ -1,11 +1,20 @@
-#pragma once
+ï»¿#pragma once
 
 #include "DC1Enums.generated.h"
 
 UENUM(BlueprintType)
 enum class EDC1FadeType : uint8
 {
-	Default = 0 UMETA(DisplayName = "Default"), // °ËÁ¤ È­¸é
-	Spinner = 1 UMETA(DisplayName = "Spinner"), // °ËÁ¤ È­¸é + ½ºÇÁ¶óÀÌÆ® ¾Ö´Ï¸ŞÀÌ¼Ç
-	Loading = 2 UMETA(DisplayName = "Loading"), // °ËÁ¤ È­¸é + ½ºÇÁ¶óÀÌÆ® ¾Ö´Ï¸ŞÀÌ¼Ç + Tip
+	Default = 0 UMETA(DisplayName = "Default"), // ê²€ì • í™”ë©´
+	Spinner = 1 UMETA(DisplayName = "Spinner"), // ê²€ì • í™”ë©´ + ìŠ¤í”„ë¼ì´íŠ¸ ì• ë‹ˆë©”ì´ì…˜
+	Loading = 2 UMETA(DisplayName = "Loading"), // ê²€ì • í™”ë©´ + ìŠ¤í”„ë¼ì´íŠ¸ ì• ë‹ˆë©”ì´ì…˜ + Tip
+};
+
+UENUM()
+enum class EDC1TechSlotState : uint8
+{
+	Default = 0,
+	Locked = 1,		// ë ˆë²¨ ë¶€ì¡± || ì½”ìŠ¤íŠ¸ ë¶€ì¡±
+	Available = 2,	// í•´ê¸ˆ ê°€ëŠ¥ ( ë ˆë²¨ ì¶©ì¡± + ì½”ìŠ¤íŠ¸ ì¶©ë¶„ )
+	Unlocked = 3,	// í•´ê¸ˆ
 };

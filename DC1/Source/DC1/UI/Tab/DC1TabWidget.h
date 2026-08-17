@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -26,7 +26,7 @@ class DC1_API UDC1TabWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void	NativeConstruct() override;
+	virtual void	NativeOnInitialized() override;
 	
 public:
 	virtual void	HandleInputKey(const FKey& InputKey) override;

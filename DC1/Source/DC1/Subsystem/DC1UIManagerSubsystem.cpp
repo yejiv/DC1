@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
@@ -242,7 +242,7 @@ void UDC1UIManagerSubsystem::UpdateInputMode()
     }
     else
     {
-        FInputModeUIOnly InputMode;
+        FInputModeGameAndUI InputMode;
         InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
         PC->SetInputMode(InputMode);
         PC->SetShowMouseCursor(true);
