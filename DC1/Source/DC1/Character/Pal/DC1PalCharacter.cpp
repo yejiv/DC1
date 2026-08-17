@@ -3,6 +3,8 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
+#include "Components/CapsuleComponent.h"
+//#include "Components/SkeletalMeshComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
@@ -17,8 +19,8 @@
 ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	AIControllerClass = ADC1PalAIController::StaticClass();
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	//AIControllerClass = ADC1PalAIController::StaticClass();
+	//AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
@@ -55,7 +57,7 @@ void ADC1PalCharacter::ApplyPalData()
 	}
 
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-	if (false == ::IsValid(Registry))
+	if (false == IsValid(Registry))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: Can't find PalRegistryData. Check PDA_AssetData."), *GetName());
 		return;
@@ -63,7 +65,7 @@ void ADC1PalCharacter::ApplyPalData()
 
 	// 나중에 스폰 전에 비동기로 미리 올려두는 쪽으로 바꾸기.
 	PalData = Registry->FindPalDataByTag(SpeciesTag).LoadSynchronous();
-	if (false == ::IsValid(PalData))
+	if (false == IsValid(PalData))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: Failed to load PalData [%s]."), *GetName(), *SpeciesTag.ToString());
 		return;
@@ -76,13 +78,14 @@ void ADC1PalCharacter::ApplyPalData()
 		Movement->RotationRate = FRotator(0.f, PalData->RotationRateYaw, 0.f);
 	}
 
-	if (::IsValid(AbilitySystemComponent))
+	if (IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
+		BindHealthWatcher();
 	}
 
 	// Stats. PalData는 초기값만 공급하고, 이후 진실은 어트리뷰트다.
-	if (::IsValid(PalAttributeSet))
+	if (IsValid(PalAttributeSet))
 	{
 		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);
 		PalAttributeSet->InitHealth(PalData->MaxHealth);
@@ -94,8 +97,47 @@ void ADC1PalCharacter::ApplyPalData()
 	{
 		PalController->ApplyPerceptionSettings();
 	}
+}
 
-	UE_LOG(LogTemp, Log, TEXT("[Pal] %s: PalData applied [%s]."), *GetName(), *SpeciesTag.ToString());
+void ADC1PalCharacter::OnDeath()
+{
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->CancelAbilities();
+	}
+
+	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
+	{
+		PalController->StopBehavior();
+	}
+
+	// 시체를 계속 감지해 쫓지 않도록
+	if (UAIPerceptionSystem* PerceptionSystem = UAIPerceptionSystem::GetCurrent(this))
+	{
+		PerceptionSystem->UnregisterSource(*this);
+	}
+
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->DisableMovement();
+	}
+
+	// 래그돌 -> 더 찾아보기
+	// 캡슐을 먼저 끄기
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
+		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		MeshComp->SetSimulatePhysics(true);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
 }
 
 UAbilitySystemComponent* ADC1PalCharacter::GetAbilitySystemComponent() const

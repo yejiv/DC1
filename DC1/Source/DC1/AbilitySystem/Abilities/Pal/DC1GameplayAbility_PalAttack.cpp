@@ -4,7 +4,8 @@
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalAttack.h"
 
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
-#include "AbilitySystem/Effects/DC1GameplayEffect_PalDamage.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+#include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
@@ -161,7 +162,7 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 		EffectContext.AddSourceObject(Pal);
 		EffectContext.AddHitResult(Hit);
 
-		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_PalDamage::StaticClass(), GetAbilityLevel(), EffectContext);
+		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), GetAbilityLevel(), EffectContext);
 		if (false == SpecHandle.IsValid())
 		{
 			continue;
@@ -169,7 +170,7 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 
 		// 공격력은 어트리뷰트가 진실이다. (PalData는 초기값만 공급)
 		const float AttackPower = SourceASC->GetNumericAttribute(UDC1AttributeSet::GetAttackPowerAttribute());
-		SpecHandle.Data->SetSetByCallerMagnitude(DC1PalTags::SetByCaller_Damage, AttackPower);
+		SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower);
 		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 	}
 }

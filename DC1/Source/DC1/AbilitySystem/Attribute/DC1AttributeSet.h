@@ -41,6 +41,11 @@ public:
 	FGameplayAttributeData Experience;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Experience)
 
+	// 메타 어트리뷰트
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes|Meta")
+	FGameplayAttributeData Damage;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Damage)
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

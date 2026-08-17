@@ -36,6 +36,28 @@ void UDC1AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 {
 	Super::PostGameplayEffectExecute(Data);
 
+	if (GetDamageAttribute() == Data.EvaluatedData.Attribute)
+	{
+		// 메타 어트리뷰트는 즉시 비운다. 남겨두면 다음 GE에 누적된다.
+		const float LocalDamage = GetDamage();
+		SetDamage(0.f);
+
+		if (LocalDamage <= 0.f)
+		{
+			return;
+		}
+
+		SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
+
+		UE_LOG(LogTemp, Log, TEXT("[DC1] %s took %.1f damage from %s. Health = %.1f / %.1f"),
+			*GetNameSafe(Data.Target.GetAvatarActor()),
+			LocalDamage,
+			*GetNameSafe(Data.EffectSpec.GetContext().GetEffectCauser()),
+			GetHealth(), GetMaxHealth());
+
+		return;
+	}
+
 	if (GetHealthAttribute() == Data.EvaluatedData.Attribute)
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));

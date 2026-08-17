@@ -5,6 +5,21 @@
 #include "AI/DC1TeamTypes.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
+
+#include "Tags/State/DC1GameplayTag_State.h"
+
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+
+namespace DC1PalAIController
+{
+	static bool IsDead(const AActor* Actor)
+	{
+		const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor);
+		return (nullptr != ASC) && ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
+	}
+}
 
 #include "Components/StateTreeAIComponent.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -55,7 +70,7 @@ void ADC1PalAIController::OnPossess(APawn* InPawn)
 void ADC1PalAIController::ApplyPerceptionSettings()
 {
 	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
-	if (false == ::IsValid(Pal))
+	if (false == IsValid(Pal))
 	{
 		return;
 	}
@@ -87,7 +102,7 @@ void ADC1PalAIController::ApplyPerceptionSettings()
 
 void ADC1PalAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (false == ::IsValid(Actor))
+	if (false == IsValid(Actor))
 	{
 		return;
 	}
@@ -116,7 +131,7 @@ void ADC1PalAIController::UpdateTarget()
 {
 	const APawn* SelfPawn = GetPawn();
 	const UWorld* World = GetWorld();
-	if (false == ::IsValid(SelfPawn) || nullptr == World)
+	if (false == IsValid(SelfPawn) || nullptr == World)
 	{
 		SetCurrentTarget(nullptr);
 		return;
@@ -127,8 +142,6 @@ void ADC1PalAIController::UpdateTarget()
 			return (false == Weak.IsValid());
 		});
 
-	//  Health > 0 검사 추가 필요
-
 	// 가장 가까운 대상 고르기
 	const FVector SelfLocation = SelfPawn->GetActorLocation();
 
@@ -138,6 +151,12 @@ void ADC1PalAIController::UpdateTarget()
 	for (const TWeakObjectPtr<AActor>& Weak : SensedTargets)
 	{
 		AActor* Candidate = Weak.Get();
+
+		if (true == DC1PalAIController::IsDead(Candidate))
+		{
+			continue;
+		}
+
 		const float DistanceSq = FVector::DistSquared(SelfLocation, Candidate->GetActorLocation());
 		if (DistanceSq < ClosestDistanceSq)
 		{
@@ -156,12 +175,28 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	// 지금 보이는 대상이 없어도 기억 시간 안이면 직전 대상을 유지한다.
-	if (true == ::IsValid(CurrentTarget) && ((Now - LastSeenTime) < TargetMemoryDuration))
+	// 지금 보이는 대상이 없어도 기억 시간 안이면 직전 대상을 유지
+	// 시체는 무시
+	if (true == IsValid(CurrentTarget)
+		&& false == DC1PalAIController::IsDead(CurrentTarget)
+		&& ((Now - LastSeenTime) < TargetMemoryDuration))
 	{
 		return;
 	}
 
+	SetCurrentTarget(nullptr);
+}
+
+void ADC1PalAIController::StopBehavior()
+{
+	// StateTree 정지
+	if (IsValid(StateTreeComponent))
+	{
+		StateTreeComponent->StopLogic(TEXT("StopBehavior"));
+	}
+
+	// 타겟/포커스 해제
+	SensedTargets.Reset();
 	SetCurrentTarget(nullptr);
 }
 
@@ -177,7 +212,7 @@ void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)
 	CurrentTarget = NewTarget;
 
 	// 회전은 focus가 구동
-	if (true == ::IsValid(NewTarget))
+	if (true == IsValid(NewTarget))
 	{
 		SetFocus(NewTarget, EAIFocusPriority::Gameplay);
 	}

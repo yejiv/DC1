@@ -29,6 +29,8 @@ public:
 	void					ApplyPerceptionSettings();
 
 	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
+
+	void					StopBehavior();
 	const FVector&			GetLastKnownTargetLocation() const { return LastKnownTargetLocation; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
