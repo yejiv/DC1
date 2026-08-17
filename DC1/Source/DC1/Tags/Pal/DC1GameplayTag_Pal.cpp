@@ -20,8 +20,4 @@ namespace DC1PalTags
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Attack_Hit, "Event.Pal.Attack.Hit");
 #pragma endregion
-
-#pragma region SetByCaller
-	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Damage, "SetByCaller.Damage");
-#pragma endregion
 }

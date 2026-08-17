@@ -19,7 +19,7 @@ public:
 
 protected:
 	virtual void	NativeOnInitialized() override;
-
+	virtual void	NativeDestruct() override;
 protected:
 	virtual void	HandleHovered() override;
 	virtual void	HandleUnhovered() override;

@@ -29,9 +29,4 @@ namespace DC1PalTags
 	// 공격 몽타주의 AnimNotify가 이 이벤트를 쏘면 어빌리티가 받아서 판정 트레이스를 돌린다.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Attack_Hit);
 #pragma endregion
-
-#pragma region SetByCaller
-	// GE_PalDamage의 크기를 런타임에 넘기는 키. AttackPower가 여기로 들어간다.
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Damage);
-#pragma endregion
 }

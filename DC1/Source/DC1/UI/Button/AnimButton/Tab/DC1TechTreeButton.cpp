@@ -14,6 +14,17 @@ void UDC1TechTreeButton::NativeOnInitialized()
 	Super::NativeOnInitialized();
 }
 
+void UDC1TechTreeButton::NativeDestruct()
+{
+	if (true == ::IsValid(UnlockedAnim) && true == IsAnimationPlaying(UnlockedAnim))
+	{
+		SetAnimationCurrentTime(UnlockedAnim, UnlockedAnim->GetEndTime());
+		StopAnimation(UnlockedAnim);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UDC1TechTreeButton::HandleHovered()
 {
 	Super::HandleHovered();

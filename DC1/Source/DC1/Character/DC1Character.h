@@ -7,6 +7,7 @@
 #include "AbilitySystemInterface.h"
 #include "DC1Character.generated.h"
 
+struct FOnAttributeChangeData;
 
 UCLASS()
 class DC1_API ADC1Character : public ACharacter, public IAbilitySystemInterface
@@ -21,6 +22,18 @@ public:
 
 public:
 	virtual void SetAttackCollision(bool OnCollision) {}
+
+protected:
+	// ASC가 준비된 뒤 자식 클래스가 호출 (펠 = 스폰 시, 플레이어 = PlayerState 확보 시)
+	void BindHealthWatcher();
+
+	void HandleHealthChanged(const FOnAttributeChangeData& Data);
+
+	// 사망 반응은 자식이 정하기
+	virtual void OnDeath() {}
+
+protected:
+	bool bDead = { false };
 
 protected:
 	// Called when the game starts or when spawned
