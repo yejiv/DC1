@@ -38,10 +38,12 @@ public:
 	void CancelAbilityByTag(const FGameplayTag& AbilityTag);
 
 	bool HasAbilityByTag(const FGameplayTag& AbilityTag);
+	bool HasAbility(const TSubclassOf<UGameplayAbility>& AbilityClass, const FGameplayTag& ActivationTag) const;
 
 	// ------------- State Tag ----------------
 public:
 	void SetExclusiveStateTag(const FGameplayTag& AxisRootTag, const FGameplayTag& NewStateTag);
+	FGameplayTag GetExclusiveStateTag(const FGameplayTag& AxisRootTag);
 private:
 	void AddStateTag(const FGameplayTag& StateTag);
 	void RemoveAxisStateTag(const FGameplayTag& AxisRootTag);

@@ -21,6 +21,7 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Sprint);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Toggle_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Jump);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Attack);
 #pragma endregion
 
 
@@ -28,5 +29,6 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_HasPal);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
 #pragma endregion
 }

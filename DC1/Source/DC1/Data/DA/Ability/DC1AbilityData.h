@@ -8,7 +8,6 @@
 #include "DC1AbilityData.generated.h"
 
 class UDC1AbilitySystemComponent;
-class UAttributeSet;
 class UGameplayAbility;
 class UGameplayEffect;
 struct FDC1AbilitySetGrantedHandles;
@@ -56,8 +55,4 @@ public:
 	// Effects
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
 	TMap<FGameplayTag, TSubclassOf<UGameplayEffect>> Effects;
-
-	// AttributeSets
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attribute")
-	TArray<TSubclassOf<UAttributeSet>> AttributeSets;
 };

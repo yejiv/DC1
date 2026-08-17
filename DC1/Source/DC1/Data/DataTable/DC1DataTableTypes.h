@@ -47,3 +47,22 @@ struct FDC1TechRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 UnlockCost;
 };
+
+USTRUCT(BlueprintType)
+struct FDC1ItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// DataTable에서 특정 테크를 찾기 위한 Key
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag CategoryTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText	ItemName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UTexture2D> ItemIcon;
+};

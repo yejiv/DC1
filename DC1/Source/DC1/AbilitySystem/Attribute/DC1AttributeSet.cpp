@@ -61,6 +61,12 @@ void UDC1AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	if (GetHealthAttribute() == Data.EvaluatedData.Attribute)
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+
+		UE_LOG(LogTemp, Log, TEXT("[DC1] %s Health %+.1f from %s. Health = %.1f / %.1f"),
+			*GetNameSafe(Data.Target.GetAvatarActor()),
+			Data.EvaluatedData.Magnitude,
+			*GetNameSafe(Data.EffectSpec.GetContext().GetEffectCauser()),
+			GetHealth(), GetMaxHealth());
 	}
 }
 
