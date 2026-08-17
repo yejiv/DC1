@@ -102,6 +102,11 @@ void ADC1PlayerController::SetupInputComponent()
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
 		}
+		// Attack
+		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
+		{
+			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
+		}
 
 #pragma region UI_TEST
 		// Open Inventory
@@ -223,6 +228,16 @@ void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
 	}
 
 	ControlObject->StopJumping();
+}
+
+void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Attack);
 }
 
 #pragma region Debug
