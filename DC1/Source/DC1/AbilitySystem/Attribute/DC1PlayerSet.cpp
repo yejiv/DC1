@@ -8,5 +8,6 @@ UDC1PlayerSet::UDC1PlayerSet()
 	InitHealth(100.f);
 	InitMaxHealth(100.f);
 	InitAttackPower(10.f);
+	InitLevel(3.f);
 }
 

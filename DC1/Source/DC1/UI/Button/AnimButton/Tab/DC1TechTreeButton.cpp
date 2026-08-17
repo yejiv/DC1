@@ -35,9 +35,9 @@ void UDC1TechTreeButton::HandleHovered()
 
 	Super::HandleHovered();
 	
-	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
+	if (true == ::IsValid(ButtonImage) && SlotState == EDC1TechSlotState::Available)
 	{
-		ButtonHoverImage->SetOpacity(1.f);
+		ButtonImage->SetBrush(HoverAvailableButtonImageBrush);
 	}
 }
 
@@ -50,15 +50,16 @@ void UDC1TechTreeButton::HandleUnhovered()
 
 	Super::HandleUnhovered();
 
-	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
+	if (true == ::IsValid(ButtonImage) && SlotState == EDC1TechSlotState::Available)
 	{
-		ButtonHoverImage->SetOpacity(0.f);
+		ButtonImage->SetBrush(AvailableButtonImageBrush);
 	}
 }
 
 void UDC1TechTreeButton::InitTechButton(const FDC1TechRow& Row)
 {
 	TechID = Row.TechID;
+	RequiredLevel = Row.RequiredLevel;
 
 	if (true == ::IsValid(TechNameText))
 	{
@@ -108,10 +109,12 @@ void UDC1TechTreeButton::ApplyState()
 	bool IsLocked = (SlotState == EDC1TechSlotState::Locked);
 	bool IsAvailable = (SlotState == EDC1TechSlotState::Available);
 	bool IsUnlocked = (SlotState == EDC1TechSlotState::Unlocked);
-	
-	if (false == IsAvailable && true == ::IsValid(ButtonHoverImage))
+
+	// Button Image Setting
+	if (true == ::IsValid(ButtonImage))
 	{
-		ButtonHoverImage->SetOpacity(0.f);
+		FSlateBrush CurrentBrush = IsLocked ? LockedButtonImageBrush : IsUnlocked ? UnlockedButtonImageBrush : AvailableButtonImageBrush;
+		ButtonImage->SetBrush(CurrentBrush);
 	}
 
 	// Locked Image Setting
