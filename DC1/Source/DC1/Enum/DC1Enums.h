@@ -50,3 +50,14 @@ enum class EDC1TechPointState : uint8
 	HasPoint = 1,
 	NoPoint = 2,	
 };
+
+UENUM()
+enum class EDC1CollisionLayer : uint8
+{
+	ECC_Player = ECC_GameTraceChannel1,
+	ECC_Pal = ECC_GameTraceChannel2,
+	ECC_AllyAttack = ECC_GameTraceChannel3,
+	ECC_EnemyAttack = ECC_GameTraceChannel4,
+	ECC_Resource = ECC_GameTraceChannel5,
+	ECC_ItemInteraction = ECC_GameTraceChannel6,
+};
