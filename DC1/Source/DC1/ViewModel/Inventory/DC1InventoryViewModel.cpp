@@ -1,6 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
+#include "Component/Inventory/DC1InventoryComponentBase.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/DC1ChestInventoryComponent.h"
 
 UDC1InventoryViewModel::UDC1InventoryViewModel()
 {
@@ -21,6 +24,17 @@ const FDC1ItemRow* UDC1InventoryViewModel::GetItemData(const FName& ItemID) cons
 {
 	return ItemDatabase.Find(ItemID);
 }
+
+void UDC1InventoryViewModel::SetPlayerInventoryComponent(UDC1PlayerInventoryComponent* InPlayerComp)
+{
+	MyInventoryComp = InPlayerComp;
+}
+
+void UDC1InventoryViewModel::SetTargetChest(UDC1ChestInventoryComponent* InChestComp)
+{
+	TargetChestComp = InChestComp;
+}
+
 
 void UDC1InventoryViewModel::InitializeMockData()
 {
