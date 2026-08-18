@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/HorizontalBox.h"
 
@@ -18,6 +19,7 @@ void UDC1TechTreeRowWidget::InitTier(int32 Level)
 		LevelText->SetText(FText::AsNumber(Level));
 	}
 
+	RowLevel = Level;
 }
 
 UDC1TechTreeButton* UDC1TechTreeRowWidget::AddTechSlot(const FDC1TechRow& Row)
@@ -41,4 +43,50 @@ UDC1TechTreeButton* UDC1TechTreeRowWidget::AddTechSlot(const FDC1TechRow& Row)
 	SlotContainer->AddChild(SlotWidget);
 
 	return SlotWidget;
+}
+
+void UDC1TechTreeRowWidget::SetState(int32 NewLevel)
+{
+	bool IsActivated = RowLevel <= NewLevel;
+
+	bool IsActivatedTopLine = (IsActivated && 1 < RowLevel);
+	
+	bool IsActivatedBottomLine = (IsActivated&& NewLevel > RowLevel);
+
+	
+	if (true == ::IsValid(Level_HoverImage))
+	{
+		float HoverOpacity = IsActivated ? 0.f : DeactivedHoverOpacity;
+		Level_HoverImage->SetOpacity(HoverOpacity);
+	}
+
+	if (true == ::IsValid(Level_Icon))
+	{
+		FLinearColor IconColor = IsActivated ? ActivatedIconColor : DeactivatedIconColor;
+		Level_Icon->SetColorAndOpacity(IconColor);
+	}
+
+	if (true == ::IsValid(Level_Background))
+	{
+		float LevelBackgroundOpacity = IsActivated ? 1.f : 0.f;
+		Level_Background->SetOpacity(LevelBackgroundOpacity);
+	}
+
+	if (true == ::IsValid(Row_Background))
+	{
+		FLinearColor RowBackgroundColor = IsActivated ? ActivatedBackgroundColor : DeactivatedBackgroundColor;
+		Row_Background->SetColorAndOpacity(RowBackgroundColor);
+	}
+
+	if (true == ::IsValid(Level_TopLine))
+	{
+		float TopLineOpacity = IsActivatedTopLine ? 1.f : 0.f;
+		Level_TopLine->SetOpacity(TopLineOpacity);
+	}
+
+	if (true == ::IsValid(Level_BottomLine))
+	{
+		float BottomLineOpacity = IsActivatedBottomLine ? 1.f : 0.f;
+		Level_BottomLine->SetOpacity(BottomLineOpacity);
+	}
 }

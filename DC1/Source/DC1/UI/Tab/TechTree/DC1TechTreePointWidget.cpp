@@ -57,6 +57,11 @@ void UDC1TechTreePointWidget::SetPoint(int32 NumPoint)
 
 	PointState = CurrentPointState;
 
+	ApplyState();
+}
+
+void UDC1TechTreePointWidget::ApplyState()
+{
 	bool HasPoint = PointState == EDC1TechPointState::HasPoint;
 
 	//Overlay Setting

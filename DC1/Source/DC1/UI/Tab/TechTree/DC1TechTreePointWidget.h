@@ -24,6 +24,9 @@ public:
 	void			SetPoint(int32 NumPoint);
 
 private:
+	void			ApplyState();
+
+private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>				TechPoint_FrontBar;
 

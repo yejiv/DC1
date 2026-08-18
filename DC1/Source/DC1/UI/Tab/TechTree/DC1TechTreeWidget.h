@@ -6,12 +6,14 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1TechTreeWidget.generated.h"
 
+struct FOnAttributeChangeData;
 class UDataTable;
 class UScrollBox;
 class UDC1TechTreeRowWidget;
 class UDC1TechTreeButton;
 class UDC1TechTreePointWidget;
 class UDC1TechTreeComponent;
+
 
 UCLASS()
 class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
@@ -23,26 +25,37 @@ protected:
 
 private:
 	UDC1TechTreeComponent*	GetTechTreeComponent();
+	void					InitRows(int32 NewLevel);
 	
+	void					UpdateRows(int32 NewLevel);
+	void					UpdatePoint(const UDC1TechTreeComponent* TechComp);
+	void					UpdateSlots(const UDC1TechTreeComponent* TechComp);
+
 	// DataTable 읽어서 Row, Slot 생성
 	void					BuildTechTree();
 
 	// TechTree Slot 상태 변화 ( Lock, Available, Unlock )
 	void					OnTechStateChanged();
 
+
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UScrollBox>					TechTreeScrollBox;
+	TObjectPtr<UScrollBox>						TechTreeScrollBox;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TechTreePointWidget>		TechPointWidget;
+	TObjectPtr<UDC1TechTreePointWidget>			TechPointWidget;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TechTreePointWidget>		AncientTechPointWidget;
+	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	TSubclassOf<UDC1TechTreeRowWidget>		RowWidgetClass;
+	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass;
 
 	UPROPERTY()
-	TArray<TObjectPtr<UDC1TechTreeButton>>	TechSlots;
+	TArray<TObjectPtr<UDC1TechTreeRowWidget>>	TechRows;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
+
+	int32										CachedLevel = 0;
 };
