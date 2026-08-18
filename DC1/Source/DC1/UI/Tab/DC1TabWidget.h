@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
 #include "GameplayTagContainer.h"
+#include "Components/WidgetSwitcher.h"
 #include "DC1TabWidget.generated.h"
 
-class UWidgetSwitcher;
 class UPanelWidget;
 class UDC1TabHeaderButton;
 
@@ -28,15 +28,34 @@ class DC1_API UDC1TabWidget : public UDC1UserWidget
 protected:
 	virtual void	NativeOnInitialized() override;
 	
+protected:
+	virtual void			ButtonInitialize();
+	virtual void			CloseWidget(const FKey& InputKey);
+
+	UDC1TabHeaderButton*	GetTabButton(const FGameplayTag& Tab) const;
+
+	template<typename TabType>
+	TabType*			GetTabWidget(const FGameplayTag& Tab) const;
+
 public:
 	virtual void	HandleInputKey(const FKey& InputKey) override;
 
 public:
-	void			SelectTab(const FGameplayTag& Tab);
+	bool			SelectTab(const FGameplayTag& Tab);
+	void			SelectFirstInactiveTab();
+
+	void			EnableTab(const FGameplayTag& Tab);
 
 private:
+	bool			CanSelectTab(const FGameplayTag& Tab) const;
 	void			ChangeTab(bool IsNext);
-	void			CloseWidget(const FKey& InputKey);
+
+protected:
+	UPROPERTY()
+	TMap<FGameplayTag, TObjectPtr<UDC1TabHeaderButton>> TabButtons;
+
+	UPROPERTY(EditAnywhere, Category = "TAB")
+	TMap<FGameplayTag, int32>							TabToSwitchIndex;
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -54,13 +73,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "TAB")
 	TMap<FGameplayTag, FDC1KeyList> TabCloseKeys;
 
-	UPROPERTY(EditAnywhere, Category = "TAB")
-	TMap<FGameplayTag, int32>		TabToSwitchIndex;
-
-	UPROPERTY()
-	TMap<FGameplayTag, TObjectPtr<UDC1TabHeaderButton>> TabButtons;
 
 	TMap<int32, FGameplayTag>		SwitchIndexToTab;
 
 	FGameplayTag					CurrentTab = FGameplayTag();
 };
+
+
+template<typename TabType>
+inline TabType* UDC1TabWidget::GetTabWidget(const FGameplayTag& Tab) const
+{
+	const int32* Index = TabToSwitchIndex.Find(Tab);
+	if (nullptr == Index)
+	{
+		return nullptr;
+	}
+
+	if (false == ::IsValid(TabSwitcher))
+	{
+		return nullptr;
+	}
+
+	return Cast<TabType>(TabSwitcher->GetChildAt(*Index));
+}

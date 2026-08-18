@@ -31,10 +31,10 @@ private:
 	TObjectPtr<UImage>				TechPoint_FrontBar;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				TechPoint_Icon;
+	TObjectPtr<UPanelWidget>		TechPointOverlay;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>		TechPointOverlay;
+	TObjectPtr<UImage>				TechPoint_Icon;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>				TechPoint_Background;
