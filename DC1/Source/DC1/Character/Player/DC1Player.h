@@ -12,6 +12,8 @@ class USpringArmComponent;
 class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
+
+class UDC1EquipComponent;
 /**
  * 
  */
@@ -36,6 +38,8 @@ public:
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
 
+	void Change_AttackCollider(UPrimitiveComponent* AttackCollider);
+
 private:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -59,6 +63,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USphereComponent>			HandAttackCollider = { nullptr };
+
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UDC1EquipComponent>		Equipment = { nullptr };
 
 private:
 	void	InitializeAbilitySystem();

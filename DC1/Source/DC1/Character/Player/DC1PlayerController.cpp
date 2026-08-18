@@ -17,6 +17,7 @@
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1EquipComponent.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -106,6 +107,11 @@ void ADC1PlayerController::SetupInputComponent()
 		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
 		{
 			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
+		}
+		// ChangeWeapon
+		if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
+		{
+			EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
 		}
 
 #pragma region UI_TEST
@@ -238,6 +244,30 @@ void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
 	}
 
 	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Attack);
+}
+
+void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (false == IsValid(ControlObject->Equipment))
+	{
+		return;
+	}
+
+	const float AxisValue = Value.Get<float>();
+	if (true == FMath::IsNearlyZero(AxisValue))
+	{
+		return;
+	}
+
+	// 절대 인덱스가 아니라 증감량을 보낸다. 빠르게 굴려도 서버에서 순서대로 누적된다
+	const int32 Delta = (AxisValue > 0.f) ? 1 : -1;
+
+	ControlObject->Equipment->Server_ChangeWeapon(Delta);
 }
 
 #pragma region Debug

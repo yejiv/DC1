@@ -42,7 +42,7 @@ private:
 	void OnJump(const FInputActionValue& Value);
 	void StopJumping(const FInputActionValue& Value);
 	void OnAttack(const FInputActionValue& Value);
-
+	void ChangeWeapon(const FInputActionValue& Value);
 
 private:
 	void OnUIChange();
