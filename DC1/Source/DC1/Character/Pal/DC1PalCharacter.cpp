@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 //#include "Components/SkeletalMeshComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "GameplayEffectExtension.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -120,6 +121,16 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	if (false == HasAuthority() || Data.NewValue >= Data.OldValue || Data.NewValue <= 0.f)
 	{
 		return;
+	}
+
+	if (nullptr != Data.GEModData)
+	{
+		AActor* Causer = Data.GEModData->EffectSpec.GetContext().GetEffectCauser();
+
+		if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
+		{
+			PalController->ProvokeBy(Causer);
+		}
 	}
 
 	if (IsValid(AbilitySystemComponent))
