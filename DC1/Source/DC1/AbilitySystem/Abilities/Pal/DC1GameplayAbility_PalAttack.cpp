@@ -8,9 +8,7 @@
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
-#include "Tags/Anim/DC1GameplayTag_Anim.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
-#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
@@ -24,9 +22,9 @@ UDC1GameplayAbility_PalAttack::UDC1GameplayAbility_PalAttack(const FObjectInitia
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 
-	ActivationOwnedTags.AddTag(DC1StateTags::State_Pal_Attacking);
+	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_Attacking);
 
-	MontageTag = DC1AnimTags::Anim_Pal_Attack;
+	MontageTag = DC1PalTags::Anim_Pal_Attack;
 	HitEventTag = DC1PalTags::Event_Pal_Attack_Hit;
 }
 
@@ -85,7 +83,6 @@ void UDC1GameplayAbility_PalAttack::ActivateAbility(const FGameplayAbilitySpecHa
 
 void UDC1GameplayAbility_PalAttack::OnHitEventReceived(FGameplayEventData Payload)
 {
-	// AnimNotify는 몽타주가 도는 모든 머신에서 발화한다. (판정, GE 적용은 서버에서 한 번만)
 	if (nullptr == CurrentActorInfo || false == CurrentActorInfo->IsNetAuthority())
 	{
 		return;
@@ -119,7 +116,6 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 	const FVector Origin = Pal->GetActorLocation() + (Forward * Pal->GetSimpleCollisionRadius());
 	const FVector End = Origin + (Forward * PalData->AttackRange);
 
-	// 오브젝트 쿼리 쓰기
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
 
@@ -170,7 +166,6 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 			continue;
 		}
 
-		// 공격력은 어트리뷰트가 진실이다. (PalData는 초기값만 공급)
 		const float AttackPower = SourceASC->GetNumericAttribute(UDC1AttributeSet::GetAttackPowerAttribute());
 		SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower);
 		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
