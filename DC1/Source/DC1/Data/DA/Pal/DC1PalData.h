@@ -9,7 +9,7 @@
 class UAnimMontage;
 
 /**
- * 재생할 때 하나를 랜덤으로 고른다.
+ *
  */
 USTRUCT(BlueprintType)
 struct FDC1PalMontageSet
@@ -21,23 +21,7 @@ struct FDC1PalMontageSet
 
 	TSoftObjectPtr<UAnimMontage> PickRandomMontage() const
 	{
-		TArray<int32> ValidIndices;
-		ValidIndices.Reserve(Montages.Num());
-
-		for (int32 Index = 0; Index < Montages.Num(); ++Index)
-		{
-			if (false == Montages[Index].IsNull())
-			{
-				ValidIndices.Add(Index);
-			}
-		}
-
-		if (0 == ValidIndices.Num())
-		{
-			return nullptr;
-		}
-
-		return Montages[ValidIndices[FMath::RandRange(0, ValidIndices.Num() - 1)]];
+		return (0 < Montages.Num()) ? Montages[FMath::RandRange(0, Montages.Num() - 1)] : nullptr;
 	}
 };
 
@@ -48,7 +32,7 @@ class DC1_API UDC1PalData : public UDataAsset
 
 public:
 #pragma region Locomotion
-	// 추격 속도. AnimInstance의 NormalizedSpeed 분모이기도 하다
+	// 추격 속도. AnimInstance의 NormalizedSpeed 분모
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RunSpeed = { 400.f };
 
@@ -69,7 +53,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Asset"))
 	FGameplayTag					AbilityDataTag;
 
-	// 종별 몽타주. 키는 Anim.Pal.* 이다
+	// 종별 몽타주
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Anim.Pal"))
 	TMap<FGameplayTag, FDC1PalMontageSet>	Montages;
 #pragma endregion
@@ -95,19 +79,6 @@ public:
 	float							AttackTraceRadius = { 50.f };
 #pragma endregion
 
-public:
-	const FDC1PalMontageSet* FindMontageSetByTag(const FGameplayTag& MontageTag) const
-	{
-		return Montages.Find(MontageTag);
-	}
-
-	// 변형이 여러 개면 매 호출마다 다른 것이 나올 수 있다.
-	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& MontageTag) const
-	{
-		const FDC1PalMontageSet* Found = FindMontageSetByTag(MontageTag);
-		return (nullptr != Found) ? Found->PickRandomMontage() : nullptr;
-	}
-
 #pragma region AI
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							SightRadius = { 1500.f };
@@ -129,4 +100,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Wander")
 	float							WanderRadius = { 800.f };
 #pragma endregion
+
+public:
+	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& MontageTag) const
+	{
+		const FDC1PalMontageSet* Found = Montages.Find(MontageTag);
+		return (nullptr != Found) ? Found->PickRandomMontage() : nullptr;
+	}
 };

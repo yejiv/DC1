@@ -37,12 +37,14 @@ void UDC1GameplayAbility_PalIdle::ActivateAbility(const FGameplayAbilitySpecHand
 		return;
 	}
 
-	const FGameplayTag IdleTag = PickIdleTag(*PalData);
-	if (false == IdleTag.IsValid())
+	const TArray<FGameplayTag>& IdleTags = PalData->IdleMontageTags;
+	if (0 == IdleTags.Num())
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 		return;
 	}
+
+	const FGameplayTag IdleTag = IdleTags[FMath::RandRange(0, IdleTags.Num() - 1)];
 
 	// 스폰 시점에 미리 로드하는 쪽으로 바꿔야됨
 	UAnimMontage* Montage = PalData->FindMontageByTag(IdleTag).LoadSynchronous();
@@ -52,8 +54,6 @@ void UDC1GameplayAbility_PalIdle::ActivateAbility(const FGameplayAbilitySpecHand
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
-	LastPlayedTag = IdleTag;
 
 	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage);
 	if (nullptr == MontageTask)
@@ -67,42 +67,6 @@ void UDC1GameplayAbility_PalIdle::ActivateAbility(const FGameplayAbilitySpecHand
 	MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->ReadyForActivation();
-}
-
-FGameplayTag UDC1GameplayAbility_PalIdle::PickIdleTag(const UDC1PalData& PalData) const
-{
-	const TArray<FGameplayTag>& Candidates = PalData.IdleMontageTags;
-
-	if (0 == Candidates.Num())
-	{
-		return FGameplayTag();
-	}
-
-	if (1 == Candidates.Num())
-	{
-		return Candidates[0];
-	}
-
-	if (true == AvoidRepeat && true == LastPlayedTag.IsValid())
-	{
-		TArray<FGameplayTag> Filtered;
-		Filtered.Reserve(Candidates.Num());
-
-		for (const FGameplayTag& Tag : Candidates)
-		{
-			if (Tag != LastPlayedTag)
-			{
-				Filtered.Add(Tag);
-			}
-		}
-
-		if (0 < Filtered.Num())
-		{
-			return Filtered[FMath::RandRange(0, Filtered.Num() - 1)];
-		}
-	}
-
-	return Candidates[FMath::RandRange(0, Candidates.Num() - 1)];
 }
 
 void UDC1GameplayAbility_PalIdle::OnMontageFinished()

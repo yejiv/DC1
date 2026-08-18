@@ -35,7 +35,6 @@ ADC1PalAIController::ADC1PalAIController()
 	SightConfig->LoseSightRadius = 2000.f;
 	SightConfig->PeripheralVisionAngleDegrees = 70.f;
 	SightConfig->SetMaxAge(5.f);
-	SightConfig->AutoSuccessRangeFromLastSeenLocation = 500.f;
 
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 	SightConfig->DetectionByAffiliation.bDetectNeutrals = false;
@@ -122,9 +121,6 @@ void ADC1PalAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus S
 			{
 				return (Weak.Get() == Actor);
 			});
-
-		// 놓친 지점 남기기
-		LastKnownTargetLocation = Stimulus.StimulusLocation;
 	}
 
 	// 누구를 쫓을지 정함
@@ -174,7 +170,6 @@ void ADC1PalAIController::UpdateTarget()
 	if (nullptr != Closest)
 	{
 		SetCurrentTarget(Closest);
-		LastKnownTargetLocation = Closest->GetActorLocation();
 		LastSeenTime = Now;
 		return;
 	}

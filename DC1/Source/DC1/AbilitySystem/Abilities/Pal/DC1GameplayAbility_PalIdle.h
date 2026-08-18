@@ -4,10 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
-#include "GameplayTagContainer.h"
 #include "DC1GameplayAbility_PalIdle.generated.h"
-
-class UDC1PalData;
 
 /**
  * 
@@ -29,14 +26,4 @@ protected:
 
 	UFUNCTION()
 	void OnMontageAborted();
-
-	FGameplayTag PickIdleTag(const UDC1PalData& PalData) const;
-
-protected:
-	// 같은 태그가 연속으로 나오지 않게 한다
-	UPROPERTY(EditDefaultsOnly, Category = "Pal")
-	bool			AvoidRepeat = { true };
-
-private:
-	FGameplayTag	LastPlayedTag;
 };

@@ -31,7 +31,6 @@ public:
 	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
 
 	void					StopBehavior();
-	const FVector&			GetLastKnownTargetLocation() const { return LastKnownTargetLocation; }
 
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
@@ -60,7 +59,6 @@ protected:
 	// 현재 감지 중인 적들. 죽으면 UpdateTarget에서 걸러짐.
 	TArray<TWeakObjectPtr<AActor>>	SensedTargets;
 
-	FVector							LastKnownTargetLocation = { FVector::ZeroVector };
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };
 
