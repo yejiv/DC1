@@ -9,6 +9,10 @@
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+
 // Sets default values for this component's properties
 UDC1TechTreeComponent::UDC1TechTreeComponent()
 {
@@ -17,6 +21,20 @@ UDC1TechTreeComponent::UDC1TechTreeComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	SetIsReplicatedByDefault(true);
+}
+
+int32 UDC1TechTreeComponent::GetPlayerLevel() const
+{
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	if (false == ::IsValid(ASC))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent ::  Can't Find ASC"));
+		return 0;
+	}
+
+	int32 NewLevel = FMath::TruncToInt32(ASC->GetNumericAttribute(UDC1AttributeSet::GetLevelAttribute()));
+
+	return NewLevel;
 }
 
 EDC1TechSlotState UDC1TechTreeComponent::GetTechState(const FName& TechID) const
@@ -32,12 +50,10 @@ EDC1TechSlotState UDC1TechTreeComponent::GetTechState(const FName& TechID) const
 		return EDC1TechSlotState::Default;
 	}
 
-	if (TechPoints < (*Found)->UnlockCost)
+	if (GetPlayerLevel() < (*Found)->RequiredLevel || TechPoints < (*Found)->UnlockCost)
 	{
 		return EDC1TechSlotState::Locked;
 	}
-
-	// LEVEL 검사 ( AttributeSet )
 
 	return EDC1TechSlotState::Available;
 }
@@ -47,6 +63,7 @@ void UDC1TechTreeComponent::BeginPlay()
 	Super::BeginPlay();
 
 	CachedTechRows();
+	BindLevelChange();
 }
 
 void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -55,7 +72,9 @@ void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechIDs, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, TechPoints, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, AncientTechPoints, COND_OwnerOnly);
 }
+
 
 void UDC1TechTreeComponent::AddTechPoints(int32 Points)
 {
@@ -70,6 +89,19 @@ void UDC1TechTreeComponent::AddTechPoints(int32 Points)
 	OnRep_TechState();
 }
 
+void UDC1TechTreeComponent::AddAncientTechPoints(int32 Points)
+{
+	if (false == GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
+	AncientTechPoints += Points;
+
+	//StandAlone
+	OnRep_TechState();
+}
+
 void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FName& TechID)
 {
 	if (EDC1TechSlotState::Available != GetTechState(TechID))
@@ -78,8 +110,33 @@ void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FName& TechID
 	}
 
 	const FDC1TechRow* const* Found = TechRowsByID.Find(TechID);
+	if (nullptr == Found)
+	{
+		return;
+	}
 
 	TechPoints -= (*Found)->UnlockCost;
+	UnlockedTechIDs.Add(TechID);
+
+	//StandAlone
+	OnRep_TechState();
+}
+
+void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FName& TechID)
+{
+	// GetAncient TechState로 추후 변경 ( GetTechState에서 TechPoint로 State 판별 )
+	if (EDC1TechSlotState::Available != GetTechState(TechID))
+	{
+		return;
+	}
+
+	const FDC1TechRow* const* Found = TechRowsByID.Find(TechID);
+	if (nullptr == Found)
+	{
+		return;
+	}
+
+	AncientTechPoints -= (*Found)->UnlockCost;
 	UnlockedTechIDs.Add(TechID);
 
 	//StandAlone
@@ -134,4 +191,24 @@ void UDC1TechTreeComponent::CachedTechRows()
 
 		TechRowsByID.Add(TechID, Row);
 	}
+}
+
+void UDC1TechTreeComponent::BindLevelChange()
+{
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	if (false == ::IsValid(ASC))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent ::  Can't Find ASC"));
+		return;
+	}
+
+	FOnGameplayAttributeValueChange& LevelChangeDelegate = ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetLevelAttribute());
+
+	LevelChangeDelegate.RemoveAll(this);
+	LevelChangeDelegate.AddUObject(this, &ThisClass::HandleLevelChanged);
+}
+
+void UDC1TechTreeComponent::HandleLevelChanged(const FOnAttributeChangeData& Data)
+{
+	OnTechStateChange.Broadcast();
 }

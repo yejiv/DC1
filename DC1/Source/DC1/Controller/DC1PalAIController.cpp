@@ -11,6 +11,9 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "Components/StateTreeAIComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 
 namespace DC1PalAIController
 {
@@ -20,10 +23,6 @@ namespace DC1PalAIController
 		return (nullptr != ASC) && ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
 	}
 }
-
-#include "Components/StateTreeAIComponent.h"
-#include "Perception/AIPerceptionComponent.h"
-#include "Perception/AISenseConfig_Sight.h"
 
 ADC1PalAIController::ADC1PalAIController()
 	: Super()
@@ -36,7 +35,6 @@ ADC1PalAIController::ADC1PalAIController()
 	SightConfig->LoseSightRadius = 2000.f;
 	SightConfig->PeripheralVisionAngleDegrees = 70.f;
 	SightConfig->SetMaxAge(5.f);
-	SightConfig->AutoSuccessRangeFromLastSeenLocation = 500.f;
 
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
 	SightConfig->DetectionByAffiliation.bDetectNeutrals = false;
@@ -61,6 +59,11 @@ void ADC1PalAIController::BeginPlay()
 void ADC1PalAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+
+	if (::IsValid(InPawn))
+	{
+		HomeLocation = InPawn->GetActorLocation();
+	}
 
 	ApplyPerceptionSettings();
 
@@ -118,9 +121,6 @@ void ADC1PalAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus S
 			{
 				return (Weak.Get() == Actor);
 			});
-
-		// 놓친 지점 남기기
-		LastKnownTargetLocation = Stimulus.StimulusLocation;
 	}
 
 	// 누구를 쫓을지 정함
@@ -170,7 +170,6 @@ void ADC1PalAIController::UpdateTarget()
 	if (nullptr != Closest)
 	{
 		SetCurrentTarget(Closest);
-		LastKnownTargetLocation = Closest->GetActorLocation();
 		LastSeenTime = Now;
 		return;
 	}

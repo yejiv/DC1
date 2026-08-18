@@ -31,5 +31,6 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_HasPal);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Inventory);
 #pragma endregion
 }

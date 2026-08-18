@@ -11,10 +11,7 @@ namespace DC1PalTags
 
 #pragma region Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Attack, "Ability.Pal.Attack");
-#pragma endregion
-
-#pragma region State
-	UE_DEFINE_GAMEPLAY_TAG(Pal_State_Attacking, "Pal.State.Attacking");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Idle, "Ability.Pal.Idle");
 #pragma endregion
 
 #pragma region Event

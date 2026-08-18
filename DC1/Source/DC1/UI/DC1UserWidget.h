@@ -25,8 +25,8 @@ public:
 
 
 protected:
-	void			NativeOnActivated();
-	void			NativeOnDeactivated();
+	virtual void	NativeOnActivated();
+	virtual void	NativeOnDeactivated();
 
 protected:
 	// [ IntroAnim ] Animation 바인딩 (없어도 됨)

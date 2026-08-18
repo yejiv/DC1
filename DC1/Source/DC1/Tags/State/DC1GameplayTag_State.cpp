@@ -11,6 +11,11 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon_Bow, "State.Weapon.Bow");
 #pragma endregion
 
+#pragma region Pal
+	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Attacking, "State.Pal.Attacking");
+	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Idling, "State.Pal.Idling");
+#pragma endregion
+
 #pragma region Common
 	UE_DEFINE_GAMEPLAY_TAG(State_Dead, "State.Dead");
 #pragma endregion

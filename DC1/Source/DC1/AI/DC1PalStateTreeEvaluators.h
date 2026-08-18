@@ -24,9 +24,6 @@ struct FDC1PalTargetEvaluatorInstanceData
 	UPROPERTY(EditAnywhere, Category = Output)
 	float							DistanceToTarget = { 0.f };
 
-	UPROPERTY(EditAnywhere, Category = Output)
-	FVector							LastKnownLocation = { FVector::ZeroVector };
-
 	// 전이 조건이 DistanceToTarget과 비교할 값. 종마다 달라서 PalData로 판단
 	UPROPERTY(EditAnywhere, Category = Output)
 	float							AttackRange = { 0.f };

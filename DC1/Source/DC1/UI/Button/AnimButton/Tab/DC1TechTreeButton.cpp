@@ -35,9 +35,9 @@ void UDC1TechTreeButton::HandleHovered()
 
 	Super::HandleHovered();
 	
-	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
+	if (true == ::IsValid(ButtonImage) && SlotState == EDC1TechSlotState::Available)
 	{
-		ButtonHoverImage->SetOpacity(1.f);
+		ButtonImage->SetBrush(HoverAvailableButtonImageBrush);
 	}
 }
 
@@ -50,15 +50,16 @@ void UDC1TechTreeButton::HandleUnhovered()
 
 	Super::HandleUnhovered();
 
-	if (true == ::IsValid(ButtonHoverImage) && SlotState == EDC1TechSlotState::Available)
+	if (true == ::IsValid(ButtonImage) && SlotState == EDC1TechSlotState::Available)
 	{
-		ButtonHoverImage->SetOpacity(0.f);
+		ButtonImage->SetBrush(AvailableButtonImageBrush);
 	}
 }
 
 void UDC1TechTreeButton::InitTechButton(const FDC1TechRow& Row)
 {
 	TechID = Row.TechID;
+	RequiredLevel = Row.RequiredLevel;
 
 	if (true == ::IsValid(TechNameText))
 	{
@@ -108,12 +109,15 @@ void UDC1TechTreeButton::ApplyState()
 	bool IsLocked = (SlotState == EDC1TechSlotState::Locked);
 	bool IsAvailable = (SlotState == EDC1TechSlotState::Available);
 	bool IsUnlocked = (SlotState == EDC1TechSlotState::Unlocked);
-	
-	if (false == IsAvailable && true == ::IsValid(ButtonHoverImage))
+
+	// Button Image Setting
+	if (true == ::IsValid(ButtonImage))
 	{
-		ButtonHoverImage->SetOpacity(0.f);
+		FSlateBrush CurrentBrush = IsLocked ? LockedButtonImageBrush : IsUnlocked ? UnlockedButtonImageBrush : AvailableButtonImageBrush;
+		ButtonImage->SetBrush(CurrentBrush);
 	}
 
+	// Locked Image Setting
 	if (true == ::IsValid(LockedImage))
 	{
 		float LockOverImageOpacity = IsLocked ? LockedImageOpacity : 0.f;
@@ -121,6 +125,7 @@ void UDC1TechTreeButton::ApplyState()
 		LockedImage->SetOpacity(LockOverImageOpacity);
 	}
 
+	// Available Image Setting
 	if (true == ::IsValid(AvailableImage))
 	{
 		float AvailableOpacity = IsAvailable ? AvailableImageOpacity : 0.f;
@@ -128,6 +133,7 @@ void UDC1TechTreeButton::ApplyState()
 		AvailableImage->SetOpacity(AvailableOpacity);
 	}
 
+	// Icon Back Image Setting
 	if (true == ::IsValid(IconBackImage))
 	{
 		FLinearColor IconBackImageColor = IsUnlocked ? UnlockedIconBackImageColor : AvailableIconBackImageColor;
@@ -135,6 +141,7 @@ void UDC1TechTreeButton::ApplyState()
 		IconBackImage->SetBrushTintColor(IconBackImageColor);
 	}
 
+	// TechName Back Image Setting
 	if (true == ::IsValid(TechNameBackImage))
 	{
 		FLinearColor TechNameBackImageColor = IsUnlocked ? UnlockedTechNameBackColor : LockedTechNameBackColor;
@@ -142,12 +149,14 @@ void UDC1TechTreeButton::ApplyState()
 		TechNameBackImage->SetColorAndOpacity(TechNameBackImageColor);
 	}
 
+	// TechName Text Setting
 	if (true == ::IsValid(TechNameText))
 	{
 		FLinearColor TechNameColor = IsAvailable ? AvailableFontColor : UnlockedFontColor;
 		TechNameText->SetColorAndOpacity(TechNameColor);
 	}
 
+	// TextLabel ( Need TechPoint ) Setting
 	if (true == ::IsValid(TextLabel))
 	{
 		float CostOpacity = IsAvailable ? 1.f : 0.f;
@@ -155,6 +164,7 @@ void UDC1TechTreeButton::ApplyState()
 		TextLabel->SetOpacity(CostOpacity);
 	}
 
+	// Overlay Setting
 	if (true == ::IsValid(RootOverlay))
 	{
 		float OverlayOpacity = IsLocked ? LockedOpacity : 1.f;

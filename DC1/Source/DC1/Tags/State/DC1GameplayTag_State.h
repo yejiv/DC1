@@ -13,6 +13,11 @@ namespace DC1StateTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon_Bow);
 #pragma endregion
 
+#pragma region Pal
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Attacking);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Idling);
+#pragma endregion
+
 #pragma region Common
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Dead);
 #pragma endregion

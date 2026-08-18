@@ -54,7 +54,7 @@ private:
 	TObjectPtr<UImage>			TechNameBackImage;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			ButtonHoverImage;
+	TObjectPtr<UImage>			ButtonImage;
 
 	//COST Text = BracketButton::TextLabel
 
@@ -64,33 +64,63 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>		CategoryNameText;
 
+
+#pragma region TECH NAME FONT
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
 	FLinearColor				AvailableFontColor = FLinearColor::Blue;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
 	FLinearColor				UnlockedFontColor = FLinearColor::White;
+#pragma endregion
 
+#pragma region BUTTON RECT IMAGE
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	FSlateBrush					LockedButtonImageBrush;
+	
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	FSlateBrush					AvailableButtonImageBrush;
+	
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	FSlateBrush					UnlockedButtonImageBrush;
+
+
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	FSlateBrush					HoverAvailableButtonImageBrush;
+
+#pragma endregion
+
+
+#pragma region ICON BACKGROUND IMAGE
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
 	FLinearColor				UnlockedIconBackImageColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
 	FLinearColor				AvailableIconBackImageColor = FLinearColor::White;
+#pragma endregion
 
+#pragma region TECH NAME
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
 	FLinearColor				UnlockedTechNameBackColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
 	FLinearColor				LockedTechNameBackColor = FLinearColor::White;
+#pragma endregion
 
-	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float						LockedOpacity = 0.3f;
-
-	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float						LockedImageOpacity = 0.7f;
-
+#pragma region OPACITY
+	// Available 상태에서 Hover Image Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
 	float						AvailableImageOpacity = 0.5f;
 
-	FName				TechID = NAME_None;
-	EDC1TechSlotState	SlotState = EDC1TechSlotState::Default;
+	// Lock 상태에서의 모든 이미지 Opacity 비율 ( RootOverlay Opacity )
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	float						LockedOpacity = 0.3f;
+
+	// Lock 상태에서 Hover Image Opacity
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
+	float						LockedImageOpacity = 0.7f;
+#pragma endregion
+
+	int32						RequiredLevel = 0;
+	FName						TechID = NAME_None;
+	EDC1TechSlotState			SlotState = EDC1TechSlotState::Default;
 };
