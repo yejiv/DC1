@@ -426,7 +426,10 @@ void ADC1PlayerController::OpenTabWidget(FGameplayTag Tab)
 	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
 	if (nullptr != TabWidget)
 	{
-		TabWidget->SelectTab(Tab);
+		if (false == TabWidget->SelectTab(Tab))
+		{
+			TabWidget->SelectFirstInactiveTab();
+		}
 	}
 }
 #pragma endregion
