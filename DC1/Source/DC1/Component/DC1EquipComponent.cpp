@@ -103,11 +103,11 @@ void UDC1EquipComponent::ApplyWeaponCollider()
 	{
 		if (nullptr == CurrentWeapon)
 		{
-			Player->Change_AttackCollider(nullptr);
+			Player->Change_AttackCollider(nullptr, false);
 		}
 		else
 		{
-			Player->Change_AttackCollider(CurrentWeapon->GetAttackCollider());
+			Player->Change_AttackCollider(CurrentWeapon->GetAttackCollider(), true);
 		}
 	}
 }

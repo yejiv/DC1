@@ -121,11 +121,11 @@ void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
 	}
 }
 
-void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider)
+void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip)
 {
-	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider) ? HandAttackCollider : AttackCollider;
+	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider && false == IsEquip) ? HandAttackCollider : AttackCollider;
 	
-	if (ActiveCollider == NewCollider) return;
+	if (ActiveCollider == NewCollider || nullptr == NewCollider) return;
 
 	if(IsValid(ActiveCollider))
 		ActiveCollider->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnAttackColliderOverlap);
