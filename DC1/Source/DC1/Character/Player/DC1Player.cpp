@@ -12,6 +12,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
+#include "Component/DC1EquipComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 
@@ -58,6 +59,9 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	HandAttackCollider->SetRelativeLocation(FVector(60.f, 0.f, 0.f));
 	HandAttackCollider->SetSphereRadius(50.f);
 	HandAttackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Equipment
+	Equipment = CreateDefaultSubobject<UDC1EquipComponent>("Equipment");
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -116,6 +120,19 @@ void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
 	}
 }
 
+void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider)
+{
+	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider) ? HandAttackCollider : AttackCollider;
+	
+	if (ActiveCollider == NewCollider) return;
+
+	if(IsValid(ActiveCollider))
+		ActiveCollider->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnAttackColliderOverlap);
+
+	ActiveCollider = NewCollider;
+	ActiveCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
+}
+
 void ADC1Player::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -128,8 +145,8 @@ void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ActiveCollider = HandAttackCollider;
-	HandAttackCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
+	//ActiveCollider = HandAttackCollider;
+	//HandAttackCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
 }
 
 void ADC1Player::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -143,8 +160,7 @@ void ADC1Player::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
 
-	// Temp(Equip None)
-	Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent())->SetExclusiveStateTag(DC1StateTags::State_Weapon, DC1StateTags::State_Weapon_None);
+	Equipment->Init_Equip();
 }
 
 void ADC1Player::UnPossessed()
