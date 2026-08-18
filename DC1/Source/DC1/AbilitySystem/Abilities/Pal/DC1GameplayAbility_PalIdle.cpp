@@ -5,7 +5,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
-#include "Tags/State/DC1GameplayTag_State.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Animation/AnimMontage.h"
@@ -15,7 +15,7 @@ UDC1GameplayAbility_PalIdle::UDC1GameplayAbility_PalIdle(const FObjectInitialize
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 
-	ActivationOwnedTags.AddTag(DC1StateTags::State_Pal_Idling);
+	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_Idling);
 }
 
 void UDC1GameplayAbility_PalIdle::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

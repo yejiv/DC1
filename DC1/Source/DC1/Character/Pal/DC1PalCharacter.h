@@ -50,6 +50,8 @@ protected:
 
 	void								ApplyPalData();
 
+	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
+
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void OnDeath() override;
 

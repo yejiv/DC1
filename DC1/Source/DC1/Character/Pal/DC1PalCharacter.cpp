@@ -2,6 +2,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Components/CapsuleComponent.h"
 //#include "Components/SkeletalMeshComponent.h"
@@ -11,6 +12,7 @@
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -96,6 +98,7 @@ void ADC1PalCharacter::ApplyPalData()
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
 		BindHealthWatcher();
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleDamaged);
 	}
 
 	if (IsValid(PalAttributeSet))
@@ -109,6 +112,19 @@ void ADC1PalCharacter::ApplyPalData()
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
 		PalController->ApplyPerceptionSettings();
+	}
+}
+
+void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
+{
+	if (false == HasAuthority() || Data.NewValue >= Data.OldValue || Data.NewValue <= 0.f)
+	{
+		return;
+	}
+
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Hit);
 	}
 }
 

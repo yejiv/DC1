@@ -29,14 +29,12 @@ protected:
 	UFUNCTION()
 	void OnHitEventReceived(FGameplayEventData Payload);
 
-	// 서버에서만 호출
 	void PerformAttackTrace();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Pal", meta = (Categories = "Anim.Pal"))
 	FGameplayTag		MontageTag;
 
-	// 타격 이벤트.
 	UPROPERTY(EditDefaultsOnly, Category = "Pal", meta = (Categories = "Event"))
 	FGameplayTag		HitEventTag;
 };
