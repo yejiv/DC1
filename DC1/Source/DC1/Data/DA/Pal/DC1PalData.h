@@ -8,6 +8,23 @@
 
 class UAnimMontage;
 
+/**
+ *
+ */
+USTRUCT(BlueprintType)
+struct FDC1PalMontageSet
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
+	TArray<TSoftObjectPtr<UAnimMontage>>	Montages;
+
+	TSoftObjectPtr<UAnimMontage> PickRandomMontage() const
+	{
+		return (0 < Montages.Num()) ? Montages[FMath::RandRange(0, Montages.Num() - 1)] : nullptr;
+	}
+};
+
 UCLASS()
 class DC1_API UDC1PalData : public UDataAsset
 {
@@ -15,8 +32,13 @@ class DC1_API UDC1PalData : public UDataAsset
 
 public:
 #pragma region Locomotion
+	// 추격 속도. AnimInstance의 NormalizedSpeed 분모
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RunSpeed = { 400.f };
+
+	// 배회 속도
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
+	float							WalkSpeed = { 150.f };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RotationRateYaw = { 360.f };
@@ -31,9 +53,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Asset"))
 	FGameplayTag					AbilityDataTag;
 
-	// 어빌리티 태그 (종별 몽타주)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Ability"))
-	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>>	Montages;
+	// 종별 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Anim.Pal"))
+	TMap<FGameplayTag, FDC1PalMontageSet>	Montages;
+#pragma endregion
+
+#pragma region Idle
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Idle", meta = (Categories = "Anim.Pal.Idle"))
+	TArray<FGameplayTag>			IdleMontageTags;
 #pragma endregion
 
 #pragma region Combat
@@ -45,21 +72,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackExitRange = { 220.f };
 
-	// AttackPower 어트리뷰트의 초기값. 런타임 값은 어트리뷰트 쪽이 진실이다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };
 
-	// 스윙의 굵기. 실제 도달 거리는 AttackRange + 이 반경이다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackTraceRadius = { 50.f };
 #pragma endregion
-
-public:
-	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& AbilityTag) const
-	{
-		const TSoftObjectPtr<UAnimMontage>* Found = Montages.Find(AbilityTag);
-		return (nullptr != Found) ? *Found : nullptr;
-	}
 
 #pragma region AI
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
@@ -77,5 +95,16 @@ public:
 	// 추격 유지 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							TargetMemoryDuration = { 3.f };
+
+	// 스폰 지점 기준 배회 반경
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Wander")
+	float							WanderRadius = { 800.f };
 #pragma endregion
+
+public:
+	TSoftObjectPtr<UAnimMontage> FindMontageByTag(const FGameplayTag& MontageTag) const
+	{
+		const FDC1PalMontageSet* Found = Montages.Find(MontageTag);
+		return (nullptr != Found) ? Found->PickRandomMontage() : nullptr;
+	}
 };

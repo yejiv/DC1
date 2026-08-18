@@ -36,8 +36,6 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 
 	AIController->UpdateTarget();
 
-	InstanceData.LastKnownLocation = AIController->GetLastKnownTargetLocation();
-
 	// 사거리는 타겟 유무와 무관
 	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
 	{

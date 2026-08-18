@@ -34,11 +34,25 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	bUseControllerRotationRoll = false;
 
 	UCharacterMovementComponent* Movement = GetCharacterMovement();
-	Movement->bOrientRotationToMovement = false; // 회전은 AIController의 focus가 구동
-	Movement->bUseControllerDesiredRotation = true;
+	SetOrientToMovement(false); // 기본은 AIController의 focus가 회전을 구동
 	Movement->RotationRate = FRotator(0.f, 360.f, 0.f);
 	Movement->MaxWalkSpeed = 400.f;
 	Movement->bUseRVOAvoidance = true;
+}
+
+void ADC1PalCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
+{
+	OutLocation = GetPawnViewLocation();
+	OutRotation = GetActorRotation();
+}
+
+void ADC1PalCharacter::SetOrientToMovement(bool Enable)
+{
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->bOrientRotationToMovement = Enable;
+		Movement->bUseControllerDesiredRotation = (false == Enable);
+	}
 }
 
 void ADC1PalCharacter::PostInitializeComponents()
@@ -84,7 +98,6 @@ void ADC1PalCharacter::ApplyPalData()
 		BindHealthWatcher();
 	}
 
-	// Stats. PalData는 초기값만 공급하고, 이후 진실은 어트리뷰트다.
 	if (IsValid(PalAttributeSet))
 	{
 		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);

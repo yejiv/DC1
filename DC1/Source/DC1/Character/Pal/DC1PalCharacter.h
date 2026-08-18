@@ -30,23 +30,25 @@ public:
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
-	EDC1Team GetTeam() const { return Team; }
+	EDC1Team							GetTeam() const { return Team; }
+	void								SetTeam(EDC1Team NewTeam);
 
-	void SetTeam(EDC1Team NewTeam);
+	const UDC1PalData*					GetPalData() const { return PalData; }
 
-	const UDC1PalData* GetPalData() const { return PalData; }
+	void								SetOrientToMovement(bool Enable);
+	virtual void						GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 protected:
-	virtual void PostInitializeComponents() override;
+	virtual void						PostInitializeComponents() override;
 
-	virtual void OnTeamChanged();
+	virtual void						OnTeamChanged();
 
 	UFUNCTION()
-	void OnRep_Team();
+	void								OnRep_Team();
 
-	void ApplyPalData();
+	void								ApplyPalData();
 
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void OnDeath() override;
