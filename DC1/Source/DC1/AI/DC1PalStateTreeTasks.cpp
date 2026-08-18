@@ -6,6 +6,7 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Controller/DC1PalAIController.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemGlobals.h"
 #include "GameFramework/Actor.h"
@@ -27,7 +28,7 @@ namespace DC1PalTaskHelper
 		return Cast<UDC1AbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor));
 	}
 
-	// 실패하면 갈 곳이 없다는 뜻(구석에 몰림). 호출부는 제자리에 머문다
+	// 실패하면 갈 곳이 없다는 뜻
 	static bool RequestFleeMove(ADC1PalAIController& AIController, const ADC1PalCharacter& Pal, const AActor& Target, float AcceptanceRadius)
 	{
 		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Pal.GetWorld());
@@ -114,6 +115,11 @@ EStateTreeRunStatus FDC1PalActivateAbilityTask::Tick(FStateTreeExecutionContext&
 	if (nullptr == ASC)
 	{
 		return EStateTreeRunStatus::Failed;
+	}
+
+	if (ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_HitReacting))
+	{
+		return EStateTreeRunStatus::Running;
 	}
 
 	return ASC->HasMatchingGameplayTag(InstanceData.ActiveStateTag)

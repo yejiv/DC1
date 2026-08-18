@@ -64,11 +64,10 @@ public:
 #pragma endregion
 
 #pragma region Combat
-	// 몸통 표면 간 거리 기준. (Evaluator의 DistanceToTarget 비슷)
+	// 몸통 표면 간 거리 기준
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackRange = { 150.f };
 
-	// 진입보다 크게! 같은 값이면 사거리 경계에서 Chase와 Attack이 매 프레임 바뀜
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackExitRange = { 220.f };
 
