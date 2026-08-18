@@ -6,6 +6,7 @@
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1TechTreeComponent.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -21,6 +22,8 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 
 	TechTreeComponent = CreateDefaultSubobject<UDC1TechTreeComponent>(TEXT("TechTreeComponent"));
 
+	InventoryComponent = CreateDefaultSubobject<UDC1PlayerInventoryComponent>(TEXT("InventoryComponent"));
+	InventoryComponent->SetIsReplicated(true);
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const

@@ -19,6 +19,9 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
 
+#include "ViewModel/Inventory/DC1InventoryViewModel.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
+
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -51,6 +54,20 @@ void ADC1PlayerController::BeginPlay()
 		{
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
+
+	// 인벤토리 ViewModel 생성
+	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
+	if (IsValid(InventoryViewModel))
+	{
+		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
+		if (IsValid(OwnerPlayerState))
+		{
+			if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
+			{
+				InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+			}
+		}
+	}
 }
 
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)

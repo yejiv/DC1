@@ -10,6 +10,7 @@
 #include "DC1PlayerController.generated.h"
 
 class ADC1Player;
+class UDC1InventoryViewModel;
 
 UCLASS()
 class DC1_API ADC1PlayerController : public APlayerController
@@ -21,6 +22,7 @@ public:
 
 public:
 	void SetCursorMode(bool OnTurn);
+	UDC1InventoryViewModel* GetInventoryViewModel() const { return InventoryViewModel; }
 
 public:
 	virtual void BeginPlay() override;
@@ -68,6 +70,9 @@ private:
 private:
 	UPROPERTY()
 	TObjectPtr<ADC1Player>	ControlObject = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UDC1InventoryViewModel> InventoryViewModel = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
 
