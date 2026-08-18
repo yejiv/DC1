@@ -17,6 +17,7 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Sprint, "Input.Default.Sprint");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Toggle_Move, "Input.Default.Toggle.Move");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Jump, "Input.Default.Jump");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Crouch, "Input.Default.Crouch");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Attack, "Input.Default.Attack");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ChangeWeapon, "Input.Default.ChangeWeapon");

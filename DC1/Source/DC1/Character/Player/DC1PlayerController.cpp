@@ -18,6 +18,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -102,6 +103,11 @@ void ADC1PlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
+		}
+		// Crouch
+		if (const UInputAction* CrouchAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Crouch))
+		{
+			EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::OnCrouch);
 		}
 		// Attack
 		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
@@ -195,6 +201,13 @@ void ADC1PlayerController::OnSprint(const FInputActionValue& Value)
 	{
 		return;
 	}
+
+	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
+	{
+		if (true == CMC->IsCrouching())
+			return;
+	}
+
 	ControlObject->SetSprint(true);
 }
 
@@ -223,6 +236,7 @@ void ADC1PlayerController::OnJump(const FInputActionValue& Value)
 		return;
 	}
 
+	ControlObject->UnCrouch();
 	ControlObject->Jump();
 }
 
@@ -234,6 +248,29 @@ void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
 	}
 
 	ControlObject->StopJumping();
+}
+
+void ADC1PlayerController::OnCrouch(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
+	{
+		bool IsCrouch = CMC->IsCrouching();
+		bool IsFalling = CMC->IsFalling();
+
+		if (true == IsFalling)
+			return;
+
+		if (false == IsCrouch && false == ControlObject->CanCrouch())
+			return;
+
+		ControlObject->SetSprint(false);
+		IsCrouch ? ControlObject->UnCrouch() : ControlObject->Crouch();
+	}
 }
 
 void ADC1PlayerController::OnAttack(const FInputActionValue& Value)

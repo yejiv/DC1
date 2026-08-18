@@ -20,4 +20,8 @@ public:
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	bool				IsCrouch = { false };
 };
