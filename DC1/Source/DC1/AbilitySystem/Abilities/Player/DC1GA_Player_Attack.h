@@ -41,4 +41,12 @@ public:
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
 	TMap<FGameplayTag, FGameplayTag> MappingStateToAnim;
+
+private:
+	TArray<FName>					SectionName;
+
+	uint32									SectionIndex = {};
+
+	float									LastAttackTime = {};
+	float									ResetTime = { 2.f };
 };

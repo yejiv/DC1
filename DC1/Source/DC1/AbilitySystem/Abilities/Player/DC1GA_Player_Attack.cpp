@@ -20,6 +20,9 @@ UDC1GA_Player_Attack::UDC1GA_Player_Attack(const FObjectInitializer& ObjectIniti
 	: Super(ObjectInitializer)
 {
 	HitEventTag = DC1PlayerTags::Event_Player_Hit;
+
+	SectionName.Add("Attack_R");
+	SectionName.Add("Attack_L");
 }
 
 void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -54,7 +57,10 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		}
 		if (UAnimMontage* Montage = AnimData->FindMontageByTag(MappingStateToAnim[StateTag]))
 		{
-			UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage);
+			if (GetWorld()->GetTimeSeconds() - LastAttackTime > ResetTime)
+				SectionIndex = 0;
+
+			UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f, SectionName[SectionIndex]);
 			if (nullptr == PlayMontageTask)
 			{
 				EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -65,6 +71,10 @@ void UDC1GA_Player_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 			PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
 			PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
 			PlayMontageTask->ReadyForActivation();
+
+			SectionIndex = (SectionIndex + 1) % SectionName.Num();
+
+			LastAttackTime = GetWorld()->GetTimeSeconds();
 		}
 	}
 }
