@@ -174,8 +174,15 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	// 지금 보이는 대상이 없어도 기억 시간 안이면 직전 대상을 유지
-	// 시체는 무시
+	if (true == IsValid(ProvokedTarget)
+		&& false == DC1PalAIController::IsDead(ProvokedTarget)
+		&& ((Now - LastSeenTime) < TargetMemoryDuration))
+	{
+		SetCurrentTarget(ProvokedTarget);
+		return;
+	}
+
+
 	if (true == IsValid(CurrentTarget)
 		&& false == DC1PalAIController::IsDead(CurrentTarget)
 		&& ((Now - LastSeenTime) < TargetMemoryDuration))
@@ -183,7 +190,29 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
+	ProvokedTarget = nullptr;
 	SetCurrentTarget(nullptr);
+}
+
+void ADC1PalAIController::ProvokeBy(AActor* InInstigator)
+{
+	if (false == IsValid(InInstigator))
+	{
+		return;
+	}
+
+	const UWorld* World = GetWorld();
+	if (nullptr == World)
+	{
+		return;
+	}
+
+	ProvokedTarget = InInstigator;
+
+	// 맞을 때마다 기억 시간이 초기화된다
+	LastSeenTime = World->GetTimeSeconds();
+
+	UpdateTarget();
 }
 
 void ADC1PalAIController::StopBehavior()
@@ -196,13 +225,12 @@ void ADC1PalAIController::StopBehavior()
 
 	// 타겟/포커스 해제
 	SensedTargets.Reset();
+	ProvokedTarget = nullptr;
 	SetCurrentTarget(nullptr);
 }
 
 void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)
 {
-	// CurrentTarget 갱신은 타겟과 focus가 어긋나지 않게 전부 들어옴
-
 	if (CurrentTarget == NewTarget)
 	{
 		return;
@@ -210,7 +238,6 @@ void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)
 
 	CurrentTarget = NewTarget;
 
-	// 회전은 focus가 구동
 	if (true == IsValid(NewTarget))
 	{
 		SetFocus(NewTarget, EAIFocusPriority::Gameplay);
