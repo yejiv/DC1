@@ -2,6 +2,10 @@
 
 #include "DC1Enums.generated.h"
 
+
+#pragma region UI ENUM
+
+// FADE TYPE
 UENUM(BlueprintType)
 enum class EDC1FadeType : uint8
 {
@@ -10,6 +14,35 @@ enum class EDC1FadeType : uint8
 	Loading = 2 UMETA(DisplayName = "Loading"), // 검정 화면 + 스프라이트 애니메이션 + Tip
 };
 
+// TAB BUTTON STATE
+UENUM()
+enum class EDC1TabButtonState : uint8
+{
+	Default = 0 UMETA(DisplayName = "Default"),
+	Inactive = 1 UMETA(DisplayName = "Inactive"),	// Tab 비활성화
+	Active = 2 UMETA(DisplayName = "Active"),		// Tab 활성화
+	Disable = 3 UMETA(DisplayName = "Disable"),		// Tab 활성화 불가
+};
+
+// TECH SLOT STATE
+UENUM()
+enum class EDC1TechSlotState : uint8
+{
+	Default = 0,
+	Locked = 1,		// 레벨 부족 || 코스트 부족
+	Available = 2,	// 해금 가능 ( 레벨 충족 + 코스트 충분 )
+	Unlocked = 3,	// 해금
+};
+
+// TECH POINT STATE
+UENUM()
+enum class EDC1TechPointState : uint8
+{
+	Default = 0,
+	HasPoint = 1,
+	NoPoint = 2,
+};
+#pragma endregion
 
 UENUM(BlueprintType)
 enum class EDC1ItemType : uint8
@@ -34,22 +67,6 @@ enum class EDC1ItemRarity : uint8
 
 };
 
-UENUM()
-enum class EDC1TechSlotState : uint8
-{
-	Default = 0,
-	Locked = 1,		// 레벨 부족 || 코스트 부족
-	Available = 2,	// 해금 가능 ( 레벨 충족 + 코스트 충분 )
-	Unlocked = 3,	// 해금
-};
-
-UENUM()
-enum class EDC1TechPointState : uint8
-{
-	Default = 0,
-	HasPoint = 1,
-	NoPoint = 2,	
-};
 
 UENUM()
 enum class EDC1CollisionLayer : uint8

@@ -10,6 +10,7 @@
 class UDC1AbilitySystemComponent;
 class UDC1PlayerSet;
 class UDC1TechTreeComponent;
+class UDC1PlayerInventoryComponent;
 
 /**
  * 
@@ -25,12 +26,18 @@ public:
 public:
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
+	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
 	UPROPERTY()
 	TObjectPtr<UDC1PlayerSet> PlayerSet = { nullptr };
+	
 	UPROPERTY(VisibleAnywhere, Category = "Tech")
 	TObjectPtr< UDC1TechTreeComponent>		TechTreeComponent = { nullptr };
+
+	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	TObjectPtr<UDC1PlayerInventoryComponent> InventoryComponent = { nullptr };
 };

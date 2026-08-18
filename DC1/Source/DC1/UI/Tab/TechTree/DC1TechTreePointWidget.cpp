@@ -48,7 +48,7 @@ void UDC1TechTreePointWidget::SetPoint(int32 NumPoint)
 	// Num Tech Point Setting
 	TextPoint_Num->SetText(FText::AsNumber(NumPoint));
 
-	EDC1TechPointState CurrentPointState = (0 < NumPoint) ? EDC1TechPointState::HasPoint : EDC1TechPointState::NoPoint;
+	EDC1TechPointState CurrentPointState = ( NumPoint > 0 ) ? EDC1TechPointState::HasPoint : EDC1TechPointState::NoPoint;
 
 	if (CurrentPointState == PointState)
 	{

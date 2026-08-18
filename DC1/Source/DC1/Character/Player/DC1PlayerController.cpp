@@ -18,6 +18,10 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
+#include "ViewModel/Inventory/DC1InventoryViewModel.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -51,6 +55,20 @@ void ADC1PlayerController::BeginPlay()
 		{
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
+
+	// 인벤토리 ViewModel 생성
+	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
+	if (IsValid(InventoryViewModel))
+	{
+		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
+		if (IsValid(OwnerPlayerState))
+		{
+			if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
+			{
+				InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+			}
+		}
+	}
 }
 
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -102,6 +120,11 @@ void ADC1PlayerController::SetupInputComponent()
 		{
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
+		}
+		// Crouch
+		if (const UInputAction* CrouchAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Crouch))
+		{
+			EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::OnCrouch);
 		}
 		// Attack
 		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
@@ -195,6 +218,13 @@ void ADC1PlayerController::OnSprint(const FInputActionValue& Value)
 	{
 		return;
 	}
+
+	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
+	{
+		if (true == CMC->IsCrouching())
+			return;
+	}
+
 	ControlObject->SetSprint(true);
 }
 
@@ -223,6 +253,7 @@ void ADC1PlayerController::OnJump(const FInputActionValue& Value)
 		return;
 	}
 
+	ControlObject->UnCrouch();
 	ControlObject->Jump();
 }
 
@@ -234,6 +265,29 @@ void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
 	}
 
 	ControlObject->StopJumping();
+}
+
+void ADC1PlayerController::OnCrouch(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
+	{
+		bool IsCrouch = CMC->IsCrouching();
+		bool IsFalling = CMC->IsFalling();
+
+		if (true == IsFalling)
+			return;
+
+		if (false == IsCrouch && false == ControlObject->CanCrouch())
+			return;
+
+		ControlObject->SetSprint(false);
+		IsCrouch ? ControlObject->UnCrouch() : ControlObject->Crouch();
+	}
 }
 
 void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
@@ -372,7 +426,10 @@ void ADC1PlayerController::OpenTabWidget(FGameplayTag Tab)
 	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
 	if (nullptr != TabWidget)
 	{
-		TabWidget->SelectTab(Tab);
+		if (false == TabWidget->SelectTab(Tab))
+		{
+			TabWidget->SelectFirstInactiveTab();
+		}
 	}
 }
 #pragma endregion

@@ -31,6 +31,11 @@ void UDC1TechTreeWidget::NativeOnInitialized()
 	if (true == ::IsValid(TechComp))
 	{
 		TechComp->OnTechStateChange.AddUObject(this, &ThisClass::OnTechStateChanged);
+
+		TechComp->OnTechUnlocked.AddWeakLambda(this, [](const FGameplayTag& Tag)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Unlocked : %s "), *Tag.ToString());
+			});
 	}
 	else
 	{

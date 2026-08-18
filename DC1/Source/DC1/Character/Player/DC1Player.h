@@ -38,7 +38,7 @@ public:
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
 
-	void Change_AttackCollider(UPrimitiveComponent* AttackCollider);
+	void Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip);
 
 private:
 	virtual void PostInitializeComponents() override;

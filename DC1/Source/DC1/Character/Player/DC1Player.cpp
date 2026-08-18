@@ -28,6 +28,7 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	bUseControllerRotationRoll = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
 	USkeletalMeshComponent* BodyMesh = GetMesh();
 	BodyMesh->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -90.f), FRotator(0.f, -90.f, 0.f));
@@ -120,11 +121,11 @@ void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
 	}
 }
 
-void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider)
+void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip)
 {
-	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider) ? HandAttackCollider : AttackCollider;
+	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider && false == IsEquip) ? HandAttackCollider : AttackCollider;
 	
-	if (ActiveCollider == NewCollider) return;
+	if (ActiveCollider == NewCollider || nullptr == NewCollider) return;
 
 	if(IsValid(ActiveCollider))
 		ActiveCollider->OnComponentBeginOverlap.RemoveDynamic(this, &ThisClass::OnAttackColliderOverlap);

@@ -76,9 +76,9 @@ void UDC1TechTreeButton::InitTechButton(const FDC1TechRow& Row)
 		TextLabel->SetText(FText::AsNumber(Row.UnlockCost));
 	}
 
-	if (true == ::IsValid(TechIconImage) && true == ::IsValid(Row.Icon))
+	if (true == ::IsValid(TechIconImage) && false == Row.Icon.IsNull())
 	{
-		TechIconImage->SetBrushFromTexture(Row.Icon);
+		TechIconImage->SetBrushFromSoftTexture(Row.Icon);
 	}
 }
 

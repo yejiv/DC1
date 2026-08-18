@@ -24,7 +24,7 @@ class DC1_API UDC1UIManagerSubsystem : public UGameInstanceSubsystem
 public:
 	FSimpleMulticastDelegate	OnScreenStackChanged;
 	
-	bool						HasActiveScreen() { return 0 < ScreenStack.Num(); };
+	bool						HasActiveScreen() { return ScreenStack.Num() > 0; };
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
