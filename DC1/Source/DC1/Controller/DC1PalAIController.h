@@ -32,6 +32,8 @@ public:
 
 	void					StopBehavior();
 
+	void					TryStartBehavior();
+
 	// 때린 상대를 기억한다. 보이지 않아도 기억 시간 동안 쫓아간다
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }

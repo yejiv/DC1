@@ -28,6 +28,7 @@ ADC1PalAIController::ADC1PalAIController()
 	: Super()
 {
 	StateTreeComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("StateTreeComponent"));
+	StateTreeComponent->SetStartLogicAutomatically(false);
 
 	// 실제 값은 OnPossess에서 종별 PalData로 덮어씀
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
@@ -54,18 +55,22 @@ void ADC1PalAIController::BeginPlay()
 	{
 		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
 	}
+
+	TryStartBehavior();
 }
 
 void ADC1PalAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	if (::IsValid(InPawn))
+	if (IsValid(InPawn))
 	{
 		HomeLocation = InPawn->GetActorLocation();
 	}
 
 	ApplyPerceptionSettings();
+
+	TryStartBehavior();
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s possessed by %s (Team=%s)"), *GetNameSafe(InPawn), *GetName(), *UEnum::GetValueAsString(DC1Team::FromGenericTeamId(GetGenericTeamId())));
 }
@@ -99,8 +104,8 @@ void ADC1PalAIController::ApplyPerceptionSettings()
 	}
 
 	// 재설정 + 리스너 갱신해야 sight query에 반영됨
-	PerceptionComp->ConfigureSense(*SightConfig);
-	PerceptionComp->RequestStimuliListenerUpdate();
+	PerceptionComp->ConfigureSense(*SightConfig);	//config → digest
+	PerceptionComp->RequestStimuliListenerUpdate();	//component → listener
 }
 
 void ADC1PalAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -227,6 +232,21 @@ void ADC1PalAIController::StopBehavior()
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
 	SetCurrentTarget(nullptr);
+}
+
+void ADC1PalAIController::TryStartBehavior()
+{
+	if (false == IsValid(GetPawn()) || false == HasActorBegunPlay())
+	{
+		return;
+	}
+
+	if (false == IsValid(StateTreeComponent))
+	{
+		return;
+	}
+
+	StateTreeComponent->StartLogic();
 }
 
 void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)

@@ -5,7 +5,6 @@
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Components/CapsuleComponent.h"
-//#include "Components/SkeletalMeshComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
 
@@ -60,9 +59,8 @@ void ADC1PalCharacter::SetOrientToMovement(bool Enable)
 
 void ADC1PalCharacter::PostInitializeComponents()
 {
+	ApplyPalData(); //PalData 먼저로드
 	Super::PostInitializeComponents();
-
-	ApplyPalData();
 }
 
 void ADC1PalCharacter::ApplyPalData()
@@ -107,12 +105,6 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);
 		PalAttributeSet->InitHealth(PalData->MaxHealth);
 		PalAttributeSet->InitAttackPower(PalData->AttackPower);
-	}
-
-	// OnPossess때 PalData가 없어서 컨트롤러가 생성자 기본값을 씀. 다시 적용
-	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
-	{
-		PalController->ApplyPerceptionSettings();
 	}
 }
 
