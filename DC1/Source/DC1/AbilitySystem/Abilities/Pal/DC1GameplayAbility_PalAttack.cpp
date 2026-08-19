@@ -114,7 +114,7 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 
 	const FVector Forward = Pal->GetActorForwardVector();
 	const FVector Origin = Pal->GetActorLocation() + (Forward * Pal->GetSimpleCollisionRadius());
-	const FVector End = Origin + (Forward * PalData->AttackRange);
+	const FVector End = Origin + (Forward * GetMaxRange());
 
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);

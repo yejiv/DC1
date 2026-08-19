@@ -64,12 +64,9 @@ public:
 #pragma endregion
 
 #pragma region Combat
-	// 몸통 표면 간 거리 기준
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
-	float							AttackRange = { 150.f };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
-	float							AttackExitRange = { 220.f };
+	// AI가 쓸 스킬 목록. 앞에 있을수록 우선. 사거리는 어빌리티 BP가 갖는다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
+	TArray<FGameplayTag>			SkillTags;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };

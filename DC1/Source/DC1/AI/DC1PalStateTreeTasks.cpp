@@ -28,6 +28,41 @@ namespace DC1PalTaskHelper
 		return Cast<UDC1AbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor));
 	}
 
+	static EStateTreeRunStatus ActivateAbility(UDC1AbilitySystemComponent& ASC, const FGameplayTag& AbilityTag, const FGameplayTag& StateTag, const AActor* Owner)
+	{
+		if (false == ASC.ActivateAbilityByTag(AbilityTag))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbility: [%s] failed to activate [%s]. (Granted = %s)"),
+				*GetNameSafe(Owner),
+				*AbilityTag.ToString(),
+				ASC.HasAbilityByTag(AbilityTag) ? TEXT("true") : TEXT("false"));
+
+			return EStateTreeRunStatus::Failed;
+		}
+
+		if (false == ASC.HasMatchingGameplayTag(StateTag))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbility: [%s] activated but [%s] is not applied. Check the ability's ActivationOwnedTags."),
+				*AbilityTag.ToString(), *StateTag.ToString());
+
+			return EStateTreeRunStatus::Succeeded;
+		}
+
+		return EStateTreeRunStatus::Running;
+	}
+
+	static EStateTreeRunStatus TickWhileActive(const UDC1AbilitySystemComponent& ASC, const FGameplayTag& StateTag)
+	{
+		if (ASC.HasMatchingGameplayTag(DC1PalTags::State_Pal_HitReacting))
+		{
+			return EStateTreeRunStatus::Running;
+		}
+
+		return ASC.HasMatchingGameplayTag(StateTag)
+			? EStateTreeRunStatus::Running
+			: EStateTreeRunStatus::Succeeded;
+	}
+
 	// 실패하면 갈 곳이 없다는 뜻
 	static bool RequestFleeMove(ADC1PalAIController& AIController, const ADC1PalCharacter& Pal, const AActor& Target, float AcceptanceRadius)
 	{
@@ -87,24 +122,7 @@ EStateTreeRunStatus FDC1PalActivateAbilityTask::EnterState(FStateTreeExecutionCo
 		return EStateTreeRunStatus::Failed;
 	}
 
-	if (false == ASC->ActivateAbilityByTag(InstanceData.AbilityTag))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbilityTask: [%s] failed to activate [%s]. (Granted = %s)"),
-			*GetNameSafe(InstanceData.Actor),
-			*InstanceData.AbilityTag.ToString(),
-			ASC->HasAbilityByTag(InstanceData.AbilityTag) ? TEXT("true") : TEXT("false"));
-
-		return EStateTreeRunStatus::Failed;
-	}
-
-	if (false == ASC->HasMatchingGameplayTag(InstanceData.ActiveStateTag))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbilityTask: [%s] activated but [%s] is not applied. Check the ability's ActivationOwnedTags."),
-			*InstanceData.AbilityTag.ToString(), *InstanceData.ActiveStateTag.ToString());
-		return EStateTreeRunStatus::Succeeded;
-	}
-
-	return EStateTreeRunStatus::Running;
+	return DC1PalTaskHelper::ActivateAbility(*ASC, InstanceData.AbilityTag, InstanceData.ActiveStateTag, InstanceData.Actor);
 }
 
 EStateTreeRunStatus FDC1PalActivateAbilityTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
@@ -117,14 +135,7 @@ EStateTreeRunStatus FDC1PalActivateAbilityTask::Tick(FStateTreeExecutionContext&
 		return EStateTreeRunStatus::Failed;
 	}
 
-	if (ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_HitReacting))
-	{
-		return EStateTreeRunStatus::Running;
-	}
-
-	return ASC->HasMatchingGameplayTag(InstanceData.ActiveStateTag)
-		? EStateTreeRunStatus::Running
-		: EStateTreeRunStatus::Succeeded;
+	return DC1PalTaskHelper::TickWhileActive(*ASC, InstanceData.ActiveStateTag);
 }
 
 void FDC1PalActivateAbilityTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
@@ -135,6 +146,84 @@ void FDC1PalActivateAbilityTask::ExitState(FStateTreeExecutionContext& Context, 
 	{
 		ASC->CancelAbilityByTag(InstanceData.AbilityTag);
 	}
+}
+
+
+EStateTreeRunStatus FDC1PalActivateSkillTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.ActivatedSkillTag = FGameplayTag::EmptyTag;
+
+	const ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const APawn* Pal = AIController->GetPawn();
+
+	UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(Pal);
+	if (nullptr == ASC)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const FGameplayTag SkillTag = AIController->GetSelectedSkillTag();
+	if (false == SkillTag.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateSkillTask: [%s] has no selected skill. Check PalData.SkillTags."), *GetNameSafe(Pal));
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, SkillTag, DC1PalTags::State_Pal_Attacking, Pal);
+
+	// 발동에 성공했으면 ExitState가 취소할 수 있게 기억해둔다
+	if (EStateTreeRunStatus::Failed != Result)
+	{
+		InstanceData.ActivatedSkillTag = SkillTag;
+	}
+
+	return Result;
+}
+
+EStateTreeRunStatus FDC1PalActivateSkillTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	const ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(AIController->GetPawn());
+	if (nullptr == ASC)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	return DC1PalTaskHelper::TickWhileActive(*ASC, DC1PalTags::State_Pal_Attacking);
+}
+
+void FDC1PalActivateSkillTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	if (false == IsValid(InstanceData.AIController))
+	{
+		return;
+	}
+
+	if (true == InstanceData.ActivatedSkillTag.IsValid())
+	{
+		if (UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(InstanceData.AIController->GetPawn()))
+		{
+			ASC->CancelAbilityByTag(InstanceData.ActivatedSkillTag);
+		}
+	}
+
+	// 한 번 썼으면 다음엔 다시 고른다. 발동에 실패했어도 같은 스킬을 무한 재시도하지 않게 비운다
+	InstanceData.AIController->ClearSelectedSkill();
 }
 
 

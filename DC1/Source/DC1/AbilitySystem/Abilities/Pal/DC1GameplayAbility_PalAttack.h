@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/DC1GameplayAbility.h"
+#include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 #include "GameplayTagContainer.h"
 #include "DC1GameplayAbility_PalAttack.generated.h"
 
 struct FGameplayEventData;
 
 UCLASS()
-class DC1_API UDC1GameplayAbility_PalAttack : public UDC1GameplayAbility
+class DC1_API UDC1GameplayAbility_PalAttack : public UDC1GameplayAbility_PalSkill
 {
 	GENERATED_BODY()
 

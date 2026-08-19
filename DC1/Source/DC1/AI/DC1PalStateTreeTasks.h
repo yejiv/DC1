@@ -44,6 +44,40 @@ struct FDC1PalActivateAbilityTask : public FStateTreeTaskCommonBase
 
 
 USTRUCT()
+struct FDC1PalActivateSkillTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+	
+	UPROPERTY()
+	FGameplayTag		ActivatedSkillTag;// EnterState에서 실제로 발동한 태그
+};
+
+
+/**
+ * 컨트롤러가 고른 스킬을 발동
+ */
+USTRUCT(DisplayName = "Pal Activate Selected Skill", Category = "Pal")
+struct FDC1PalActivateSkillTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalActivateSkillTaskInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
+
+USTRUCT()
 struct FDC1PalWanderTaskInstanceData
 {
 	GENERATED_BODY()

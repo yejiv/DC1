@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "GameplayTagContainer.h"
 #include "DC1PalAIController.generated.h"
 
 class ADC1Character;
@@ -31,8 +32,14 @@ public:
 	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
 
 	void					StopBehavior();
-
 	void					TryStartBehavior();
+
+	void					UpdateSelectedSkill();
+	void					ClearSelectedSkill();
+
+	const FGameplayTag&		GetSelectedSkillTag() const { return SelectedSkillTag; }
+	float					GetSelectedMinRange() const { return SelectedMinRange; }
+	float					GetSelectedMaxRange() const { return SelectedMaxRange; }
 
 	// 때린 상대를 기억한다. 보이지 않아도 기억 시간 동안 쫓아간다
 	void					ProvokeBy(AActor* InInstigator);
@@ -67,6 +74,12 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AActor>				ProvokedTarget = { nullptr };
+
+
+	// 지금 쓰기로 고른 스킬. 이 스킬의 사거리가 접근/후퇴의 기준이 된다
+	FGameplayTag				SelectedSkillTag;
+	float						SelectedMinRange = { 0.f };
+	float						SelectedMaxRange = { 0.f };
 
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };

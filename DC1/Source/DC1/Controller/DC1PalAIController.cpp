@@ -4,6 +4,7 @@
 
 #include "AI/DC1TeamTypes.h"
 #include "Character/Pal/DC1PalCharacter.h"
+#include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
@@ -21,6 +22,24 @@ namespace DC1PalAIController
 	{
 		const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor);
 		return (nullptr != ASC) && ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
+	}
+
+	static const UDC1GameplayAbility_PalSkill* FindSkillByTag(const UAbilitySystemComponent& ASC, const FGameplayTag& SkillTag)
+	{
+		for (const FGameplayAbilitySpec& Spec : ASC.GetActivatableAbilities())
+		{
+			if (false == Spec.GetDynamicSpecSourceTags().HasTagExact(SkillTag))
+			{
+				continue;
+			}
+
+			if (const UDC1GameplayAbility_PalSkill* Skill = Cast<UDC1GameplayAbility_PalSkill>(Spec.Ability))
+			{
+				return Skill;
+			}
+		}
+
+		return nullptr;
 	}
 }
 
@@ -199,6 +218,55 @@ void ADC1PalAIController::UpdateTarget()
 	SetCurrentTarget(nullptr);
 }
 
+void ADC1PalAIController::UpdateSelectedSkill()
+{
+	if (true == SelectedSkillTag.IsValid())
+	{
+		return;
+	}
+
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData)
+	{
+		return;
+	}
+
+	const UAbilitySystemComponent* ASC = Pal->GetAbilitySystemComponent();
+	if (nullptr == ASC)
+	{
+		return;
+	}
+
+	TArray<TPair<FGameplayTag, const UDC1GameplayAbility_PalSkill*>> Candidates;
+
+	for (const FGameplayTag& SkillTag : PalData->SkillTags)
+	{
+		if (const UDC1GameplayAbility_PalSkill* Skill = DC1PalAIController::FindSkillByTag(*ASC, SkillTag))
+		{
+			Candidates.Emplace(SkillTag, Skill);
+		}
+	}
+
+	if (0 == Candidates.Num())
+	{
+		return;
+	}
+
+	const int32 PickedIndex = FMath::RandRange(0, Candidates.Num() - 1);
+
+	SelectedSkillTag = Candidates[PickedIndex].Key;
+	SelectedMinRange = Candidates[PickedIndex].Value->GetMinRange();
+	SelectedMaxRange = Candidates[PickedIndex].Value->GetMaxRange();
+}
+
+void ADC1PalAIController::ClearSelectedSkill()
+{
+	SelectedSkillTag = FGameplayTag::EmptyTag;
+	SelectedMinRange = 0.f;
+	SelectedMaxRange = 0.f;
+}
+
 void ADC1PalAIController::ProvokeBy(AActor* InInstigator)
 {
 	if (false == IsValid(InInstigator))
@@ -231,6 +299,7 @@ void ADC1PalAIController::StopBehavior()
 	// 타겟/포커스 해제
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
+	ClearSelectedSkill();
 	SetCurrentTarget(nullptr);
 }
 
@@ -257,6 +326,8 @@ void ADC1PalAIController::SetCurrentTarget(AActor* NewTarget)
 	}
 
 	CurrentTarget = NewTarget;
+
+	ClearSelectedSkill();
 
 	if (true == IsValid(NewTarget))
 	{

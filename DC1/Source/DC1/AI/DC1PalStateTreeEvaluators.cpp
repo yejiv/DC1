@@ -4,7 +4,6 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
-#include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"
@@ -31,6 +30,8 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	InstanceData.bProvoked = false;
 	InstanceData.bHitReacting = false;
 	InstanceData.DistanceToTarget = TNumericLimits<float>::Max();
+	InstanceData.SelectedMinRange = 0.f;
+	InstanceData.SelectedMaxRange = 0.f;
 
 	ADC1PalAIController* AIController = InstanceData.AIController;
 	if (false == ::IsValid(AIController))
@@ -42,15 +43,8 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 
 	InstanceData.bProvoked = AIController->IsProvoked();
 
-	// 사거리는 타겟 유무와 무관
 	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
 	{
-		if (const UDC1PalData* PalData = SelfPal->GetPalData())
-		{
-			InstanceData.AttackRange = PalData->AttackRange;
-			InstanceData.AttackExitRange = PalData->AttackExitRange;
-		}
-
 		if (const UAbilitySystemComponent* ASC = SelfPal->GetAbilitySystemComponent())
 		{
 			InstanceData.bHitReacting = ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_HitReacting);
@@ -66,4 +60,9 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 		InstanceData.bHasTarget = true;
 		InstanceData.DistanceToTarget = DC1PalTargetEvaluator::GetSurfaceDistance2D(*SelfPawn, *Target);
 	}
+
+	// 스킬을 먼저 고르고, 거리 판단은 그 스킬의 사거리로 한다
+	AIController->UpdateSelectedSkill();
+	InstanceData.SelectedMinRange = AIController->GetSelectedMinRange();
+	InstanceData.SelectedMaxRange = AIController->GetSelectedMaxRange();
 }
