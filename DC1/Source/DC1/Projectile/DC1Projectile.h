@@ -3,13 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Item/Material/DC1MaterialItem.h"
+#include "GameFramework/Actor.h"
+#include "GameplayEffectTypes.h"
 #include "DC1Projectile.generated.h"
 
+class USphereComponent;
+class UStaticMeshComponent;
 class UProjectileMovementComponent;
 
-UCLASS()
-class DC1_API ADC1Projectile : public ADC1MaterialItem
+UCLASS(Abstract)
+class DC1_API ADC1Projectile : public AActor
 {
 	GENERATED_BODY()
 
@@ -24,5 +27,12 @@ protected:
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USphereComponent>					HitCollider = { nullptr };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent>				ProjectileMesh = { nullptr };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UProjectileMovementComponent>	ProjectileMovement = { nullptr };
+
+	// 발사 시점에 굳어진 데미지. 쏘는 쪽이 채워준다
+	FGameplayEffectSpecHandle						DamageSpec;
 };

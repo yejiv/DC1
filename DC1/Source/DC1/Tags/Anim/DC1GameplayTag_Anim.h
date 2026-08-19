@@ -11,5 +11,6 @@ namespace DC1AnimTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Attack_None);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Attack_Melee);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Attack_Bow);
 #pragma endregion
 }

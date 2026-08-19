@@ -16,8 +16,4 @@ namespace DC1PlayerTags
 #pragma region Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Hit);
 #pragma endregion
-
-#pragma region SetByCaller
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Damage);
-#pragma endregion
 }

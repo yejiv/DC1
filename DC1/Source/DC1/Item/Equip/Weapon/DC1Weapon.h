@@ -24,4 +24,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
 	FName				AttackSocketName;
+
+	// 최종 데미지 = 공격력 x 이 값
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
+	float				DamageMultiplier = { 1.f };
 };

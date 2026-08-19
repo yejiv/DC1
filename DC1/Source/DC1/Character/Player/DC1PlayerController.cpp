@@ -129,7 +129,9 @@ void ADC1PlayerController::SetupInputComponent()
 		// Attack
 		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
 		{
+			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::OnAttackPressed);
 			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
+			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ThisClass::OnAttackReleased);
 		}
 		// ChangeWeapon
 		if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
@@ -300,6 +302,32 @@ void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
 	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Attack);
 }
 
+void ADC1PlayerController::OnAttackPressed(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
+void ADC1PlayerController::OnAttackReleased(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
 void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 {
 	if (false == IsValid(ControlObject))
@@ -316,6 +344,11 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 	if (true == FMath::IsNearlyZero(AxisValue))
 	{
 		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_Attack);
 	}
 
 	// 절대 인덱스가 아니라 증감량을 보낸다. 빠르게 굴려도 서버에서 순서대로 누적된다

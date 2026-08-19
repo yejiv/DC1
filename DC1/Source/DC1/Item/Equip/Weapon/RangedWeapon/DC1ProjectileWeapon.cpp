@@ -1,9 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Item/Equip/Weapon/RangedWeapon/DC1ProjectileWeapon.h"
 
 #include "Components/StaticMeshComponent.h"
-#include "Item/Material/Projectile/DC1Projectile.h"
+#include "Projectile/DC1Projectile.h"
 
 ADC1ProjectileWeapon::ADC1ProjectileWeapon()
 	: Super()
@@ -16,6 +16,27 @@ UPrimitiveComponent* ADC1ProjectileWeapon::GetAttackCollider()
 	return nullptr;
 }
 
+ADC1Projectile* ADC1ProjectileWeapon::FireProjectile(const FGameplayEffectSpecHandle& DamageSpec)
+{
+	if (false == HasAuthority()) return nullptr;
+	if (nullptr == ProjectileClass) return nullptr;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	const FTransform SpawnTransform(GetAimDirection().Rotation(), GetMuzzleTransform().GetLocation());
+
+	ADC1Projectile* Projectile = GetWorld()->SpawnActor<ADC1Projectile>(ProjectileClass, SpawnTransform, SpawnParams);
+	if (nullptr != Projectile)
+	{
+		Projectile->DamageSpec = DamageSpec;
+	}
+
+	return Projectile;
+}
+
 FTransform ADC1ProjectileWeapon::GetMuzzleTransform() const
 {
 	if (false == MuzzleSocketName.IsNone() && ItemMesh->DoesSocketExist(MuzzleSocketName))
@@ -26,17 +47,15 @@ FTransform ADC1ProjectileWeapon::GetMuzzleTransform() const
 	return ItemMesh->GetComponentTransform();
 }
 
-ADC1Projectile* ADC1ProjectileWeapon::FireProjectile(const FVector& Direction)
+FVector ADC1ProjectileWeapon::GetAimDirection()
 {
-	if (false == HasAuthority()) return nullptr;
-	if (nullptr == ProjectileClass) return nullptr;
+	if (APawn* Pawn = GetInstigator())
+	{
+		if (AController* Controller = Pawn->GetController())
+		{
+			return Controller->GetControlRotation().Vector();
+		}
+	}
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = GetInstigator();
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	const FTransform SpawnTransform(Direction.Rotation(), GetMuzzleTransform().GetLocation());
-
-	return GetWorld()->SpawnActor<ADC1Projectile>(ProjectileClass, SpawnTransform, SpawnParams);
+	return GetMuzzleTransform().GetRotation().GetForwardVector();
 }
