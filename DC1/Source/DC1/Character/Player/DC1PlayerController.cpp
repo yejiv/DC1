@@ -140,22 +140,28 @@ void ADC1PlayerController::SetupInputComponent()
 		}
 
 #pragma region UI_TEST
-		// Open Inventory
+		// Open Tab - Inventory Widget
 		if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
 		{
-			EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_Inventory.GetTag());
+			EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_Inventory.GetTag());
 		}
 
-		// Open HasPal
+		// Open Tab - HasPal Widget
 		if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
 		{
-			EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_HasPal.GetTag());
+			EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_HasPal.GetTag());
 		}
 
-		// Open TechTree
+		// Open Tab - TechTree Widget
 		if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
 		{
-			EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab_TechTree.GetTag());
+			EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_TechTree.GetTag());
+		}
+
+		// Open Build Widget
+		if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
+		{
+			EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
 		}
 #pragma endregion
 	}
@@ -447,7 +453,7 @@ void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
 
 
 #pragma region UI_TEST
-void ADC1PlayerController::OpenTabWidget(FGameplayTag Tab)
+void ADC1PlayerController::OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab)
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -456,10 +462,17 @@ void ADC1PlayerController::OpenTabWidget(FGameplayTag Tab)
 		return;
 	}
 
-	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(DC1UITags::UI_Main_Tab, true));
+	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(InUITag, true));
 	if (nullptr != TabWidget)
 	{
-		if (false == TabWidget->SelectTab(Tab))
+		if (true == InTab.IsValid())
+		{
+			if (false == TabWidget->SelectTab(InTab))
+			{
+				TabWidget->SelectFirstInactiveTab();
+			}
+		}
+		else
 		{
 			TabWidget->SelectFirstInactiveTab();
 		}

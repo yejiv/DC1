@@ -30,11 +30,11 @@ void UDC1UIManagerSubsystem::Deinitialize()
     FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bool IsPop)
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& InUITag, bool InIsPop)
 {
     bool IsCreated = false;
 
-    TObjectPtr<UDC1UserWidget>* FoundWidget = CreatedWidget.Find(UITag);
+    TObjectPtr<UDC1UserWidget>* FoundWidget = CreatedWidget.Find(InUITag);
     if (nullptr != FoundWidget)
     {
         IsCreated = true;
@@ -43,19 +43,19 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bo
     TSubclassOf<UDC1UserWidget> WidgetClass = nullptr;
     if (false == IsCreated)
     {
-        WidgetClass = FindWidgetClass(UITag);
+        WidgetClass = FindWidgetClass(InUITag);
         if (false == ::IsValid(WidgetClass))
         {
             return nullptr;
         }
     }
 
-    if (true == IsPop)
+    if (true == InIsPop)
     {
         PopScreen();
     }
 
-    return IsCreated ? PushScreenInternal(FoundWidget->Get()) : PushScreenInternal(UITag, WidgetClass);
+    return IsCreated ? PushScreenInternal(FoundWidget->Get()) : PushScreenInternal(InUITag, WidgetClass);
 }
 
 void UDC1UIManagerSubsystem::PopScreen()
@@ -75,7 +75,7 @@ void UDC1UIManagerSubsystem::PopScreen()
     UpdateInputMode();
 }
 
-void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType FadeType, FSimpleDelegate OnComplete)
+void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, FSimpleDelegate InOnComplete)
 {
     if (false == ::IsValid(FadeWidget))
     {
@@ -83,7 +83,7 @@ void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType FadeType, FSi
 
         if (false == ::IsValid(FadeWidget))
         {
-            OnComplete.ExecuteIfBound();
+            InOnComplete.ExecuteIfBound();
             return;
         }
     }
@@ -95,18 +95,18 @@ void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType FadeType, FSi
 
     if (false == bIsTraveling)
     {
-        RollLoadingType(FadeType);
+        RollLoadingType(InFadeType);
     }
 
-    FadeWidget->SetFadeType(FadeType, PendingLoadingEntry, PendingTip);
-    FadeWidget->FadeIn(InDuration, OnComplete);
+    FadeWidget->SetFadeType(InFadeType, PendingLoadingEntry, PendingTip);
+    FadeWidget->FadeIn(InDuration, InOnComplete);
 }
 
-void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate OnComplete)
+void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate InOnComplete)
 {
     if (false == ::IsValid(FadeWidget))
     {
-        OnComplete.ExecuteIfBound();
+        InOnComplete.ExecuteIfBound();
         return;
     }
 
@@ -115,10 +115,10 @@ void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate OnComplet
         return;
     }
 
-    FadeWidget->FadeOut(InDuration, OnComplete);
+    FadeWidget->FadeOut(InDuration, InOnComplete);
 }
 
-void UDC1UIManagerSubsystem::RouteInputKey(const FKey& Key)
+void UDC1UIManagerSubsystem::RouteInputKey(const FKey& InKey)
 {
     if (ScreenStack.Num() <= 0)
     {
@@ -128,13 +128,13 @@ void UDC1UIManagerSubsystem::RouteInputKey(const FKey& Key)
     UDC1UserWidget* TopWidget = ScreenStack.Top();
     if (true == ::IsValid(TopWidget))
     {
-        TopWidget->HandleInputKey(Key);
+        TopWidget->HandleInputKey(InKey);
     }
 }
 
-void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel)
+void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel)
 {
-    FadeIn(InDuration, EDC1FadeType::Loading, FSimpleDelegate::CreateWeakLambda(this, [this, OnReadyToTravel]
+    FadeIn(InDuration, EDC1FadeType::Loading, FSimpleDelegate::CreateWeakLambda(this, [this, InOnReadyToTravel]
         {
             while (ScreenStack.Num() > 0)
             {
@@ -143,16 +143,16 @@ void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDel
 
             CreatedWidget.Empty();
 
-            OnReadyToTravel.ExecuteIfBound();
+            InOnReadyToTravel.ExecuteIfBound();
         }));
 
 
     bIsTraveling = true;
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& UITag, int32 ZOrder)
+UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder)
 {
-    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(UITag);
+    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
     if (false == ::IsValid(WidgetClass))
     {
         return nullptr;
@@ -164,38 +164,39 @@ UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& UITag,
         return nullptr;
     }
 
-    NewWidget->AddToViewport(ZOrder);
+    NewWidget->AddToViewport(InZOrder);
     return NewWidget;
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* Widget)
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* InWidget)
 {
-    if (false == ::IsValid(Widget))
+    if (false == ::IsValid(InWidget))
     {
         return nullptr;
     }
 
-    Widget->AddToViewport(ScreenStack.Num());
-    ScreenStack.Add(Widget);
-    Widget->Activate();
+    InWidget->AddToViewport(ScreenStack.Num());
+    ScreenStack.Add(InWidget);
+    InWidget->Activate();
 
     UpdateInputMode();
 
-    return Widget;
+    return InWidget;
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& UITag, TSubclassOf<UDC1UserWidget> WidgetClass)
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass)
 {
+    // 레벨 전환 시점 Player 생성 확인
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
     if (false == ::IsValid(PC))
     {
         return nullptr;
     }
 
-    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, WidgetClass);
+    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, InWidgetClass);
     if (true == ::IsValid(NewWidget))
     {
-        CreatedWidget.Add(UITag, NewWidget);
+        CreatedWidget.Add(InUITag, NewWidget);
     }
     else
     {
@@ -211,7 +212,7 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& U
     return NewWidget;
 }
 
-TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGameplayTag& UITag)
+TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGameplayTag& InUITag)
 {
     if (false == ::IsValid(CachedUIData))
     {
@@ -223,7 +224,7 @@ TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGamep
         }
     }
 
-    return CachedUIData->FindUserWidgetClassByTag(UITag);
+    return CachedUIData->FindUserWidgetClassByTag(InUITag);
 }
 
 void UDC1UIManagerSubsystem::UpdateInputMode()
@@ -308,7 +309,7 @@ void UDC1UIManagerSubsystem::RollLoadingType(EDC1FadeType InType)
 
 }
 
-void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* LoadedWorld)
+void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
 {
     ScreenStack.Empty();
     FadeWidget = nullptr;

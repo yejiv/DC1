@@ -87,6 +87,6 @@ private:
 
 #pragma region UI_TEST
 private:
-	void OpenTabWidget(FGameplayTag Tab);
+	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
 #pragma endregion
 };
