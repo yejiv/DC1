@@ -21,7 +21,7 @@ public:
 
 protected:
 	virtual void	NativeConstruct() override;
-	virtual void	NativeTick(const FGeometry& MyGeomtry, float InDeltaTime) override;
+	virtual void	NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
 	void			SetFadeType(EDC1FadeType InType, const FUILoadingEntry* InLoadingEntry = nullptr, const FText* InText = nullptr);

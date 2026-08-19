@@ -38,7 +38,7 @@ void UDC1TechTreePointWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UDC1TechTreePointWidget::SetPoint(int32 NumPoint)
+void UDC1TechTreePointWidget::SetPoint(int32 InNumPoint)
 {
 	if (false == ::IsValid(TextPoint_Num))
 	{
@@ -46,9 +46,9 @@ void UDC1TechTreePointWidget::SetPoint(int32 NumPoint)
 	}
 	
 	// Num Tech Point Setting
-	TextPoint_Num->SetText(FText::AsNumber(NumPoint));
+	TextPoint_Num->SetText(FText::AsNumber(InNumPoint));
 
-	EDC1TechPointState CurrentPointState = ( NumPoint > 0 ) ? EDC1TechPointState::HasPoint : EDC1TechPointState::NoPoint;
+	EDC1TechPointState CurrentPointState = ( InNumPoint > 0 ) ? EDC1TechPointState::HasPoint : EDC1TechPointState::NoPoint;
 
 	if (CurrentPointState == PointState)
 	{

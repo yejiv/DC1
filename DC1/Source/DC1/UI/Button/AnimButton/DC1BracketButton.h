@@ -35,7 +35,7 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>				BracketImage;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>			TextLabel;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")

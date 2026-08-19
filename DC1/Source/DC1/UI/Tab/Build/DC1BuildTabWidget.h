@@ -6,8 +6,11 @@
 #include "UI/Tab/DC1TabWidget.h"
 #include "DC1BuildTabWidget.generated.h"
 
+struct FDC1BuildRow;
+struct FDC1TechRow;
+
 class UDC1TechTreeComponent;
-class UDC1BuildCategoryWidget;
+class UDC1BuildWidget;
 
 UCLASS()
 class DC1_API UDC1BuildTabWidget : public UDC1TabWidget
@@ -19,11 +22,14 @@ protected:
 
 protected:
 	virtual void			ButtonInitialize() override;
-	virtual void			CloseWidget(const FKey& InputKey) override;
+	virtual void			CloseWidget(const FKey& InKey) override;
 
 private:
 	UDC1TechTreeComponent*	GetTechTreeComponent();
-	void					OnTechStateChanged();
+
+	bool					FindBuildData(TArray<const FDC1BuildRow*>& OutBuildRows);
+
+	void					OnTechUnlocked(const FGameplayTag& InUnlockedTag);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Build")

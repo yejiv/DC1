@@ -4,10 +4,9 @@
 #include "UI/Tab/TechTree/DC1TechTreeWidget.h"
 
 #include "UI/Tab/TechTree/DC1TechTreeRowWidget.h"
-#include "UI/Button/AnimButton/Tab/DC1TechTreeButton.h"
+#include "UI/Button/AnimButton/Slot/DC1TechTreeButton.h"
 #include "UI/Tab/TechTree/DC1TechTreePointWidget.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "System/DC1AssetManager.h"
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DA/DataTable/DC1DataTableData.h"
@@ -44,7 +43,7 @@ void UDC1TechTreeWidget::NativeOnInitialized()
 	}
 
 	// Init TechTree Row + Slot + Init Slot State
-	BuildTechTree();
+	InitTechTree();
 
 	// Init Rows
 	InitRows(TechComp->GetPlayerLevel());
@@ -72,7 +71,7 @@ UDC1TechTreeComponent* UDC1TechTreeWidget::GetTechTreeComponent()
 	return TechComp;
 }
 
-void UDC1TechTreeWidget::InitRows(int32 NewLevel)
+void UDC1TechTreeWidget::InitRows(int32 InNewLevel)
 {
 	for (UDC1TechTreeRowWidget* Row : TechRows)
 	{
@@ -81,18 +80,18 @@ void UDC1TechTreeWidget::InitRows(int32 NewLevel)
 			continue;
 		}
 
-		Row->SetState(NewLevel);
+		Row->SetState(InNewLevel);
 	}
 
-	CachedLevel = NewLevel;
+	CachedLevel = InNewLevel;
 }
 
-void UDC1TechTreeWidget::UpdateRows(int32 NewLevel)
+void UDC1TechTreeWidget::UpdateRows(int32 InNewLevel)
 {
 	int32 Start = FMath::Max(CachedLevel - 1, 0);
-	int32 End = FMath::Min(NewLevel, TechRows.Num());
+	int32 End = FMath::Min(InNewLevel, TechRows.Num());
 
-	CachedLevel = NewLevel;
+	CachedLevel = InNewLevel;
 
 	for (int32 i = Start; i < End; ++i)
 	{
@@ -103,43 +102,37 @@ void UDC1TechTreeWidget::UpdateRows(int32 NewLevel)
 			continue;
 		}
 
-		Row->SetState(NewLevel);
+		Row->SetState(InNewLevel);
 	}
 }
 
-void UDC1TechTreeWidget::UpdatePoint(const UDC1TechTreeComponent* TechComp)
+void UDC1TechTreeWidget::UpdatePoint(const UDC1TechTreeComponent* InTechComp)
 {
-	int32 NumTechPoint = TechComp->GetTechPoints();
-	int32 NumAncientTechPoint = TechComp->GetAncientTechPoints();
+	int32 NumTechPoint = InTechComp->GetTechPoints();
+	int32 NumAncientTechPoint = InTechComp->GetAncientTechPoints();
 
 	TechPointWidget->SetPoint(NumTechPoint);
 	AncientTechPointWidget->SetPoint(NumAncientTechPoint);
 }
 
-void UDC1TechTreeWidget::UpdateSlots(const UDC1TechTreeComponent* TechComp)
+void UDC1TechTreeWidget::UpdateSlots(const UDC1TechTreeComponent* InTechComp)
 {
 	for (UDC1TechTreeButton* TechSlot : TechSlots)
 	{
-		FName CurrentSlotID = TechSlot->GetTechID();
-		TechSlot->SetState(TechComp->GetTechState(CurrentSlotID));
+		const FGameplayTag& CurrentSlotTag = TechSlot->GetTechTag();
+		TechSlot->SetState(InTechComp->GetTechState(CurrentSlotTag));
 	}
 }
 
-void UDC1TechTreeWidget::BuildTechTree()
+void UDC1TechTreeWidget::InitTechTree()
 {
-	if (false == ::IsValid(TechTreeScrollBox))
+	if (false == ::IsValid(TechTreeScrollBox) || false == ::IsValid(RowWidgetClass))
 	{
 		return;
 	}
-
 	const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
 
 	if (false == ::IsValid(DataTable))
-	{
-		return;
-	}
-
-	if (false == ::IsValid(RowWidgetClass))
 	{
 		return;
 	}
@@ -169,15 +162,9 @@ void UDC1TechTreeWidget::BuildTechTree()
 	RowsByLevel.GetKeys(Levels);
 	Levels.Sort();
 
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (false == ::IsValid(PC))
-	{
-		return;
-	}
-
 	for (int32 AddLevel : Levels)
 	{
-		UDC1TechTreeRowWidget* RowWidget = CreateWidget<UDC1TechTreeRowWidget>(PC, RowWidgetClass);
+		UDC1TechTreeRowWidget* RowWidget = CreateWidget<UDC1TechTreeRowWidget>(this, RowWidgetClass);
 		if (false == ::IsValid(RowWidget))
 		{
 			continue;
@@ -197,13 +184,13 @@ void UDC1TechTreeWidget::BuildTechTree()
 				UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
 				if (true == ::IsValid(TechComp))
 				{
-					FName CurrentSlotID = Row->TechID;
+					const FGameplayTag& CurrentSlotTag = Row->TechTag;
 
-					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotID, TechComp]() {
-							TechComp->Server_UnlockTech(CurrentSlotID);
+					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotTag, TechComp]() {
+							TechComp->Server_UnlockTech(CurrentSlotTag);
 						});
 
-					TechSlot->SetState(TechComp->GetTechState(CurrentSlotID));
+					TechSlot->SetState(TechComp->GetTechState(CurrentSlotTag));
 				}
 
 				TechSlots.Add(TechSlot);

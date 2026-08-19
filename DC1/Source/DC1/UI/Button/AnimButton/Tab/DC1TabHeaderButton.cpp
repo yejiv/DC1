@@ -18,6 +18,11 @@ void UDC1TabHeaderButton::NativeConstruct()
 
 void UDC1TabHeaderButton::HandleHovered()
 {
+	if (ButtonState == EDC1TabButtonState::Disable || ButtonState == EDC1TabButtonState::Default)
+	{
+		return;
+	}
+
 	Super::HandleHovered();
 
 	if (true == ::IsValid(HoverImage))
@@ -28,32 +33,45 @@ void UDC1TabHeaderButton::HandleHovered()
 
 void UDC1TabHeaderButton::HandleUnhovered()
 {
-	Super::HandleUnhovered();
-
-	if (true == ::IsValid(HoverImage))
-	{
-		HoverImage->SetOpacity(0.f);
-	}
-}
-
-void UDC1TabHeaderButton::SetState(EDC1TabButtonState State)
-{
-	if (ButtonState == State)
+	if (ButtonState == EDC1TabButtonState::Disable || ButtonState == EDC1TabButtonState::Default)
 	{
 		return;
 	}
 
-	if (ButtonState == EDC1TabButtonState::Active || State == EDC1TabButtonState::Active)
+	Super::HandleUnhovered();
+
+	if (true == ::IsValid(HoverImage))
 	{
-		if (true == ::IsValid(ClickedAnim))
-		{
-			EUMGSequencePlayMode::Type PlayMode = ButtonState == EDC1TabButtonState::Active ? EUMGSequencePlayMode::Reverse : EUMGSequencePlayMode::Forward;
-			
-			PlayAnimation(ClickedAnim, 0.f, 1, PlayMode);
-		}
+		HoverImage->SetOpacity(UnhoverOpacity);
+	}
+}
+
+bool UDC1TabHeaderButton::SetState(EDC1TabButtonState InState)
+{
+	if (ButtonState == InState)
+	{
+		return false;
 	}
 
-	ButtonState = State;
+	if (ButtonState == EDC1TabButtonState::Active || InState == EDC1TabButtonState::Active)
+	{
+		FDC1AnimPlayInfo PlayInfo;
+
+		PlayInfo.PlayMode = (InState == EDC1TabButtonState::Active) ? EUMGSequencePlayMode::Forward : EUMGSequencePlayMode::Reverse;
+
+		PlayAnim(ClickedAnim, PlayInfo);
+	}
+
+	ButtonState = InState;
+
+	ApplyState();
+
+	return true;
+}
+
+void UDC1TabHeaderButton::OnAnimFinished(const UWidgetAnimation* InAnim)
+{
+	Super::OnAnimFinished(InAnim);
 
 	ApplyState();
 }
@@ -83,5 +101,4 @@ void UDC1TabHeaderButton::ApplyState()
 
 		ActiveBackgroundImage->SetOpacity(BackgroundOpacity);
 	}
-
 }

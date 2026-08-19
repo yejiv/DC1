@@ -25,14 +25,14 @@ protected:
 
 private:
 	UDC1TechTreeComponent*	GetTechTreeComponent();
-	void					InitRows(int32 NewLevel);
+	void					InitRows(int32 InNewLevel);
 	
-	void					UpdateRows(int32 NewLevel);
-	void					UpdatePoint(const UDC1TechTreeComponent* TechComp);
-	void					UpdateSlots(const UDC1TechTreeComponent* TechComp);
+	void					UpdateRows(int32 InNewLevel);
+	void					UpdatePoint(const UDC1TechTreeComponent* InTechComp);
+	void					UpdateSlots(const UDC1TechTreeComponent* InTechComp);
 
 	// DataTable 읽어서 Row, Slot 생성
-	void					BuildTechTree();
+	void					InitTechTree();
 
 	// TechTree Slot 상태 변화 ( Lock, Available, Unlock )
 	void					OnTechStateChanged();

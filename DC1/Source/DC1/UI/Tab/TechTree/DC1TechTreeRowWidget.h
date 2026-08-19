@@ -18,30 +18,39 @@ class DC1_API UDC1TechTreeRowWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 public:
-	void					InitTier(int32 Level);
-	UDC1TechTreeButton*		AddTechSlot(const FDC1TechRow& Row);
+	void					InitTier(int32 InLevel);
+	UDC1TechTreeButton*		AddTechSlot(const FDC1TechRow& InRow);
 
-	void					SetState(int32 NewLevel);
+	void					SetState(int32 InNewLevel);
 
 private:
+	void					ApplyState(bool InIsActivated, bool InIsActivatedTopLine, bool InIsActivatedBottomLine);
+
+private:
+	// Level Text
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>				LevelText;
 
+	// Level Icon Image
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_Icon;
 
+	// Level Icon Background
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_Background;
 
+	// 비활성화된 Row Hover Image ( Blend Black )
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_HoverImage;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Row_Background;
 
+	// 활성화된 Row Level Icon 간 Line
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_TopLine;
 
+	// 활성화된 Row Level Icon 간 Line
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_BottomLine;
 
@@ -68,5 +77,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
 	FLinearColor						InactiveBackgroundColor = FLinearColor::Black;
 
+private:
 	int32								RowLevel = 0;
+
 };

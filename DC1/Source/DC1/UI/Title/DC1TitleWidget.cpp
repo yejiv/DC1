@@ -8,11 +8,8 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Kismet/GameplayStatics.h"
 
 #include "Controller/DC1LogoController.h"
-
-#include "Helper/DC1Macro.h"
 
 void UDC1TitleWidget::NativeOnInitialized()
 {
@@ -77,7 +74,7 @@ void UDC1TitleWidget::OnConnectClicked()
 		return;
 	}
 	
-	ADC1LogoController* LogoController = Cast<ADC1LogoController>(UGameplayStatics::GetPlayerController(this, 0));
+	ADC1LogoController* LogoController = Cast<ADC1LogoController>(GetOwningPlayer());
 	if (false == ::IsValid(LogoController))
 	{
 		return;

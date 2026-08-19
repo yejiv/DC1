@@ -67,10 +67,14 @@ void UDC1BracketButton::HandleHovered()
 		BracketImage->SetOpacity(1.f);
 	}
 
-	if (true == ::IsValid(HoverAnim))
-	{
-		PlayAnimation(HoverAnim, 0.f, 0);
-	}
+	FDC1AnimPlayInfo PlayInfo;
+
+	// 호버 동안 무한 루프, 언호버 시 원래 값으로 복원
+	PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
+	PlayInfo.bRestoreState = true;
+	PlayInfo.NumLoops = 0;
+
+	PlayAnim(HoverAnim, PlayInfo);
 }
 
 void UDC1BracketButton::HandleUnhovered()
@@ -80,8 +84,5 @@ void UDC1BracketButton::HandleUnhovered()
 		BracketImage->SetOpacity(0.f);
 	}
 
-	if (true == ::IsValid(HoverAnim))
-	{
-		StopAnimation(HoverAnim);
-	}
+	StopAnim(HoverAnim);
 }
