@@ -10,22 +10,55 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Logo_Title, "UI.Logo.Title");
 #pragma endregion
 
-#pragma region MAIN
+#pragma region MAIN TAB
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab, "UI.Main.Tab");
+	
+	// UI_Main_Tab의 Tab 구별용 Tag
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_Inventory,	"UI.Main.Tab.Inventory");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_HasPal,		"UI.Main.Tab.HasPal");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_TechTree,	"UI.Main.Tab.TechTree");
+#pragma endregion
+
+#pragma region MAIN_BUILD
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build, "UI.Main.Build");
+
+	// UI_Main_Build의 Tab 구별용 Tag
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Crafting, "UI.Main.Build.Crafting");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Pal, "UI.Main.Build.Pal");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Storage, "UI.Main.Storage");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Food, "UI.Main.Food");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Infrastructure, "UI.Main.Infrastructure");
 #pragma endregion
 }
 
 namespace DC1TechTags
 {
 #pragma region CATEGORY_BUILD
-	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_CraftAndRepair, "Build.Crafting.CraftAndRepair");
-	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Sphere, "Build.Crafting.Sphere");
-	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Weapon, "Build.Crafting.Weapon");
-	
-	UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalBox, "Build.Pal.PalBox");
+	UE_DEFINE_GAMEPLAY_TAG(Build, "Build");
+
+#pragma region CRAFTING_CRAFTANDREAPIR
+	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_CraftAndRepair_WorkBench00, "Build.Crafting.CraftAndRepair.WorkBench00");
+#pragma endregion
+
+#pragma region CRAFTING_SPHERE
+	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Sphere_SphereBench00, "Build.Crafting.Sphere.SphereBench00");
+#pragma endregion
+
+#pragma region CRAFTING_WEAPON
+	UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Weapon_WeaponBench00, "Build.Crafting.Weapon.WeaponBench00");
+#pragma endregion
+
+#pragma region PAL_PALMANAGEMENT
+	UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalManagement_PalBox, "Build.Pal.PalManagement.PalBox");
+#pragma endregion
+
+#pragma region FOOD_COOK
+#pragma endregion
+
+#pragma region FOOD_FARM
+	UE_DEFINE_GAMEPLAY_TAG(Build_Food_Farm_Fruit, "Build.Food.Farm.Fruit");
+#pragma endregion
+
 #pragma endregion
 
 #pragma region CATEGORY_CRAFTING

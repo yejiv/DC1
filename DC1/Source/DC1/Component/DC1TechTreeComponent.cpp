@@ -64,6 +64,17 @@ void UDC1TechTreeComponent::BeginPlay()
 
 	CachedTechRows();
 	BindLevelChange();
+
+	if (false == GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
+	UnlockedTechTags.AppendTags(DefaultUnlockedTags);
+
+	// Stand Alone 대응
+	OnRep_TechState();
+	OnRep_UnlockedTags();
 }
 
 void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -73,6 +84,7 @@ void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechIDs, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, TechPoints, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, AncientTechPoints, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechTags, COND_OwnerOnly);
 }
 
 
@@ -118,8 +130,15 @@ void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FName& TechID
 	TechPoints -= (*Found)->UnlockCost;
 	UnlockedTechIDs.Add(TechID);
 
+	FGameplayTag TechTag = (*Found)->CategoryTag;
+	if (true == TechTag.IsValid())
+	{
+		UnlockedTechTags.AddTag(TechTag);
+	}
+
 	//StandAlone
 	OnRep_TechState();
+	OnRep_UnlockedTags();
 }
 
 void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FName& TechID)
@@ -146,6 +165,19 @@ void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FName&
 void UDC1TechTreeComponent::OnRep_TechState()
 {
 	OnTechStateChange.Broadcast();
+}
+
+void UDC1TechTreeComponent::OnRep_UnlockedTags()
+{
+	for (const FGameplayTag& Tag : UnlockedTechTags)
+	{
+		if (false == LastUnlockedTags.HasTagExact(Tag))
+		{
+			OnTechUnlocked.Broadcast(Tag);
+		}
+	}
+
+	LastUnlockedTags = UnlockedTechTags;
 }
 
 void UDC1TechTreeComponent::CachedTechRows()

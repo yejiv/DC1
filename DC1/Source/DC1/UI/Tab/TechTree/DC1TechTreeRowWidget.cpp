@@ -49,20 +49,20 @@ void UDC1TechTreeRowWidget::SetState(int32 NewLevel)
 {
 	bool IsActivated = RowLevel <= NewLevel;
 
-	bool IsActivatedTopLine = (IsActivated && 1 < RowLevel);
+	bool IsActivatedTopLine = (IsActivated && RowLevel > 1);
 	
 	bool IsActivatedBottomLine = (IsActivated&& NewLevel > RowLevel);
 
 	
 	if (true == ::IsValid(Level_HoverImage))
 	{
-		float HoverOpacity = IsActivated ? 0.f : DeactivedHoverOpacity;
+		float HoverOpacity = IsActivated ? 0.f : InactiveHoverOpacity;
 		Level_HoverImage->SetOpacity(HoverOpacity);
 	}
 
 	if (true == ::IsValid(Level_Icon))
 	{
-		FLinearColor IconColor = IsActivated ? ActivatedIconColor : DeactivatedIconColor;
+		FLinearColor IconColor = IsActivated ? ActiveIconColor : InactiveIconColor;
 		Level_Icon->SetColorAndOpacity(IconColor);
 	}
 
@@ -74,7 +74,7 @@ void UDC1TechTreeRowWidget::SetState(int32 NewLevel)
 
 	if (true == ::IsValid(Row_Background))
 	{
-		FLinearColor RowBackgroundColor = IsActivated ? ActivatedBackgroundColor : DeactivatedBackgroundColor;
+		FLinearColor RowBackgroundColor = IsActivated ? ActiveBackgroundColor : InactiveBackgroundColor;
 		Row_Background->SetColorAndOpacity(RowBackgroundColor);
 	}
 

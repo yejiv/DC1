@@ -5,6 +5,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Controller/DC1PalAIController.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
@@ -44,10 +45,10 @@ void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandl
 		ASC->CancelAbilityByTag(DC1PalTags::Ability_Pal_Attack);
 	}
 
-	// StopMovement면 도착됨
 	if (AAIController* AIController = Cast<AAIController>(Pal->GetController()))
 	{
 		AIController->PauseMove(FAIRequestID::CurrentRequest);
+		AIController->ClearFocus(EAIFocusPriority::Gameplay); // 회전 금지
 	}
 
 	UAnimMontage* Montage = PalData->FindMontageByTag(DC1PalTags::Anim_Pal_Hit).LoadSynchronous();
@@ -65,8 +66,8 @@ void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandl
 		return;
 	}
 
+	// OnBlendOut은 안함. (회전이랑 몽타주랑 겹침)
 	MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
-	MontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageFinished);
 	MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->ReadyForActivation();
@@ -74,13 +75,16 @@ void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandl
 
 void UDC1GameplayAbility_PalHit::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (const AActor* Avatar = GetAvatarActorFromActorInfo())
+	if (const APawn* Pal = Cast<APawn>(GetAvatarActorFromActorInfo()))
 	{
-		if (const APawn* Pal = Cast<APawn>(Avatar))
+		if (ADC1PalAIController* AIController = Cast<ADC1PalAIController>(Pal->GetController()))
 		{
-			if (AAIController* AIController = Cast<AAIController>(Pal->GetController()))
+			AIController->ResumeMove(FAIRequestID::CurrentRequest);
+
+			// 경직이 끝난 후 타겟 보기
+			if (AActor* Target = AIController->GetCurrentTarget())
 			{
-				AIController->ResumeMove(FAIRequestID::CurrentRequest);
+				AIController->SetFocus(Target, EAIFocusPriority::Gameplay);
 			}
 		}
 	}

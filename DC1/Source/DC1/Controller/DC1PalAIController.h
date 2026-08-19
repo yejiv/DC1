@@ -32,6 +32,10 @@ public:
 
 	void					StopBehavior();
 
+	// 때린 상대를 기억한다. 보이지 않아도 기억 시간 동안 쫓아간다
+	void					ProvokeBy(AActor* InInstigator);
+	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
+
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
 	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
@@ -58,6 +62,9 @@ protected:
 
 	// 현재 감지 중인 적들. 죽으면 UpdateTarget에서 걸러짐.
 	TArray<TWeakObjectPtr<AActor>>	SensedTargets;
+
+	UPROPERTY()
+	TObjectPtr<AActor>				ProvokedTarget = { nullptr };
 
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };

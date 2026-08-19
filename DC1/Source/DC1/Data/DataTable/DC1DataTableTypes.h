@@ -24,7 +24,7 @@ struct FDC1TechRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName TechID;
 
-	// 해당 테크가 어떤 분류에 속하는지
+	// 해당 테크 Tag - ex) Build_Crafting_CraftAndRepair_WorkBench00
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag CategoryTag;
 
@@ -34,18 +34,55 @@ struct FDC1TechRow : public FTableRowBase
 
 	// 테크 이름 - ex) 원시적인 작업대
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText	DisplayName;
+	FText DisplayName;
 
 	// 분류 이름 - ex) 건축물, 아이템
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<UTexture2D> Icon;
+	TSoftObjectPtr<UTexture2D> Icon;
 
-	// �ر� �ڽ�Ʈ
+	// 해금 비용
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 UnlockCost;
+};
+
+USTRUCT(BlueprintType)
+struct FDC1ItemCost
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Count;
+};
+
+USTRUCT(BlueprintType)
+struct FDC1BuildRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	//	4단계 고정 - ex) Build_Crafting_CraftAndRepair_WorkBench00
+	//	Page = Build.Crafing 
+	//	Row = BuildCrafting.CraftAndRepair
+	//	Slot = Build_Crafting_CraftAndRepair_WorkBench00
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag BuildTag;
+
+	// Row 내부 정렬 순서
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 SortOrder;
+
+	// Build 비용
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FDC1ItemCost> BuildCosts;
+
+	// Build Actor
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftClassPtr<AActor> BuildActorClass;
 };
 
 USTRUCT(BlueprintType)

@@ -31,8 +31,10 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
 	UPROPERTY()
 	TObjectPtr<UDC1PlayerSet> PlayerSet = { nullptr };
+	
 	UPROPERTY(VisibleAnywhere, Category = "Tech")
 	TObjectPtr< UDC1TechTreeComponent>		TechTreeComponent = { nullptr };
 

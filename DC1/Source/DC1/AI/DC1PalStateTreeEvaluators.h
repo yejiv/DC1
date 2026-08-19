@@ -22,6 +22,12 @@ struct FDC1PalTargetEvaluatorInstanceData
 	bool							bHasTarget = { false };
 
 	UPROPERTY(EditAnywhere, Category = Output)
+	bool							bProvoked = { false };
+
+	UPROPERTY(EditAnywhere, Category = Output)
+	bool							bHitReacting = { false };
+
+	UPROPERTY(EditAnywhere, Category = Output)
 	float							DistanceToTarget = { 0.f };
 
 	// 전이 조건이 DistanceToTarget과 비교할 값. 종마다 달라서 PalData로 판단

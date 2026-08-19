@@ -6,7 +6,6 @@
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
-#include "Components/WidgetSwitcher.h"
 
 void UDC1TabWidget::NativeOnInitialized()
 {
@@ -35,96 +34,20 @@ void UDC1TabWidget::NativeOnInitialized()
 				});
 		}
 	}
+
+	ButtonInitialize();
 }
 
-void UDC1TabWidget::HandleInputKey(const FKey& InputKey)
+void UDC1TabWidget::ButtonInitialize()
 {
-	if (0 >= TabToSwitchIndex.Num())
+	for (const TPair<FGameplayTag, TObjectPtr<UDC1TabHeaderButton>>& Pair : TabButtons)
 	{
-		return;
+		UDC1TabHeaderButton* TabButton = Pair.Value.Get();
+		if (true == ::IsValid(TabButton))
+		{
+			TabButton->SetState(EDC1TabButtonState::Inactive);
+		}
 	}
-
-	if (true == PrevTabKeys.Keys.Contains(InputKey))
-	{
-		ChangeTab(false);
-		return;
-	}
-
-	if (true == NextTabKeys.Keys.Contains(InputKey))
-	{
-		ChangeTab(true);
-		return;
-	}
-
-	if (true == CurrentTab.IsValid())
-	{
-		CloseWidget(InputKey);
-		return;
-	}
-}
-
-void UDC1TabWidget::SelectTab(const FGameplayTag& Tab)
-{
-	int32* Index = TabToSwitchIndex.Find(Tab);
-	if (nullptr == Index)
-	{
-		return;
-	}
-
-	if (false == ::IsValid(TabSwitcher))
-	{
-		return;
-	}
-
-	// ChangeButton
-	TObjectPtr<UDC1TabHeaderButton>* ChangeTabPtr = TabButtons.Find(Tab);
-	if (nullptr == ChangeTabPtr)
-	{
-		return;
-	}
-
-	UDC1TabHeaderButton* ChangeTabButton = ChangeTabPtr->Get();
-
-	// CurrentButton
-	UDC1TabHeaderButton* CurrentTabButton = nullptr;
-	TObjectPtr<UDC1TabHeaderButton>* CurrentTabPtr = TabButtons.Find(CurrentTab);
-	if (nullptr != CurrentTabPtr)
-	{
-		CurrentTabButton = CurrentTabPtr->Get();
-	}
-
-	if (nullptr != CurrentTabButton)
-	{
-		CurrentTabButton->SetActive(false);
-	}
-
-	ChangeTabButton->SetActive(true);
-
-	CurrentTab = Tab;
-	TabSwitcher->SetActiveWidgetIndex(*Index);
-}
-
-void UDC1TabWidget::ChangeTab(bool IsNext)
-{
-	const int32* CurrentIndex = TabToSwitchIndex.Find(CurrentTab);
-	if (nullptr == CurrentIndex)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DC1TabWidget :: None bind Tab to Index"));
-		return;
-	}
-
-	int32 NumsIndex = TabToSwitchIndex.Num();
-	int32 ChangeIndex = IsNext ? (*(CurrentIndex) + 1) % NumsIndex :
-								((*(CurrentIndex) - 1) + NumsIndex ) % NumsIndex;
-
-	const FGameplayTag* ChangeTab = SwitchIndexToTab.Find(ChangeIndex);
-	if (nullptr == ChangeTab)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DC1TabWidget :: None bind Tab to Index"));
-		return;
-	}
-
-	SelectTab(*ChangeTab);
 }
 
 void UDC1TabWidget::CloseWidget(const FKey& InputKey)
@@ -150,5 +73,165 @@ void UDC1TabWidget::CloseWidget(const FKey& InputKey)
 		}
 
 		UIManager->PopScreen();
+	}
+}
+
+UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& Tab) const
+{
+	const TObjectPtr<UDC1TabHeaderButton>* TabButtonPtr = TabButtons.Find(Tab);
+	if (nullptr == TabButtonPtr)
+	{
+		return nullptr;
+	}
+
+	UDC1TabHeaderButton* TabButton = TabButtonPtr->Get();
+	if (false == ::IsValid(TabButton))
+	{
+		return nullptr;
+	}
+
+	return TabButton;
+}
+
+
+void UDC1TabWidget::HandleInputKey(const FKey& InputKey)
+{
+	if (TabToSwitchIndex.Num() <= 0)
+	{
+		return;
+	}
+
+	if (true == PrevTabKeys.Keys.Contains(InputKey))
+	{
+		ChangeTab(false);
+		return;
+	}
+
+	if (true == NextTabKeys.Keys.Contains(InputKey))
+	{
+		ChangeTab(true);
+		return;
+	}
+
+	if (true == CurrentTab.IsValid())
+	{
+		CloseWidget(InputKey);
+		return;
+	}
+}
+
+bool UDC1TabWidget::SelectTab(const FGameplayTag& Tab)
+{
+	if (false == CanSelectTab(Tab))
+	{
+		return false;
+	}
+
+	if (CurrentTab == Tab)
+	{
+		return true;
+	}
+
+	int32* Index = TabToSwitchIndex.Find(Tab);
+	if (nullptr == Index)
+	{
+		return false;
+	}
+
+	if (false == ::IsValid(TabSwitcher))
+	{
+		return false;
+	}
+
+	UDC1TabHeaderButton* ChangeTabButton = GetTabButton(Tab);
+	if (false == ::IsValid(ChangeTabButton))
+	{
+		return false;
+	}
+
+	UDC1TabHeaderButton* CurrentTabButton = GetTabButton(CurrentTab);	
+	if (true == ::IsValid(CurrentTabButton))
+	{
+		CurrentTabButton->SetState(EDC1TabButtonState::Inactive);
+	}
+
+	ChangeTabButton->SetState(EDC1TabButtonState::Active);
+	CurrentTab = Tab;
+	TabSwitcher->SetActiveWidgetIndex(*Index);
+	
+	return true;
+}
+
+void UDC1TabWidget::EnableTab(const FGameplayTag& Tab)
+{
+	UDC1TabHeaderButton* TabButton = GetTabButton(Tab);
+
+	if (true == ::IsValid(TabButton) && false == TabButton->CanSelect())
+	{
+		TabButton->SetState(EDC1TabButtonState::Inactive);
+	}
+}
+
+bool UDC1TabWidget::CanSelectTab(const FGameplayTag& Tab) const
+{
+	UDC1TabHeaderButton* TabButton = GetTabButton(Tab);
+
+	if (false == ::IsValid(TabButton))
+	{
+		return false;
+	}
+
+	return TabButton->CanSelect();
+}
+
+void UDC1TabWidget::ChangeTab(bool IsNext)
+{
+	const int32* CurrentIndex = TabToSwitchIndex.Find(CurrentTab);
+	if (nullptr == CurrentIndex)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DC1TabWidget :: None bind Tab to Index"));
+		return;
+	}
+
+	int32 NumsIndex = TabToSwitchIndex.Num();
+
+	int32 Step = IsNext ? 1 : -1;
+
+	for (int32 Offset = 1; Offset < NumsIndex; ++Offset)
+	{
+		// 음수 방지 () + NumIndex % NumsIndex
+		int32 ChangeIndex = (((*(CurrentIndex)+(Step * Offset)) % NumsIndex) + NumsIndex) % NumsIndex;
+
+		const FGameplayTag* ChangeTab = SwitchIndexToTab.Find(ChangeIndex);
+		if (nullptr == ChangeTab)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("DC1TabWidget :: None bind Tab to Index"));
+			continue;
+		}
+
+		if (true == SelectTab(*ChangeTab))
+		{
+			break;
+		}
+	}
+}
+
+void UDC1TabWidget::SelectFirstInactiveTab()
+{
+	int32 NumsIndex = TabToSwitchIndex.Num();
+
+	for (int32 Index = 0; Index < NumsIndex; ++Index)
+	{
+		const FGameplayTag* ChangeTab = SwitchIndexToTab.Find(Index);
+		if (nullptr == ChangeTab)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("DC1TabWidget :: None bind Tab to Index"));
+			continue;
+		}
+
+		if (true == SelectTab(*ChangeTab))
+		{
+			break;
+		}
 	}
 }

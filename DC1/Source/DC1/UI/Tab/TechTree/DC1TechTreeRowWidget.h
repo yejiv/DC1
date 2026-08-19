@@ -45,28 +45,28 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>					Level_BottomLine;
 
+	// Slot Container
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UPanelWidget>			SlotContainer;
 
-
+	// 생성할 Slot Class
 	UPROPERTY(EditAnywhere, Category = "TechTree")
 	TSubclassOf<UDC1TechTreeButton>		SlotWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
+	float								InactiveHoverOpacity = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	float								DeactivedHoverOpacity = 0.5f;
+	FLinearColor						ActiveIconColor = FLinearColor::Blue;
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						ActivatedIconColor = FLinearColor::Blue;
+	FLinearColor						InactiveIconColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						DeactivatedIconColor = FLinearColor::White;
+	FLinearColor						ActiveBackgroundColor = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						ActivatedBackgroundColor = FLinearColor::White;
-
-	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						DeactivatedBackgroundColor = FLinearColor::Black;
+	FLinearColor						InactiveBackgroundColor = FLinearColor::Black;
 
 	int32								RowLevel = 0;
 };

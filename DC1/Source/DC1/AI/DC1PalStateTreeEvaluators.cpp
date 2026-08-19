@@ -5,7 +5,9 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
+#include "AbilitySystemComponent.h"
 #include "GameFramework/Pawn.h"
 #include "StateTreeExecutionContext.h"
 
@@ -26,6 +28,8 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 
 	InstanceData.Target = nullptr;
 	InstanceData.bHasTarget = false;
+	InstanceData.bProvoked = false;
+	InstanceData.bHitReacting = false;
 	InstanceData.DistanceToTarget = TNumericLimits<float>::Max();
 
 	ADC1PalAIController* AIController = InstanceData.AIController;
@@ -36,6 +40,8 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 
 	AIController->UpdateTarget();
 
+	InstanceData.bProvoked = AIController->IsProvoked();
+
 	// 사거리는 타겟 유무와 무관
 	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
 	{
@@ -43,6 +49,11 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 		{
 			InstanceData.AttackRange = PalData->AttackRange;
 			InstanceData.AttackExitRange = PalData->AttackExitRange;
+		}
+
+		if (const UAbilitySystemComponent* ASC = SelfPal->GetAbilitySystemComponent())
+		{
+			InstanceData.bHitReacting = ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_HitReacting);
 		}
 	}
 

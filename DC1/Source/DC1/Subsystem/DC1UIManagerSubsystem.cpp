@@ -60,7 +60,7 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bo
 
 void UDC1UIManagerSubsystem::PopScreen()
 {
-    if (0 >= ScreenStack.Num())
+    if (ScreenStack.Num() <= 0)
     {
         return;
     }
@@ -120,7 +120,7 @@ void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate OnComplet
 
 void UDC1UIManagerSubsystem::RouteInputKey(const FKey& Key)
 {
-    if (0 >= ScreenStack.Num())
+    if (ScreenStack.Num() <= 0)
     {
         return;
     }
@@ -136,7 +136,7 @@ void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDel
 {
     FadeIn(InDuration, EDC1FadeType::Loading, FSimpleDelegate::CreateWeakLambda(this, [this, OnReadyToTravel]
         {
-            while (0 < ScreenStack.Num())
+            while (ScreenStack.Num() > 0)
             {
                 PopScreen();
             }
@@ -234,7 +234,7 @@ void UDC1UIManagerSubsystem::UpdateInputMode()
         return;
     }
 
-    if (0 >= ScreenStack.Num())
+    if (ScreenStack.Num() <= 0)
     {
         FInputModeGameOnly InputMode;
         PC->SetInputMode(InputMode);
