@@ -21,12 +21,9 @@ struct FDC1TechRow : public FTableRowBase
 	GENERATED_BODY()
 
 	// DataTable에서 특정 테크를 찾기 위한 Key
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName TechID;
-
 	// 해당 테크 Tag - ex) Build_Crafting_CraftAndRepair_WorkBench00
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FGameplayTag CategoryTag;
+	FGameplayTag TechTag;
 
 	// 활성화 및 배치될 레벨 ( 플레이어 레벨 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

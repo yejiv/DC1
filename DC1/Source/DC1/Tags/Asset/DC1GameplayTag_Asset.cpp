@@ -41,7 +41,8 @@ namespace DC1DataTableTags
 {
 #pragma region UI
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_UI_LoadingTip, "DataTable.UI.LoadingTip");
-	UE_DEFINE_GAMEPLAY_TAG(DataTable_UI_TechTree, "DataTable.UI.TechTree");
+	UE_DEFINE_GAMEPLAY_TAG(DataTable_UI_TechTree,	"DataTable.UI.TechTree");
+	UE_DEFINE_GAMEPLAY_TAG(DataTable_UI_Build,		"DataTable.UI.Build");
 #pragma endregion
 
 #pragma region Item

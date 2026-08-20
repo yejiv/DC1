@@ -21,7 +21,7 @@ protected:
 	virtual void	NativeDestruct() override;
 
 public:
-	void			SetPoint(int32 NumPoint);
+	void			SetPoint(int32 InNumPoint);
 
 private:
 	void			ApplyState();

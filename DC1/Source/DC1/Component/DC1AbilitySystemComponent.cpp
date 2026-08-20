@@ -95,6 +95,53 @@ void UDC1AbilitySystemComponent::CancelAbilityByTag(const FGameplayTag& AbilityT
 	}
 }
 
+void UDC1AbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec)
+{
+	Super::AbilitySpecInputReleased(Spec);
+
+	if (Spec.Ability && Spec.IsActive())
+	{
+		// Spec.ActivationInfo는 NonInstanced 전용이라 인스턴스 어빌리티에선 채워지지 않는다.
+		// 태스크가 등록한 키와 맞추려면 인스턴스의 CurrentActivationInfo를 봐야 한다
+		if (UGameplayAbility* Instance = Spec.GetPrimaryInstance())
+		{
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle,
+				Instance->GetCurrentActivationInfo().GetActivationPredictionKey());
+		}
+	}
+}
+
+void UDC1AbilitySystemComponent::AbilityInputPressedByTag(const FGameplayTag& AbilityTag)
+{
+	TArray<FGameplayAbilitySpecHandle> Handles;
+	AbilityTagCache.MultiFind(AbilityTag, Handles);
+
+	for (const FGameplayAbilitySpecHandle& handle : Handles)
+	{
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(handle);
+		if (nullptr == Spec) continue;
+
+		AbilitySpecInputPressed(*Spec);
+
+		if (TryActivateAbility(handle))
+			return;
+	}
+}
+
+void UDC1AbilitySystemComponent::AbilityInputReleasedByTag(const FGameplayTag& AbilityTag)
+{
+	TArray<FGameplayAbilitySpecHandle> Handles;
+	AbilityTagCache.MultiFind(AbilityTag, Handles);
+
+	for (const FGameplayAbilitySpecHandle& handle : Handles)
+	{
+		if (FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(handle))
+		{
+			AbilitySpecInputReleased(*Spec);
+		}
+	}
+}
+
 bool UDC1AbilitySystemComponent::HasAbilityByTag(const FGameplayTag& AbilityTag)
 {
 	return AbilityTagCache.Contains(AbilityTag);

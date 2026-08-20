@@ -77,4 +77,5 @@ enum class EDC1CollisionLayer : uint8
 	ECC_EnemyAttack = ECC_GameTraceChannel4,
 	ECC_Resource = ECC_GameTraceChannel5,
 	ECC_ItemInteraction = ECC_GameTraceChannel6,
+	ECC_Projectile = ECC_GameTraceChannel7,
 };

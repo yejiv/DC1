@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Item/Equip/Weapon/DC1Weapon.h"
+#include "GameplayEffectTypes.h"
 #include "DC1ProjectileWeapon.generated.h"
 
 class ADC1Projectile;
@@ -20,8 +21,8 @@ public:
 public:
 	virtual UPrimitiveComponent* GetAttackCollider() override;
 
-	// 서버에서만 유효. 조준 방향은 그걸 아는 호출측(GA)이 넘긴다
-	ADC1Projectile*		FireProjectile(const FVector& Direction);
+	// 데미지는 쏘는 쪽(GA)이 발사 시점 값으로 굳혀서 넘긴다
+	ADC1Projectile*		FireProjectile(const FGameplayEffectSpecHandle& DamageSpec);
 
 	FTransform			GetMuzzleTransform() const;
 
@@ -32,4 +33,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
 	TSubclassOf<ADC1Projectile>		ProjectileClass;
+
+private:
+	FVector				GetAimDirection();
 };

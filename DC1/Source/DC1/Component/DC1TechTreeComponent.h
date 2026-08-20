@@ -17,7 +17,7 @@ class UDataTable;
 DECLARE_MULTICAST_DELEGATE(FDC1OnTechStateChange);
 
 // Tech Unlock ( Build, Crafting )
-// FGameplayTag = Unlocked CategoryTag
+// FGameplayTag = Unlocked TechTag
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnTechUnlocked, const FGameplayTag&);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -33,13 +33,14 @@ public:
 	UDC1TechTreeComponent();
 
 public:
-	bool					IsTechUnlocked(const FName& TechID) const { return UnlockedTechIDs.Contains(TechID); }
+	bool					IsTechUnlocked(const FGameplayTag& InTechTag) const { return UnlockedTechTags.HasTagExact(InTechTag); }
 	int32					GetTechPoints() const { return TechPoints; }
 	int32					GetAncientTechPoints() const { return AncientTechPoints; }
-	const TArray<FName>&	GetUnlockedTechID() const { return UnlockedTechIDs; }
 	int32					GetPlayerLevel() const;
-	EDC1TechSlotState		GetTechState(const FName& TechID) const;
+	EDC1TechSlotState		GetTechState(const FGameplayTag& InTechTag) const;
 	bool					HasUnlockedTag(const FGameplayTag& Tag) const { return UnlockedTechTags.HasTag(Tag); }
+
+	const TMap<FGameplayTag, const FDC1TechRow*>& GetTechRowsByTag() const { return TechRowsByTag; }
 
 public:
 	virtual void			BeginPlay() override;
@@ -48,13 +49,13 @@ public:
 
 public:
 	UFUNCTION(Server, Reliable)
-	void			Server_UnlockTech(const FName& TechID);
+	void			Server_UnlockTech(const FGameplayTag& InTechTag);
 	
 	UFUNCTION(Server, Reliable)
-	void			Server_UnlockAncientTech(const FName& TechID);
+	void			Server_UnlockAncientTech(const FGameplayTag& InTechTag);
 
-	void			AddTechPoints(int32 Points);
-	void			AddAncientTechPoints(int32 Points);
+	void			AddTechPoints(int32 InPoints);
+	void			AddAncientTechPoints(int32 InPoints);
 
 
 private:
@@ -67,14 +68,10 @@ private:
 	void			CachedTechRows();
 	
 	void			BindLevelChange();
-	void			HandleLevelChanged(const FOnAttributeChangeData& Data);
-	
+	void			HandleLevelChanged(const FOnAttributeChangeData& InData);
+	void			UnlockTech(const FGameplayTag& InTechTag);
 
 private:
-	// 해금된 Tech IDs ( OnRep )
-	UPROPERTY(ReplicatedUsing = OnRep_TechState)
-	TArray<FName>					UnlockedTechIDs;
-
 	// 기술 포인트 ( OnRep )
 	UPROPERTY(ReplicatedUsing = OnRep_TechState)
 	int32							TechPoints = 10;
@@ -98,6 +95,6 @@ private:
 	UPROPERTY()
 	TObjectPtr<const UDataTable>	CachedTechData;
 
-	// 특정 TechID가 가진 Tech Data Caching ( Point, Tech Cost 비교 )
-	TMap<FName, const FDC1TechRow*>	TechRowsByID;
+	// 특정 Tech Tag가 가진 Tech Data Caching ( Point, Tech Cost 비교 )
+	TMap<FGameplayTag, const FDC1TechRow*>	TechRowsByTag;
 };

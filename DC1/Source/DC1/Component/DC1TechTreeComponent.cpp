@@ -37,14 +37,14 @@ int32 UDC1TechTreeComponent::GetPlayerLevel() const
 	return NewLevel;
 }
 
-EDC1TechSlotState UDC1TechTreeComponent::GetTechState(const FName& TechID) const
+EDC1TechSlotState UDC1TechTreeComponent::GetTechState(const FGameplayTag& InTechTag) const
 {
-	if (true == IsTechUnlocked(TechID))
+	if (true == IsTechUnlocked(InTechTag))
 	{
 		return EDC1TechSlotState::Unlocked;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByID.Find(TechID);
+	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
 	if (nullptr == Found)
 	{
 		return EDC1TechSlotState::Default;
@@ -70,6 +70,7 @@ void UDC1TechTreeComponent::BeginPlay()
 		return;
 	}
 
+
 	UnlockedTechTags.AppendTags(DefaultUnlockedTags);
 
 	// Stand Alone 대응
@@ -81,82 +82,77 @@ void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechIDs, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, TechPoints, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, AncientTechPoints, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechTags, COND_OwnerOnly);
 }
 
 
-void UDC1TechTreeComponent::AddTechPoints(int32 Points)
+void UDC1TechTreeComponent::AddTechPoints(int32 InPoints)
 {
 	if (false == GetOwner()->HasAuthority())
 	{
 		return;
 	}
 
-	TechPoints += Points;
+	TechPoints += InPoints;
 
 	//StandAlone
 	OnRep_TechState();
 }
 
-void UDC1TechTreeComponent::AddAncientTechPoints(int32 Points)
+void UDC1TechTreeComponent::AddAncientTechPoints(int32 InPoints)
 {
 	if (false == GetOwner()->HasAuthority())
 	{
 		return;
 	}
 
-	AncientTechPoints += Points;
+	AncientTechPoints += InPoints;
 
 	//StandAlone
 	OnRep_TechState();
 }
 
-void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FName& TechID)
+void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FGameplayTag& InTechTag)
 {
-	if (EDC1TechSlotState::Available != GetTechState(TechID))
+	if (EDC1TechSlotState::Available != GetTechState(InTechTag))
 	{
 		return;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByID.Find(TechID);
+	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
 	if (nullptr == Found)
 	{
 		return;
 	}
 
 	TechPoints -= (*Found)->UnlockCost;
-	UnlockedTechIDs.Add(TechID);
 
-	FGameplayTag TechTag = (*Found)->CategoryTag;
-	if (true == TechTag.IsValid())
-	{
-		UnlockedTechTags.AddTag(TechTag);
-	}
+	UnlockTech(InTechTag);
 
 	//StandAlone
 	OnRep_TechState();
 	OnRep_UnlockedTags();
 }
 
-void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FName& TechID)
+void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FGameplayTag& InTechTag)
 {
 	// GetAncient TechState로 추후 변경 ( GetTechState에서 TechPoint로 State 판별 )
-	if (EDC1TechSlotState::Available != GetTechState(TechID))
+	if (EDC1TechSlotState::Available != GetTechState(InTechTag))
 	{
 		return;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByID.Find(TechID);
+	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
 	if (nullptr == Found)
 	{
 		return;
 	}
 
 	AncientTechPoints -= (*Found)->UnlockCost;
-	UnlockedTechIDs.Add(TechID);
+	
+	UnlockTech(InTechTag);
 
 	//StandAlone
 	OnRep_TechState();
@@ -204,24 +200,24 @@ void UDC1TechTreeComponent::CachedTechRows()
 		return;
 	}
 
-	TechRowsByID.Empty();
+	TechRowsByTag.Empty();
 
 	for (FDC1TechRow* Row : AllRows)
 	{
-		FName TechID = Row->TechID;
-		if (true == TechID.IsNone())
+		const FGameplayTag& TechTag = Row->TechTag;
+		if (false == TechTag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("TechID is None"));
+			UE_LOG(LogTemp, Warning, TEXT("Tech Tag is Invalid"));
 			continue;
 		}
 
-		if (nullptr != TechRowsByID.Find(TechID))
+		if (nullptr != TechRowsByTag.Find(TechTag))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Duplication TechID"));
+			UE_LOG(LogTemp, Warning, TEXT("Duplication TechTag"));
 			continue;
 		}
 
-		TechRowsByID.Add(TechID, Row);
+		TechRowsByTag.Add(TechTag, Row);
 	}
 }
 
@@ -240,7 +236,26 @@ void UDC1TechTreeComponent::BindLevelChange()
 	LevelChangeDelegate.AddUObject(this, &ThisClass::HandleLevelChanged);
 }
 
-void UDC1TechTreeComponent::HandleLevelChanged(const FOnAttributeChangeData& Data)
+void UDC1TechTreeComponent::HandleLevelChanged(const FOnAttributeChangeData& InData)
 {
 	OnTechStateChange.Broadcast();
+}
+
+void UDC1TechTreeComponent::UnlockTech(const FGameplayTag& InTechTag)
+{
+	if (true == UnlockedTechTags.HasTagExact(InTechTag))
+	{
+		return;
+	}
+
+	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
+	if (nullptr == Found)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Cant Find TechRows by %s"), *InTechTag.ToString());
+		return;
+	}
+
+	const FGameplayTag& TechTag = (*Found)->TechTag;
+
+	UnlockedTechTags.AddTag(TechTag);
 }

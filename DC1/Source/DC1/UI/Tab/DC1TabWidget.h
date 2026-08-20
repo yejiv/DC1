@@ -30,25 +30,25 @@ protected:
 	
 protected:
 	virtual void			ButtonInitialize();
-	virtual void			CloseWidget(const FKey& InputKey);
+	virtual void			CloseWidget(const FKey& InKey);
 
-	UDC1TabHeaderButton*	GetTabButton(const FGameplayTag& Tab) const;
+	UDC1TabHeaderButton*	GetTabButton(const FGameplayTag& InTab) const;
 
 	template<typename TabType>
-	TabType*			GetTabWidget(const FGameplayTag& Tab) const;
+	TabType*			GetTabWidget(const FGameplayTag& InTab) const;
 
 public:
-	virtual void	HandleInputKey(const FKey& InputKey) override;
+	virtual void	HandleInputKey(const FKey& InKey) override;
 
 public:
-	bool			SelectTab(const FGameplayTag& Tab);
+	bool			SelectTab(const FGameplayTag& InTab);
 	void			SelectFirstInactiveTab();
 
-	void			EnableTab(const FGameplayTag& Tab);
+	void			EnableTab(const FGameplayTag& InTab);
 
 private:
-	bool			CanSelectTab(const FGameplayTag& Tab) const;
-	void			ChangeTab(bool IsNext);
+	bool			CanSelectTab(const FGameplayTag& InTab) const;
+	void			ChangeTab(bool InIsNext);
 
 protected:
 	UPROPERTY()
@@ -81,9 +81,9 @@ private:
 
 
 template<typename TabType>
-inline TabType* UDC1TabWidget::GetTabWidget(const FGameplayTag& Tab) const
+inline TabType* UDC1TabWidget::GetTabWidget(const FGameplayTag& InTab) const
 {
-	const int32* Index = TabToSwitchIndex.Find(Tab);
+	const int32* Index = TabToSwitchIndex.Find(InTab);
 	if (nullptr == Index)
 	{
 		return nullptr;

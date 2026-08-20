@@ -31,28 +31,28 @@ public:
 	virtual void Deinitialize() override;
 
 public:
-	// IsPop == 최상위 UI를 Pop하고 Push 할 것인가
-	UDC1UserWidget*				PushScreen(const FGameplayTag& UITag, bool IsPop = false);
+	// InIsPop == 최상위 UI를 Pop하고 Push 할 것인가
+	UDC1UserWidget*				PushScreen(const FGameplayTag& InUITag, bool InIsPop = false);
 	void						PopScreen();
 
-	void						FadeIn(float InDuration, EDC1FadeType FadeType = EDC1FadeType::Default, FSimpleDelegate OnComplete = FSimpleDelegate());
-	void						FadeOut(float InDuration, FSimpleDelegate OnComplete = FSimpleDelegate());
+	void						FadeIn(float InDuration, EDC1FadeType InFadeType = EDC1FadeType::Default, FSimpleDelegate InOnComplete = FSimpleDelegate());
+	void						FadeOut(float InDuration, FSimpleDelegate InOnComplete = FSimpleDelegate());
 
 
-	void						RouteInputKey(const FKey& Key);
-	void						BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel);
+	void						RouteInputKey(const FKey& InKey);
+	void						BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel);
 
 private:
-	UDC1UserWidget*				CreateOverlay(const FGameplayTag& UITag, int32 ZOrder);
-	UDC1UserWidget*				PushScreenInternal(UDC1UserWidget* CreatedWidget);
-	UDC1UserWidget*				PushScreenInternal(const FGameplayTag& UITag, TSubclassOf<UDC1UserWidget> WidgetClass);
+	UDC1UserWidget*				CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder);
+	UDC1UserWidget*				PushScreenInternal(UDC1UserWidget* InWidget);
+	UDC1UserWidget*				PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass);
 
 
-	TSubclassOf<UDC1UserWidget> FindWidgetClass(const FGameplayTag& UITag);
+	TSubclassOf<UDC1UserWidget> FindWidgetClass(const FGameplayTag& InUITag);
 	void						UpdateInputMode();
 	
 	void						RollLoadingType(EDC1FadeType InType);
-	void						OnPostLoadMap(UWorld* LoadedWorld);
+	void						OnPostLoadMap(UWorld* InLoadedWorld);
 	
 private:
 	UPROPERTY()

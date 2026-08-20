@@ -44,7 +44,11 @@ private:
 	void OnJump(const FInputActionValue& Value);
 	void StopJumping(const FInputActionValue& Value);
 	void OnCrouch(const FInputActionValue& Value);
+
 	void OnAttack(const FInputActionValue& Value);
+	void OnAttackPressed(const FInputActionValue& Value);
+	void OnAttackReleased(const FInputActionValue& Value);
+
 	void ChangeWeapon(const FInputActionValue& Value);
 
 private:
@@ -83,6 +87,6 @@ private:
 
 #pragma region UI_TEST
 private:
-	void OpenTabWidget(FGameplayTag Tab);
+	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
 #pragma endregion
 };

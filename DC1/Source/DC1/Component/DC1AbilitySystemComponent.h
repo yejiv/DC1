@@ -37,6 +37,10 @@ public:
 	bool ActivateAbilityByTag(const FGameplayTag& AbilityTag);
 	void CancelAbilityByTag(const FGameplayTag& AbilityTag);
 
+	virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
+	void AbilityInputPressedByTag(const FGameplayTag& AbilityTag);
+	void AbilityInputReleasedByTag(const FGameplayTag& AbilityTag);
+
 	bool HasAbilityByTag(const FGameplayTag& AbilityTag);
 	bool HasAbility(const TSubclassOf<UGameplayAbility>& AbilityClass, const FGameplayTag& ActivationTag) const;
 
