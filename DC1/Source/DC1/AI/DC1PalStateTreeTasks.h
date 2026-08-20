@@ -111,6 +111,8 @@ struct FDC1PalWanderTask : public FStateTreeTaskCommonBase
 };
 
 
+
+
 USTRUCT()
 struct FDC1PalFleeTaskInstanceData
 {

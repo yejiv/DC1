@@ -30,7 +30,6 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	InstanceData.bProvoked = false;
 	InstanceData.bHitReacting = false;
 	InstanceData.DistanceToTarget = TNumericLimits<float>::Max();
-	InstanceData.SelectedMinRange = 0.f;
 	InstanceData.SelectedMaxRange = 0.f;
 
 	ADC1PalAIController* AIController = InstanceData.AIController;
@@ -63,6 +62,5 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 
 	// 스킬을 먼저 고르고, 거리 판단은 그 스킬의 사거리로 한다
 	AIController->UpdateSelectedSkill();
-	InstanceData.SelectedMinRange = AIController->GetSelectedMinRange();
 	InstanceData.SelectedMaxRange = AIController->GetSelectedMaxRange();
 }

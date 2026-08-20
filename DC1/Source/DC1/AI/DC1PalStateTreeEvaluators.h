@@ -31,9 +31,6 @@ struct FDC1PalTargetEvaluatorInstanceData
 	float							DistanceToTarget = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = Output)
-	float						SelectedMinRange = { 0.f };
-
-	UPROPERTY(EditAnywhere, Category = Output)
 	float						SelectedMaxRange = { 0.f };
 };
 

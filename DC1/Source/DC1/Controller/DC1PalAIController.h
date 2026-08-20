@@ -27,8 +27,6 @@ public:
 
 	void					UpdateTarget();
 
-	void					ApplyPerceptionSettings();
-
 	AActor*					GetCurrentTarget() const { return ::IsValid(CurrentTarget) ? CurrentTarget.Get() : nullptr; }
 
 	void					StopBehavior();
@@ -38,19 +36,14 @@ public:
 	void					ClearSelectedSkill();
 
 	const FGameplayTag&		GetSelectedSkillTag() const { return SelectedSkillTag; }
-	float					GetSelectedMinRange() const { return SelectedMinRange; }
 	float					GetSelectedMaxRange() const { return SelectedMaxRange; }
 
-	// 때린 상대를 기억한다. 보이지 않아도 기억 시간 동안 쫓아간다
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
 
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
 	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
-	TObjectPtr<AActor>		CurrentTarget = { nullptr };
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,6 +55,8 @@ protected:
 	
 	void SetCurrentTarget(AActor* NewTarget);
 
+	void					ApplyPerceptionSettings();
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "AI")
 	TObjectPtr<UStateTreeAIComponent> StateTreeComponent = { nullptr };
@@ -69,21 +64,27 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "AI|Perception")
 	TObjectPtr<UAISenseConfig_Sight> SightConfig = { nullptr };
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	TObjectPtr<AActor>				CurrentTarget = { nullptr };
+
 	// 현재 감지 중인 적들. 죽으면 UpdateTarget에서 걸러짐.
 	TArray<TWeakObjectPtr<AActor>>	SensedTargets;
 
 	UPROPERTY()
 	TObjectPtr<AActor>				ProvokedTarget = { nullptr };
 
+	UPROPERTY()
+	TObjectPtr<AActor>				LastProvokedBy = { nullptr };
 
-	// 지금 쓰기로 고른 스킬. 이 스킬의 사거리가 접근/후퇴의 기준이 된다
-	FGameplayTag				SelectedSkillTag;
-	float						SelectedMinRange = { 0.f };
-	float						SelectedMaxRange = { 0.f };
+	FGameplayTag					SelectedSkillTag;
+	float							SelectedMaxRange = { 0.f };
 
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };
 
 	// 놓친 뒤 추격 유지하는 시간
 	float							TargetMemoryDuration = { 3.f };
+
+	// 시야에서 놓친 뒤 따라가는 시간
+	float							ProvokeMemoryDuration = { 10.f };
 };

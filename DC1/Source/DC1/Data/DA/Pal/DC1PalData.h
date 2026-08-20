@@ -70,9 +70,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
-	float							AttackTraceRadius = { 50.f };
 #pragma endregion
 
 #pragma region AI
@@ -91,6 +88,10 @@ public:
 	// 추격 유지 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							TargetMemoryDuration = { 3.f };
+
+	// 시야에서 놓쳐도 따라가는 시간. 보이는 동안은 계속 갱신
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
+	float							ProvokeMemoryDuration = { 10.f };
 
 	// 스폰 지점 기준 배회 반경
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Wander")

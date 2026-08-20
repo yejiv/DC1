@@ -40,6 +40,8 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	Movement->RotationRate = FRotator(0.f, 360.f, 0.f);
 	Movement->MaxWalkSpeed = 400.f;
 	Movement->bUseRVOAvoidance = true;
+
+	Movement->GetNavMovementProperties()->bUseAccelerationForPaths = true;
 }
 
 void ADC1PalCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const

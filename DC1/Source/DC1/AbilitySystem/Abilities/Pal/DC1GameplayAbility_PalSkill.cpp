@@ -1,14 +1,12 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalAttack.h"
+#include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
-#include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
-#include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/Effect/DC1GameplayTag_Effect.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
@@ -17,18 +15,13 @@
 #include "Animation/AnimMontage.h"
 #include "Engine/World.h"
 
-UDC1GameplayAbility_PalAttack::UDC1GameplayAbility_PalAttack(const FObjectInitializer& ObjectInitializer)
+UDC1GameplayAbility_PalSkill::UDC1GameplayAbility_PalSkill(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
-
-	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_Attacking);
-
-	MontageTag = DC1PalTags::Anim_Pal_Attack;
-	HitEventTag = DC1PalTags::Event_Pal_Attack_Hit;
 }
 
-void UDC1GameplayAbility_PalAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+void UDC1GameplayAbility_PalSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
@@ -56,14 +49,13 @@ void UDC1GameplayAbility_PalAttack::ActivateAbility(const FGameplayAbilitySpecHa
 		return;
 	}
 
-	// 타격 이벤트 대기
-	if (true == HitEventTag.IsValid())
+	if (true == TriggerEventTag.IsValid())
 	{
-		UAbilityTask_WaitGameplayEvent* HitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag, nullptr, false, true);
-		if (nullptr != HitEventTask)
+		UAbilityTask_WaitGameplayEvent* TriggerTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TriggerEventTag, nullptr, false, true);
+		if (nullptr != TriggerTask)
 		{
-			HitEventTask->EventReceived.AddDynamic(this, &ThisClass::OnHitEventReceived);
-			HitEventTask->ReadyForActivation();
+			TriggerTask->EventReceived.AddDynamic(this, &ThisClass::OnTriggerEventReceived);
+			TriggerTask->ReadyForActivation();
 		}
 	}
 
@@ -81,26 +73,20 @@ void UDC1GameplayAbility_PalAttack::ActivateAbility(const FGameplayAbilitySpecHa
 	MontageTask->ReadyForActivation();
 }
 
-void UDC1GameplayAbility_PalAttack::OnHitEventReceived(FGameplayEventData Payload)
+void UDC1GameplayAbility_PalSkill::OnTriggerEventReceived(FGameplayEventData Payload)
 {
 	if (nullptr == CurrentActorInfo || false == CurrentActorInfo->IsNetAuthority())
 	{
 		return;
 	}
 
-	PerformAttackTrace();
+	PerformSkillEffect();
 }
 
-void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
+void UDC1GameplayAbility_PalSkill::SweepAndApplyDamage(float Length, TSet<TObjectPtr<AActor>>& InOutDamagedActors)
 {
 	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetAvatarActorFromActorInfo());
-	if (false == ::IsValid(Pal))
-	{
-		return;
-	}
-
-	const UDC1PalData* PalData = Pal->GetPalData();
-	if (nullptr == PalData)
+	if (false == IsValid(Pal))
 	{
 		return;
 	}
@@ -114,7 +100,7 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 
 	const FVector Forward = Pal->GetActorForwardVector();
 	const FVector Origin = Pal->GetActorLocation() + (Forward * Pal->GetSimpleCollisionRadius());
-	const FVector End = Origin + (Forward * GetMaxRange());
+	const FVector End = Origin + (Forward * Length);
 
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
@@ -125,19 +111,17 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 
 	TArray<FHitResult> Hits;
 	World->SweepMultiByObjectType(Hits, Origin, End, FQuat::Identity, ObjectParams,
-		FCollisionShape::MakeSphere(PalData->AttackTraceRadius), QueryParams);
-
-	TSet<AActor*> DamagedActors;
+		FCollisionShape::MakeSphere(TraceRadius), QueryParams);
 
 	for (const FHitResult& Hit : Hits)
 	{
 		AActor* HitActor = Hit.GetActor();
-		if (false == ::IsValid(HitActor) || HitActor == Pal)
+		if (false == IsValid(HitActor) || HitActor == Pal)
 		{
 			continue;
 		}
 
-		if (true == DamagedActors.Contains(HitActor))
+		if (true == InOutDamagedActors.Contains(HitActor))
 		{
 			continue;
 		}
@@ -153,7 +137,7 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 			continue;
 		}
 
-		DamagedActors.Add(HitActor);
+		InOutDamagedActors.Add(HitActor);
 
 		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 		EffectContext.SetAbility(this);
@@ -172,12 +156,12 @@ void UDC1GameplayAbility_PalAttack::PerformAttackTrace()
 	}
 }
 
-void UDC1GameplayAbility_PalAttack::OnMontageFinished()
+void UDC1GameplayAbility_PalSkill::OnMontageFinished()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UDC1GameplayAbility_PalAttack::OnMontageAborted()
+void UDC1GameplayAbility_PalSkill::OnMontageAborted()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }

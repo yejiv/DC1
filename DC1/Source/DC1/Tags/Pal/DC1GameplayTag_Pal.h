@@ -15,9 +15,9 @@ namespace DC1PalTags
 #pragma endregion
 
 #pragma region Ability
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Attack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Idle);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Tossin);
 #pragma endregion
 
 #pragma region State
@@ -29,8 +29,8 @@ namespace DC1PalTags
 
 #pragma region Anim
 	// PalData.Montages의 키
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Attack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Tossin);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_LookAround);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_Eat);

@@ -115,6 +115,7 @@ void ADC1PalAIController::ApplyPerceptionSettings()
 	SightConfig->SetMaxAge(PalData->StimulusMaxAge);
 
 	TargetMemoryDuration = PalData->TargetMemoryDuration;
+	ProvokeMemoryDuration = PalData->ProvokeMemoryDuration;
 
 	UAIPerceptionComponent* PerceptionComp = GetAIPerceptionComponent();
 	if (nullptr == PerceptionComp)
@@ -195,17 +196,21 @@ void ADC1PalAIController::UpdateTarget()
 	{
 		SetCurrentTarget(Closest);
 		LastSeenTime = Now;
+
+		if (Closest == LastProvokedBy)
+		{
+			ProvokedTarget = Closest;
+		}
 		return;
 	}
 
 	if (true == IsValid(ProvokedTarget)
 		&& false == DC1PalAIController::IsDead(ProvokedTarget)
-		&& ((Now - LastSeenTime) < TargetMemoryDuration))
+		&& ((Now - LastSeenTime) < ProvokeMemoryDuration))
 	{
 		SetCurrentTarget(ProvokedTarget);
 		return;
 	}
-
 
 	if (true == IsValid(CurrentTarget)
 		&& false == DC1PalAIController::IsDead(CurrentTarget)
@@ -256,14 +261,12 @@ void ADC1PalAIController::UpdateSelectedSkill()
 	const int32 PickedIndex = FMath::RandRange(0, Candidates.Num() - 1);
 
 	SelectedSkillTag = Candidates[PickedIndex].Key;
-	SelectedMinRange = Candidates[PickedIndex].Value->GetMinRange();
 	SelectedMaxRange = Candidates[PickedIndex].Value->GetMaxRange();
 }
 
 void ADC1PalAIController::ClearSelectedSkill()
 {
 	SelectedSkillTag = FGameplayTag::EmptyTag;
-	SelectedMinRange = 0.f;
 	SelectedMaxRange = 0.f;
 }
 
@@ -281,6 +284,7 @@ void ADC1PalAIController::ProvokeBy(AActor* InInstigator)
 	}
 
 	ProvokedTarget = InInstigator;
+	LastProvokedBy = InInstigator;
 
 	// 맞을 때마다 기억 시간이 초기화된다
 	LastSeenTime = World->GetTimeSeconds();
@@ -300,6 +304,7 @@ void ADC1PalAIController::StopBehavior()
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
 	ClearSelectedSkill();
+	LastProvokedBy = nullptr;
 	SetCurrentTarget(nullptr);
 }
 

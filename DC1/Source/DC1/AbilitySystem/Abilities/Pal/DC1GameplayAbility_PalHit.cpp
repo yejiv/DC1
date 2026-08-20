@@ -42,7 +42,11 @@ void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandl
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo()))
 	{
-		ASC->CancelAbilityByTag(DC1PalTags::Ability_Pal_Attack);
+		// 진행 중인 스킬을 끊기
+		if (const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController()))
+		{
+			ASC->CancelAbilityByTag(PalController->GetSelectedSkillTag());
+		}
 	}
 
 	if (AAIController* AIController = Cast<AAIController>(Pal->GetController()))
