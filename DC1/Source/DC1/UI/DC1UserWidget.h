@@ -71,5 +71,5 @@ protected:
 
 	// [ OutroAnim ] Animation 바인딩 (없어도 됨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation> OutroAnim; = { nullptr };
+	TObjectPtr<UWidgetAnimation> OutroAnim = { nullptr };
 };

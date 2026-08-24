@@ -56,6 +56,13 @@ enum class EDC1BuildState : uint8
 	Completed = 3 UMETA(DisplayName = "Completed"),			// 건설 완료 ( 서버 )
 };
 
+UENUM(BlueprintType)
+enum class EDC1BuildProbeDirection : uint8
+{
+	Down = 0 UMETA(DisplayName = "Bottom"),	// 지면 확인
+	Up = 1 UMETA(DisplayName = "Up"),		// 천장 확인
+};
+
 #pragma endregion
 
 UENUM(BlueprintType)
