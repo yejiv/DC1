@@ -27,31 +27,31 @@ protected:
 
 protected:
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation>	HoverAnim;
+	TObjectPtr<UWidgetAnimation>	HoverAnim = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<USizeBox>			ButtonSizeBox;
+	TObjectPtr<USizeBox>			ButtonSizeBox = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				BracketImage;
+	TObjectPtr<UImage>				BracketImage = { nullptr };
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UTextBlock>			TextLabel;
+	TObjectPtr<UTextBlock>			TextLabel = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	FText							Button_LabelText;
+	FText							Button_LabelText = { FText::GetEmpty()};
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	float	ButtonSizeX= 0.f;
+	float	ButtonSizeX = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	float	ButtonSizeY = 0.f;
+	float	ButtonSizeY = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	float	FontSize = 0.f;
+	float	FontSize = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Image")
-	bool	ButtonBrushOverride = false;
+	bool	ButtonBrushOverride = { false };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Image", meta = (EditCondition = "ButtonBrushOverride"))
 	FSlateBrush		NormalBrush;

@@ -15,12 +15,12 @@ struct FDC1AnimPlayInfo
 {
 	GENERATED_BODY()
 
-	TEnumAsByte<EUMGSequencePlayMode::Type> PlayMode = EUMGSequencePlayMode::Forward;
+	TEnumAsByte<EUMGSequencePlayMode::Type> PlayMode = { EUMGSequencePlayMode::Forward };
 
-	bool bRestoreState = false;
+	bool bRestoreState = { false };
 
 	// 0 = 무한 루프
-	int32 NumLoops = 1;
+	int32 NumLoops = { 1 };
 };
 
 UCLASS()
@@ -67,9 +67,9 @@ private:
 protected:
 	// [ IntroAnim ] Animation 바인딩 (없어도 됨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation> IntroAnim;
+	TObjectPtr<UWidgetAnimation> IntroAnim = { nullptr };
 
 	// [ OutroAnim ] Animation 바인딩 (없어도 됨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation> OutroAnim;
+	TObjectPtr<UWidgetAnimation> OutroAnim; = { nullptr };
 };

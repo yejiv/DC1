@@ -26,25 +26,25 @@ class DC1_API UDC1TabWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void	NativeOnInitialized() override;
-	
-protected:
-	virtual void			ButtonInitialize();
-	virtual void			CloseWidget(const FKey& InKey);
-
-	UDC1TabHeaderButton*	GetTabButton(const FGameplayTag& InTab) const;
+	UDC1TabHeaderButton* GetTabButton(const FGameplayTag& InTab) const;
 
 	template<typename TabType>
-	TabType*			GetTabWidget(const FGameplayTag& InTab) const;
+	TabType* GetTabWidget(const FGameplayTag& InTab) const;
 
+protected:
+	virtual void	NativeOnInitialized() override;
+	
 public:
 	virtual void	HandleInputKey(const FKey& InKey) override;
 
 public:
 	bool			SelectTab(const FGameplayTag& InTab);
 	void			SelectFirstInactiveTab();
-
 	void			EnableTab(const FGameplayTag& InTab);
+
+protected:
+	virtual void	ButtonInitialize();
+	virtual void	CloseWidget(const FKey& InKey);
 
 private:
 	bool			CanSelectTab(const FGameplayTag& InTab) const;
@@ -59,10 +59,10 @@ protected:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher>		TabSwitcher;
+	TObjectPtr<UWidgetSwitcher>		TabSwitcher = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>		TabButtonContainer;
+	TObjectPtr<UPanelWidget>		TabButtonContainer = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "TAB")
 	FDC1KeyList						PrevTabKeys;
@@ -73,10 +73,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "TAB")
 	TMap<FGameplayTag, FDC1KeyList> TabCloseKeys;
 
-
+private:
 	TMap<int32, FGameplayTag>		SwitchIndexToTab;
 
-	FGameplayTag					CurrentTab = FGameplayTag();
+	FGameplayTag					CurrentTab = { FGameplayTag::EmptyTag };
 };
 
 

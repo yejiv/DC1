@@ -24,39 +24,39 @@ public:
 private:
 	// Opacity 조절용 Overlay
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>	RootOverlay;
+	TObjectPtr<UPanelWidget>	RootOverlay = { nullptr };
 
 	// Inctive Anim Optional
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
-	TObjectPtr<UWidgetAnimation>	InactivedAnim;
+	TObjectPtr<UWidgetAnimation>	InactivedAnim = { nullptr };
 
 	// Active Hover Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>	ActiveHoverImage;
+	TObjectPtr<UImage>	ActiveHoverImage = { nullptr };
 
 	// Button Icon Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>	ButtonIconImage;
+	TObjectPtr<UImage>	ButtonIconImage = { nullptr };
 
 	// Disable Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Icon")
-	TSoftObjectPtr<UTexture2D>	IconTexture;
+	TSoftObjectPtr<UTexture2D>	IconTexture = { nullptr };
 
 	// State To Font Icon Color
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Color")
-	FLinearColor		ActiveFontIconColor = FLinearColor::White;
+	FLinearColor		ActiveFontIconColor = { FLinearColor::White };
 
 	// State To Font Icon Color
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Color")
-	FLinearColor		InactiveFontIconColor = FLinearColor::White;
+	FLinearColor		InactiveFontIconColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Color")
-	FLinearColor		ActiveHoverColor = FLinearColor::White;
+	FLinearColor		ActiveHoverColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Color")
-	FLinearColor		InactiveHoverColor = FLinearColor::White;
+	FLinearColor		InactiveHoverColor = { FLinearColor::White };
 
 	// State To RootOverlay Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Build|Image|Opacity")
-	float				DisableOpacity = 0.2f;
+	float				DisableOpacity = { 0.2f };
 };

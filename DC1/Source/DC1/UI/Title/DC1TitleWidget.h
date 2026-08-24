@@ -37,20 +37,20 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher>		MenuSwitcher;
+	TObjectPtr<UWidgetSwitcher>		MenuSwitcher = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TitleButton>		StartButton;
+	TObjectPtr<UDC1TitleButton>		StartButton = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TitleButton>		QuitButton;
+	TObjectPtr<UDC1TitleButton>		QuitButton = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UEditableTextBox>	IPTextBox;
+	TObjectPtr<UEditableTextBox>	IPTextBox = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1BracketButton>	ConnectButton;
+	TObjectPtr<UDC1BracketButton>	ConnectButton = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TitleButton>		ReturnButton;
+	TObjectPtr<UDC1TitleButton>		ReturnButton = { nullptr };
 };

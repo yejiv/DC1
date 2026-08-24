@@ -14,7 +14,7 @@ struct FAssetEntry
 
 public:
 	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag AssetTag;
+	FGameplayTag AssetTag = { FGameplayTag::EmptyTag };
 
 	UPROPERTY(EditDefaultsOnly)
 	FSoftObjectPath AssetPath;

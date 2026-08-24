@@ -29,17 +29,17 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>		SlotContainer;
+	TObjectPtr<UPanelWidget>		SlotContainer = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>			RowNameText;
+	TObjectPtr<UTextBlock>			RowNameText = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Slot")
-	TSubclassOf<UDC1BuildButton>	SlotWidgetClass;
+	TSubclassOf<UDC1BuildButton>	SlotWidgetClass = { nullptr };
 
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDC1BuildButton>> Slots;
 
 private:
-	FGameplayTag	RowTag;
+	FGameplayTag	RowTag = { FGameplayTag::EmptyTag };
 };

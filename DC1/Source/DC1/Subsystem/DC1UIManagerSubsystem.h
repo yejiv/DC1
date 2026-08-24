@@ -59,18 +59,19 @@ private:
 	TArray<TObjectPtr<UDC1UserWidget>>	ScreenStack;
 	
 	UPROPERTY()
-	TObjectPtr<const UDC1UIData>		CachedUIData;
+	TObjectPtr<const UDC1UIData>		CachedUIData = { nullptr };
 
 	UPROPERTY()
-	TObjectPtr<UDC1FadeWidget>			FadeWidget;
+	TObjectPtr<UDC1FadeWidget>			FadeWidget = { nullptr };
 
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDC1UserWidget>> CreatedWidget;
 
-	EDC1FadeType						PendingFadeType = EDC1FadeType::Default;
-	const FUILoadingEntry*				PendingLoadingEntry = nullptr;
-	const FText*						PendingTip = nullptr;
-	bool								bIsTraveling = false;
+private:
+	EDC1FadeType						PendingFadeType = { EDC1FadeType::Default };
+	const FUILoadingEntry*				PendingLoadingEntry = { nullptr };
+	const FText*						PendingTip = { nullptr };
+	bool								bIsTraveling = { false };
 
-	static constexpr int32				FadeZOrder = 100;
+	static constexpr int32				FadeZOrder = { 100 };
 };

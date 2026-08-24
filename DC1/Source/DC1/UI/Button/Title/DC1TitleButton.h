@@ -37,19 +37,20 @@ protected:
 
 private:
 	UPROPERTY()
-	TObjectPtr<UMaterialInstanceDynamic> HoverMID;
-
-	float	HoverProgress = 0.f;
-	bool	IsHovered = false;
-
-	FVector2D	NormalScale = FVector2D(1.f);
-	FVector2D	HoverScale = FVector2D(1.2f);
-
-	FLinearColor	NormalColor = FLinearColor::White;
+	TObjectPtr<UMaterialInstanceDynamic> HoverMID = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Hover")
-	float	HoverSpeed = 8.f;
+	float	HoverSpeed = { 8.f };
 
 	UPROPERTY(EditAnywhere, Category = "Hover")
-	FLinearColor	HoverColor = FLinearColor::White;
+	FLinearColor	HoverColor = { FLinearColor::White };
+
+private:
+	float			HoverProgress = { 0.f };
+	bool			IsHovered = { false };
+
+	FVector2D		NormalScale = { FVector2D(1.f) };
+	FVector2D		HoverScale = { FVector2D(1.2f) };
+
+	FLinearColor	NormalColor = { FLinearColor::White };
 };

@@ -36,19 +36,19 @@ private:
 private:
 	// Icon Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		BuildIconImage;
+	TObjectPtr<UImage>		BuildIconImage = { nullptr };
 
 	// Inactive Hover Image ( Blend Black )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		InactiveHoverImage;
+	TObjectPtr<UImage>		InactiveHoverImage = { nullptr };
 
 	// Button Outline Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		ButtonImage;
+	TObjectPtr<UImage>		ButtonImage = { nullptr };
 
 	// Button Outline Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>		IconBackImage;
+	TObjectPtr<UImage>		IconBackImage = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Build|Image|Hover")
 	FSlateBrush				HoverButtonImageBrush;
@@ -63,14 +63,14 @@ private:
 	FSlateBrush				UnHoverIconBackImageBrush;
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Build|Image|Opacity")
-	float					InactiveHoverImageOpacity = 0.4f;
+	float					InactiveHoverImageOpacity = { 0.4f };
 
 
 private:
-	bool					CanBuild = false;
+	bool					CanBuild = { false };
 
-	FGameplayTag			BuildTag;
-	int32					SortOrder = 0;
+	FGameplayTag			BuildTag = { FGameplayTag::EmptyTag };
+	int32					SortOrder = { 0 };
 
 	TArray<FDC1ItemCost>	CachedCosts;
 };

@@ -77,6 +77,10 @@ struct FDC1BuildRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FDC1ItemCost> BuildCosts;
 
+	// Build 시간 ( 작업량 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RequiredWork;
+
 	// Build Actor
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftClassPtr<AActor> BuildActorClass;

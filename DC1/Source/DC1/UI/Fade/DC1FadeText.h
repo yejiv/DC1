@@ -17,5 +17,5 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>		FadeTip;
+	TObjectPtr<UTextBlock>		FadeTip = { nullptr };
 };
