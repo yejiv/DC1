@@ -28,6 +28,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Locomotion")
 	float				BlendInterpSpeed = { 8.f };
 
+	// 제자리 회전을 가상의 이동 속도로 환산하는 계수. (로코모션)
+	UPROPERTY(EditDefaultsOnly, Category = "Locomotion", meta = (ClampMin = "0.0"))
+	float				TurnSpeedScale = { 0.5f };
+
 private:
 	float				MaxLocomotionSpeed = {};
+	float				PrevYaw = {};
 };

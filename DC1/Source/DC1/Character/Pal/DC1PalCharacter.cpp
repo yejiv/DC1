@@ -99,7 +99,9 @@ void ADC1PalCharacter::ApplyPalData()
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
 		BindHealthWatcher();
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleDamaged);
+
+		// Health는 PostGameplayEffectExecute 가 SetHealth 로 바꾸므로 Damage 를 구독
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).AddUObject(this, &ThisClass::HandleDamaged);
 	}
 
 	if (IsValid(PalAttributeSet))
@@ -112,19 +114,17 @@ void ADC1PalCharacter::ApplyPalData()
 
 void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 {
-	if (false == HasAuthority() || Data.NewValue >= Data.OldValue || Data.NewValue <= 0.f)
+	// Damage 메타 어트리뷰트가 채워지는 순간만 본다. 곧바로 0으로 되돌리는 변경은 무시
+	if (false == HasAuthority() || Data.NewValue <= 0.f || nullptr == Data.GEModData)
 	{
 		return;
 	}
 
-	if (nullptr != Data.GEModData)
-	{
-		AActor* Causer = Data.GEModData->EffectSpec.GetContext().GetEffectCauser();
+	AActor* Causer = Data.GEModData->EffectSpec.GetContext().GetEffectCauser();
 
-		if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
-		{
-			PalController->ProvokeBy(Causer);
-		}
+	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
+	{
+		PalController->ProvokeBy(Causer);
 	}
 
 	if (IsValid(AbilitySystemComponent))
