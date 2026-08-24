@@ -74,11 +74,11 @@ private:
 private:
 	// 기술 포인트 ( OnRep )
 	UPROPERTY(ReplicatedUsing = OnRep_TechState)
-	int32							TechPoints = 10;
+	int32							TechPoints = { 10 };
 
 	// 고대 기술 포인트 ( OnRep )
 	UPROPERTY(ReplicatedUsing = OnRep_TechState)
-	int32							AncientTechPoints = 0;
+	int32							AncientTechPoints = { 0 };
 
 	// 해금된 Tech Tags ( OnRep )
 	UPROPERTY(ReplicatedUsing = OnRep_UnlockedTags)
@@ -93,7 +93,7 @@ private:
 
 	// Tech Data Table Caching
 	UPROPERTY()
-	TObjectPtr<const UDataTable>	CachedTechData;
+	TObjectPtr<const UDataTable>	CachedTechData = { nullptr };
 
 	// 특정 Tech Tag가 가진 Tech Data Caching ( Point, Tech Cost 비교 )
 	TMap<FGameplayTag, const FDC1TechRow*>	TechRowsByTag;

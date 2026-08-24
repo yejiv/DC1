@@ -40,16 +40,16 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UScrollBox>						TechTreeScrollBox;
+	TObjectPtr<UScrollBox>						TechTreeScrollBox = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TechTreePointWidget>			TechPointWidget;
+	TObjectPtr<UDC1TechTreePointWidget>			TechPointWidget = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget;
+	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton")
-	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass;
+	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass = { nullptr };
 
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1TechTreeRowWidget>>	TechRows;
@@ -57,5 +57,6 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
 
-	int32										CachedLevel = 0;
+private:
+	int32										CachedLevel = { 0 };
 };

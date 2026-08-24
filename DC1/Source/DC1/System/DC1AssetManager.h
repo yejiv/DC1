@@ -43,7 +43,7 @@ private:
 private:
 	// Cached AssetData
 	UPROPERTY()
-	TObjectPtr<UDC1AssetData> LoadedPrimaryAssetData;
+	TObjectPtr<UDC1AssetData> LoadedPrimaryAssetData = { nullptr };
 
 	UPROPERTY()
 	TMap<FName, FGameplayTag> NameToTag;
@@ -51,7 +51,7 @@ private:
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<const UObject>> TagToLoadedDataAsset;
 
-	TSharedPtr<FStreamableHandle> ActiveLoadHandle;
+	TSharedPtr<FStreamableHandle> ActiveLoadHandle = { nullptr };
 };
 
 template<typename AssetType>

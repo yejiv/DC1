@@ -33,5 +33,5 @@ protected:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UButton>				UserButton;
+	TObjectPtr<UButton>				UserButton = { nullptr };
 };

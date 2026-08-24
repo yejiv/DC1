@@ -29,55 +29,54 @@ private:
 private:
 	// Level Text
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>				LevelText;
+	TObjectPtr<UTextBlock>				LevelText = { nullptr };
 
 	// Level Icon Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Level_Icon;
+	TObjectPtr<UImage>					Level_Icon = { nullptr };
 
 	// Level Icon Background
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Level_Background;
+	TObjectPtr<UImage>					Level_Background = { nullptr };
 
 	// 비활성화된 Row Hover Image ( Blend Black )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Level_HoverImage;
+	TObjectPtr<UImage>					Level_HoverImage = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Row_Background;
-
-	// 활성화된 Row Level Icon 간 Line
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Level_TopLine;
+	TObjectPtr<UImage>					Row_Background = { nullptr };
 
 	// 활성화된 Row Level Icon 간 Line
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>					Level_BottomLine;
+	TObjectPtr<UImage>					Level_TopLine = { nullptr };
+
+	// 활성화된 Row Level Icon 간 Line
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage>					Level_BottomLine = { nullptr };
 
 	// Slot Container
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>			SlotContainer;
+	TObjectPtr<UPanelWidget>			SlotContainer = { nullptr };
 
 	// 생성할 Slot Class
 	UPROPERTY(EditAnywhere, Category = "TechTree")
-	TSubclassOf<UDC1TechTreeButton>		SlotWidgetClass;
+	TSubclassOf<UDC1TechTreeButton>		SlotWidgetClass = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	float								InactiveHoverOpacity = 0.5f;
+	float								InactiveHoverOpacity = { 0.5f };
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						ActiveIconColor = FLinearColor::Blue;
+	FLinearColor						ActiveIconColor = { FLinearColor::Blue };
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						InactiveIconColor = FLinearColor::White;
+	FLinearColor						InactiveIconColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						ActiveBackgroundColor = FLinearColor::White;
+	FLinearColor						ActiveBackgroundColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "TechTree|Image")
-	FLinearColor						InactiveBackgroundColor = FLinearColor::Black;
+	FLinearColor						InactiveBackgroundColor = { FLinearColor::Black };
 
 private:
-	int32								RowLevel = 0;
-
+	int32								RowLevel = { 0 };
 };

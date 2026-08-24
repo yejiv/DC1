@@ -16,7 +16,7 @@ public:
 	TArray<TObjectPtr<UTexture2D>> Frames;
 
 	UPROPERTY(EditDefaultsOnly)
-	float FPS = 10.f;
+	float FPS = { 10.f };
 };
 
 UCLASS()

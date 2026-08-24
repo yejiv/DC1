@@ -38,36 +38,36 @@ protected:
 private:
 	// ActiveBackgroundImage Anim 
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation>	ClickedAnim;
+	TObjectPtr<UWidgetAnimation>	ClickedAnim = { nullptr };
 
 	// Anim Image
 	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UImage>	ActiveBackgroundImage;
+	TObjectPtr<UImage>	ActiveBackgroundImage = { nullptr };
 
 	// HOVER IMAGE OPTIONAL
 	UPROPERTY(meta = (BindWidgetOptional))
-	TObjectPtr<UImage>	HoverImage;
+	TObjectPtr<UImage>	HoverImage = { nullptr };
 
 	// Tab 활성화 Button Color
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	FLinearColor		ActiveColor = FLinearColor::White;
+	FLinearColor		ActiveColor = { FLinearColor::White };
 
 	// Tab 비활성화 Button Color
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	FLinearColor		InactiveColor = FLinearColor::White;
+	FLinearColor		InactiveColor = { FLinearColor::White };
 
 	// Tab 선택 불가 Button Color
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	FLinearColor		DisableColor = FLinearColor::White;
+	FLinearColor		DisableColor = { FLinearColor::White };
 
 	// Tab Widget에서 Index 캐싱 용 Tag
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	FGameplayTag		TabTag = FGameplayTag();
+	FGameplayTag		TabTag = { FGameplayTag::EmptyTag };
 
 	// HOVER IMAGE OPTIONAL - Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	float				HoverOpacity = 0.4f;
+	float				HoverOpacity = { 0.4f };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tab|Image")
-	float				UnhoverOpacity = 0.f;
+	float				UnhoverOpacity = { 0.f };
 };

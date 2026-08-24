@@ -7,6 +7,24 @@
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
+UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
+{
+	const TObjectPtr<UDC1TabHeaderButton>* TabButtonPtr = TabButtons.Find(InTab);
+	if (nullptr == TabButtonPtr)
+	{
+		return nullptr;
+	}
+
+	UDC1TabHeaderButton* TabButton = TabButtonPtr->Get();
+	if (false == ::IsValid(TabButton))
+	{
+		return nullptr;
+	}
+
+	return TabButton;
+}
+
+
 void UDC1TabWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -75,24 +93,6 @@ void UDC1TabWidget::CloseWidget(const FKey& InKey)
 		UIManager->PopScreen();
 	}
 }
-
-UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
-{
-	const TObjectPtr<UDC1TabHeaderButton>* TabButtonPtr = TabButtons.Find(InTab);
-	if (nullptr == TabButtonPtr)
-	{
-		return nullptr;
-	}
-
-	UDC1TabHeaderButton* TabButton = TabButtonPtr->Get();
-	if (false == ::IsValid(TabButton))
-	{
-		return nullptr;
-	}
-
-	return TabButton;
-}
-
 
 void UDC1TabWidget::HandleInputKey(const FKey& InKey)
 {

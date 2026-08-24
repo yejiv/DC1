@@ -42,19 +42,19 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UScrollBox>			BuildScrollBox;
+	TObjectPtr<UScrollBox>			BuildScrollBox = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>			BuildTextLabel;
+	TObjectPtr<UTextBlock>			BuildTextLabel = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Row")
 	TArray<FDC1BuildRowInfo>		RowInfos;
 
 	UPROPERTY(EditAnywhere, Category = "Build|Row")
-	TSubclassOf<UDC1BuildRowWidget>	RowWidgetClass;
+	TSubclassOf<UDC1BuildRowWidget>	RowWidgetClass = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Row")
-	FText							BuildText;
+	FText							BuildText = { FText::GetEmpty()};
 
 private:
 	UPROPERTY()

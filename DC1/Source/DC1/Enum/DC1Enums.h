@@ -18,10 +18,10 @@ enum class EDC1FadeType : uint8
 UENUM()
 enum class EDC1TabButtonState : uint8
 {
-	Default = 0 UMETA(DisplayName = "Default"),
-	Inactive = 1 UMETA(DisplayName = "Inactive"),	// Tab 비활성화
-	Active = 2 UMETA(DisplayName = "Active"),		// Tab 활성화
-	Disable = 3 UMETA(DisplayName = "Disable"),		// Tab 활성화 불가
+	Default = 0, 
+	Inactive = 1,		// Tab 비활성화
+	Active = 2,			// Tab 활성화
+	Disable = 3,		// Tab 활성화 불가
 };
 
 // TECH SLOT STATE
@@ -42,6 +42,27 @@ enum class EDC1TechPointState : uint8
 	HasPoint = 1,
 	NoPoint = 2,
 };
+
+#pragma endregion
+
+#pragma region BUILD
+
+UENUM(BlueprintType)
+enum class EDC1BuildState : uint8
+{
+	Default = 0 UMETA(DisplayName = "Default"),
+	Preview = 1 UMETA(DisplayName = "Preview"),				// 배치 미리보기 ( 로컬 )
+	Construction = 2 UMETA(DisplayName = "Construction"),	// 설치 및 건설 진행 중 ( 서버 )
+	Completed = 3 UMETA(DisplayName = "Completed"),			// 건설 완료 ( 서버 )
+};
+
+UENUM(BlueprintType)
+enum class EDC1BuildProbeDirection : uint8
+{
+	Down = 0 UMETA(DisplayName = "Bottom"),	// 지면 확인
+	Up = 1 UMETA(DisplayName = "Up"),		// 천장 확인
+};
+
 #pragma endregion
 
 UENUM(BlueprintType)

@@ -34,53 +34,53 @@ private:
 
 private:
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	TObjectPtr<UWidgetAnimation>	UnlockedAnim;
+	TObjectPtr<UWidgetAnimation>	UnlockedAnim = { nullptr };
 
 	// Opacity 조절용 Overlay
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>	RootOverlay;
+	TObjectPtr<UPanelWidget>	RootOverlay = { nullptr };
 
 	// Lock 상태에서의 Hover Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			LockedImage;
+	TObjectPtr<UImage>			LockedImage = { nullptr };
 
 	// Available 상태에서의 Hover Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			AvailableImage;
+	TObjectPtr<UImage>			AvailableImage = { nullptr };
 
 	// Icon Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			TechIconImage;
+	TObjectPtr<UImage>			TechIconImage = { nullptr };
 
 	// Icon Background Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			IconBackImage;
+	TObjectPtr<UImage>			IconBackImage = { nullptr };
 
 	// Tech Name Background Image ( ex) 원시적인 작업대 Background Image )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			TechNameBackImage;
+	TObjectPtr<UImage>			TechNameBackImage = { nullptr };
 
 	// Button Outline Image
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>			ButtonImage;
+	TObjectPtr<UImage>			ButtonImage = { nullptr };
 
 	//COST Text = BracketButton::TextLabel
 
 	// Tech Name ( ex) 원시적인 작업대 )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>		TechNameText;
+	TObjectPtr<UTextBlock>		TechNameText = { nullptr };
 
 	// Category Name ( ex) 건축물 )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>		CategoryNameText;
+	TObjectPtr<UTextBlock>		CategoryNameText = { nullptr };
 
 
 #pragma region STATE TO TECH NAME FONT COLOR
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
-	FLinearColor				AvailableFontColor = FLinearColor::Blue;
+	FLinearColor				AvailableFontColor = { FLinearColor::Blue };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Font")
-	FLinearColor				UnlockedFontColor = FLinearColor::White;
+	FLinearColor				UnlockedFontColor = { FLinearColor::White };
 #pragma endregion
 
 
@@ -107,20 +107,20 @@ private:
 
 #pragma region STATE TO ICON BACKGROUND IMAGE COLOR
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor				UnlockedIconBackImageColor = FLinearColor::White;
+	FLinearColor				UnlockedIconBackImageColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor				AvailableIconBackImageColor = FLinearColor::White;
+	FLinearColor				AvailableIconBackImageColor = { FLinearColor::White };
 #pragma endregion
 
 
 
 #pragma region STATE TO TECH NAME BACKGROUND COLOR
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor				UnlockedTechNameBackColor = FLinearColor::White;
+	FLinearColor				UnlockedTechNameBackColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	FLinearColor				LockedTechNameBackColor = FLinearColor::White;
+	FLinearColor				LockedTechNameBackColor = { FLinearColor::White };
 #pragma endregion
 
 
@@ -128,20 +128,20 @@ private:
 #pragma region STATE TO OPACITY
 	// Available 상태에서 Hover Image Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float						AvailableImageOpacity = 0.5f;
+	float						AvailableImageOpacity = { 0.5f };
 
 	// Lock 상태에서의 모든 이미지 Opacity 비율 ( RootOverlay Opacity )
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float						LockedOpacity = 0.3f;
+	float						LockedOpacity = { 0.3f };
 
 	// Lock 상태에서 Hover Image Opacity
 	UPROPERTY(EditAnywhere, Category = "UserButton|Tech|Image")
-	float						LockedImageOpacity = 0.7f;
+	float						LockedImageOpacity = { 0.7f };
 #pragma endregion
 
 
 private:
-	int32						RequiredLevel = 0;
-	FGameplayTag				TechTag = FGameplayTag::EmptyTag;
-	EDC1TechSlotState			SlotState = EDC1TechSlotState::Default;
+	int32						RequiredLevel = { 0 };
+	FGameplayTag				TechTag = { FGameplayTag::EmptyTag };
+	EDC1TechSlotState			SlotState = { EDC1TechSlotState::Default };
 };

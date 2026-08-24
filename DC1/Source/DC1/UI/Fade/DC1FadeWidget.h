@@ -34,16 +34,17 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1FadeImage>	FadeImage;
+	TObjectPtr<UDC1FadeImage>	FadeImage = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1FadeText>	FadeText;
+	TObjectPtr<UDC1FadeText>	FadeText = { nullptr };
 
-	float			StartAlpha = 0.f;
-	float			TargetAlpha = 0.f;
-	float			FadeDuration = 0.f;
-	float			Elapsed = 0.f;
-	bool			bIsFading = false;
+private:
+	float			StartAlpha = { 0.f };
+	float			TargetAlpha = { 0.f };
+	float			FadeDuration = { 0.f };
+	float			Elapsed = { 0.f };
+	bool			bIsFading = { false };
 
 	FSimpleDelegate	CompleteDelegate;
 };

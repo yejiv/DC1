@@ -28,49 +28,49 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				TechPoint_FrontBar;
+	TObjectPtr<UImage>				TechPoint_FrontBar = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UPanelWidget>		TechPointOverlay;
+	TObjectPtr<UPanelWidget>		TechPointOverlay = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				TechPoint_Icon;
+	TObjectPtr<UImage>				TechPoint_Icon = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				TechPoint_Background;
+	TObjectPtr<UImage>				TechPoint_Background = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				TechPoint_Box;
+	TObjectPtr<UImage>				TechPoint_Box = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>			TechPoint_Label;
+	TObjectPtr<UTextBlock>			TechPoint_Label = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>			TextPoint_Num;
+	TObjectPtr<UTextBlock>			TextPoint_Num = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Overlay")
-	float							NoPointOverlayOpacity = 0.5f;
+	float							NoPointOverlayOpacity = { 0.5f };
 	
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Image")
 	FSlateBrush						IconBrush;
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Image")
-	FLinearColor					BoxColor = FLinearColor::White;
+	FLinearColor					BoxColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Image")
-	FLinearColor					HasPointBackgroundColor = FLinearColor::White;
+	FLinearColor					HasPointBackgroundColor = { FLinearColor::White };
 	
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Image")
-	FLinearColor					NoPointBackgroundColor = FLinearColor::White;
+	FLinearColor					NoPointBackgroundColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Font")
-	FText							TechPoint_LabelText;
+	FText							TechPoint_LabelText = { FText::GetEmpty() };
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Font")
-	FLinearColor					HasPointNumColor = FLinearColor::White;
+	FLinearColor					HasPointNumColor = { FLinearColor::White };
 
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Font")
-	FLinearColor					NoPointNumColor = FLinearColor::White;
+	FLinearColor					NoPointNumColor = { FLinearColor::White } ;
 
-	EDC1TechPointState				PointState = EDC1TechPointState::Default;
+	EDC1TechPointState				PointState = { EDC1TechPointState::Default };
 };
