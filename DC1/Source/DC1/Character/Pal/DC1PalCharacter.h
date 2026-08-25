@@ -31,14 +31,16 @@ public:
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
 	EDC1Team							GetTeam() const { return Team; }
+
+	// 진영 변경. 포획으로 길들일 때 쓴다. 서버 전용
+	UFUNCTION(BlueprintCallable, Category = "Pal|Team")
 	void								SetTeam(EDC1Team NewTeam);
 
 	const UDC1PalData*					GetPalData() const { return PalData; }
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 	void								SetOrientToMovement(bool Enable);
 	virtual void						GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
-
-	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 protected:
 	virtual void						PostInitializeComponents() override;
@@ -53,7 +55,7 @@ protected:
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
 	// 래그돌, AI 정지, 퍼셉션 해제
-	virtual void OnDeath() override;
+	virtual void						OnDeath() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")

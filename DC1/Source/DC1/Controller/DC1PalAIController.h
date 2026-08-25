@@ -32,6 +32,9 @@ public:
 	void					StopBehavior();
 	void					TryStartBehavior();
 
+	// 진영이 바뀌면 이미 감지한 것들의 적대 판정이 무효가 된다
+	void					RefreshPerception();
+
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
 
@@ -56,6 +59,8 @@ protected:
 	void SetCurrentTarget(AActor* NewTarget);
 
 	void					ApplyPerceptionSettings();
+
+	void					ClearTargetState();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "AI")
