@@ -75,6 +75,33 @@ void UDC1UIManagerSubsystem::PopScreen()
     UpdateInputMode();
 }
 
+UDC1UserWidget* UDC1UIManagerSubsystem::CreateWidgetWithTag(const FGameplayTag& InUITag)
+{
+    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
+    if (false == ::IsValid(WidgetClass))
+    {
+        return nullptr;
+    }
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (false == ::IsValid(PC))
+    {
+        return nullptr;
+    }
+
+    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, WidgetClass);
+    if (true == ::IsValid(NewWidget))
+    {
+        CreatedWidget.Add(InUITag, NewWidget);
+    }
+    else
+    {
+        return nullptr;
+    }
+
+    return NewWidget;
+}
+
 void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, FSimpleDelegate InOnComplete)
 {
     if (false == ::IsValid(FadeWidget))
@@ -148,6 +175,16 @@ void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDel
 
 
     bIsTraveling = true;
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::FindWidget(const FGameplayTag& InUITag)
+{
+    if (TObjectPtr<UDC1UserWidget>* FoundWidgetPtr = CreatedWidget.Find(InUITag))
+    {
+        return FoundWidgetPtr->Get();
+    }
+
+    return nullptr;
 }
 
 UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder)

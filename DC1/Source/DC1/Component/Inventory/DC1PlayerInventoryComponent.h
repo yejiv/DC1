@@ -25,6 +25,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	float GetCurrentWeight() const { return CurrentWeight; }
 
@@ -46,6 +47,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
 	const FDC1InventorySlot& GetEquipmentSlot(int32 InSlotIndex) const;
 
+public:
 	// 장비 착용 및 해제 함수
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
 	bool EquipItem(int32 InSlotIndex, int32 InEquipSlotIndex);
@@ -59,6 +61,7 @@ public:
 protected:
 	virtual void CalculateWeight();
 	virtual void InitializeEquipmentSlots();
+	virtual void InitializeDefaultItems();
 	virtual void InitializeSlots() override;
 	virtual void OnInventoryUpdated_Internal() override;
 

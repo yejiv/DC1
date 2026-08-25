@@ -1,8 +1,15 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
+#include "System/DC1AssetManager.h"
+#include "Data/DA/UI/DC1UIData.h"
+#include "Data/DA/DataTable/DC1DataTableData.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
+
+#include "Tags/UI/DC1GameplayTag_UI.h"
 UDC1PlayerInventoryComponent::UDC1PlayerInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -21,7 +28,66 @@ void UDC1PlayerInventoryComponent::BeginPlay()
 	if (GetOwnerRole() == ROLE_Authority)
 	{
 		InitializeEquipmentSlots();
+		InitializeDefaultItems();
 	}
+}
+
+void UDC1PlayerInventoryComponent::InitializeDefaultItems()
+{
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return;
+	}
+
+	const UDC1DataTableData* DataTableAsset = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
+	if (false == ::IsValid(DataTableAsset))
+	{
+		return;
+	}
+
+	const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(DC1DataTableTags::DataTable_Item);
+	if (false == ::IsValid(ItemDataTable))
+	{
+		return;
+	}
+
+
+	TArray<FDC1ItemRow*> AllRows;
+	ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("Items"), AllRows);
+	if (true == AllRows.IsEmpty())
+	{
+		return;
+	}
+
+	TMap<int32, TArray<FDC1ItemRow*>> RowsByLevel;
+
+	for (FDC1ItemRow* Row : AllRows)
+	{
+		FName ItemID = Row->ItemID;
+		AddItem(ItemID, 1);
+
+		FText ItemName = Row->ItemName;
+
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Cyan,
+			FString::Printf(TEXT("Item Name %s"), *ItemName.ToString())
+		);
+	}
+
+	if (ItemDataTable->GetRowNames().Num() > 1)
+	{
+		FName SecondItemID = ItemDataTable->GetRowNames()[1];
+		AddItem(SecondItemID, 1);	
+	}
+
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		5.0f,
+		FColor::Cyan,
+		FString::Printf(TEXT("%s"), *Slots[20].ItemID.ToString())
+	);
 }
 
 void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(
@@ -35,7 +101,7 @@ void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(
 }
 
 // ========================
-// 무게 관련 함수 구현
+// 무게 관련 함수
 // ========================
 
 float UDC1PlayerInventoryComponent::GetWeightPercentage() const
@@ -60,18 +126,26 @@ bool UDC1PlayerInventoryComponent::CanAddItem(FName InItemID, int32 InCount) con
 		return false;
 	}
 
-	// 빈 슬롯이 있는지 확인
+	int32 SlotIndex;
+	// 이미 아이템이 있는지 확인
+	if (FindItemInSlot(InItemID, &SlotIndex))
+	{
+		// 소유 개수 추후 추가하기
+		return true;
+	}
+
+	// 빈 슬롯 또는 이미 아이템이 있는지 확인
 	if (FindEmptySlot() == -1)
 	{
 		return false;
 	}
 
-	// 무게 체크
-	float EstimatedWeight = CurrentWeight + (InCount * ItemWeightPerUnit);
-	if (EstimatedWeight > MaxWeight)
-	{
-		return false;
-	}
+	//// 무게는 상관 없나?
+	//float EstimatedWeight = CurrentWeight + (InCount * ItemWeightPerUnit);
+	//if (EstimatedWeight > MaxWeight)
+	//{
+	//	return false;
+	//}
 
 	return true;
 }

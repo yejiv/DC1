@@ -10,6 +10,7 @@
 
 class UPanelWidget;
 class UDC1TabHeaderButton;
+class UDC1InventoryWidget;
 
 USTRUCT(BlueprintType)
 struct FDC1KeyList
@@ -41,6 +42,9 @@ public:
 	bool			SelectTab(const FGameplayTag& InTab);
 	void			SelectFirstInactiveTab();
 	void			EnableTab(const FGameplayTag& InTab);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Tab")
+	UDC1InventoryWidget* GetInventoryWidget() const;
 
 protected:
 	virtual void	ButtonInitialize();

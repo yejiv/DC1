@@ -22,6 +22,7 @@
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "UI/Tab/Inventory/DC1InventoryWidget.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -56,6 +57,8 @@ void ADC1PlayerController::BeginPlay()
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
 
+	UDC1TabWidget* MainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
+
 	// 인벤토리 ViewModel 생성
 	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
 	if (IsValid(InventoryViewModel))
@@ -66,8 +69,16 @@ void ADC1PlayerController::BeginPlay()
 			if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
 			{
 				InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+
+				UDC1InventoryWidget* PlayerInventoryWidget = MainTabWidget->GetInventoryWidget();
+				if (PlayerInventoryWidget)
+				{
+					PlayerInventoryWidget->SetViewModel(InventoryViewModel);
+				}
 			}
 		}
+
+		
 	}
 }
 

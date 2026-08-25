@@ -10,7 +10,6 @@
 class UDC1InventoryViewModel;
 class UDC1InventorySlotWidget;
 class UScrollBox;
-class UWrapBox;
 class UUniformGridPanel;
 
 UCLASS()
@@ -22,22 +21,23 @@ public:
 	UDC1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 protected:
-	virtual void NativePreConstruct() override; 
+	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
 public:
-	// ViewModel ¼³Á¤
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetViewModel(UDC1InventoryViewModel* NewViewModel);
+	void SetInventoryViewModel(UDC1InventoryViewModel* InViewModel);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RefreshSlotCapacity(int32 NewTotalSlots);
 
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RefreshAllSlots();
+
 protected:
 	void CreateSlotWidgets(int32 TotalSlots);
-
-	UFUNCTION()
+	void UpdateSlotDisplay(int32 SlotIndex);
 	void HandleInventoryUpdated();
 
 private:
@@ -51,9 +51,6 @@ private:
 	TObjectPtr<UUniformGridPanel> SlotGrid;
 
 	UPROPERTY()
-	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;
-
-	UPROPERTY()
 	TArray<TObjectPtr<UDC1InventorySlotWidget>> SlotWidgets;
 
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
@@ -61,4 +58,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	FMargin SlotMargin = FMargin(2.0f);
+
+	UPROPERTY()
+	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;
 };
