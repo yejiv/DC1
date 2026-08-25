@@ -6,9 +6,9 @@
 #include "Components/ActorComponent.h"
 #include "Enum/DC1Enums.h"
 #include "GameplayTagContainer.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1TechTreeComponent.generated.h"
 
-struct FDC1TechRow;
 struct FOnAttributeChangeData;
 
 class UDataTable;
@@ -40,7 +40,7 @@ public:
 	EDC1TechSlotState		GetTechState(const FGameplayTag& InTechTag) const;
 	bool					HasUnlockedTag(const FGameplayTag& Tag) const { return UnlockedTechTags.HasTag(Tag); }
 
-	const TMap<FGameplayTag, const FDC1TechRow*>& GetTechRowsByTag() const { return TechRowsByTag; }
+	const TMap<FGameplayTag, const FDC1TechRow>& GetTechRowsByTag() const { return TechRowsByTag; }
 
 public:
 	virtual void			BeginPlay() override;
@@ -59,6 +59,8 @@ public:
 
 
 private:
+	const FDC1TechRow* FindTechRow(const FGameplayTag& InTechTag) const;
+	
 	UFUNCTION()
 	void			OnRep_TechState();
 
@@ -92,10 +94,6 @@ private:
 	// OnRep으로 인한 UnlockedTechTags와의 비교 위한 Container
 	FGameplayTagContainer			LastUnlockedTags;
 
-	// Tech Data Table Caching
-	UPROPERTY()
-	TObjectPtr<const UDataTable>	CachedTechData = { nullptr };
-
 	// 특정 Tech Tag가 가진 Tech Data Caching ( Point, Tech Cost 비교 )
-	TMap<FGameplayTag, const FDC1TechRow*>	TechRowsByTag;
+	TMap<FGameplayTag, const FDC1TechRow>	TechRowsByTag;
 };

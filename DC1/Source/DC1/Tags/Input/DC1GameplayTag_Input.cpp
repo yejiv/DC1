@@ -7,6 +7,7 @@ namespace DC1IMCTags
 {
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Default, "IMC.Default");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_UI, "IMC.UI");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Build, "IMC.Build");
 }
 
 namespace DC1InputTags

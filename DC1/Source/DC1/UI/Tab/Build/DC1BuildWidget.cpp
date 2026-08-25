@@ -12,7 +12,7 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 
-void UDC1BuildWidget::InitBuild(const TArray<const FDC1BuildRow*>& InBuildRows, const UDC1TechTreeComponent* InTechComp)
+void UDC1BuildWidget::InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const UDC1TechTreeComponent* InTechComp)
 {
 	if (true == ::IsValid(BuildTextLabel) && false == BuildText.IsEmpty())
 	{
@@ -39,14 +39,14 @@ void UDC1BuildWidget::InitBuild(const TArray<const FDC1BuildRow*>& InBuildRows, 
 		BuildRows.Add(RowInfo.RowTag, RowWidget);
 	}
 
-	const TMap<FGameplayTag, const FDC1TechRow*>& TechRowsByTag = InTechComp->GetTechRowsByTag();
+	const TMap<FGameplayTag, const FDC1TechRow>& TechRowsByTag = InTechComp->GetTechRowsByTag();
 
-	for (const FDC1BuildRow* BuildRow : InBuildRows)
+	for (const FDC1BuildRow& BuildRow : InBuildRows)
 	{
-		const FGameplayTag& BuildTag = BuildRow->BuildTag;
+		const FGameplayTag& BuildTag = BuildRow.BuildTag;
 		const FGameplayTag& RowTag = BuildTag.RequestDirectParent();
 
-		const FDC1TechRow* const* FoundTech = TechRowsByTag.Find(BuildTag);
+		const FDC1TechRow* FoundTech = TechRowsByTag.Find(BuildTag);
 		if (nullptr == FoundTech)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
@@ -56,10 +56,11 @@ void UDC1BuildWidget::InitBuild(const TArray<const FDC1BuildRow*>& InBuildRows, 
 		TObjectPtr<UDC1BuildRowWidget>* FoundRow = BuildRows.Find(RowTag);
 		if (nullptr == FoundRow)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
 			continue;
 		}
 		
-		(*FoundRow)->AddBuildSlot(*BuildRow, **FoundTech);
+		(*FoundRow)->AddBuildSlot(BuildRow, *FoundTech);
 
 		if (true == ::IsValid(InTechComp) && true == InTechComp->HasUnlockedTag(BuildTag))
 		{
@@ -73,6 +74,7 @@ bool UDC1BuildWidget::VisibleSlot(const FGameplayTag& InRowTag, const FGameplayT
 	TObjectPtr<UDC1BuildRowWidget>* Found = BuildRows.Find(InRowTag);
 	if (nullptr == Found)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *InRowTag.ToString());
 		return false;
 	}
 

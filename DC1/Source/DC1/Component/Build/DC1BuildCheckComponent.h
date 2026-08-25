@@ -23,13 +23,17 @@ struct FDC1BuildProbeData
 	UPROPERTY(EditAnywhere)
 	int32 ProbeCountY = { 1 };
 
-	// 상, 하 면에서 X * Y 몇개의 Probe로 검사할건지
+	// 건설이 가능한 Probe와 표면사이의 거리
 	UPROPERTY(EditAnywhere)
 	float MaxTraceDistance = { 10.f };
 
 	// 모서리에서의 Probe 거리 비율. 1.f = 모서리에서 시작, 0.5f = 모서리에서 ( 반지름 * 0.5f ) 만큼 떨어짐
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.1", ClampMax = "1.0"))
-	float	ProbeDistanceFromCorner = { 0.95f };
+	float ProbeDistanceFromCorner = { 0.95f };
+
+	// 표면의 기울기를 적용할것인가 ( false라면 항상 수직 유지 )
+	UPROPERTY(EditAnywhere)
+	bool AlignToSurface = { true };
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -41,16 +45,19 @@ public:
 	UDC1BuildCheckComponent();
 
 public:
-	void			SetSnapped(bool InIsSnap) { IsSnap = InIsSnap; }
+	void							SetSnapped(bool InIsSnap) { IsSnap = InIsSnap; }
+	const EDC1BuildProbeDirection	GetProbeDirection() const { return BuildProbeData.ProbeDirection; }
 
 public:
 	bool			CheckCanBuild();
+	FTransform		ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
 
 private:
 	bool			CheckSurface();
 	bool			CheckOverlap();
 
 	float			ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
+	FVector			GetAttachLocalOffset() const;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")

@@ -22,11 +22,12 @@
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
+	BuildPlacementComponent = CreateDefaultSubobject<UDC1BuildPlacementComponent>("BuildPlacementComponent");
 }
 
 void ADC1PlayerController::SetCursorMode(bool OnTurn)
@@ -450,7 +451,6 @@ void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
 		}
 	}
 }
-
 
 #pragma region UI_TEST
 void ADC1PlayerController::OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab)

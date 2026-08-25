@@ -11,6 +11,7 @@ namespace DC1IMCTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Default);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_UI);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Build);
 }
 
 namespace DC1InputTags
@@ -39,4 +40,11 @@ namespace DC1InputTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Build);
 #pragma endregion
+}
+
+namespace DC1InputBuildTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Build);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Rotate);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Snap);
 }

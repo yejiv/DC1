@@ -10,6 +10,11 @@
 #include "Components/TextBlock.h"
 #include "Components/HorizontalBox.h"
 
+#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Character/Player/DC1PlayerController.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
+
+
 void UDC1BuildRowWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -51,9 +56,32 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 	SlotContainer->AddChild(SlotWidget);
 	Slots.FindOrAdd(InBuildRow.BuildTag, SlotWidget);
 
-	SlotWidget->OnClickedDelegate.AddWeakLambda(this, []()
+	const FGameplayTag BuildTag = InBuildRow.BuildTag;
+
+	SlotWidget->OnClickedDelegate.AddWeakLambda(this, [this, BuildTag]()
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Need Bind Build Function"));
+			ADC1PlayerController* PC = GetOwningPlayer<ADC1PlayerController>();
+			if (false == ::IsValid(PC))
+			{
+				return;
+			}
+
+			UDC1BuildPlacementComponent* BuildPlacementComp = PC->GetBuildPlacementComponent();
+			if (false == ::IsValid(BuildPlacementComp))
+			{
+				return;
+			}
+
+			if (false == BuildPlacementComp->StartPlacement(BuildTag))
+			{
+				return;
+			}
+
+			UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+			if (true == ::IsValid(UIManager))
+			{
+				UIManager->PopScreen();
+			}
 		});
 
 

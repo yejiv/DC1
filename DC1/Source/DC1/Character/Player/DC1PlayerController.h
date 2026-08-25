@@ -11,6 +11,7 @@
 
 class ADC1Player;
 class UDC1InventoryViewModel;
+class UDC1BuildPlacementComponent;
 
 UCLASS()
 class DC1_API ADC1PlayerController : public APlayerController
@@ -23,6 +24,7 @@ public:
 public:
 	void SetCursorMode(bool OnTurn);
 	UDC1InventoryViewModel* GetInventoryViewModel() const { return InventoryViewModel; }
+	UDC1BuildPlacementComponent* GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 
 public:
 	virtual void BeginPlay() override;
@@ -80,6 +82,9 @@ private:
 	TObjectPtr<UDC1InventoryViewModel> InventoryViewModel = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
+
+	UPROPERTY(EditAnywhere, Category = "Build")
+	TObjectPtr<UDC1BuildPlacementComponent> BuildPlacementComponent = { nullptr };
 
 private:
 	bool	IsTurn = { true };

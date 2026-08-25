@@ -15,10 +15,18 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UDC1BuildCheckComponent;
 
+// 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
 {
+	// Translucent Material
 	static const FName TranslucentColor = FName("TranslucentColor");
 	static const FName BuildProgress = FName("BuildProgress");
+	static const FName BaseColorTexture = FName("BaseColorTexture");
+	static const FName UseTexture = FName("UseTexture");
+	static const FName FlashAmont = FName("FlashAmount");
+
+	// 원본 Material ( BaseColorTexture 추출용 )
+	static const FName SourceBaseColorParamName = FName("BaseColor");
 }
 
 USTRUCT()
@@ -52,6 +60,9 @@ public:
 	EDC1BuildState					GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 
+	EDC1BuildProbeDirection			GetProbeDirection() const;
+	FTransform						ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+
 protected:
 	virtual void	BeginPlay() override;
 	virtual void	GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -76,8 +87,12 @@ protected:
 	void			ApplyState();
 
 private:
+	void			CreateTranslucentMIDs();
+	void			BuildCompleted();
+
 	void			SetMaterialTranslucentColor(const FLinearColor& InColor);
 	void			SetMaterialBuildProgress();
+	void			SetMaterialFlash();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
@@ -89,6 +104,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
+	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };
+
+	// Completed 시점 Flash 지속시간
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
+	float									CompleteFlashDuration = { 0.4f };
+
+	// 머테리얼 슬롯별 진행도 구간 ( ex) Body = 0 ~ 0.5, Head = 0.5 ~ 1 )
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
+	TArray<FVector2D>						MaterialProgressRanges;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f)};
 
@@ -97,6 +123,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							ConstructionColor = { FLinearColor::Blue };
+
 
 private:
 	UPROPERTY(Replicated)
@@ -116,4 +143,5 @@ private:
 	bool					CanBuilding = { false };
 	float					CurrentWork = { 0.f };
 	float					WorkSpeed = { 0.f };
+	float					FlashAmount = { 0.f };
 };

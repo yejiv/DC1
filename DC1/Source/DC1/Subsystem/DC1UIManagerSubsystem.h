@@ -38,7 +38,6 @@ public:
 	void						FadeIn(float InDuration, EDC1FadeType InFadeType = EDC1FadeType::Default, FSimpleDelegate InOnComplete = FSimpleDelegate());
 	void						FadeOut(float InDuration, FSimpleDelegate InOnComplete = FSimpleDelegate());
 
-
 	void						RouteInputKey(const FKey& InKey);
 	void						BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel);
 
@@ -46,7 +45,6 @@ private:
 	UDC1UserWidget*				CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder);
 	UDC1UserWidget*				PushScreenInternal(UDC1UserWidget* InWidget);
 	UDC1UserWidget*				PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass);
-
 
 	TSubclassOf<UDC1UserWidget> FindWidgetClass(const FGameplayTag& InUITag);
 	void						UpdateInputMode();
@@ -71,7 +69,7 @@ private:
 	EDC1FadeType						PendingFadeType = { EDC1FadeType::Default };
 	const FUILoadingEntry*				PendingLoadingEntry = { nullptr };
 	const FText*						PendingTip = { nullptr };
-	bool								bIsTraveling = { false };
+	bool								IsTraveling = { false };
 
 	static constexpr int32				FadeZOrder = { 100 };
 };

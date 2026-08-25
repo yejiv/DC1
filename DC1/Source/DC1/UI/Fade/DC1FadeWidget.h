@@ -41,11 +41,9 @@ private:
 
 private:
 	float			StartAlpha = { 0.f };
-
 	float			TargetAlpha = { 0.f };
 
 	float			FadeDuration = { 0.f };
-
 	float			Elapsed = { 0.f };
 
 	bool			bIsFading = { false };

@@ -27,7 +27,7 @@ protected:
 private:
 	UDC1TechTreeComponent*	GetTechTreeComponent();
 
-	bool					FindBuildData(TArray<const FDC1BuildRow*>& OutBuildRows);
+	bool					FindSortBuildData(TArray<FDC1BuildRow>& OutBuildRows);
 
 	void					OnTechUnlocked(const FGameplayTag& InUnlockedTag);
 

@@ -9,8 +9,7 @@
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
-#include "System/DC1AssetManager.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
+#include "Helper/DC1Helper.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
@@ -40,9 +39,9 @@ void UDC1BuildTabWidget::ButtonInitialize()
 		return;
 	}
 
-	TArray<const FDC1BuildRow*>	BuildRows;
+	TArray<FDC1BuildRow> BuildRows;
 
-	if (false == FindBuildData(BuildRows))
+	if (false == FindSortBuildData(BuildRows))
 	{
 		return;
 	}
@@ -107,34 +106,22 @@ UDC1TechTreeComponent* UDC1BuildTabWidget::GetTechTreeComponent()
 	return TechComp;
 }
 
-bool UDC1BuildTabWidget::FindBuildData(TArray<const FDC1BuildRow*>& OutBuildRows)
+bool UDC1BuildTabWidget::FindSortBuildData(TArray<FDC1BuildRow>& OutBuildRows)
 {
-	const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-	if (false == ::IsValid(DataTable))
+	TArray<FDC1BuildRow> AllBuildRows;
+
+	if (false == DC1DataTableHelper::GetAllRows<FDC1BuildRow>(DC1DataTableTags::DataTable_UI_Build, AllBuildRows))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Build DataTable is NULL"));
 		return false;
 	}
 
-	// Find BuildData
-	const UDataTable* BuildData = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_Build);
-	if (false == ::IsValid(BuildData))
+	for (const FDC1BuildRow& BuildRow : AllBuildRows)
 	{
-		return false;
-	}
-
-	TArray<FDC1BuildRow*> AllBuildRows;
-	BuildData->GetAllRows<FDC1BuildRow>(TEXT("TechTree"), AllBuildRows);
-	if (true == AllBuildRows.IsEmpty())
-	{
-		return false;
-	}
-
-	for (const FDC1BuildRow* BuildRow : AllBuildRows)
-	{
-		const FGameplayTag& BuildTag = BuildRow->BuildTag;
+		const FGameplayTag& BuildTag = BuildRow.BuildTag;
 		if (true == BuildTag.IsValid())
 		{
-			OutBuildRows.AddUnique(BuildRow);
+			OutBuildRows.Add(BuildRow);
 		}
 	}
 

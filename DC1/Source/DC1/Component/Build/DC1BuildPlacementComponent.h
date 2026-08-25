@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
+#include "Enum/DC1Enums.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1BuildPlacementComponent.generated.h"
 
-struct FDC1BuildRow;
 struct FDC1BuildActorData;
 
 class ADC1BuildActor;
-class UDataTable;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
@@ -31,8 +31,23 @@ public:
 
 public:
 	bool				IsPlacing() const;
-	bool				BeginPlacement(const FGameplayTag& InBuildTag);
-	void				EndPlacement();				
+	bool				StartPlacement(const FGameplayTag& InBuildTag);
+	void				StopPlacement();
+	void				ConfirmPlacement();
+	void				AddRotation(float InDeltaYaw);
+
+private:
+	UFUNCTION(Server, Reliable)
+	void				Server_PlaceBuild(const FGameplayTag& InBuildTag, const FTransform& InTransform);
+
+	void				CacheBuildRows();
+	
+	const FDC1BuildRow* FindBuildRow(const FGameplayTag& InBuildTag) const;
+	FDC1BuildActorData	MakeBuildActorData(const FDC1BuildRow& InRow) const;
+	ADC1BuildActor*		SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform);
+
+	bool				TraceSurface(FHitResult& OutHit) const;
+	void				ApplyPreviewTransform(const FHitResult& InHit);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
@@ -51,13 +66,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADC1BuildActor>				PreviewActor = { nullptr };
 
-	UPROPERTY()
-	TObjectPtr<const UDataTable>			CachedBuildData = { nullptr };
-
-	TMap<FGameplayTag, const FDC1BuildRow*>	BuildRowsByTag;
+	TMap<FGameplayTag, const FDC1BuildRow>	BuildRowsByTag;
 
 	FGameplayTag							CurrentBuildTag = { FGameplayTag::EmptyTag };
 
 	float									CurrentYaw = { 0.f };
-	bool									CanPlace = { false };
+	bool									CanBuilding = { false };
 };

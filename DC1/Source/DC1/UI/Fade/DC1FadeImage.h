@@ -29,10 +29,8 @@ private:
 	TArray<TObjectPtr<UTexture2D>> SelectFrames;
 
 	float	FPS = { 10.f };
-
 	float	Elapsed = { 0.f };
 
 	int32	LastFrameIndex = { INDEX_NONE };
-
 	bool	bIsPlaying = { false };
 };
