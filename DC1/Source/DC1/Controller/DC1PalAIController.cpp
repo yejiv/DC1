@@ -300,12 +300,27 @@ void ADC1PalAIController::StopBehavior()
 		StateTreeComponent->StopLogic(TEXT("StopBehavior"));
 	}
 
-	// 타겟/포커스 해제
+	ClearTargetState();
+}
+
+void ADC1PalAIController::ClearTargetState()
+{
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
-	ClearSelectedSkill();
 	LastProvokedBy = nullptr;
+
+	// SetCurrentTarget은 타겟이 이미 없으면 그냥 반환하므로 스킬은 따로 비운다
+	ClearSelectedSkill();
 	SetCurrentTarget(nullptr);
+}
+
+void ADC1PalAIController::RefreshPerception()
+{
+	// 리스너를 다시 등록해야 sight query의 적대 판정이 재평가된다
+	ApplyPerceptionSettings();
+
+	// 옛 진영 기준으로 쌓인 감지 결과와 원한은 버린다
+	ClearTargetState();
 }
 
 void ADC1PalAIController::TryStartBehavior()

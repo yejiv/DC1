@@ -13,4 +13,8 @@ class DC1_API UDC1PalAttributeSet : public UDC1AttributeSet
 
 public:
 	UDC1PalAttributeSet();
+
+protected:
+	// 아군이 가한 데미지는 적용 막기
+	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
 };

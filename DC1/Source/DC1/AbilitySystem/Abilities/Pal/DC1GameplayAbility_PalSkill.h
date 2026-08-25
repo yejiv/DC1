@@ -27,7 +27,6 @@ public:
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void			PerformSkillEffect() PURE_VIRTUAL(UDC1GameplayAbility_PalSkill::PerformSkillEffect, );
-	void					SweepAndApplyDamage(float Length, TSet<TObjectPtr<AActor>>& InOutDamagedActors);
 
 	UFUNCTION()
 	void					OnMontageFinished();
@@ -47,7 +46,4 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
 	float					MaxRange = { 150.f };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
-	float					TraceRadius = { 50.f };
 };

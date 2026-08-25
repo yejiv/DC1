@@ -4,9 +4,11 @@
 
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "Templates/SubclassOf.h"
 #include "DC1PalData.generated.h"
 
 class UAnimMontage;
+class ADC1PalProjectile;
 
 /**
  *
@@ -70,6 +72,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	float							AttackPower = { 10.f };
+
+	// 이 종이 어떤 탄을 쏘는가. 키는 스킬 태그. 메시/속도/속성은 투사체 BP가 갖는다. 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
+	TMap<FGameplayTag, TSubclassOf<ADC1PalProjectile>>	Projectiles;
 #pragma endregion
 
 #pragma region AI
@@ -103,5 +109,11 @@ public:
 	{
 		const FDC1PalMontageSet* Found = Montages.Find(MontageTag);
 		return (nullptr != Found) ? Found->PickRandomMontage() : nullptr;
+	}
+
+	TSubclassOf<ADC1PalProjectile> FindProjectileByTag(const FGameplayTag& SkillTag) const
+	{
+		const TSubclassOf<ADC1PalProjectile>* Found = Projectiles.Find(SkillTag);
+		return (nullptr != Found) ? *Found : nullptr;
 	}
 };
