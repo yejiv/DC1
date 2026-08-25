@@ -72,5 +72,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "TechPoint|Font")
 	FLinearColor					NoPointNumColor = { FLinearColor::White } ;
 
+private:
 	EDC1TechPointState				PointState = { EDC1TechPointState::Default };
 };

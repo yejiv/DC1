@@ -53,10 +53,10 @@ private:
 	float			ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 
 private:
-	UPROPERTY(EditDefaultsOnly, Category = "BuildCheck")
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	FDC1BuildProbeData	BuildProbeData;
 
-	UPROPERTY(EditDefaultsOnly, Category = "BuildCheck")
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	bool				DrawDebugProbes = false;
 
 private:

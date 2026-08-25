@@ -88,6 +88,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Tech")
 	FGameplayTagContainer			DefaultUnlockedTags;
 
+private:
 	// OnRep으로 인한 UnlockedTechTags와의 비교 위한 Container
 	FGameplayTagContainer			LastUnlockedTags;
 

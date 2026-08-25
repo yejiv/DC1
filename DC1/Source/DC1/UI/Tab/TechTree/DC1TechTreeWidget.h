@@ -51,12 +51,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "UserButton")
 	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass = { nullptr };
 
+private:
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1TechTreeRowWidget>>	TechRows;
 
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
 
-private:
 	int32										CachedLevel = { 0 };
 };
