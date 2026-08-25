@@ -4,10 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
-#include "Templates/SubclassOf.h"
 #include "DC1GameplayAbility_PalFarSkill.generated.h"
-
-class ADC1PalProjectile;
 
 /**
  *
@@ -25,11 +22,15 @@ protected:
 	virtual void			PerformSkillEffect() override;
 
 protected:
-	// 속도, 중력, 메시는 BP에서 설정
-	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill")
-	TSubclassOf<ADC1PalProjectile>	ProjectileClass;
+	// PalData.Projectiles 조회 키
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill", meta = (Categories = "Ability.Pal"))
+	FGameplayTag			ProjectileTag;
 
-	// 발사 위치 오프셋.
+	// 발사 위치
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill")
+	FName					MuzzleSocketName = { TEXT("Muzzle") };
+
+	// 소켓이 없을 때만 쓰는 폴백 오프셋
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill", meta = (ClampMin = "0.0"))
 	float					MuzzleForwardOffset = { 60.f };
 

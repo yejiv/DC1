@@ -4,13 +4,15 @@
 
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+#include "Character/Pal/DC1PalCharacter.h"
+#include "Data/DA/Pal/DC1PalData.h"
 #include "Projectile/Pal/DC1PalProjectile.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "GameFramework/Pawn.h"
 
 UDC1GameplayAbility_PalFarSkill::UDC1GameplayAbility_PalFarSkill(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -19,27 +21,41 @@ UDC1GameplayAbility_PalFarSkill::UDC1GameplayAbility_PalFarSkill(const FObjectIn
 
 	MontageTag = DC1PalTags::Anim_Pal_FarSkill;
 	TriggerEventTag = DC1PalTags::Event_Pal_Attack_Hit;
+	ProjectileTag = DC1PalTags::Ability_Pal_FarSkill;
 
 	MaxRange = 1200.f;
 }
 
 void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()
 {
-	APawn* Pal = Cast<APawn>(GetAvatarActorFromActorInfo());
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetAvatarActorFromActorInfo());
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (false == ::IsValid(Pal) || nullptr == SourceASC)
 	{
 		return;
 	}
 
+	const UDC1PalData* PalData = Pal->GetPalData();
+	if (nullptr == PalData)
+	{
+		return;
+	}
+
+	const TSubclassOf<ADC1PalProjectile> ProjectileClass = PalData->FindProjectileByTag(ProjectileTag);
 	if (nullptr == ProjectileClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No ProjectileClass. Check the ability BP."), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No projectile for tag [%s]. Check PalData.Projectiles."),
+			*GetNameSafe(Pal), *ProjectileTag.ToString());
 		return;
 	}
 
 	const FVector Direction = Pal->GetActorForwardVector().GetSafeNormal2D();
-	const FVector MuzzleLocation = Pal->GetActorLocation() + (Direction * MuzzleForwardOffset) + (FVector::UpVector * MuzzleHeightOffset);
+
+	//발사 위치 찾기
+	const USkeletalMeshComponent* MeshComp = Pal->GetMesh();
+	const FVector MuzzleLocation = (nullptr != MeshComp && true == MeshComp->DoesSocketExist(MuzzleSocketName))
+		? MeshComp->GetSocketLocation(MuzzleSocketName)
+		: Pal->GetActorLocation() + (Direction * MuzzleForwardOffset) + (FVector::UpVector * MuzzleHeightOffset);
 
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 	EffectContext.SetAbility(this);
@@ -59,8 +75,10 @@ void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()
 	SpawnParams.Instigator = Pal;
 
 	ADC1PalProjectile* Projectile = Pal->GetWorld()->SpawnActor<ADC1PalProjectile>(ProjectileClass, MuzzleLocation, Direction.Rotation(), SpawnParams);
-	if (nullptr != Projectile)
+	if (nullptr == Projectile)
 	{
-		Projectile->DamageSpec = SpecHandle;
+		return;
 	}
+
+	Projectile->DamageSpec = SpecHandle;
 }
