@@ -120,7 +120,7 @@ void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, F
         return;
     }
 
-    if (false == bIsTraveling)
+    if (false == IsTraveling)
     {
         RollLoadingType(InFadeType);
     }
@@ -174,7 +174,7 @@ void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDel
         }));
 
 
-    bIsTraveling = true;
+    IsTraveling  = true;
 }
 
 UDC1UserWidget* UDC1UIManagerSubsystem::FindWidget(const FGameplayTag& InUITag)
@@ -353,12 +353,12 @@ void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
 
     CreatedWidget.Empty();
 
-    if (false == bIsTraveling)
+    if (false == IsTraveling)
     {
         return;
     }
 
     FadeIn(0.f, PendingFadeType);
 
-    bIsTraveling = false;
+    IsTraveling = false;
 }

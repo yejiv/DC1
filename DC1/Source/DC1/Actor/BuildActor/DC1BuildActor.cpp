@@ -33,6 +33,16 @@ ADC1BuildActor::ADC1BuildActor()
 	SetRootComponent(BuildMesh);
 }
 
+EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
+{
+	return (::IsValid(BuildCheckComp) ? BuildCheckComp->GetProbeDirection() : EDC1BuildProbeDirection::Down);
+}
+
+FTransform ADC1BuildActor::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
+{
+	return (::IsValid(BuildCheckComp) ? BuildCheckComp->ComputePlaceTransform(InHit, InYaw) : FTransform::Identity);
+}
+
 // Called when the game starts or when spawned
 void ADC1BuildActor::BeginPlay()
 {
@@ -43,24 +53,6 @@ void ADC1BuildActor::BeginPlay()
 		BuildState = EDC1BuildState::Completed;
 		BuildProgress = 1.f;
 	}
-
-	// Create DMI
-	if (true == ::IsValid(BuildMesh))
-	{
-		int32 NumMaterials = BuildMesh->GetNumMaterials();
-
-		for(int32 i = 0; i < NumMaterials; ++i)
-		{
-			UMaterialInstanceDynamic* MID = BuildMesh->CreateAndSetMaterialInstanceDynamic(i);
-
-			if (true == ::IsValid(MID))
-			{
-				BuildMIDs.Add(MID);
-			}
-		}
-	}
-
-	CurrentWork = 0.f;
 
 	ApplyState();
 }
@@ -80,7 +72,23 @@ void ADC1BuildActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	BuildCheckComp->CheckCanBuild();
+	// Completed 처리
+	if (FlashAmount > 0.f)
+	{
+		FlashAmount -= (DeltaTime / CompleteFlashDuration);
+
+		if (FlashAmount <= 0.f)
+		{
+			FlashAmount = 0.f;
+			BuildCompleted();
+		}
+		else
+		{
+			SetMaterialFlash();
+		}
+
+		return;
+	}
 
 	// Construction 처리
 	if (WorkSpeed <= 0.f || false == HasAuthority())
@@ -128,6 +136,7 @@ bool ADC1BuildActor::UpdatePreview()
 
 void ADC1BuildActor::AddBuildProgress(float InWork)
 {
+	WorkSpeed += InWork;
 }
 
 void ADC1BuildActor::BuildDestroy()
@@ -170,8 +179,95 @@ void ADC1BuildActor::ApplyState()
 	InteractCollider->SetCollisionEnabled(IsPreview ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
 	BuildCheckComp->SetCollisionEnabled(IsPreview ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
 
-	bool	IsTickEnabled = (BuildState == EDC1BuildState::Construction) ? true : false;
-	SetActorTickEnabled(true);
+	switch (BuildState)
+	{
+	case EDC1BuildState::Preview:
+	{
+		CreateTranslucentMIDs();
+		SetMaterialTranslucentColor(CanBuilding ? PreviewValidColor : PreviewInvalidColor);
+		SetActorTickEnabled(false);
+		break;
+	}
+	case EDC1BuildState::Construction:
+	{
+		CreateTranslucentMIDs();
+		SetMaterialTranslucentColor(ConstructionColor);
+		SetMaterialBuildProgress();
+		SetActorTickEnabled(true);
+		break;
+	}
+	case EDC1BuildState::Completed:
+	{
+		if (true == BuildMIDs.IsEmpty())
+		{
+			SetActorTickEnabled(false);
+		}
+		else
+		{
+			FlashAmount = 1.f;
+			SetActorTickEnabled(true);
+		}
+		break;
+	}
+	}
+}
+
+void ADC1BuildActor::CreateTranslucentMIDs()
+{
+	if (false == BuildMIDs.IsEmpty())
+	{
+		return;
+	}
+
+	// Create DMI
+	if (false == ::IsValid(BuildMesh) || false == ::IsValid(TranslucentMaterial))
+	{
+		return;
+	}
+
+	const int32 NumMaterials = BuildMesh->GetNumMaterials();
+
+	for (int32 i = 0; i < NumMaterials; ++i)
+	{
+		UMaterialInterface* OriginalMaterial = BuildMesh->GetMaterial(i);
+
+		UMaterialInstanceDynamic* MID = BuildMesh->CreateDynamicMaterialInstance(i, TranslucentMaterial);
+
+		if (false == ::IsValid(MID))
+		{
+			continue;
+		}
+
+		UTexture* SourceTexture = nullptr;
+		float UseTexture = 0.f;
+
+		if (true == ::IsValid(OriginalMaterial))
+		{
+			OriginalMaterial->GetTextureParameterValue(DC1BuildMaterialParams::SourceBaseColorParamName, SourceTexture);
+		}
+
+		if (true == ::IsValid(SourceTexture))
+		{
+			MID->SetTextureParameterValue(DC1BuildMaterialParams::BaseColorTexture, SourceTexture);
+			UseTexture = 1.f;
+		}
+
+		MID->SetScalarParameterValue(DC1BuildMaterialParams::UseTexture, UseTexture);
+
+		BuildMIDs.Add(MID);
+	}
+}
+
+void ADC1BuildActor::BuildCompleted()
+{
+	if (true == ::IsValid(BuildMesh))
+	{
+		BuildMesh->EmptyOverrideMaterials();
+	}
+
+	BuildMIDs.Reset();
+
+	SetActorTickEnabled(false);
 }
 
 void ADC1BuildActor::SetMaterialTranslucentColor(const FLinearColor& InColor)
@@ -181,18 +277,48 @@ void ADC1BuildActor::SetMaterialTranslucentColor(const FLinearColor& InColor)
 		if (true == ::IsValid(MID))
 		{
 			MID->SetVectorParameterValue(DC1BuildMaterialParams::TranslucentColor, InColor);
-			MID->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, BuildProgress);
 		}
 	}
 }
 
 void ADC1BuildActor::SetMaterialBuildProgress()
 {
+	int32 NumMIDs = BuildMIDs.Num();
+
+	for (int32 i = 0; i < NumMIDs; ++i)
+	{
+		if (false == ::IsValid(BuildMIDs[i]))
+		{
+			continue;
+		}
+
+		if (false == MaterialProgressRanges.IsValidIndex(i))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Material None Progress Range : %d"), i);
+			continue;
+		}
+
+		const FVector2D& Range = MaterialProgressRanges[i];
+		const float RangeSize = (Range.Y - Range.X);
+
+		float MaterialProgress = 0.f;
+
+		if (RangeSize > KINDA_SMALL_NUMBER)
+		{
+			MaterialProgress = FMath::Clamp(((BuildProgress - Range.X) / RangeSize), 0.f, 1.f);
+		}
+
+		BuildMIDs[i]->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, MaterialProgress);
+	}
+}
+
+void ADC1BuildActor::SetMaterialFlash()
+{
 	for (UMaterialInstanceDynamic* MID : BuildMIDs)
 	{
 		if (true == ::IsValid(MID))
 		{
-			MID->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, BuildProgress);
+			MID->SetScalarParameterValue(DC1BuildMaterialParams::FlashAmont, FlashAmount);
 		}
 	}
 }

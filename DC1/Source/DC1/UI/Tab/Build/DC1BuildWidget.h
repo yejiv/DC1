@@ -36,7 +36,7 @@ class DC1_API UDC1BuildWidget : public UDC1UserWidget
 	GENERATED_BODY()
 	
 public:
-	void	InitBuild(const TArray<const FDC1BuildRow*>& InBuildRows, const UDC1TechTreeComponent* InTechComp);
+	void	InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const UDC1TechTreeComponent* InTechComp);
 
 	bool	VisibleSlot(const FGameplayTag& InRowTag, const FGameplayTag& InSlotTag);
 

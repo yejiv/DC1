@@ -26,6 +26,34 @@ bool UDC1BuildCheckComponent::CheckCanBuild()
 	return (IsNoneOverlap && IsAttachedSurface);
 }
 
+FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
+{
+	const AActor* Owner = GetOwner();
+	if (false == ::IsValid(Owner))
+	{
+		return FTransform::Identity;
+	}
+
+	FVector AlignAxis = FVector::UpVector;
+	
+	if (true == BuildProbeData.AlignToSurface)
+	{
+		const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
+
+		const FVector ImpactNormal = FVector(InHit.ImpactNormal);
+
+		AlignAxis = IsDown ? ImpactNormal : (ImpactNormal * -1.f);
+	}
+
+
+	FQuat AlignQuat = FQuat::FindBetweenNormals(FVector::UpVector, AlignAxis);
+	FQuat FinalQuat = AlignQuat * (FRotator(0.f, InYaw, 0.f).Quaternion());
+
+	FVector Location = InHit.ImpactPoint - FinalQuat.RotateVector(GetAttachLocalOffset());
+
+	return FTransform(FinalQuat, Location, Owner->GetActorScale3D());
+}
+
 bool UDC1BuildCheckComponent::CheckSurface()
 {
 	if (BuildProbeData.ProbeCountX <= 0 || BuildProbeData.ProbeCountY <= 0 || BuildProbeData.MaxTraceDistance <= 0.f)
@@ -52,6 +80,8 @@ bool UDC1BuildCheckComponent::CheckSurface()
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
+
+	bool IsAllHit = true;
 
 	for (int32 x = 0; x < BuildProbeData.ProbeCountX; ++x)
 	{
@@ -82,11 +112,13 @@ bool UDC1BuildCheckComponent::CheckSurface()
 				{
 					return false;
 				}
+
+				IsAllHit = false;
 			}
 		}
 	}
 
-	return true;
+	return IsAllHit;
 }
 
 bool UDC1BuildCheckComponent::CheckOverlap()
@@ -118,4 +150,22 @@ float UDC1BuildCheckComponent::ComputeProbeAxisOffset(int32 InIndex, int32 InCou
 	const float Ratio = (static_cast<float>(InIndex) / static_cast<float>(InCount - 1));
 
 	return (FMath::Lerp((InExtent * -1.f), InExtent, Ratio) * BuildProbeData.ProbeDistanceFromCorner);
+}
+
+FVector UDC1BuildCheckComponent::GetAttachLocalOffset() const
+{
+	const AActor* Owner = GetOwner();
+	if (false == ::IsValid(Owner))
+	{
+		return FVector::ZeroVector;
+	}
+
+	const bool IsDown = (EDC1BuildProbeDirection::Down == BuildProbeData.ProbeDirection);
+
+	const float OffsetDirectionZ = IsDown ? -1.f : 1.f;
+
+	const FVector WorldOffset = GetComponentLocation() + (GetUpVector() * GetScaledBoxExtent().Z * OffsetDirectionZ);
+
+	// 회전 제거
+	return Owner->GetActorQuat().UnrotateVector(WorldOffset - Owner->GetActorLocation());
 }

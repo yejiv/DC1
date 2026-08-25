@@ -4,20 +4,15 @@
 #include "Component/DC1TechTreeComponent.h"
 #include "Net/UnrealNetwork.h"
 
-#include "System/DC1AssetManager.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
-#include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Helper/DC1Helper.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
-// Sets default values for this component's properties
 UDC1TechTreeComponent::UDC1TechTreeComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
 	SetIsReplicatedByDefault(true);
@@ -44,13 +39,13 @@ EDC1TechSlotState UDC1TechTreeComponent::GetTechState(const FGameplayTag& InTech
 		return EDC1TechSlotState::Unlocked;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
+	const FDC1TechRow* Found = FindTechRow(InTechTag);
 	if (nullptr == Found)
 	{
 		return EDC1TechSlotState::Default;
 	}
 
-	if (GetPlayerLevel() < (*Found)->RequiredLevel || TechPoints < (*Found)->UnlockCost)
+	if (GetPlayerLevel() < (*Found).RequiredLevel || TechPoints < (*Found).UnlockCost)
 	{
 		return EDC1TechSlotState::Locked;
 	}
@@ -121,13 +116,13 @@ void UDC1TechTreeComponent::Server_UnlockTech_Implementation(const FGameplayTag&
 		return;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
+	const FDC1TechRow* Found = FindTechRow(InTechTag);
 	if (nullptr == Found)
 	{
 		return;
 	}
 
-	TechPoints -= (*Found)->UnlockCost;
+	TechPoints -= (*Found).UnlockCost;
 
 	UnlockTech(InTechTag);
 
@@ -144,18 +139,31 @@ void UDC1TechTreeComponent::Server_UnlockAncientTech_Implementation(const FGamep
 		return;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
+	const FDC1TechRow* Found = FindTechRow(InTechTag);
 	if (nullptr == Found)
 	{
 		return;
 	}
 
-	AncientTechPoints -= (*Found)->UnlockCost;
+	AncientTechPoints -= (*Found).UnlockCost;
 	
 	UnlockTech(InTechTag);
 
 	//StandAlone
 	OnRep_TechState();
+}
+
+const FDC1TechRow* UDC1TechTreeComponent::FindTechRow(const FGameplayTag& InTechTag) const
+{
+	const FDC1TechRow* Found = TechRowsByTag.Find(InTechTag);
+	if (nullptr == Found)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Cant Find TechRows by %s"), *InTechTag.ToString());
+
+		return nullptr;
+	}
+
+	return Found;
 }
 
 void UDC1TechTreeComponent::OnRep_TechState()
@@ -178,23 +186,8 @@ void UDC1TechTreeComponent::OnRep_UnlockedTags()
 
 void UDC1TechTreeComponent::CachedTechRows()
 {
-	const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-	if (false == ::IsValid(DataTable))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't Find DataTable Asset from AssetManager"));
-		return;
-	}
-
-	CachedTechData = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_TechTree);
-	if (false == ::IsValid(CachedTechData))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't Find TechTree DataTable from DataTableAsset"));
-		return;
-	}
-
-	TArray<FDC1TechRow*> AllRows;
-	CachedTechData->GetAllRows<FDC1TechRow>(TEXT("Cached Tech Rows"), AllRows);
-	if (true == AllRows.IsEmpty())
+	TArray<FDC1TechRow> AllRows;
+	if (false == DC1DataTableHelper::GetAllRows<FDC1TechRow>(DC1DataTableTags::DataTable_UI_TechTree, AllRows))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TechTree DataTable is NULL"));
 		return;
@@ -202,9 +195,9 @@ void UDC1TechTreeComponent::CachedTechRows()
 
 	TechRowsByTag.Empty();
 
-	for (FDC1TechRow* Row : AllRows)
+	for (const FDC1TechRow& Row : AllRows)
 	{
-		const FGameplayTag& TechTag = Row->TechTag;
+		const FGameplayTag& TechTag = Row.TechTag;
 		if (false == TechTag.IsValid())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Tech Tag is Invalid"));
@@ -248,14 +241,13 @@ void UDC1TechTreeComponent::UnlockTech(const FGameplayTag& InTechTag)
 		return;
 	}
 
-	const FDC1TechRow* const* Found = TechRowsByTag.Find(InTechTag);
+	const FDC1TechRow* Found = FindTechRow(InTechTag);
 	if (nullptr == Found)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Cant Find TechRows by %s"), *InTechTag.ToString());
 		return;
 	}
 
-	const FGameplayTag& TechTag = (*Found)->TechTag;
+	const FGameplayTag& TechTag = (*Found).TechTag;
 
 	UnlockedTechTags.AddTag(TechTag);
 }

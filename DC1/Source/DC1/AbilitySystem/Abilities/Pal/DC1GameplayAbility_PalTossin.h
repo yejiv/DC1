@@ -20,7 +20,8 @@ public:
 protected:
 	virtual void			PerformSkillEffect() override;
 	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-	void					SweepDuringCharge();
+	// 돌진 중 전방을 훑어 적대 대상에 데미지. 타이머가 SweepInterval마다 부른다
+	void					SweepAndApplyDamage();
 
 	UFUNCTION()
 	void					StopCharge();
@@ -38,6 +39,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Tossin", meta = (ClampMin = "0.01"))
 	float					SweepInterval = { 0.05f };
+
+	// 전방 판정 구체의 반지름
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Tossin", meta = (ClampMin = "0.0"))
+	float					TraceRadius = { 70.f };
 
 private:
 	UPROPERTY()

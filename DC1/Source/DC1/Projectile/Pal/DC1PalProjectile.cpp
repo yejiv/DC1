@@ -5,6 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GenericTeamAgentInterface.h"
 
 ADC1PalProjectile::ADC1PalProjectile()
@@ -12,6 +13,15 @@ ADC1PalProjectile::ADC1PalProjectile()
 {
 	HitCollider->OnComponentHit.RemoveDynamic(this, &ThisClass::OnProjectileHit);
 	HitCollider->OnComponentHit.AddDynamic(this, &ThisClass::OnPalProjectileHit);
+
+	HitCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HitCollider->SetCollisionObjectType(ECC_WorldDynamic);
+	HitCollider->SetCollisionResponseToAllChannels(ECR_Ignore);
+	HitCollider->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	HitCollider->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+
+	// 부모 변경 필요
+	ProjectileMesh->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
 }
 
 void ADC1PalProjectile::OnPalProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

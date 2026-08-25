@@ -37,9 +37,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Build|Slot")
 	TSubclassOf<UDC1BuildButton>	SlotWidgetClass = { nullptr };
 
+private:
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDC1BuildButton>> Slots;
 
-private:
 	FGameplayTag	RowTag = { FGameplayTag::EmptyTag };
 };

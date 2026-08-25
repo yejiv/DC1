@@ -2,18 +2,12 @@
 
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
-#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
-#include "Tags/Effect/DC1GameplayTag_Effect.h"
 
-#include "AbilitySystemComponent.h"
-#include "AbilitySystemGlobals.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Animation/AnimMontage.h"
-#include "Engine/World.h"
 
 UDC1GameplayAbility_PalSkill::UDC1GameplayAbility_PalSkill(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -81,79 +75,6 @@ void UDC1GameplayAbility_PalSkill::OnTriggerEventReceived(FGameplayEventData Pay
 	}
 
 	PerformSkillEffect();
-}
-
-void UDC1GameplayAbility_PalSkill::SweepAndApplyDamage(float Length, TSet<TObjectPtr<AActor>>& InOutDamagedActors)
-{
-	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetAvatarActorFromActorInfo());
-	if (false == IsValid(Pal))
-	{
-		return;
-	}
-
-	UWorld* World = Pal->GetWorld();
-	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-	if (nullptr == World || nullptr == SourceASC)
-	{
-		return;
-	}
-
-	const FVector Forward = Pal->GetActorForwardVector();
-	const FVector Origin = Pal->GetActorLocation() + (Forward * Pal->GetSimpleCollisionRadius());
-	const FVector End = Origin + (Forward * Length);
-
-	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
-
-	FCollisionQueryParams QueryParams;
-	QueryParams.bTraceComplex = false;
-	QueryParams.AddIgnoredActor(Pal);
-
-	TArray<FHitResult> Hits;
-	World->SweepMultiByObjectType(Hits, Origin, End, FQuat::Identity, ObjectParams,
-		FCollisionShape::MakeSphere(TraceRadius), QueryParams);
-
-	for (const FHitResult& Hit : Hits)
-	{
-		AActor* HitActor = Hit.GetActor();
-		if (false == IsValid(HitActor) || HitActor == Pal)
-		{
-			continue;
-		}
-
-		if (true == InOutDamagedActors.Contains(HitActor))
-		{
-			continue;
-		}
-
-		if (ETeamAttitude::Hostile != Pal->GetTeamAttitudeTowards(*HitActor))
-		{
-			continue;
-		}
-
-		UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(HitActor);
-		if (nullptr == TargetASC)
-		{
-			continue;
-		}
-
-		InOutDamagedActors.Add(HitActor);
-
-		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-		EffectContext.SetAbility(this);
-		EffectContext.AddSourceObject(Pal);
-		EffectContext.AddHitResult(Hit);
-
-		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), GetAbilityLevel(), EffectContext);
-		if (false == SpecHandle.IsValid())
-		{
-			continue;
-		}
-
-		const float AttackPower = SourceASC->GetNumericAttribute(UDC1AttributeSet::GetAttackPowerAttribute());
-		SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower);
-		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-	}
 }
 
 void UDC1GameplayAbility_PalSkill::OnMontageFinished()
