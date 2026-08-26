@@ -9,6 +9,7 @@
 
 class ADC1Character;
 class UStateTreeAIComponent;
+class UStateTree;
 class UAISenseConfig_Sight;
 
 /**
@@ -32,8 +33,10 @@ public:
 	void					StopBehavior();
 	void					TryStartBehavior();
 
-	// 진영이 바뀌면 이미 감지한 것들의 적대 판정이 무효가 된다
-	void					RefreshPerception();
+	// 진영이 바뀌면 지각과 행동 트리 다시.
+	void					HandleTeamChanged();
+
+	AActor*					GetFollowTarget() const;
 
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
@@ -49,20 +52,32 @@ public:
 	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void OnPossess(APawn* InPawn) override;
+	virtual void			BeginPlay() override;
+	virtual void			OnPossess(APawn* InPawn) override;
 
 	UFUNCTION()
-	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+	void					OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
 	
-	void SetCurrentTarget(AActor* NewTarget);
+	void					SetCurrentTarget(AActor* NewTarget);
 
 	void					ApplyPerceptionSettings();
+
+	void					RefreshPerception();
+
+	// 진영에 맞는 행동 트리 적용
+	void					ApplyStateTreeForTeam();
 
 	void					ClearTargetState();
 
 protected:
+	// 진영별 행동 트리. 컨트롤러 BP에서 지정한다
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	TObjectPtr<UStateTree>	WildStateTree = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	TObjectPtr<UStateTree>	PartnerStateTree = { nullptr };
+
 	UPROPERTY(VisibleAnywhere, Category = "AI")
 	TObjectPtr<UStateTreeAIComponent> StateTreeComponent = { nullptr };
 

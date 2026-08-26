@@ -221,17 +221,17 @@ void ADC1PalCharacter::OnTeamChanged()
 {
 	// 적대 판정은 sight query 생성 시점에 한 번만 해서 진영이 바뀌면 양쪽을 다 갱신!
 
-	// 남들이 나를 다시 판정하도록. 해제 없이 재등록만 하면 옛 쿼리가 그대로 남는다
+	// 남들이 나를 다시 판정
 	if (UAIPerceptionSystem* PerceptionSystem = UAIPerceptionSystem::GetCurrent(this))
 	{
 		PerceptionSystem->UnregisterSource(*this);
 		PerceptionSystem->RegisterSource(*this);
 	}
 
-	// 내가 남들을 다시 판정하도록
+	// 내가 남들을 다시 판정 + 진영에 맞는 행동 트리로 갈아탄다
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
-		PalController->RefreshPerception();
+		PalController->HandleTeamChanged();
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s team changed to %s."), *GetName(), *UEnum::GetValueAsString(Team));

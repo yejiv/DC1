@@ -13,6 +13,8 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Components/StateTreeAIComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "StateTree.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 
@@ -323,6 +325,46 @@ void ADC1PalAIController::RefreshPerception()
 	ClearTargetState();
 }
 
+void ADC1PalAIController::ApplyStateTreeForTeam()
+{
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	if (false == IsValid(Pal) || false == IsValid(StateTreeComponent))
+	{
+		return;
+	}
+
+	UStateTree* Desired = (EDC1Team::Player == Pal->GetTeam()) ? PartnerStateTree : WildStateTree;
+
+	// BP에 안 넣었으면 컴포넌트에 이미 물려 있는 트리를 그대로 쓴다
+	if (nullptr == Desired)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No state tree for team [%s]. Check the controller BP."),
+			*GetNameSafe(Pal), *UEnum::GetValueAsString(Pal->GetTeam()));
+		return;
+	}
+
+	StateTreeComponent->SetStateTree(Desired);
+}
+
+AActor* ADC1PalAIController::GetFollowTarget() const
+{
+	// 포획이 붙으면 팰이 들고 있는 주인 참조로 바꾼다. 지금은 플레이어 하나뿐이다
+	return UGameplayStatics::GetPlayerPawn(this, 0);
+}
+
+void ADC1PalAIController::HandleTeamChanged()
+{
+	// 진영이 바뀌면 트리가 통째로 달라진다. 멈추고 다시 시작한다
+	if (IsValid(StateTreeComponent))
+	{
+		StateTreeComponent->StopLogic(TEXT("TeamChanged"));
+	}
+
+	RefreshPerception();
+
+	TryStartBehavior();
+}
+
 void ADC1PalAIController::TryStartBehavior()
 {
 	if (false == IsValid(GetPawn()) || false == HasActorBegunPlay())
@@ -334,6 +376,9 @@ void ADC1PalAIController::TryStartBehavior()
 	{
 		return;
 	}
+
+	// 시작 직전에 진영에 맞는 트리를 물린다
+	ApplyStateTreeForTeam();
 
 	StateTreeComponent->StartLogic();
 }

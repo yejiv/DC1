@@ -381,3 +381,78 @@ void FDC1PalFleeTask::ExitState(FStateTreeExecutionContext& Context, const FStat
 	}
 }
 
+
+
+EStateTreeRunStatus FDC1PalFollowTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	// 이동 방향으로 턴
+	if (ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
+	{
+		Pal->SetOrientToMovement(true);
+	}
+
+	// 실제 이동은 Tick에서
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalFollowTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const APawn* Pal = AIController->GetPawn();
+	AActor* FollowTarget = AIController->GetFollowTarget();
+	if (false == IsValid(Pal) || false == IsValid(FollowTarget))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const float DistanceSq = FVector::DistSquared2D(Pal->GetActorLocation(), FollowTarget->GetActorLocation());
+	const bool bMoving = (EPathFollowingStatus::Idle != AIController->GetMoveStatus());
+
+	if (DistanceSq > FMath::Square(InstanceData.FollowDistance))
+	{
+		// 이미 가고 있으면 그대로
+		if (false == bMoving)
+		{
+			AIController->MoveToActor(FollowTarget, InstanceData.AcceptanceRadius);
+		}
+	}
+	else if (true == bMoving)
+	{
+		AIController->StopMovement();
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+void FDC1PalFollowTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return;
+	}
+
+	AIController->StopMovement();
+
+	if (ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
+	{
+		Pal->SetOrientToMovement(false);
+	}
+}
