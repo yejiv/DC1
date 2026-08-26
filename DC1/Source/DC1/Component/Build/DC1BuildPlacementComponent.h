@@ -10,6 +10,7 @@
 #include "DC1BuildPlacementComponent.generated.h"
 
 struct FDC1BuildActorData;
+struct FInputActionValue;
 
 class ADC1BuildActor;
 
@@ -21,7 +22,6 @@ class DC1_API UDC1BuildPlacementComponent : public UActorComponent
 public:	
 	UDC1BuildPlacementComponent();
 
-
 protected:
 	virtual void		BeginPlay() override;
 	virtual void		EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -30,12 +30,8 @@ public:
 	virtual void		TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	bool				IsPlacing() const;
 	bool				StartPlacement(const FGameplayTag& InBuildTag);
-	void				StopPlacement();
-	void				ConfirmPlacement();
-	void				AddRotation(float InDeltaYaw);
-
+	
 private:
 	UFUNCTION(Server, Reliable)
 	void				Server_PlaceBuild(const FGameplayTag& InBuildTag, const FTransform& InTransform);
@@ -46,8 +42,16 @@ private:
 	FDC1BuildActorData	MakeBuildActorData(const FDC1BuildRow& InRow) const;
 	ADC1BuildActor*		SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform);
 
+	void				CancelPlacement();
+	void				ConfirmPlacement();
+
 	bool				TraceSurface(FHitResult& OutHit) const;
-	void				ApplyPreviewTransform(const FHitResult& InHit);
+
+	void				SetUpBuildInput();
+	void				OnRotateInput(const FInputActionValue& Value);
+	void				SetBuildInputMode(bool InEnabled);
+
+	const APawn*		GetOwnerPawn() const;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
