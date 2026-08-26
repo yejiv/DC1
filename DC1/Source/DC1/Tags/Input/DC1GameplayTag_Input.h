@@ -44,7 +44,7 @@ namespace DC1InputTags
 
 namespace DC1InputBuildTags
 {
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Build);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Confirm);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Cancel);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Rotate);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Snap);
 }
