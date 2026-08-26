@@ -59,6 +59,7 @@ public:
 	const TArray<FDC1ItemCost>&		GetBuildCosts() const { return BuildActorData.BuildCosts; }
 	EDC1BuildState					GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
+	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
 
 	EDC1BuildProbeDirection			GetProbeDirection() const;
 	FTransform						ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
@@ -103,6 +104,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
+
+	// 이 건물 위에 다른 건물을 지을 수 있는가 ex) 바닥 = true
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
+	bool									IsBuildableSurface = { false };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };

@@ -136,7 +136,12 @@ bool ADC1BuildActor::UpdatePreview()
 
 void ADC1BuildActor::AddBuildProgress(float InWork)
 {
-	WorkSpeed += InWork;
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	WorkSpeed = FMath::Max(0.f, WorkSpeed + InWork);
 }
 
 void ADC1BuildActor::BuildDestroy()
@@ -173,16 +178,13 @@ void ADC1BuildActor::ApplyState()
 		return;
 	}
 
-	bool	IsPreview = (BuildState == EDC1BuildState::Preview);
-	
-	BuildMesh->SetCollisionEnabled(IsPreview ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryAndPhysics);
-	InteractCollider->SetCollisionEnabled(IsPreview ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
-	BuildCheckComp->SetCollisionEnabled(IsPreview ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
-
 	switch (BuildState)
 	{
 	case EDC1BuildState::Preview:
 	{
+		BuildMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		InteractCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 		CreateTranslucentMIDs();
 		SetMaterialTranslucentColor(CanBuilding ? PreviewValidColor : PreviewInvalidColor);
 		SetActorTickEnabled(false);
@@ -190,6 +192,9 @@ void ADC1BuildActor::ApplyState()
 	}
 	case EDC1BuildState::Construction:
 	{
+		BuildMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		InteractCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
 		CreateTranslucentMIDs();
 		SetMaterialTranslucentColor(ConstructionColor);
 		SetMaterialBuildProgress();
@@ -198,6 +203,9 @@ void ADC1BuildActor::ApplyState()
 	}
 	case EDC1BuildState::Completed:
 	{
+		BuildMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		InteractCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
 		if (true == BuildMIDs.IsEmpty())
 		{
 			SetActorTickEnabled(false);
