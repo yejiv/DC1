@@ -23,12 +23,15 @@
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
 #include "Component/Build/DC1BuildPlacementComponent.h"
+#include "Component/Build/DC1InteractComponent.h"
 
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	BuildPlacementComponent = CreateDefaultSubobject<UDC1BuildPlacementComponent>("BuildPlacementComponent");
+
+	InteractComponent = CreateDefaultSubobject<UDC1InteractComponent>("InteractComponent");
 }
 
 void ADC1PlayerController::SetCursorMode(bool OnTurn)

@@ -15,6 +15,7 @@ class UDC1InputData;
 
 class UDC1InventoryViewModel;
 class UDC1BuildPlacementComponent;
+class UDC1InteractComponent;
 
 UCLASS()
 class DC1_API ADC1PlayerController : public APlayerController
@@ -94,6 +95,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Build")
 	TObjectPtr<UDC1BuildPlacementComponent> BuildPlacementComponent = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = "Build|Interact")
+	TObjectPtr<UDC1InteractComponent> InteractComponent = { nullptr };
 
 private:
 	bool	IsTurn = { true };

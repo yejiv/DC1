@@ -7,9 +7,9 @@
 #include "UI/Button/AnimButton/Slot/DC1TechTreeButton.h"
 #include "UI/Tab/TechTree/DC1TechTreePointWidget.h"
 
-#include "System/DC1AssetManager.h"
+#include "Helper/DC1Helper.h"
+
 #include "Data/DA/UI/DC1UIData.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
@@ -130,31 +130,18 @@ void UDC1TechTreeWidget::InitTechTree()
 	{
 		return;
 	}
-	const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-
-	if (false == ::IsValid(DataTable))
-	{
-		return;
-	}
-
-	const UDataTable* TechTreeData = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_TechTree);
-	if (false == ::IsValid(TechTreeData))
-	{
-		return;
-	}
 	
-	TArray<FDC1TechRow*> AllRows;
-	TechTreeData->GetAllRows<FDC1TechRow>(TEXT("BuildTechTree"), AllRows);
-	if (true == AllRows.IsEmpty())
+	TArray<FDC1TechRow> AllRows;
+	if (false == DC1DataTableHelper::GetAllRows<FDC1TechRow>(DC1DataTableTags::DataTable_UI_TechTree, AllRows))
 	{
 		return;
 	}
 
-	TMap<int32, TArray<FDC1TechRow*>> RowsByLevel;
+	TMap<int32, TArray<const FDC1TechRow>> RowsByLevel;
 
-	for (FDC1TechRow* Row : AllRows)
+	for (const FDC1TechRow& Row : AllRows)
 	{
-		int32 Level = Row->RequiredLevel;
+		int32 Level = Row.RequiredLevel;
 		RowsByLevel.FindOrAdd(Level).Add(Row);
 	}
 
@@ -175,16 +162,16 @@ void UDC1TechTreeWidget::InitTechTree()
 
 		TechTreeScrollBox->AddChild(RowWidget);
 
-		for (const FDC1TechRow* Row : RowsByLevel[AddLevel])
+		for (const FDC1TechRow Row : RowsByLevel[AddLevel])
 		{
-			UDC1TechTreeButton* TechSlot = RowWidget->AddTechSlot(*Row);
+			UDC1TechTreeButton* TechSlot = RowWidget->AddTechSlot(Row);
 			if (true == ::IsValid(TechSlot))
 			{
 
 				UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
 				if (true == ::IsValid(TechComp))
 				{
-					const FGameplayTag& CurrentSlotTag = Row->TechTag;
+					const FGameplayTag& CurrentSlotTag = Row.TechTag;
 
 					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotTag, TechComp]() {
 							TechComp->Server_UnlockTech(CurrentSlotTag);

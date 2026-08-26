@@ -10,10 +10,11 @@
 #include "DC1BuildActor.generated.h"
 
 class UStaticMeshComponent;
-class USphereComponent;
+class UBoxComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UDC1BuildCheckComponent;
+class ADC1Character;
 
 // 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
@@ -23,7 +24,7 @@ namespace DC1BuildMaterialParams
 	static const FName BuildProgress = FName("BuildProgress");
 	static const FName BaseColorTexture = FName("BaseColorTexture");
 	static const FName UseTexture = FName("UseTexture");
-	static const FName FlashAmont = FName("FlashAmount");
+	static const FName FlashAmount = FName("FlashAmount");
 
 	// 원본 Material ( BaseColorTexture 추출용 )
 	static const FName SourceBaseColorParamName = FName("BaseColor");
@@ -63,6 +64,7 @@ public:
 
 	EDC1BuildProbeDirection			GetProbeDirection() const;
 	FTransform						ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+	const bool						IsInInteractRange(const APawn* InPawn) const;
 
 protected:
 	virtual void	BeginPlay() override;
@@ -72,9 +74,12 @@ public:
 	virtual void	Tick(float DeltaTime) override;
 
 public:
-	void			InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
 	virtual bool	UpdatePreview();
-	void			AddBuildProgress(float InWork);
+	
+	void			InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
+
+	void			AddWorker(const ADC1Character* InWorker);
+	void			RemoveWorker(const ADC1Character* InWorker);
 	void			BuildDestroy();
 
 protected:
@@ -91,6 +96,8 @@ private:
 	void			CreateTranslucentMIDs();
 	void			BuildCompleted();
 
+	float			ComputeTotalWorkSpeed();
+
 	void			SetMaterialTranslucentColor(const FLinearColor& InColor);
 	void			SetMaterialBuildProgress();
 	void			SetMaterialFlash();
@@ -100,7 +107,7 @@ protected:
 	TObjectPtr<UStaticMeshComponent>		BuildMesh = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<USphereComponent>			InteractCollider = { nullptr };
+	TObjectPtr<UBoxComponent>			InteractCollider = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
@@ -109,6 +116,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	bool									IsBuildableSurface = { false };
 
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"), Category = "Build|Interact")
+	float									InteractDistance = { 200.f };
+
+	// Preview, Constrction 상태에서 사용할 Materail
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };
 
@@ -145,8 +156,8 @@ private:
 	TArray<TObjectPtr<UMaterialInstanceDynamic>>	BuildMIDs;
 
 private:
+	TSet<TWeakObjectPtr<const ADC1Character>> Workers;
 	bool					CanBuilding = { false };
 	float					CurrentWork = { 0.f };
-	float					WorkSpeed = { 0.f };
 	float					FlashAmount = { 0.f };
 };

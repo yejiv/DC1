@@ -4,10 +4,14 @@
 #include "Actor/BuildActor/DC1BuildActor.h"
 
 #include "Components/StaticMeshComponent.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include "Component/Build/DC1BuildCheckComponent.h"
+
+#include "Character/DC1Character.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -24,7 +28,7 @@ ADC1BuildActor::ADC1BuildActor()
 	BuildMesh = CreateDefaultSubobject<UStaticMeshComponent>("BuildMesh");
 	BuildMesh->SetMobility(EComponentMobility::Movable);
 
-	InteractCollider = CreateDefaultSubobject<USphereComponent>("InteractCollider");
+	InteractCollider = CreateDefaultSubobject<UBoxComponent>("InteractCollider");
 	InteractCollider->SetupAttachment(BuildMesh);
 
 	BuildCheckComp = CreateDefaultSubobject<UDC1BuildCheckComponent>("BuildCheckComp");
@@ -41,6 +45,26 @@ EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
 FTransform ADC1BuildActor::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
 {
 	return (::IsValid(BuildCheckComp) ? BuildCheckComp->ComputePlaceTransform(InHit, InYaw) : FTransform::Identity);
+}
+
+const bool ADC1BuildActor::IsInInteractRange(const APawn* InPawn) const
+{
+	if (false == ::IsValid(InPawn) || false == ::IsValid(InteractCollider))
+	{
+		return false;
+	}
+
+	FVector PawnLocation = InPawn->GetActorLocation();
+
+	float DistanceSquared = 0.f;
+	FVector ClosetPoint;
+
+	if (false == InteractCollider->GetSquaredDistanceToCollision(PawnLocation, DistanceSquared, ClosetPoint))
+	{
+		return false;
+	}
+
+	return DistanceSquared <= (InteractDistance * InteractDistance);
 }
 
 // Called when the game starts or when spawned
@@ -91,14 +115,16 @@ void ADC1BuildActor::Tick(float DeltaTime)
 	}
 
 	// Construction 처리
-	if (WorkSpeed <= 0.f || false == HasAuthority())
+	if (true == Workers.IsEmpty() || false == HasAuthority())
 	{
 		return;
 	}
 
-	if (BuildActorData.RequiredWork > 0.f && CurrentWork < BuildActorData.RequiredWork)
+	const float TotalWorkSpeed = ComputeTotalWorkSpeed();
+
+	if (TotalWorkSpeed > 0.f && BuildActorData.RequiredWork > 0.f && CurrentWork < BuildActorData.RequiredWork)
 	{
-		CurrentWork += (WorkSpeed * DeltaTime);
+		CurrentWork += (TotalWorkSpeed * DeltaTime);
 
 		BuildProgress = (CurrentWork / BuildActorData.RequiredWork);
 
@@ -119,6 +145,26 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1B
 	BuildState = InState;
 }
 
+void ADC1BuildActor::AddWorker(const ADC1Character* InWorker)
+{
+	if (false == ::IsValid(InWorker) || false == HasAuthority() || BuildState != EDC1BuildState::Construction)
+	{
+		return;
+	}
+
+	Workers.Add(InWorker);
+}
+
+void ADC1BuildActor::RemoveWorker(const ADC1Character* InWorker)
+{
+	if (nullptr == InWorker || false == HasAuthority())
+	{
+		return;
+	}
+
+	Workers.Remove(InWorker);
+}
+
 bool ADC1BuildActor::UpdatePreview()
 {
 	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild();
@@ -134,26 +180,23 @@ bool ADC1BuildActor::UpdatePreview()
 	return CanBuilding;
 }
 
-void ADC1BuildActor::AddBuildProgress(float InWork)
-{
-	if (false == HasAuthority())
-	{
-		return;
-	}
-
-	WorkSpeed = FMath::Max(0.f, WorkSpeed + InWork);
-}
-
 void ADC1BuildActor::BuildDestroy()
 {
+	// TODO Despawn, Cost Return
+	Workers.Empty();
 }
 
 void ADC1BuildActor::OnRep_BuildState()
 {
+	if (true == HasActorBegunPlay())
+	{
+		ApplyState();
+	}
 }
 
 void ADC1BuildActor::OnRep_BuildProgress()
 {
+	SetMaterialBuildProgress();
 }
 
 void ADC1BuildActor::SetState(EDC1BuildState InNewState)
@@ -215,6 +258,8 @@ void ADC1BuildActor::ApplyState()
 			FlashAmount = 1.f;
 			SetActorTickEnabled(true);
 		}
+
+		Workers.Empty();
 		break;
 	}
 	}
@@ -278,6 +323,31 @@ void ADC1BuildActor::BuildCompleted()
 	SetActorTickEnabled(false);
 }
 
+float ADC1BuildActor::ComputeTotalWorkSpeed()
+{
+	float TotalWorkSpeed = 0.f;
+
+	for (TSet<TWeakObjectPtr<const ADC1Character>>::TIterator Iter = Workers.CreateIterator(); Iter; ++Iter)
+	{
+		const ADC1Character* Worker = Iter->Get();
+		if (false == ::IsValid(Worker))
+		{
+			Iter.RemoveCurrent();
+			continue;
+		}
+
+		const UAbilitySystemComponent* ASC = Worker->GetAbilitySystemComponent();
+		if (false == ::IsValid(ASC) || ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead))
+		{
+			continue;
+		}
+
+		TotalWorkSpeed += ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+	}
+
+	return TotalWorkSpeed;
+}
+
 void ADC1BuildActor::SetMaterialTranslucentColor(const FLinearColor& InColor)
 {
 	for (UMaterialInstanceDynamic* MID : BuildMIDs)
@@ -326,7 +396,7 @@ void ADC1BuildActor::SetMaterialFlash()
 	{
 		if (true == ::IsValid(MID))
 		{
-			MID->SetScalarParameterValue(DC1BuildMaterialParams::FlashAmont, FlashAmount);
+			MID->SetScalarParameterValue(DC1BuildMaterialParams::FlashAmount, FlashAmount);
 		}
 	}
 }

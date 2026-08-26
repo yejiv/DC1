@@ -137,14 +137,17 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 
 	const float Distance = FVector::Dist2D(PawnLocation, ActorLocation);
 
-	if (Distance > PlaceDistance)
+	// 서버 검증 여유 수치
+	if (Distance > ( PlaceDistance * DistanceMarginFactor ))
 	{
 		return;
 	}
 
 	// TODO Cost 감소
+	// ..
 
-	SpawnBuildActor(*BuildRow, EDC1BuildState::Construction, InTransform);
+	EDC1BuildState ConfirmState = (BuildRow->RequiredWork > 0.f) ? EDC1BuildState::Construction : EDC1BuildState::Completed;
+	SpawnBuildActor(*BuildRow, ConfirmState, InTransform);
 }
 
 void UDC1BuildPlacementComponent::CacheBuildRows()
@@ -339,13 +342,13 @@ void UDC1BuildPlacementComponent::SetBuildInputMode(bool InEnabled)
 
 const APawn* UDC1BuildPlacementComponent::GetOwnerPawn() const
 {
-	APlayerController* PC = GetOwner<APlayerController>();
+	const APlayerController* PC = GetOwner<APlayerController>();
 	if (false == ::IsValid(PC))
 	{
 		return nullptr;
 	}
 
-	APawn* Pawn = PC->GetPawn();
+	const APawn* Pawn = PC->GetPawn();
 	if (false == ::IsValid(Pawn))
 	{
 		return nullptr;

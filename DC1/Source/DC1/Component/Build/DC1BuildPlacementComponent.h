@@ -76,4 +76,5 @@ private:
 
 	float									CurrentYaw = { 0.f };
 	bool									CanBuilding = { false };
+	float									DistanceMarginFactor = { 1.1f };
 };

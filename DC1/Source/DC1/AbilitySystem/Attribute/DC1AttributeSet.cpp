@@ -19,6 +19,7 @@ void UDC1AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, AttackPower, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, DefensePower, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Level, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, WorkSpeed, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Experience, COND_None, REPNOTIFY_Always);
 }
 
@@ -29,6 +30,11 @@ void UDC1AttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	if (GetHealthAttribute() == Attribute)
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	}
+
+	if (GetWorkSpeedAttribute() == Attribute)
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
 	}
 }
 
@@ -98,4 +104,9 @@ void UDC1AttributeSet::OnRep_Level(const FGameplayAttributeData& OldLevel)
 void UDC1AttributeSet::OnRep_Experience(const FGameplayAttributeData& OldExperience)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, Experience, OldExperience);
+}
+
+void UDC1AttributeSet::OnRep_WorkSpeed(const FGameplayAttributeData& OldWorkSpeed)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, WorkSpeed, OldWorkSpeed);
 }
