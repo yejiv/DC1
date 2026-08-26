@@ -35,11 +35,42 @@ void ADC1PlayerController::SetCursorMode(bool OnTurn)
 	IsTurn = OnTurn;
 }
 
+void ADC1PlayerController::SetIMCEnabled(const FGameplayTag& IMCTag, bool Enabled)
+{
+	if (const UDC1InputData* InputData = UDC1AssetManager::GetAssetByTag<UDC1InputData>(DC1AssetTags::Asset_InputData))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+		{
+			const FDC1InputMappingContext* IMCData = InputData->FindIMCEntrybyTag(IMCTag);
+			if (nullptr == IMCData || nullptr == IMCData->InputMappingContext)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ADC1PlayerController :: Cant Find IMC Data or IMC : %s"), *IMCTag.ToString());
+				return;
+			}
+
+			if (IMCData->Priority == 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ADC1PlayerController :: %s is Base IMC. Cant Add/Remove"), *IMCTag.ToString());
+				return;
+			}
+
+			if (true == Enabled)
+			{
+				Subsystem->AddMappingContext(IMCData->InputMappingContext, IMCData->Priority);
+			}
+			else
+			{
+				Subsystem->RemoveMappingContext(IMCData->InputMappingContext);
+			}
+		}
+	}
+}
+
 void ADC1PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetUp_IMC(DC1IMCTags::IMC_Default);
+	SetBaseIMC(DC1IMCTags::IMC_Default);
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -140,31 +171,7 @@ void ADC1PlayerController::SetupInputComponent()
 			EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
 		}
 
-#pragma region UI_TEST
-		// Open Tab - Inventory Widget
-		if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
-		{
-			EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_Inventory.GetTag());
-		}
-
-		// Open Tab - HasPal Widget
-		if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
-		{
-			EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_HasPal.GetTag());
-		}
-
-		// Open Tab - TechTree Widget
-		if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
-		{
-			EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_TechTree.GetTag());
-		}
-
-		// Open Build Widget
-		if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
-		{
-			EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
-		}
-#pragma endregion
+		SetUpUIInput(EnhancedInputComponent, InputData);
 	}
 
 	SetUp_DebugInput(); // TODO : Debug region 제거 시 같이 삭제
@@ -374,6 +381,34 @@ void ADC1PlayerController::SetUp_DebugInput()
 	InputComponent->BindKey(EKeys::NumPadThree, IE_Pressed, this, &ThisClass::OnDebugWeaponBow);
 }
 
+void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData)
+{
+	// Open Tab - Inventory Widget
+	if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
+	{
+		EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_Inventory.GetTag());
+	}
+
+	// Open Tab - HasPal Widget
+	if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
+	{
+		EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_HasPal.GetTag());
+	}
+
+	// Open Tab - TechTree Widget
+	if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
+	{
+		EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_TechTree.GetTag());
+	}
+
+	// Open Build Widget
+	if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
+	{
+		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
+	}
+}
+
+
 void ADC1PlayerController::OnDebugWeaponNone()
 {
 	ServerSetWeaponState(DC1StateTags::State_Weapon_None);
@@ -407,7 +442,6 @@ void ADC1PlayerController::ServerSetWeaponState_Implementation(FGameplayTag NewS
 
 void ADC1PlayerController::OnUIChange()
 {
-
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
@@ -424,17 +458,17 @@ void ADC1PlayerController::OnUIChange()
 
 	if (true == UIManager->HasActiveScreen())
 	{
-		SetUp_IMC(DC1IMCTags::IMC_UI);
+		SetBaseIMC(DC1IMCTags::IMC_UI);
 	}
 	else
 	{
-		SetUp_IMC(DC1IMCTags::IMC_Default);
+		SetBaseIMC(DC1IMCTags::IMC_Default);
 	}
 
 	IsActiveScreen = IsActiveNow;
 }
 
-void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
+void ADC1PlayerController::SetBaseIMC(const FGameplayTag& IMCTag)
 {
 	if (const UDC1InputData* InputData = UDC1AssetManager::GetAssetByTag<UDC1InputData>(DC1AssetTags::Asset_InputData))
 	{
@@ -445,9 +479,9 @@ void ADC1PlayerController::SetUp_IMC(const FGameplayTag& IMC_Tag)
 				Subsystem->RemoveMappingContext(InputData->FindInputMappingContextbyTag(CurrentIMCTag));
 			}
 
-			Subsystem->AddMappingContext(InputData->FindInputMappingContextbyTag(IMC_Tag), 0);
+			Subsystem->AddMappingContext(InputData->FindInputMappingContextbyTag(IMCTag), 0);
 
-			CurrentIMCTag = IMC_Tag;
+			CurrentIMCTag = IMCTag;
 		}
 	}
 }

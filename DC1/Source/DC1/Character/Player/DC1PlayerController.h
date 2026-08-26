@@ -10,6 +10,9 @@
 #include "DC1PlayerController.generated.h"
 
 class ADC1Player;
+
+class UDC1InputData;
+
 class UDC1InventoryViewModel;
 class UDC1BuildPlacementComponent;
 
@@ -23,6 +26,8 @@ public:
 
 public:
 	void SetCursorMode(bool OnTurn);
+	// Priority 0 초과인 IMC들을 추가/삭제 - Priority 0은 Add / Remove 예외처리 후 return
+	void SetIMCEnabled(const FGameplayTag& IMCTag, bool Enabled);
 	UDC1InventoryViewModel* GetInventoryViewModel() const { return InventoryViewModel; }
 	UDC1BuildPlacementComponent* GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 
@@ -31,6 +36,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void SetupInputComponent() override;
+
 	// 서버 Possess/UnPossess, 클라이언트 OnRep_Pawn 모두 이 함수를 거친다
 	virtual void SetPawn(APawn* InPawn) override;
 
@@ -53,7 +59,9 @@ private:
 
 	void ChangeWeapon(const FInputActionValue& Value);
 
+// UI 
 private:
+	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
 	void OnUIChange();
 
 #pragma region Debug
@@ -61,6 +69,7 @@ private:
 	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
 private:
 	void SetUp_DebugInput();
+	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
 	void OnDebugWeaponNone();
 	void OnDebugWeaponMelee();
@@ -71,8 +80,8 @@ private:
 #pragma endregion
 
 private:
-	// InputMappingContext SetUp
-	void SetUp_IMC(const FGameplayTag& IMC_Tag);
+	// InputMappingContext Set MappingContext Priority 0
+	void SetBaseIMC(const FGameplayTag& IMCTag);
 
 private:
 	UPROPERTY()
@@ -89,9 +98,4 @@ private:
 private:
 	bool	IsTurn = { true };
 	bool	IsActiveScreen = { false };
-
-#pragma region UI_TEST
-private:
-	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
-#pragma endregion
 };
