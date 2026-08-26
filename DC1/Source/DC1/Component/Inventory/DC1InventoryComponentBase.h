@@ -21,10 +21,15 @@ class DC1_API UDC1InventoryComponentBase : public UActorComponent
 
 public:
 	UDC1InventoryComponentBase();
+	
+public:
+	FOnInventoryUpdated OnInventoryUpdated;
 
+public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	const TArray<FDC1InventorySlot>& GetSlots() const { return Slots; }
 
@@ -43,25 +48,24 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	int32 FindEmptySlot() const;
 
+	bool FindItemInSlot(FName InItemID, OUT int32* SlotIndex) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SwapSlots(int32 InIndex1, int32 InIndex2);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void ClearSlot(int32 InSlotIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetCapacityAndColumns(int32 InTotalCapacity, int32 InColumns);
+
+
+public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	bool AddItem(FName InItemID, int32 InCount = 1);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	bool RemoveItem(int32 InSlotIndex, int32 InCount = 1);
-
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SwapSlots(int32 InIndex1, int32 InIndex2);
-
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void ClearSlot(int32 InSlotIndex);
-
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetCapacityAndColumns(int32 InTotalCapacity, int32 InColumns);
-
-	FOnInventoryUpdated OnInventoryUpdated;
 
 protected:
 	virtual void InitializeSlots();
@@ -71,7 +75,6 @@ private:
 	bool AddItemToEmptySlot(FName InItemID, int32 InCount);
 
 protected:
-	/** 인벤토리 슬롯 배열 (복제됨) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory")
 	TArray<FDC1InventorySlot> Slots;
 

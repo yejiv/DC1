@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1InventoryViewModel.generated.h"
 
 // Forward Declarations
-class UDC1InventoryComponentBase;
 class UDC1PlayerInventoryComponent;
 class UDC1ChestInventoryComponent;
 
@@ -20,6 +20,9 @@ class DC1_API UDC1InventoryViewModel : public UObject
 
 public:
 	UDC1InventoryViewModel();
+
+public:
+	FOnInventoryUpdated OnInventoryUpdated;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -38,19 +41,18 @@ public:
 	bool IsChestOpen() const { return TargetChestComp != nullptr; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	const TArray<FDC1InventorySlot>& GetInventorySlots() const { return InventorySlots; }
+	const TArray<FDC1InventorySlot>& GetInventorySlots() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	int32 GetSlotCount() const { return InventorySlots.Num(); }
+	int32 GetSlotCount() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	const FDC1InventorySlot& GetSlot(int32 Index) const;
 
-
-	const FDC1ItemRow* GetItemData(const FName& ItemID) const;
+	const FDC1ItemRow* GetItemData(FName ItemID) const;
 
 protected:
-	void InitializeMockData();
+	void HandleInventoryUpdated();
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
@@ -59,10 +61,4 @@ protected:
 	/** 현재 열린 상자 컴포넌트 (nullptr이면 없음) */
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UDC1ChestInventoryComponent> TargetChestComp;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
-	TArray<FDC1InventorySlot> InventorySlots;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
-	TMap<FName, FDC1ItemRow> ItemDatabase;
 };

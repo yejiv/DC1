@@ -4,8 +4,10 @@
 #include "UI/Tab/DC1TabWidget.h"
 
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
+#include "UI/Tab/Inventory/DC1InventoryWidget.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
 
 UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
 {
@@ -239,4 +241,9 @@ void UDC1TabWidget::SelectFirstInactiveTab()
 			break;
 		}
 	}
+}
+
+UDC1InventoryWidget* UDC1TabWidget::GetInventoryWidget() const
+{
+	return GetTabWidget<UDC1InventoryWidget>(DC1UITags::UI_Main_Tab_Inventory);
 }

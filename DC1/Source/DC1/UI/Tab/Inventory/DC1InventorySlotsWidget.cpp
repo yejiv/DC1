@@ -1,14 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "UI/Tab/Inventory/DC1InventorySlotsWidget.h"
+#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Components/ScrollBox.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
-#include "UI/Tab/Inventory/DC1EquipmentWidget.h"
-#include "ViewModel/Inventory/DC1InventoryViewModel.h"
-
 
 UDC1InventorySlotsWidget::UDC1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -29,52 +26,57 @@ void UDC1InventorySlotsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-
+	if (CachedViewModel)
+	{
+		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		RefreshAllSlots();
+	}
 }
 
 void UDC1InventorySlotsWidget::NativeDestruct()
 {
 	if (CachedViewModel)
 	{
-		// ViewModel ÀÌº¥Æ® ÇØÁ¦ 
-		// CachedViewModel->OnInventoryChanged.RemoveAll(this);
+		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
 }
 
-void UDC1InventorySlotsWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
+void UDC1InventorySlotsWidget::SetInventoryViewModel(UDC1InventoryViewModel* InViewModel)
 {
-	if (CachedViewModel == NewViewModel)
+	// ê¸°ì¡´ ViewModel ì´ë²¤íŠ¸ êµ¬ë… í•´ì œ
+	if (CachedViewModel)
 	{
-		return;
+		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 	}
+
+	CachedViewModel = InViewModel;
 
 	if (CachedViewModel)
 	{
-		// CachedViewModel->OnInventoryChanged.RemoveAll(this);
-	}
-
-	CachedViewModel = NewViewModel;
-
-	if (CachedViewModel)
-	{
-		// ViewModel ÀÌº¥Æ® ¹ÙÀÎµù
-		// CachedViewModel->OnInventoryChanged.AddDynamic(this, &ThisClass::HandleInventoryUpdated);
-
-		// ViewModelÀÇ ÇöÀç ÃÑ ¿ë·®¿¡ ¸ÂÃç ½½·Ô »ý¼º (¿¹: ±âº» 35°³, È®Àå ½Ã N°³)
-		// int32 TotalCapacity = CachedViewModel->GetTotalCapacity();
-		// RefreshSlotCapacity(TotalCapacity);
-
-		HandleInventoryUpdated();
+		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		RefreshAllSlots();
 	}
 }
 
 void UDC1InventorySlotsWidget::RefreshSlotCapacity(int32 NewTotalSlots)
 {
-	// ½½·Ô °³¼ö°¡ ´Ã¾î³ª°Å³ª º¯°æµÇ¾úÀ» ¶§
 	CreateSlotWidgets(NewTotalSlots);
-	HandleInventoryUpdated();
+}
+
+void UDC1InventorySlotsWidget::RefreshAllSlots()
+{
+	if (!CachedViewModel)
+	{
+		return;
+	}
+
+	const int32 SlotCount = CachedViewModel->GetSlotCount();
+	for (int32 i = 0; i < SlotWidgets.Num(); ++i)
+	{
+		UpdateSlotDisplay(i);
+	}
 }
 
 void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
@@ -91,63 +93,47 @@ void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 		return;
 	}
 
-	// ±âÁ¸ ±×¸®µå ¹× À§Á¬ ¹è¿­ ÃÊ±âÈ­
 	SlotGrid->ClearChildren();
 	SlotWidgets.Empty();
 	SlotWidgets.Reserve(TotalSlots);
 
-	// ¹«Á¶°Ç °¡·Î 5°³ °íÁ¤
 	for (int32 Index = 0; Index < TotalSlots; ++Index)
 	{
 		UDC1InventorySlotWidget* NewSlotWidget = CreateWidget<UDC1InventorySlotWidget>(this, SlotWidgetClass);
 		if (NewSlotWidget)
 		{
 			const int32 Row = Index / InventoryColumns;
-			const int32 Column = Index % InventoryColumns; 
+			const int32 Column = Index % InventoryColumns;
 
 			UUniformGridSlot* GridSlot = SlotGrid->AddChildToUniformGrid(NewSlotWidget, Row, Column);
 			if (GridSlot)
 			{
-				//GridSlot->SetMargin(SlotMargin);
 				GridSlot->SetHorizontalAlignment(HAlign_Center);
 				GridSlot->SetVerticalAlignment(VAlign_Center);
 			}
-
-			// NewSlotWidget->SetSlotIndex(Index);
 
 			SlotWidgets.Add(NewSlotWidget);
 		}
 	}
 }
 
+void UDC1InventorySlotsWidget::UpdateSlotDisplay(int32 SlotIndex)
+{
+	if (!CachedViewModel || !SlotWidgets.IsValidIndex(SlotIndex))
+	{
+		return;
+	}
+
+	UDC1InventorySlotWidget* SlotWidget = SlotWidgets[SlotIndex];
+	if (!SlotWidget)
+	{
+		return;
+	}
+
+	SlotWidget->SetSlotData(CachedViewModel, SlotIndex);
+}
+
 void UDC1InventorySlotsWidget::HandleInventoryUpdated()
 {
-	if (!CachedViewModel)
-	{
-		return;
-	}
-
-	// [¾ÆÀÌÅÛ È¹µæ ¹× ½½·Ô ÀÚµ¿ È®Àå ·ÎÁ÷ ¿¹½Ã]
-	/*
-	int32 RequiredCapacity = CachedViewModel->GetTotalCapacity();
-
-	// ÇÊ¿äÇÑ ¿ë·®ÀÌ ÇöÀç UI ½½·Ô °³¼öº¸´Ù ¸¹À¸¸é ÀÚµ¿À¸·Î 5°³ ´ÜÀ§/ÇÊ¿ä °³¼ö¸¸Å­ È®Àå
-	if (SlotWidgets.Num() < RequiredCapacity)
-	{
-		RefreshSlotCapacity(RequiredCapacity);
-		return;
-	}
-
-	// °¢ ½½·Ô µ¥ÀÌÅÍ UI °»½Å
-	const TArray<FDC1ItemSlotData>& ItemList = CachedViewModel->GetItemSlots();
-	const int32 LoopCount = FMath::Min(SlotWidgets.Num(), ItemList.Num());
-
-	for (int32 Index = 0; Index < LoopCount; ++Index)
-	{
-		if (SlotWidgets[Index])
-		{
-			SlotWidgets[Index]->UpdateSlot(ItemList[Index]);
-		}
-	}
-	*/
+	RefreshAllSlots();
 }

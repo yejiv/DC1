@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "Net/UnrealNetwork.h"
@@ -81,9 +81,22 @@ int32 UDC1InventoryComponentBase::FindEmptySlot() const
 	return -1;
 }
 
-// ========================
-// 수정 함수 구현
-// ========================
+bool UDC1InventoryComponentBase::FindItemInSlot(FName InItemID, int32* SlotIndex) const
+{
+	for (int32 i = 0; i < Slots.Num(); ++i)
+	{
+		if (Slots[i].ItemID.IsEqual(InItemID))
+		{
+			if(SlotIndex)
+				*SlotIndex = i;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 
 bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 {
@@ -99,15 +112,23 @@ bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 		return false;
 	}
 
-	// 빈 슬롯에 아이템 추가
-	bool bSuccess = AddItemToEmptySlot(InItemID, InCount);
+	int32 SlotIndex = INDEX_NONE;
 
-	if (bSuccess)
+	if (FindItemInSlot(InItemID, &SlotIndex))
 	{
+		// 기존 수량에 누적 (덮어쓰기 방지)
+		Slots[SlotIndex].StackCount += InCount;
 		OnInventoryUpdated_Internal();
+		return true;
 	}
 
-	return bSuccess;
+	if (AddItemToEmptySlot(InItemID, InCount))
+	{
+		OnInventoryUpdated_Internal();
+		return true;
+	}
+
+	return false;
 }
 
 bool UDC1InventoryComponentBase::RemoveItem(int32 InSlotIndex, int32 InCount)
@@ -234,10 +255,6 @@ void UDC1InventoryComponentBase::SetCapacityAndColumns(int32 InTotalCapacity, in
 	OnInventoryUpdated_Internal();
 }
 
-// ========================
-// 보호 함수 구현
-// ========================
-
 void UDC1InventoryComponentBase::InitializeSlots()
 {
 	// 기존 슬롯 비우기
@@ -265,10 +282,6 @@ void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()
 
 	// 추가 처리는 자식 클래스에서 오버라이드
 }
-
-// ========================
-// 개인 함수 구현
-// ========================
 
 bool UDC1InventoryComponentBase::AddItemToEmptySlot(FName InItemID, int32 InCount)
 {

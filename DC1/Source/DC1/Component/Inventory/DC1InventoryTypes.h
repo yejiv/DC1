@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Enum/DC1Enums.h"
@@ -27,17 +27,27 @@ namespace DC1InventoryRarityColor
 		switch (Rarity)
 		{
 		case EDC1ItemRarity::Common:
-			return FLinearColor(0.5f, 0.5f, 0.5f, 1.0f); // 회색
+			// 일반: 부드러운 차콜 그레이 (#7F8C8D)
+			return FLinearColor(0.216f, 0.275f, 0.279f, 1.0f);
+
 		case EDC1ItemRarity::Uncommon:
-			return FLinearColor(0.2f, 0.8f, 0.2f, 1.0f); // 초록색
+			// 고급: 에메랄드 그린 (#2ECC71)
+			return FLinearColor(0.026f, 0.604f, 0.168f, 1.0f);
+
 		case EDC1ItemRarity::Rare:
-			return FLinearColor(0.2f, 0.5f, 1.0f, 1.0f); // 파란색
+			// 희귀: 비비드 스카이 블루 (#3498DB)
+			return FLinearColor(0.034f, 0.319f, 0.701f, 1.0f);
+
 		case EDC1ItemRarity::Epic:
-			return FLinearColor(0.8f, 0.2f, 0.8f, 1.0f); // 보라색
+			// 영웅: 딥 바이올렛 (#9B59B6)
+			return FLinearColor(0.332f, 0.095f, 0.473f, 1.0f);
+
 		case EDC1ItemRarity::Legendary:
-			return FLinearColor(1.0f, 0.8f, 0.0f, 1.0f); // 황금색
+			// 전설: 앰버 오렌지 / 황금빛 (#E67E22)
+			return FLinearColor(0.791f, 0.216f, 0.017f, 1.0f);
+
 		default:
-			return FLinearColor(0.5f, 0.5f, 0.5f, 1.0f); // 기본값: 회색
+			return FLinearColor(0.216f, 0.275f, 0.279f, 1.0f); // Fallback: Common
 		}
 	}
 }
