@@ -42,10 +42,10 @@ public:
 	bool CanAddItem(FName InItemID, int32 InCount = 1) const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
-	const TArray<FDC1InventorySlot>& GetEquipmentSlots() const { return EquipmentSlots; }
+	const TArray<FDC1InventorySlotInfo>& GetEquipmentSlots() const { return EquipmentSlots; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
-	const FDC1InventorySlot& GetEquipmentSlot(int32 InSlotIndex) const;
+	const FDC1InventorySlotInfo& GetEquipmentSlot(int32 InSlotIndex) const;
 
 public:
 	// 장비 착용 및 해제 함수
@@ -57,6 +57,27 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SortInventory();
+
+	/**
+	 * 인벤토리 아이템 이동 요청 (클라이언트에서 호출)
+	 * 서버에서 검증 후 처리
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+
+protected:
+	/**
+	 * 서버에서만 실행되는 RPC
+	 * 아이템 이동 검증 및 처리
+	 */
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+
+	/** 서버 RPC 검증 함수 */
+	bool Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex);
+
+	/** 서버 RPC 구현 함수 */
+	void Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex);
 
 protected:
 	virtual void CalculateWeight();
@@ -73,7 +94,7 @@ protected:
 	float CurrentWeight = 0.0f;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory|Equipment")
-	TArray<FDC1InventorySlot> EquipmentSlots;
+	TArray<FDC1InventorySlotInfo> EquipmentSlots;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings")
 	bool bAutoSort = false;

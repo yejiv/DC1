@@ -12,7 +12,9 @@ class UBorder;
 class USizeBox;
 class UImage;
 class UTextBlock;
-class UDC1InventoryViewModel;
+class UWidgetAnimation;
+
+class UDC1InventoryEntryWidget;
 
 UCLASS()
 class DC1_API UDC1InventorySlotWidget : public UDC1UserWidget
@@ -22,18 +24,25 @@ class DC1_API UDC1InventorySlotWidget : public UDC1UserWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 public:
+	void InitSlot(int32 SlotIndex);
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetSlotData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex);
+	void SetSlotData(const UDC1InventoryViewModel* ViewModel);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void ClearSlot();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	UDC1InventoryEntryWidget* GetEntryWidget() const { return EntryWidget; }
+
 protected:
-	void UpdateSlotUI();
 	void UpdateRarityColor(EDC1ItemRarity Rarity);
-	void CreateUI();
+	void ShowHoverImage();
+	void HideHoverImage();
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -43,11 +52,15 @@ private:
 	TObjectPtr<UBorder> SlotBorder;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage> ItemIcon;
+	TObjectPtr<UImage> Image_Bracket;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
+	TObjectPtr<UWidgetAnimation>	HoverAnim = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> StackCountText;
+	TObjectPtr<UDC1InventoryEntryWidget> EntryWidget;
 
+private:
 	int32 CurrentSlotIndex = -1;
-	FDC1InventorySlot CurrentSlot;
+	bool bIsBeingDragged = false;
 };

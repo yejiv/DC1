@@ -2,31 +2,51 @@
 
 #include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
 
+#include "UI/Tab/Inventory/DC1InventoryEntryWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
+
 #include "Components/SizeBox.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "Components/CanvasPanel.h"
-#include "Components/CanvasPanelSlot.h" // BorderSlot (UCanvasPanelSlot) 관련 Definition
 
 void UDC1InventorySlotWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-	//CreateUI();
 }
 
 void UDC1InventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	SizeBox_Root->SetWidthOverride(100);
-	SizeBox_Root->SetHeightOverride(100);
+	if (IsValid(SizeBox_Root))
+	{
+		SizeBox_Root->SetWidthOverride(100);
+		SizeBox_Root->SetHeightOverride(100);
+	}
+
+	// EntryWidget 생성 (자식 위젯으로 추가)
+	if (IsValid(SizeBox_Root) && !IsValid(EntryWidget))
+	{
+		EntryWidget = CreateWidget<UDC1InventoryEntryWidget>(this);
+		if (IsValid(EntryWidget))
+		{
+			SizeBox_Root->AddChild(EntryWidget);
+			EntryWidget->SetSlotWidget(this);
+		}
+	}
+
+	HideHoverImage();
 }
 
+void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex)
+{
+	CurrentSlotIndex = SlotIndex;
+}
 
-void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex)
+void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewModel)
 {
 	if (!IsValid(ViewModel))
 	{
@@ -34,17 +54,16 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 		return;
 	}
 
-	CurrentSlotIndex = SlotIndex;
-	CurrentSlot = ViewModel->GetSlot(SlotIndex);
+	const FDC1InventorySlotInfo& InventorySlot = ViewModel->GetSlot(CurrentSlotIndex);
 
-	if (CurrentSlot.IsEmpty())
+	if (InventorySlot.IsEmpty())
 	{
 		ClearSlot();
 		return;
 	}
 
 	// DataTable에서 아이템 데이터 조회
-	const FDC1ItemRow* ItemData = ViewModel->GetItemData(CurrentSlot.ItemID);
+	const FDC1ItemRow* ItemData = ViewModel->GetItemData(InventorySlot.ItemID);
 	if (!ItemData)
 	{
 		ClearSlot();
@@ -54,100 +73,23 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 	// 레어도 색상 적용
 	UpdateRarityColor(ItemData->ItemRarity);
 
-	// 아이콘 표시
-	if (IsValid(ItemIcon))
+	// EntryWidget에 데이터 전달
+	if (IsValid(EntryWidget))
 	{
-		if (ItemData->ItemIcon.IsPending())
-		{
-			ItemIcon->SetBrushFromTexture(nullptr);
-		}
-		else
-		{
-			ItemIcon->SetBrushFromTexture(ItemData->ItemIcon.Get());
-		}
-		ItemIcon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
-		ItemIcon->SetVisibility(ESlateVisibility::Visible);
-	}
-
-	// 스택 수 표시 (1개 이상일 때만)
-	if (IsValid(StackCountText))
-	{
-		if (CurrentSlot.StackCount >= 1)
-		{
-			StackCountText->SetText(FText::AsNumber(CurrentSlot.StackCount));
-			StackCountText->SetVisibility(ESlateVisibility::Visible);
-		}
-		else
-		{
-			StackCountText->SetText(FText::AsNumber(0));
-			StackCountText->SetVisibility(ESlateVisibility::Hidden);
-		}
+		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex);
 	}
 }
 
 void UDC1InventorySlotWidget::ClearSlot()
 {
-	CurrentSlotIndex = -1;
-	CurrentSlot.Clear();
+	// 레어도 색상 초기화
+	UpdateRarityColor(EDC1ItemRarity::Common);
 
-	if (IsValid(ItemIcon))
+	// EntryWidget 초기화
+	if (IsValid(EntryWidget))
 	{
-		ItemIcon->SetBrushFromTexture(nullptr);
-		ItemIcon->SetVisibility(ESlateVisibility::Hidden);
+		EntryWidget->ClearEntry();
 	}
-
-	if (IsValid(StackCountText))
-	{
-		StackCountText->SetText(FText::AsNumber(0));
-		StackCountText->SetVisibility(ESlateVisibility::Hidden);
-	}
-}
-
-void UDC1InventorySlotWidget::UpdateSlotUI()
-{
-	if (CurrentSlot.IsEmpty())
-	{
-		ClearSlot();
-		return;
-	}
-
-	//const FDC1ItemRow* ItemData = CachedViewModel->GetItemData(CurrentSlot.ItemID);
-	//if (!ItemData)
-	//{
-	//	ClearSlot();
-	//	return;
-	//}
-
-	//// 레어도 색상 적용
-	//UpdateRarityColor(ItemData->ItemRarity);
-
-	//// 아이콘 표시
-	//if (IsValid(ItemIcon))
-	//{
-	//	if (ItemData->ItemIcon.IsPending())
-	//	{
-	//		ItemIcon->SetBrushFromTexture(nullptr);
-	//	}
-	//	else
-	//	{
-	//		ItemIcon->SetBrushFromTexture(ItemData->ItemIcon.Get());
-	//	}
-	//	ItemIcon->SetVisibility(ESlateVisibility::Visible);
-	//}
-
-	//// 스택 수 표시 (1개 이상일 때만)
-	//if (IsValid(StackCountText))
-	//{
-	//	if (CurrentSlot.StackCount > 1)
-	//	{
-	//		StackCountText->SetText(FText::AsNumber(CurrentSlot.StackCount));
-	//		StackCountText->SetVisibility(ESlateVisibility::Visible);
-	//	}
-	//	else
-	//	{
-	//		StackCountText->SetVisibility(ESlateVisibility::Hidden);
-	//	}
-	//}
 }
 
 void UDC1InventorySlotWidget::UpdateRarityColor(EDC1ItemRarity Rarity)
@@ -159,4 +101,43 @@ void UDC1InventorySlotWidget::UpdateRarityColor(EDC1ItemRarity Rarity)
 
 	FLinearColor RarityColor = DC1InventoryRarityColor::GetRarityColor(Rarity);
 	SlotBorder->Background.TintColor = RarityColor;
+}
+
+void UDC1InventorySlotWidget::ShowHoverImage()
+{
+	if (IsValid(Image_Bracket))
+	{
+		Image_Bracket->SetVisibility(ESlateVisibility::Visible);
+
+		FDC1AnimPlayInfo PlayInfo;
+
+		// 호버 동안 무한 루프, 언호버 시 원래 값으로 복원
+		PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
+		PlayInfo.bRestoreState = true;
+		PlayInfo.NumLoops = 0;
+
+		PlayAnim(HoverAnim, PlayInfo);
+	}
+}
+
+void UDC1InventorySlotWidget::HideHoverImage()
+{
+	if (IsValid(Image_Bracket))
+	{
+		Image_Bracket->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void UDC1InventorySlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+
+	ShowHoverImage();
+}
+
+void UDC1InventorySlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	HideHoverImage();
 }
