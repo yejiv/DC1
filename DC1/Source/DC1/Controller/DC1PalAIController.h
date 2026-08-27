@@ -7,7 +7,6 @@
 #include "GameplayTagContainer.h"
 #include "DC1PalAIController.generated.h"
 
-class ADC1Character;
 class UStateTreeAIComponent;
 class UStateTree;
 class UAISenseConfig_Sight;
@@ -47,6 +46,12 @@ public:
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
 
+	// 주인 기준 어느 쪽에 설지. 추종과 주시 상태가 공유하므로 태스크가 아니라 여기 둔다
+	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
+
+	// 화면 밖에 오래 있었으면 보이는 자리로 설 방향을 다시 고른다. 바뀌면 true
+	bool					UpdateFollowAnchor(float DeltaTime);
+
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
 	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
@@ -80,6 +85,17 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "AI")
 	TObjectPtr<UStateTreeAIComponent> StateTreeComponent = { nullptr };
+
+	// 화면 밖에 머무는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Follow", meta = (ClampMin = "0.0"))
+	float					OutOfViewDelay = { 3.f };
+
+	// 화면 가장자리 여유 비율. 0.12면 안쪽 76퍼센트가 돼야 허용
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Follow", meta = (ClampMin = "0.0", ClampMax = "0.45"))
+	float					ScreenMargin = { 0.12f };
+
+	FVector					FollowAnchor = { FVector::ZeroVector };
+	float					OutOfViewTime = { 0.f };
 
 	UPROPERTY(VisibleAnywhere, Category = "AI|Perception")
 	TObjectPtr<UAISenseConfig_Sight> SightConfig = { nullptr };

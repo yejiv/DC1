@@ -56,9 +56,7 @@ struct FDC1PalActivateSkillTaskInstanceData
 };
 
 
-/**
- * 컨트롤러가 고른 스킬을 발동
- */
+//컨트롤러가 고른 스킬을 발동
 USTRUCT(DisplayName = "Pal Activate Selected Skill", Category = "Pal")
 struct FDC1PalActivateSkillTask : public FStateTreeTaskCommonBase
 {
@@ -90,9 +88,6 @@ struct FDC1PalWanderTaskInstanceData
 };
 
 
-/**
- * 
- */
 USTRUCT(DisplayName = "Pal Wander", Category = "Pal")
 struct FDC1PalWanderTask : public FStateTreeTaskCommonBase
 {
@@ -111,7 +106,6 @@ struct FDC1PalWanderTask : public FStateTreeTaskCommonBase
 };
 
 
-
 USTRUCT()
 struct FDC1PalFollowTaskInstanceData
 {
@@ -120,13 +114,24 @@ struct FDC1PalFollowTaskInstanceData
 	UPROPERTY(EditAnywhere, Category = Context)
 	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
 
-	// 따라가기 시작하는 거리
+	
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							FollowDistance = { 400.f };
+	float							AnchorDistance = { 700.f };		// 주인과 오프셋
 
-	// 멈추는 거리
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "1.0"))
+	float							CatchUpDistance = { 400.f };	// 따라잡기 시작하는 거리
+
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.1"))
+	float							SpeedScale = { 1.3f };			// 따라잡을 때 주인 속도에 곱할 값
+
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							AcceptanceRadius = { 200.f };
+	float							TeleportDistance = { 1500.f };	// 순간이동
+
+	UPROPERTY()
+	FVector							LastRequestedLocation = { FVector::ZeroVector };
+
+	UPROPERTY()
+	bool							bCatchingUp = { false };
 };
 
 
@@ -146,6 +151,40 @@ struct FDC1PalFollowTask : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 };
+
+
+USTRUCT()
+struct FDC1PalFaceOwnerTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	// 회전 속도
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "1.0"))
+	float							TurnRate = { 150.f };
+};
+
+
+
+USTRUCT(DisplayName = "Pal Face Owner", Category = "Pal")
+struct FDC1PalFaceOwnerTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalFaceOwnerTaskInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
 
 
 USTRUCT()

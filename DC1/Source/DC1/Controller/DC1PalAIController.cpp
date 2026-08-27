@@ -13,6 +13,8 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Components/StateTreeAIComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "StateTree.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -344,6 +346,151 @@ void ADC1PalAIController::ApplyStateTreeForTeam()
 	}
 
 	StateTreeComponent->SetStateTree(Desired);
+}
+
+namespace DC1PalFollowAnchor
+{
+	// 자리 후보 방향. 주인이 향하는 쪽이 0도. 0/180도는 진행선을 막아 제외
+	static constexpr float AnchorAngles[] = { 40.f, -40.f, 75.f, -75.f, 110.f, -110.f, 145.f, -145.f };
+
+	// 앞쪽 자리 가중치. 1이면 이동 거리와 동등
+	static constexpr float FrontBias = 1.5f;
+
+	// 후보를 NavMesh로 당길 때 찾는 반경
+	static constexpr float ProjectExtent = 300.f;
+
+	// 후보를 놓을 반경. 실제 유지 거리는 태스크가 정하므로 방향만 얻으면 됨
+	static constexpr float SampleRadius = 500.f;
+
+	// 주인이 향하는 쪽. 서 있으면 보는 쪽
+	static FVector GetOwnerHeading(const AActor& Owner)
+	{
+		const FVector Velocity = Owner.GetVelocity().GetSafeNormal2D();
+		return (false == Velocity.IsNearlyZero()) ? Velocity : Owner.GetActorForwardVector().GetSafeNormal2D();
+	}
+
+	// 카메라를 알 수 없으면 보이는 것으로 봄
+	static bool IsInOwnerView(const AActor& Owner, const FVector& Point, float ScreenMargin)
+	{
+		const APawn* OwnerPawn = Cast<APawn>(&Owner);
+		const APlayerController* PlayerController = (nullptr != OwnerPawn) ? Cast<APlayerController>(OwnerPawn->GetController()) : nullptr;
+		if (nullptr == PlayerController)
+		{
+			return true;
+		}
+
+		// 카메라 뒤면 실패
+		FVector2D ScreenPosition = FVector2D::ZeroVector;
+		if (false == PlayerController->ProjectWorldLocationToScreen(Point, ScreenPosition))
+		{
+			return false;
+		}
+
+		int32 ViewportX = 0;
+		int32 ViewportY = 0;
+		PlayerController->GetViewportSize(ViewportX, ViewportY);
+		if (ViewportX <= 0 || ViewportY <= 0)
+		{
+			return true;
+		}
+
+		// 가장자리에 걸친 건 제외
+		const float InsetX = ViewportX * ScreenMargin;
+		const float InsetY = ViewportY * ScreenMargin;
+
+		return (ScreenPosition.X >= InsetX && ScreenPosition.X <= (ViewportX - InsetX)
+			&& ScreenPosition.Y >= InsetY && ScreenPosition.Y <= (ViewportY - InsetY));
+	}
+
+	// 링에서 화면에 보이고 갈 수 있는 자리 선택. 가깝고 앞쪽인 곳 선호. 없으면 실패
+	static bool ChooseVisible(const AActor& Owner, const FVector& PalLocation, float ScreenMargin, FVector& OutDirection)
+	{
+		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Owner.GetWorld());
+		if (nullptr == NavSystem)
+		{
+			return false;
+		}
+
+		const FVector OwnerLocation = Owner.GetActorLocation();
+		const FVector Heading = GetOwnerHeading(Owner);
+		const FVector Extent(ProjectExtent);
+
+		float BestScore = -1.f;
+
+		for (const float Angle : AnchorAngles)
+		{
+			const FVector Direction = Heading.RotateAngleAxis(Angle, FVector::UpVector);
+			const FVector Candidate = OwnerLocation + (Direction * SampleRadius);
+
+			if (false == IsInOwnerView(Owner, Candidate, ScreenMargin))
+			{
+				continue;
+			}
+
+			FNavLocation Destination;
+			if (false == NavSystem->ProjectPointToNavigation(Candidate, Destination, Extent))
+			{
+				continue;
+			}
+
+			// 둘 다 0~1
+			const float TravelScore = 1.f - FMath::Clamp(FVector::Dist2D(PalLocation, Destination.Location) / (SampleRadius * 2.f), 0.f, 1.f);
+			const float FrontScore = (FVector::DotProduct(Direction, Heading) + 1.f) * 0.5f;
+			const float Score = TravelScore + (FrontScore * FrontBias);
+
+			if (Score > BestScore)
+			{
+				BestScore = Score;
+				OutDirection = Direction;
+			}
+		}
+
+		return (BestScore >= 0.f);
+	}
+}
+
+bool ADC1PalAIController::UpdateFollowAnchor(float DeltaTime)
+{
+	const APawn* Pal = GetPawn();
+	const AActor* FollowTarget = GetFollowTarget();
+	if (false == ::IsValid(Pal) || false == ::IsValid(FollowTarget))
+	{
+		return false;
+	}
+
+	const FVector PalLocation = Pal->GetActorLocation();
+
+	if (true == FollowAnchor.IsNearlyZero())
+	{
+		FollowAnchor = (PalLocation - FollowTarget->GetActorLocation()).GetSafeNormal2D();
+		if (true == FollowAnchor.IsNearlyZero())
+		{
+			FollowAnchor = -DC1PalFollowAnchor::GetOwnerHeading(*FollowTarget);
+		}
+	}
+
+	if (true == DC1PalFollowAnchor::IsInOwnerView(*FollowTarget, PalLocation, ScreenMargin))
+	{
+		OutOfViewTime = 0.f;
+		return false;
+	}
+
+	OutOfViewTime += DeltaTime;
+	if (OutOfViewTime < OutOfViewDelay)
+	{
+		return false;
+	}
+
+	OutOfViewTime = 0.f;
+
+	FVector NewAnchor = FollowAnchor;
+	if (false == DC1PalFollowAnchor::ChooseVisible(*FollowTarget, PalLocation, ScreenMargin, NewAnchor))
+	{
+		return false;
+	}
+
+	FollowAnchor = NewAnchor;
+	return true;
 }
 
 AActor* ADC1PalAIController::GetFollowTarget() const

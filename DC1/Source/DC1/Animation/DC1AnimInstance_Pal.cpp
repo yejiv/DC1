@@ -39,6 +39,7 @@ void UDC1AnimInstance_Pal::CachePalData()
 	}
 
 	MaxLocomotionSpeed = PalData->RunSpeed;
+	WalkLocomotionSpeed = PalData->WalkSpeed;
 }
 
 void UDC1AnimInstance_Pal::NativeUpdateAnimation(float DeltaSeconds)
@@ -51,7 +52,12 @@ void UDC1AnimInstance_Pal::NativeUpdateAnimation(float DeltaSeconds)
 		CachePalData();
 	}
 
-	// 회전 각속도를 속도로 환산 (미끄러짐 애니메이션 방지)
+	if (MaxLocomotionSpeed <= 0.f)
+	{
+		return;
+	}
+
+	// 회전 각속도를 가상의 이동 속도로 환산
 	float TurnSpeed = 0.f;
 	if (true == IsValid(Owner) && DeltaSeconds > 0.f)
 	{
@@ -60,8 +66,16 @@ void UDC1AnimInstance_Pal::NativeUpdateAnimation(float DeltaSeconds)
 		PrevYaw = CurrentYaw;
 	}
 
-	const float EffectiveSpeed = FMath::Max(GroundSpeed, TurnSpeed);
-	const float TargetSpeed = (MaxLocomotionSpeed > 0.f) ? FMath::Clamp(EffectiveSpeed / MaxLocomotionSpeed, 0.f, 1.f) : 0.f;
+	// 서서 도는 동안만 걷는 포즈로 대신한다. 도는 전용 애니가 없어서다.
+	// 이동 중에는 이동 속도만 본다. 둘을 섞으면 걸으며 도는 코너마다 값이 튄다.
+	// 정지 판정에 여유를 둔다. 감속 잔여 속도가 조금만 남아도 회전 몫이 통째로 빠져 미끄러지듯 돈다
+	const bool bStanding = (GroundSpeed < WalkLocomotionSpeed * StandingSpeedRatio);
+	const float EffectiveSpeed = (true == bStanding) ? FMath::Min(TurnSpeed, WalkLocomotionSpeed) : GroundSpeed;
 
-	NormalizedSpeed = FMath::FInterpTo(NormalizedSpeed, TargetSpeed, DeltaSeconds, BlendInterpSpeed);
+	const float SpeedRatio = EffectiveSpeed / MaxLocomotionSpeed;
+
+	NormalizedSpeed = FMath::FInterpTo(NormalizedSpeed, FMath::Clamp(SpeedRatio, 0.f, 1.f), DeltaSeconds, BlendInterpSpeed);
+
+	// 달리기 애니가 표현하는 속도를 넘겨 달릴 때만 그 배율만큼 빨리 감아 발을 지면에 맞춘다
+	LocomotionPlayRate = FMath::FInterpTo(LocomotionPlayRate, FMath::Clamp(SpeedRatio, 1.f, MaxPlayRate), DeltaSeconds, BlendInterpSpeed);
 }

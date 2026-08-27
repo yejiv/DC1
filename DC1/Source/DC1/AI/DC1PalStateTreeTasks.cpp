@@ -18,10 +18,57 @@
 namespace DC1PalTaskHelper
 {
 	// 한 번에 달아나는 거리
-	static constexpr float FleeStepDistance = 900.f;
+	static constexpr float FleeStepDistance = 1000.f;
 
-	// 정면이 벽이면 조금씩 틀어가며 시도한다
+	// 정면이 벽일 때 틀어볼 각도들
 	static constexpr float FleeFanAngles[] = { 0.f, 40.f, -40.f, 80.f, -80.f };
+
+	// 자리에 이만큼 붙으면 도착. 경로 요청에도 같은 값
+	static constexpr float FollowStopRadius = 60.f;
+
+	// 자리가 이만큼 움직여야 경로 재요청
+	static constexpr float FollowRepathTolerance = 60.f;
+
+	// 자리를 NavMesh로 당길 때 찾는 반경
+	static constexpr float FollowProjectExtent = 300.f;
+
+	// 이보다 느리면 주인이 서 있는 것으로 봄
+	static constexpr float FollowOwnerMoveThreshold = 10.f;
+
+	// 주인이 향하는 쪽. 서 있으면 보는 쪽
+	static FVector GetOwnerHeading(const AActor& Owner)
+	{
+		const FVector Velocity = Owner.GetVelocity().GetSafeNormal2D();
+		return (false == Velocity.IsNearlyZero()) ? Velocity : Owner.GetActorForwardVector().GetSafeNormal2D();
+	}
+
+	// 다음에 반드시 경로를 새로 잡도록 캐시도 비움
+	static void StopFollowMove(AAIController& AIController, FVector& LastRequestedLocation)
+	{
+		LastRequestedLocation = FVector::ZeroVector;
+
+		if (EPathFollowingStatus::Idle != AIController.GetMoveStatus())
+		{
+			AIController.StopMovement();
+		}
+	}
+
+	// 낙오했을 때 주인 뒤로 복귀
+	static void TeleportBehindOwner(ADC1PalAIController& AIController, ADC1PalCharacter& Pal, const FVector& BehindPoint, FVector& LastRequestedLocation)
+	{
+		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Pal.GetWorld());
+
+		FNavLocation Behind;
+		if (nullptr == NavSystem || false == NavSystem->ProjectPointToNavigation(BehindPoint, Behind, FVector(FollowProjectExtent)))
+		{
+			return;
+		}
+
+		StopFollowMove(AIController, LastRequestedLocation);
+		Pal.SetActorLocation(Behind.Location + FVector(0.f, 0.f, Pal.GetSimpleCollisionHalfHeight()));
+
+		UE_LOG(LogTemp, Log, TEXT("[Pal] %s teleported to owner (fell behind)."), *Pal.GetName());
+	}
 
 	static UDC1AbilitySystemComponent* GetASC(const AActor* Actor)
 	{
@@ -42,7 +89,7 @@ namespace DC1PalTaskHelper
 
 		if (false == ASC.HasMatchingGameplayTag(StateTag))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbility: [%s] activated but [%s] is not applied. Check the ability's ActivationOwnedTags."),
+			UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateAbility: [%s] activated but [%s] is not applied. Check ActivationOwnedTags."),
 				*AbilityTag.ToString(), *StateTag.ToString());
 
 			return EStateTreeRunStatus::Succeeded;
@@ -82,7 +129,6 @@ namespace DC1PalTaskHelper
 			AwayDirection = Pal.GetActorForwardVector().GetSafeNormal2D();
 		}
 
-		// 목표 지점이 NavMesh 밖이면 가장 가까운 NavMesh 지점으로 설정
 		const FVector ProjectExtent(FleeStepDistance, FleeStepDistance, FleeStepDistance);
 
 		for (const float Angle : FleeFanAngles)
@@ -96,6 +142,7 @@ namespace DC1PalTaskHelper
 				continue;
 			}
 
+			// 가까워지는 쪽은 도망이 아님
 			if (FVector::DistSquared2D(Destination.Location, TargetLocation) <= CurrentDistanceSq)
 			{
 				continue;
@@ -177,7 +224,7 @@ EStateTreeRunStatus FDC1PalActivateSkillTask::EnterState(FStateTreeExecutionCont
 
 	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, SkillTag, DC1PalTags::State_Pal_Attacking, Pal);
 
-	// 발동에 성공했으면 ExitState가 취소할 수 있게 기억해둔다
+	// 성공했으면 ExitState가 취소할 수 있게 기억
 	if (EStateTreeRunStatus::Failed != Result)
 	{
 		InstanceData.ActivatedSkillTag = SkillTag;
@@ -222,7 +269,7 @@ void FDC1PalActivateSkillTask::ExitState(FStateTreeExecutionContext& Context, co
 		}
 	}
 
-	// 한 번 썼으면 다음엔 다시 고른다. 발동에 실패했어도 같은 스킬을 무한 재시도하지 않게 비운다
+	// 실패했어도 비움. 같은 스킬 무한 재시도 방지
 	InstanceData.AIController->ClearSelectedSkill();
 }
 
@@ -258,7 +305,6 @@ EStateTreeRunStatus FDC1PalWanderTask::EnterState(FStateTreeExecutionContext& Co
 
 	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->WalkSpeed;
 
-	// 바라볼 타겟이 없으니 이동 방향으로 돌게 한다
 	Pal->SetOrientToMovement(true);
 
 	const EPathFollowingRequestResult::Type Result = AIController->MoveToLocation(Destination.Location, InstanceData.AcceptanceRadius);
@@ -278,7 +324,7 @@ EStateTreeRunStatus FDC1PalWanderTask::Tick(FStateTreeExecutionContext& Context,
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// 도착이든 중단이든 이동이 끝나면 배회 끝인 걸로
+	// 도착이든 중단이든 이동이 끝나면 배회 종료
 	return (EPathFollowingStatus::Idle == AIController->GetMoveStatus())
 		? EStateTreeRunStatus::Succeeded
 		: EStateTreeRunStatus::Running;
@@ -381,31 +427,33 @@ void FDC1PalFleeTask::ExitState(FStateTreeExecutionContext& Context, const FStat
 	}
 }
 
-
-
 EStateTreeRunStatus FDC1PalFollowTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
 {
-	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 
-	ADC1PalAIController* AIController = InstanceData.AIController;
+	InstanceData.LastRequestedLocation = FVector::ZeroVector;
+	InstanceData.bCatchingUp = false;
+
+	const ADC1PalAIController* AIController = InstanceData.AIController;
 	if (false == IsValid(AIController))
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// 이동 방향으로 턴
-	if (ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	if (false == IsValid(Pal))
 	{
-		Pal->SetOrientToMovement(true);
+		return EStateTreeRunStatus::Failed;
 	}
 
-	// 실제 이동은 Tick에서
+	Pal->SetOrientToMovement(true);
+
 	return EStateTreeRunStatus::Running;
 }
 
 EStateTreeRunStatus FDC1PalFollowTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
 {
-	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 
 	ADC1PalAIController* AIController = InstanceData.AIController;
 	if (false == IsValid(AIController))
@@ -413,27 +461,64 @@ EStateTreeRunStatus FDC1PalFollowTask::Tick(FStateTreeExecutionContext& Context,
 		return EStateTreeRunStatus::Failed;
 	}
 
-	const APawn* Pal = AIController->GetPawn();
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
 	AActor* FollowTarget = AIController->GetFollowTarget();
-	if (false == IsValid(Pal) || false == IsValid(FollowTarget))
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(AIController->GetWorld());
+	if (nullptr == PalData || false == IsValid(FollowTarget) || nullptr == NavSystem)
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 
-	const float DistanceSq = FVector::DistSquared2D(Pal->GetActorLocation(), FollowTarget->GetActorLocation());
-	const bool bMoving = (EPathFollowingStatus::Idle != AIController->GetMoveStatus());
+	AIController->UpdateFollowAnchor(DeltaTime);
 
-	if (DistanceSq > FMath::Square(InstanceData.FollowDistance))
+	const FVector PalLocation = Pal->GetActorLocation();
+	const FVector TargetLocation = FollowTarget->GetActorLocation();
+
+	// 설 자리. 식에 팰 위치가 없어야 팰이 움직여도 목표가 안 흔들림
+	const FVector Goal = TargetLocation + (AIController->GetFollowAnchor() * InstanceData.AnchorDistance);
+
+	FNavLocation Destination;
+	if (false == NavSystem->ProjectPointToNavigation(Goal, Destination, FVector(DC1PalTaskHelper::FollowProjectExtent)))
 	{
-		// 이미 가고 있으면 그대로
-		if (false == bMoving)
-		{
-			AIController->MoveToActor(FollowTarget, InstanceData.AcceptanceRadius);
-		}
+		return EStateTreeRunStatus::Running;
 	}
-	else if (true == bMoving)
+
+	const float GoalDistance = FVector::Dist2D(PalLocation, Destination.Location);
+
+	// 주인도 서 있고 자리에도 왔으면 추종 끝. 주시 상태로 넘긴다
+	const bool bOwnerMoving = (FollowTarget->GetVelocity().SizeSquared2D() > FMath::Square(DC1PalTaskHelper::FollowOwnerMoveThreshold));
+	if (false == bOwnerMoving && GoalDistance <= DC1PalTaskHelper::FollowStopRadius)
 	{
-		AIController->StopMovement();
+		DC1PalTaskHelper::StopFollowMove(*AIController, InstanceData.LastRequestedLocation);
+
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 지형에 걸렸거나 너무 뒤처진 경우
+	if (FVector::DistSquared2D(PalLocation, TargetLocation) > FMath::Square(InstanceData.TeleportDistance))
+	{
+		const FVector BehindPoint = TargetLocation - (DC1PalTaskHelper::GetOwnerHeading(*FollowTarget) * InstanceData.AnchorDistance);
+		DC1PalTaskHelper::TeleportBehindOwner(*AIController, *Pal, BehindPoint, InstanceData.LastRequestedLocation);
+
+		return EStateTreeRunStatus::Running;
+	}
+
+	// 속도
+	InstanceData.bCatchingUp = (true == InstanceData.bCatchingUp)
+		? (GoalDistance > DC1PalTaskHelper::FollowStopRadius)
+		: (GoalDistance > InstanceData.CatchUpDistance);
+
+	const float OwnerSpeed = FollowTarget->GetVelocity().Size2D();
+	Pal->GetCharacterMovement()->MaxWalkSpeed = (true == InstanceData.bCatchingUp)
+		? FMath::Max(PalData->RunSpeed, OwnerSpeed * InstanceData.SpeedScale)
+		: FMath::Max(PalData->WalkSpeed, OwnerSpeed);
+
+	const bool bGoalMoved = FVector::DistSquared2D(Destination.Location, InstanceData.LastRequestedLocation) > FMath::Square(DC1PalTaskHelper::FollowRepathTolerance);
+	if (true == bGoalMoved || EPathFollowingStatus::Idle == AIController->GetMoveStatus())
+	{
+		AIController->MoveToLocation(Destination.Location, DC1PalTaskHelper::FollowStopRadius, false);
+		InstanceData.LastRequestedLocation = Destination.Location;
 	}
 
 	return EStateTreeRunStatus::Running;
@@ -451,8 +536,91 @@ void FDC1PalFollowTask::ExitState(FStateTreeExecutionContext& Context, const FSt
 
 	AIController->StopMovement();
 
-	if (ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	if (false == IsValid(Pal))
 	{
-		Pal->SetOrientToMovement(false);
+		return;
+	}
+
+	// 추종용으로 올려둔 속도 복구
+	if (const UDC1PalData* PalData = Pal->GetPalData())
+	{
+		Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+	}
+}
+
+
+EStateTreeRunStatus FDC1PalFaceOwnerTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	AActor* FollowTarget = AIController->GetFollowTarget();
+	if (false == IsValid(Pal) || false == IsValid(FollowTarget))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	// 회전은 focus가 구동
+	Pal->SetOrientToMovement(false);
+	Pal->GetCharacterMovement()->RotationRate.Yaw = InstanceData.TurnRate;
+	AIController->SetFocus(FollowTarget, EAIFocusPriority::Gameplay);
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalFaceOwnerTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	const AActor* FollowTarget = AIController->GetFollowTarget();
+	if (false == IsValid(FollowTarget))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	if (FollowTarget->GetVelocity().SizeSquared2D() > FMath::Square(DC1PalTaskHelper::FollowOwnerMoveThreshold))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return AIController->UpdateFollowAnchor(DeltaTime) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
+}
+
+void FDC1PalFaceOwnerTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return;
+	}
+
+	AIController->ClearFocus(EAIFocusPriority::Gameplay);
+
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	if (false == IsValid(Pal))
+	{
+		return;
+	}
+
+	Pal->SetOrientToMovement(true);
+
+	if (const UDC1PalData* PalData = Pal->GetPalData())
+	{
+		Pal->GetCharacterMovement()->RotationRate.Yaw = PalData->RotationRateYaw;
 	}
 }
