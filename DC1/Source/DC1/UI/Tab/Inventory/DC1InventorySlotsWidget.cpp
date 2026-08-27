@@ -87,6 +87,46 @@ void UDC1InventorySlotsWidget::RefreshAllSlots()
 	}
 }
 
+int32 UDC1InventorySlotsWidget::CalculateSlotIndex(FVector2D ScreenSpaceMousePos)
+{
+	if (!SlotGrid)
+	{
+		return -1;
+	}
+
+	//마우스의 화면 절대 좌표를 Grid 패널 기준의 로컬 좌표로 변환
+	const FGeometry& GridGeometry = SlotGrid->GetCachedGeometry();
+	FVector2D MouseWidgetPos = GridGeometry.AbsoluteToLocal(ScreenSpaceMousePos);
+
+	FMargin GridPadding = SlotGrid->SlotPadding;
+
+	const float CellStrideX = GridPadding.Left + SlotSize + GridPadding.Right;
+	const float CellStrideY = GridPadding.Top + SlotSize + GridPadding.Bottom;
+
+	int32 SlotColumn = FMath::FloorToInt(MouseWidgetPos.X / CellStrideX);
+	int32 SlotRow = FMath::FloorToInt(MouseWidgetPos.Y / CellStrideY);
+
+	// 여백클릭 검사: 셀 내부에서의 상대 좌표(나머지)를 구함
+	float OffsetX = FMath::Fmod(MouseWidgetPos.X, CellStrideX);
+	float OffsetY = FMath::Fmod(MouseWidgetPos.Y, CellStrideY);
+
+	// 마우스가 실제 슬롯(이미지) 영역을 벗어나 패딩(빈 공간)에 위치했다면 무시
+	if (OffsetX < GridPadding.Left || OffsetX >(GridPadding.Left + SlotSize) ||
+		OffsetY < GridPadding.Top || OffsetY >(GridPadding.Top + SlotSize))
+	{
+		return -1;
+	}
+
+	if (SlotColumn < 0 || SlotColumn >= InventoryColumns)
+	{
+		return -1;
+	}
+
+	int32 SourceSlotIndex = (SlotRow * InventoryColumns) + SlotColumn;
+
+	return SourceSlotIndex;
+}
+
 void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 {
 	if (!SlotGrid)
@@ -113,7 +153,7 @@ void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 			const int32 Row = Index / InventoryColumns;
 			const int32 Column = Index % InventoryColumns;
 
-			NewSlotWidget->InitSlot(Index);
+			NewSlotWidget->InitSlot(Index, SlotSize);
 
 			UUniformGridSlot* GridSlot = SlotGrid->AddChildToUniformGrid(NewSlotWidget, Row, Column);
 			if (GridSlot)
@@ -170,14 +210,32 @@ int32 UDC1InventorySlotsWidget::GetSlotIndexFromPosition(FVector2D MousePosition
 			continue;
 		}
 
-		FVector2D SlotSize = SlotWidget->GetDesiredSize();
-		FVector2D SlotPosition = SlotWidget->GetTickSpaceGeometry().GetAbsolutePosition();
+		FVector2D InventorySlotSize = SlotWidget->GetTickSpaceGeometry().GetLocalSize();
 
-		FVector2D RelativeMousePos = MousePosition - SlotPosition;
+		FVector2D SlotAbsolutePosition = SlotWidget->GetTickSpaceGeometry().GetAbsolutePosition();
 
-		if (RelativeMousePos.X >= 0 && RelativeMousePos.X <= SlotSize.X &&
-			RelativeMousePos.Y >= 0 && RelativeMousePos.Y <= SlotSize.Y)
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			2.f,
+			FColor::Blue,
+			FString::Printf(TEXT("절대 위치 : %f / %f"), SlotAbsolutePosition.X, SlotAbsolutePosition.Y)
+		);
+
+		FVector2D RelativeMousePos = MousePosition - SlotAbsolutePosition;
+
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			2.f,
+			FColor::Blue,
+			FString::Printf(TEXT("상대 위치 : %f / %f"), RelativeMousePos.X, RelativeMousePos.Y)
+		);
+
+		// 마우스가 슬롯의 가로/세로 영역 안에 있는지 확인
+		if (RelativeMousePos.X >= 0 && RelativeMousePos.X <= InventorySlotSize.X &&
+			RelativeMousePos.Y >= 0 && RelativeMousePos.Y <= InventorySlotSize.Y)
 		{
+
+
 			return i;
 		}
 	}

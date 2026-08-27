@@ -1,7 +1,6 @@
 ﻿#include "UI/Tab/Inventory/DC1InventoryEntryWidget.h"
 
 #include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
-#include "UI/Item/Drag/DC1DragDropOperation.h"
 #include "UI/Item/Drag/DC1ItemDragWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
@@ -36,6 +35,9 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		return;
 	}
 
+	CurrentItemID = InventorySlotInfo.ItemID;
+	CurrentStackCount = InventorySlotInfo.StackCount;
+
 	// DataTable에서 아이템 데이터 조회
 	const FDC1ItemRow* ItemData = ViewModel->GetItemData(InventorySlotInfo.ItemID);
 	if (!ItemData)
@@ -44,7 +46,6 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		return;
 	}
 
-	// 아이콘 표시
 	if (IsValid(Image_Icon))
 	{
 		if (ItemData->ItemIcon.IsPending())
@@ -59,7 +60,6 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		Image_Icon->SetVisibility(ESlateVisibility::Visible);
 	}
 
-	// 스택 수 표시 (1개 이상일 때만)
 	if (IsValid(Text_Count))
 	{
 		if (InventorySlotInfo.StackCount >= 1)
@@ -78,6 +78,8 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 void UDC1InventoryEntryWidget::ClearEntry()
 {
 	CurrentSlotIndex = -1;
+	CurrentItemID = NAME_None;
+	CurrentStackCount = 0;
 
 	if (IsValid(Image_Icon))
 	{
@@ -93,61 +95,10 @@ void UDC1InventoryEntryWidget::ClearEntry()
 	}
 }
 
-void UDC1InventoryEntryWidget::SetSlotWidget(UDC1InventorySlotWidget* InSlotWidget)
-{
-	SlotWidget = InSlotWidget;
-}
 
 void UDC1InventoryEntryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-}
-
-void UDC1InventoryEntryWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
-}
-
-void UDC1InventoryEntryWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
-{
-	Super::NativeOnMouseLeave(InMouseEvent);
-}
-
-FReply UDC1InventoryEntryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
-
-	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
-	{
-		return FReply::Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
-	}
-
-	return FReply::Unhandled();
-}
-
-void UDC1InventoryEntryWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
-{
-	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
-
-	if (CurrentSlotIndex < 0)
-	{
-		return;
-	}
-
-	UDC1DragDropOperation* DragDropOp = NewObject<UDC1DragDropOperation>();
-	if (IsValid(DragDropOp))
-	{
-		DragDropOp->SetSourceSlot(CurrentSlotIndex);
-		OutOperation = DragDropOp;
-		SetRenderOpacity(0.5f);
-	}
-}
-
-void UDC1InventoryEntryWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
-{
-	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
-
-	SetRenderOpacity(1.0f);
 }
 
 void UDC1InventoryEntryWidget::RefreshItemCount(int32 NewItemCount)
