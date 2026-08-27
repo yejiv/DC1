@@ -29,6 +29,7 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	InstanceData.bHasTarget = false;
 	InstanceData.bProvoked = false;
 	InstanceData.bHitReacting = false;
+	InstanceData.bOwnerInCombat = false;
 	InstanceData.DistanceToTarget = TNumericLimits<float>::Max();
 	InstanceData.SelectedMaxRange = 0.f;
 
@@ -41,6 +42,7 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	AIController->UpdateTarget();
 
 	InstanceData.bProvoked = AIController->IsProvoked();
+	InstanceData.bOwnerInCombat = (nullptr != AIController->GetFollowTargetEnemy());
 
 	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(AIController->GetPawn()))
 	{

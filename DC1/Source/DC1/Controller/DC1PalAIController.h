@@ -37,6 +37,9 @@ public:
 
 	AActor*					GetFollowTarget() const;
 
+	// 싸우는 타겟
+	AActor*					GetFollowTargetEnemy() const;
+
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
 

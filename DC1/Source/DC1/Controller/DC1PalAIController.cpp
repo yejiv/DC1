@@ -28,6 +28,25 @@ namespace DC1PalAIController
 		return (nullptr != ASC) && ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
 	}
 
+	// 보임 + Alive
+	static bool IsSensed(const TArray<TWeakObjectPtr<AActor>>& InSensedTargets, const AActor* InActor)
+	{
+		if (false == ::IsValid(InActor) || true == IsDead(InActor))
+		{
+			return false;
+		}
+
+		for (const TWeakObjectPtr<AActor>& Weak : InSensedTargets)
+		{
+			if (Weak.Get() == InActor)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	static const UDC1GameplayAbility_PalSkill* FindSkillByTag(const UAbilitySystemComponent& ASC, const FGameplayTag& SkillTag)
 	{
 		for (const FGameplayAbilitySpec& Spec : ASC.GetActivatableAbilities())
@@ -171,7 +190,38 @@ void ADC1PalAIController::UpdateTarget()
 			return (false == Weak.IsValid());
 		});
 
-	// 가장 가까운 대상 고르기
+	const float Now = World->GetTimeSeconds();
+
+	// 한 번 때린 상대를 다시 보면 도발이 되살아난다
+	if (true == DC1PalAIController::IsSensed(SensedTargets, LastProvokedBy))
+	{
+		ProvokedTarget = LastProvokedBy;
+	}
+
+	// Player 적
+	if (AActor* OwnerEnemy = GetFollowTargetEnemy())
+	{
+		SetCurrentTarget(OwnerEnemy);
+		LastSeenTime = Now;
+		return;
+	}
+
+	// 나를 떄린 적
+	if (true == DC1PalAIController::IsSensed(SensedTargets, ProvokedTarget))
+	{
+		SetCurrentTarget(ProvokedTarget);
+		LastSeenTime = Now;
+		return;
+	}
+
+	// 잡고 있던 표적이 아직 보이면 안 바꾼다.
+	if (true == DC1PalAIController::IsSensed(SensedTargets, CurrentTarget))
+	{
+		LastSeenTime = Now;
+		return;
+	}
+
+	// 표적이 없을 때
 	const FVector SelfLocation = SelfPawn->GetActorLocation();
 
 	AActor* Closest = nullptr;
@@ -194,19 +244,14 @@ void ADC1PalAIController::UpdateTarget()
 		}
 	}
 
-	const float Now = World->GetTimeSeconds();
-
 	if (nullptr != Closest)
 	{
 		SetCurrentTarget(Closest);
 		LastSeenTime = Now;
-
-		if (Closest == LastProvokedBy)
-		{
-			ProvokedTarget = Closest;
-		}
 		return;
 	}
+
+	// ---- 아무것도 안 보인다. 기억으로 버틴다 ----
 
 	if (true == IsValid(ProvokedTarget)
 		&& false == DC1PalAIController::IsDead(ProvokedTarget)
@@ -497,6 +542,46 @@ AActor* ADC1PalAIController::GetFollowTarget() const
 {
 	// 포획이 붙으면 팰이 들고 있는 주인 참조로 바꾼다. 지금은 플레이어 하나뿐이다
 	return UGameplayStatics::GetPlayerPawn(this, 0);
+}
+
+AActor* ADC1PalAIController::GetFollowTargetEnemy() const
+{
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	if (false == IsValid(Pal) || EDC1Team::Player != Pal->GetTeam())
+	{
+		return nullptr;
+	}
+
+	const AActor* FollowTarget = GetFollowTarget();
+	if (false == IsValid(FollowTarget))
+	{
+		return nullptr;
+	}
+
+	// 내가 보고 있는 적만
+	for (const TWeakObjectPtr<AActor>& Weak : SensedTargets)
+	{
+		AActor* Candidate = Weak.Get();
+
+		const APawn* CandidatePawn = Cast<APawn>(Candidate);
+		if (false == IsValid(CandidatePawn) || true == DC1PalAIController::IsDead(Candidate))
+		{
+			continue;
+		}
+
+		const ADC1PalAIController* OtherController = Cast<ADC1PalAIController>(CandidatePawn->GetController());
+		if (nullptr == OtherController)
+		{
+			continue;
+		}
+
+		if (FollowTarget == OtherController->GetCurrentTarget())
+		{
+			return Candidate;
+		}
+	}
+
+	return nullptr;
 }
 
 void ADC1PalAIController::HandleTeamChanged()

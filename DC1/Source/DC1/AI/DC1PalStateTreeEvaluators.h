@@ -28,6 +28,9 @@ struct FDC1PalTargetEvaluatorInstanceData
 	bool							bHitReacting = { false };
 
 	UPROPERTY(EditAnywhere, Category = Output)
+	bool							bOwnerInCombat = { false };	// 야생은 항상 false
+
+	UPROPERTY(EditAnywhere, Category = Output)
 	float							DistanceToTarget = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = Output)
