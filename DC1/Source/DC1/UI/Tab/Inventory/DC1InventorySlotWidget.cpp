@@ -20,13 +20,6 @@ void UDC1InventorySlotWidget::NativePreConstruct()
 void UDC1InventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (IsValid(SizeBox_Root))
-	{
-		SizeBox_Root->SetWidthOverride(100);
-		SizeBox_Root->SetHeightOverride(100);
-	}
-
 	// EntryWidget 생성 (자식 위젯으로 추가)
 	if (IsValid(SizeBox_Root) && !IsValid(EntryWidget))
 	{
@@ -34,16 +27,22 @@ void UDC1InventorySlotWidget::NativeConstruct()
 		if (IsValid(EntryWidget))
 		{
 			SizeBox_Root->AddChild(EntryWidget);
-			EntryWidget->SetSlotWidget(this);
 		}
 	}
 
 	HideHoverImage();
 }
 
-void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex)
+void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex, float SlotSize)
 {
 	CurrentSlotIndex = SlotIndex;
+
+	if (IsValid(SizeBox_Root))
+	{
+		SizeBox_Root->SetWidthOverride(SlotSize);
+		SizeBox_Root->SetHeightOverride(SlotSize);
+	}
+
 }
 
 void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewModel)

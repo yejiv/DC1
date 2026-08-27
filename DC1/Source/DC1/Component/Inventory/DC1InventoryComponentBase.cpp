@@ -25,13 +25,8 @@ void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	// Slots 배열을 복제
 	DOREPLIFETIME(UDC1InventoryComponentBase, Slots);
 }
-
-// ========================
-// 조회 함수 구현
-// ========================
 
 const FDC1InventorySlotInfo& UDC1InventoryComponentBase::GetSlot(int32 InIndex) const
 {

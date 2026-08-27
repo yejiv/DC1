@@ -69,9 +69,10 @@ public:
 	 * 인벤토리 아이템 이동 요청
 	 * @param FromSlotIndex 출발 슬롯
 	 * @param ToSlotIndex 목표 슬롯
+	 * @param MoveCount 이동할 개수 (기본값: -1, 전체 이동)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
 
 protected:
 	void HandleInventoryUpdated();

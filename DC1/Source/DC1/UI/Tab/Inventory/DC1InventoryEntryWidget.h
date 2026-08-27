@@ -10,6 +10,7 @@ class USizeBox;
 class UTextBlock;
 class UImage;
 class UDC1InventorySlotWidget;
+class UDC1InventoryViewModel;
 
 UCLASS()
 class DC1_API UDC1InventoryEntryWidget : public UDC1UserWidget
@@ -26,24 +27,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void ClearEntry();
 
-	void SetSlotWidget(UDC1InventorySlotWidget* InSlotWidget);
+	// 멤버 변수 접근 함수
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetCurrentSlotIndex() const { return CurrentSlotIndex; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	FName GetCurrentItemID() const { return CurrentItemID; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetCurrentStackCount() const { return CurrentStackCount; }
 
 protected:
 	virtual void NativeConstruct() override;
-	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
-	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 private:
 	void RefreshItemCount(int32 NewItemCount);
-
-private:
-	int32 CurrentSlotIndex = -1;
-
-	UPROPERTY()
-	TObjectPtr<UDC1InventorySlotWidget> SlotWidget;
 
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -54,4 +52,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Image_Icon;
+
+private:
+	// 아이템 정보 캐시 (UI 표시용)
+	int32 CurrentSlotIndex = -1;
+	FName CurrentItemID = NAME_None;
+	int32 CurrentStackCount = 0;
 };

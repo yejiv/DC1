@@ -61,23 +61,27 @@ public:
 	/**
 	 * 인벤토리 아이템 이동 요청 (클라이언트에서 호출)
 	 * 서버에서 검증 후 처리
+	 * @param FromSlotIndex 출발 슬롯 인덱스
+	 * @param ToSlotIndex 목표 슬롯 인덱스
+	 * @param MoveCount 이동할 개수 (기본값: -1, 전체 이동)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
 
 protected:
 	/**
 	 * 서버에서만 실행되는 RPC
 	 * 아이템 이동 검증 및 처리
+	 * @param MoveCount -1이면 전체 이동, 양수면 해당 개수 이동
 	 */
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
-	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
 	/** 서버 RPC 검증 함수 */
-	bool Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex);
+	bool Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
 	/** 서버 RPC 구현 함수 */
-	void Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex);
+	void Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
 protected:
 	virtual void CalculateWeight();
