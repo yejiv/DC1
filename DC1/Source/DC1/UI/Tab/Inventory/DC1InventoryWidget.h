@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -8,9 +8,13 @@
 
 class UDC1InventoryViewModel;
 class UDC1InventorySlotsWidget;
+class UDC1ItemDragWidget;
+
 class UTextBlock;
 class UBorder;
 class UVerticalBox;
+
+struct FDC1ItemRow;
 
 UCLASS()
 class DC1_API UDC1InventoryWidget : public UDC1UserWidget
@@ -24,7 +28,9 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -48,4 +54,14 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;
+
+private:
+	// 선택된 아이템 정보
+	int32 DragSourceSlotIndex = -1;
+	int32 DragStackCount = 0;
+	const FDC1ItemRow* DragItemData = nullptr;
+
+	// 드래그 위젯
+	UPROPERTY()
+	TObjectPtr<UDC1ItemDragWidget> DragWidgetContainer = nullptr;
 };

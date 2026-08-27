@@ -28,6 +28,19 @@ protected:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	int32 GetSlotIndexFromPosition(FVector2D MousePosition) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetInventoryColumns() const { return InventoryColumns; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetDefaultSlotCapacity() const { return DefaultSlotCapacity; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	float GetSlotSize() const { return SlotSize; }
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetInventoryViewModel(UDC1InventoryViewModel* InViewModel);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -36,8 +49,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RefreshAllSlots();
 
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	int32 GetSlotIndexFromPosition(FVector2D MousePosition) const;
+	int32 CalculateSlotIndex(FVector2D ScreenSpaceMousePos);
 
 protected:
 	void CreateSlotWidgets(int32 TotalSlots);
@@ -49,6 +61,7 @@ protected:
 private:
 	static constexpr int32 InventoryColumns = 6;
 	static constexpr int32 DefaultSlotCapacity = 45;
+	static constexpr float SlotSize = 100.0f;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UScrollBox> InventoryScrollBox;
@@ -58,6 +71,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	FMargin SlotMargin = FMargin(2.0f);
+
 
 private:
 	UPROPERTY()

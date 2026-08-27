@@ -37,11 +37,15 @@ public:
 
 	AActor*					GetFollowTarget() const;
 
+	// 싸우는 타겟
+	AActor*					GetFollowTargetEnemy() const;
+
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
 
 	const FGameplayTag&		GetSelectedSkillTag() const { return SelectedSkillTag; }
 	float					GetSelectedMaxRange() const { return SelectedMaxRange; }
+	float					GetSelectedApproachRange() const { return SelectedApproachRange; }
 
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
@@ -114,6 +118,7 @@ protected:
 
 	FGameplayTag					SelectedSkillTag;
 	float							SelectedMaxRange = { 0.f };
+	float							SelectedApproachRange = { 0.f };
 
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };

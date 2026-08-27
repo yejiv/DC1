@@ -28,7 +28,7 @@ protected:
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 public:
-	void InitSlot(int32 SlotIndex);
+	void InitSlot(int32 SlotIndex, float SlotSize);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetSlotData(const UDC1InventoryViewModel* ViewModel);

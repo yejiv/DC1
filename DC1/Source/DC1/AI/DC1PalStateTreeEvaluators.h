@@ -28,10 +28,16 @@ struct FDC1PalTargetEvaluatorInstanceData
 	bool							bHitReacting = { false };
 
 	UPROPERTY(EditAnywhere, Category = Output)
+	bool							bOwnerInCombat = { false };	// 야생은 항상 false
+
+	UPROPERTY(EditAnywhere, Category = Output)
 	float							DistanceToTarget = { 0.f };
 
 	UPROPERTY(EditAnywhere, Category = Output)
-	float						SelectedMaxRange = { 0.f };
+	float						SelectedMaxRange = { 0.f }; // Chase 진입 판단용
+
+	UPROPERTY(EditAnywhere, Category = Output)
+	float						SelectedApproachRange = { 0.f };	// Chase 종료 판단용
 };
 
 

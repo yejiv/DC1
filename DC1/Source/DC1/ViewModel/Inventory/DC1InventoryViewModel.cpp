@@ -129,7 +129,7 @@ const FDC1ItemRow* UDC1InventoryViewModel::GetItemData(FName ItemID) const
 	return ItemDataTable->FindRow<FDC1ItemRow>(ItemID, TEXT("GetItemData"));
 }
 
-void UDC1InventoryViewModel::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex)
+void UDC1InventoryViewModel::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
 {
 	if (!MyInventoryComp)
 	{
@@ -139,6 +139,6 @@ void UDC1InventoryViewModel::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIn
 	UDC1PlayerInventoryComponent* PlayerInvComp = Cast<UDC1PlayerInventoryComponent>(MyInventoryComp);
 	if (PlayerInvComp)
 	{
-		PlayerInvComp->RequestMoveItem(FromSlotIndex, ToSlotIndex);
+		PlayerInvComp->RequestMoveItem(FromSlotIndex, ToSlotIndex, MoveCount);
 	}
 }

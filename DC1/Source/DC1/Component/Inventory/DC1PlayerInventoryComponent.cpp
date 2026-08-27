@@ -336,14 +336,19 @@ void UDC1PlayerInventoryComponent::OnInventoryUpdated_Internal()
 // 드래그 드롭 아이템 이동
 // ========================
 
-void UDC1PlayerInventoryComponent::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex)
+void UDC1PlayerInventoryComponent::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
 {
-	Server_MoveItem(FromSlotIndex, ToSlotIndex);
+	Server_MoveItem(FromSlotIndex, ToSlotIndex, MoveCount);
 }
 
-bool UDC1PlayerInventoryComponent::Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex)
+bool UDC1PlayerInventoryComponent::Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
 {
 	if (!Slots.IsValidIndex(FromSlotIndex) || !Slots.IsValidIndex(ToSlotIndex))
+	{
+		return false;
+	}
+
+	if (MoveCount < -1)
 	{
 		return false;
 	}
@@ -351,7 +356,7 @@ bool UDC1PlayerInventoryComponent::Server_MoveItem_Validate(int32 FromSlotIndex,
 	return true;
 }
 
-void UDC1PlayerInventoryComponent::Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex)
+void UDC1PlayerInventoryComponent::Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
 {
 	if (!Slots.IsValidIndex(FromSlotIndex) || !Slots.IsValidIndex(ToSlotIndex))
 	{
@@ -369,20 +374,37 @@ void UDC1PlayerInventoryComponent::Server_MoveItem_Implementation(int32 FromSlot
 		return;
 	}
 
+	// MoveCount가 -1이면 전체 이동, 아니면 지정된 개수만 이동
+	int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
 	FDC1InventorySlotInfo& TargetSlot = Slots[ToSlotIndex];
 
 	if (TargetSlot.IsEmpty())
 	{
-		TargetSlot = SourceSlot;
-		Slots[FromSlotIndex].Clear();
+		// 빈 슬롯으로 이동
+		TargetSlot.ItemID = SourceSlot.ItemID;
+		TargetSlot.StackCount = ActualMoveCount;
+		Slots[FromSlotIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromSlotIndex].StackCount <= 0)
+		{
+			Slots[FromSlotIndex].Clear();
+		}
 	}
 	else if (TargetSlot.ItemID == SourceSlot.ItemID)
 	{
-		TargetSlot.StackCount += SourceSlot.StackCount;
-		Slots[FromSlotIndex].Clear();
+		// 같은 아이템이 있으면 병합
+		TargetSlot.StackCount += ActualMoveCount;
+		Slots[FromSlotIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromSlotIndex].StackCount <= 0)
+		{
+			Slots[FromSlotIndex].Clear();
+		}
 	}
 	else
 	{
+		// 다른 아이템이 있으면 교환 (이동 개수 무시, 전체 교환)
 		Swap(Slots[FromSlotIndex], Slots[ToSlotIndex]);
 	}
 

@@ -66,7 +66,7 @@ public:
 #pragma endregion
 
 #pragma region Combat
-	// AI가 쓸 스킬 목록. 앞에 있을수록 우선. 사거리는 어빌리티 BP가 갖는다
+	// AI가 쓸 스킬 후보. 이 중에서 균등 랜덤으로 고른다. 사거리는 어빌리티 BP가 갖는다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
 	TArray<FGameplayTag>			SkillTags;
 

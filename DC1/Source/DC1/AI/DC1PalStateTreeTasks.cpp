@@ -542,6 +542,9 @@ void FDC1PalFollowTask::ExitState(FStateTreeExecutionContext& Context, const FSt
 		return;
 	}
 
+	// 회전은 전투에서 조절
+	Pal->SetOrientToMovement(false);
+
 	// 추종용으로 올려둔 속도 복구
 	if (const UDC1PalData* PalData = Pal->GetPalData())
 	{
@@ -609,7 +612,15 @@ void FDC1PalFaceOwnerTask::ExitState(FStateTreeExecutionContext& Context, const 
 		return;
 	}
 
-	AIController->ClearFocus(EAIFocusPriority::Gameplay);
+	// 회전 조절
+	if (AActor* Target = AIController->GetCurrentTarget())
+	{
+		AIController->SetFocus(Target, EAIFocusPriority::Gameplay);
+	}
+	else
+	{
+		AIController->ClearFocus(EAIFocusPriority::Gameplay);
+	}
 
 	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
 	if (false == IsValid(Pal))
@@ -617,7 +628,7 @@ void FDC1PalFaceOwnerTask::ExitState(FStateTreeExecutionContext& Context, const 
 		return;
 	}
 
-	Pal->SetOrientToMovement(true);
+	// orient켜지 않기. Follow면 EnterState가 켜고, 전투면 꺼야함
 
 	if (const UDC1PalData* PalData = Pal->GetPalData())
 	{

@@ -2,8 +2,13 @@
 
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
 #include "UI/Tab/Inventory/DC1InventorySlotsWidget.h"
-#include "UI/Item/Drag/DC1DragDropOperation.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
+
+#include "UI/Item/Drag/DC1ItemDragWidget.h"
+
+#include "Data/DataTable/DC1DataTableTypes.h"
+
+#include "Component/Inventory/DC1InventoryTypes.h"
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
 #include "Components/TextBlock.h"
@@ -78,35 +83,135 @@ void UDC1InventoryWidget::HandleInventoryUpdated()
 	}
 }
 
-bool UDC1InventoryWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (!IsValid(InOperation) || !IsValid(InventorySlotsWidget) || !IsValid(CachedViewModel))
+	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+
+	if (!IsValid(InventorySlotsWidget) || !IsValid(CachedViewModel))
 	{
-		return false;
+		return FReply::Unhandled();
 	}
 
-	UDC1DragDropOperation* DC1DragOp = Cast<UDC1DragDropOperation>(InOperation);
-	if (!DC1DragOp)
+	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
 	{
-		return false;
+		return FReply::Unhandled();
 	}
 
-	const int32 SourceSlotIndex = DC1DragOp->GetSourceSlot();
-	if (SourceSlotIndex < 0)
+	int32 ClickedSlotIndex = InventorySlotsWidget->CalculateSlotIndex(InMouseEvent.GetScreenSpacePosition());
+	int32 TotalSlots = CachedViewModel->GetSlotCount();
+	if (ClickedSlotIndex < 0 || ClickedSlotIndex >= TotalSlots)
 	{
-		return false;
+		return FReply::Unhandled();
 	}
 
-	FVector2D MousePosition = InDragDropEvent.GetScreenSpacePosition();
-	FVector2D SlotGridPosition = InventorySlotsWidget->GetTickSpaceGeometry().GetAbsolutePosition();
-	FVector2D RelativeMousePos = MousePosition - SlotGridPosition;
-
-	int32 TargetSlotIndex = InventorySlotsWidget->GetSlotIndexFromPosition(RelativeMousePos);
-	if (TargetSlotIndex < 0 || TargetSlotIndex == SourceSlotIndex)
+	if (DragSourceSlotIndex == -1)
 	{
-		return false;
+		const FDC1InventorySlotInfo& InventorySlotInfo = CachedViewModel->GetSlot(ClickedSlotIndex);
+		if (InventorySlotInfo.IsEmpty())
+		{
+			return FReply::Unhandled();
+		}
+
+		int32 DragCount = InventorySlotInfo.StackCount;
+		if (InMouseEvent.IsControlDown())
+		{
+			DragCount = 1;
+		}
+		else if (InMouseEvent.IsShiftDown())
+		{
+			DragCount = FMath::Max(1, InventorySlotInfo.StackCount / 2);
+		}
+
+		DragSourceSlotIndex = ClickedSlotIndex;
+		DragStackCount = DragCount;
+		DragItemData = CachedViewModel->GetItemData(InventorySlotInfo.ItemID);
+
+		if (!DragItemData)
+		{
+			DragSourceSlotIndex = -1;
+			return FReply::Unhandled();
+		}
+
+		if (!DragWidgetContainer)
+		{
+			DragWidgetContainer = CreateWidget<UDC1ItemDragWidget>(GetOwningPlayer());
+			if (IsValid(DragWidgetContainer))
+			{
+				DragWidgetContainer->InitDragWidget(DragItemData, DragStackCount);
+			}
+		}
+
+		return FReply::Handled();
+	}
+	else if (ClickedSlotIndex != DragSourceSlotIndex) // 아이템 이동
+	{
+		CachedViewModel->RequestMoveItem(DragSourceSlotIndex, ClickedSlotIndex, DragStackCount);
+
+		DragSourceSlotIndex = -1;
+		DragStackCount = 0;
+		DragItemData = nullptr;
+
+		if (IsValid(DragWidgetContainer))
+		{
+			DragWidgetContainer->RemoveFromParent();
+			DragWidgetContainer = nullptr;
+		}
+
+		return FReply::Handled();
 	}
 
-	CachedViewModel->RequestMoveItem(SourceSlotIndex, TargetSlotIndex);
-	return true;
+	return FReply::Unhandled();
+}
+
+FReply UDC1InventoryWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseMove(InGeometry, InMouseEvent);
+
+	// 첫 번째 클릭 후 마우스 이동: ItemDragWidget 위치 업데이트
+	if (DragSourceSlotIndex != -1 && IsValid(DragWidgetContainer))
+	{
+		FVector2D MousePosition = InMouseEvent.GetScreenSpacePosition();
+		DragWidgetContainer->SetPositionInViewport(MousePosition);
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
+}
+
+FReply UDC1InventoryWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
+
+	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
+	{
+		return FReply::Unhandled();
+	}
+
+	// 아이템이 선택된 상태에서 마우스를 놓음
+	if (DragSourceSlotIndex != -1 && IsValid(CachedViewModel) && IsValid(InventorySlotsWidget))
+	{
+		int32 TargetSlotIndex = InventorySlotsWidget->CalculateSlotIndex(InMouseEvent.GetScreenSpacePosition());
+		int32 TotalSlots = CachedViewModel->GetSlotCount();
+
+		if (TargetSlotIndex >= 0 && TargetSlotIndex < TotalSlots && TargetSlotIndex != DragSourceSlotIndex)
+		{
+			CachedViewModel->RequestMoveItem(DragSourceSlotIndex, TargetSlotIndex, DragStackCount);
+		}
+
+		// 선택 상태 초기화
+		DragSourceSlotIndex = -1;
+		DragStackCount = 0;
+		DragItemData = nullptr;
+
+		// ItemDragWidget 제거
+		if (IsValid(DragWidgetContainer))
+		{
+			DragWidgetContainer->RemoveFromParent();
+			DragWidgetContainer = nullptr;
+		}
+
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
 }
