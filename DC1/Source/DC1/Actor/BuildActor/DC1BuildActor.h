@@ -7,6 +7,7 @@
 #include "GameplayTagContainer.h"
 #include "Enum/DC1Enums.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Interface/DC1InteractableInterface.h"
 #include "DC1BuildActor.generated.h"
 
 class UStaticMeshComponent;
@@ -46,7 +47,7 @@ struct FDC1BuildActorData
 };
 
 UCLASS()
-class DC1_API ADC1BuildActor : public AActor
+class DC1_API ADC1BuildActor : public AActor, public IDC1InteractableInterface
 {
 	GENERATED_BODY()
 
@@ -61,53 +62,59 @@ public:
 	EDC1BuildState					GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
+	const bool						IsUnderConstruction() const { return BuildState == EDC1BuildState::Construction; }
 
 	EDC1BuildProbeDirection			GetProbeDirection() const;
 	FTransform						ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
-	const bool						IsInInteractRange(const APawn* InPawn) const;
 
 protected:
-	virtual void	BeginPlay() override;
-	virtual void	GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void					BeginPlay() override;
+	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
-	virtual void	Tick(float DeltaTime) override;
-
-public:
-	virtual bool	UpdatePreview();
+	virtual void					Tick(float DeltaTime) override;
+	virtual UPrimitiveComponent*	GetInteractCollider() const override;
+	virtual FGameplayTag			GetInteractAbilityTag() const;
 	
-	void			InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
+	virtual void					OnInteractableFocused();
+	virtual void					OnInteractableUnfocused();
 
-	void			AddWorker(const ADC1Character* InWorker);
-	void			RemoveWorker(const ADC1Character* InWorker);
-	void			BuildDestroy();
+public:
+	virtual bool					UpdatePreview();
+
+	void							InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
+
+	void							AddWorker(const ADC1Character* InWorker);
+	void							RemoveWorker(const ADC1Character* InWorker);
+	void							BuildDestroy();
 
 protected:
 	UFUNCTION()
-	void			OnRep_BuildState();
+	void							OnRep_BuildState();
 
 	UFUNCTION()
-	void			OnRep_BuildProgress();
+	void							OnRep_BuildProgress();
 
-	void			SetState(EDC1BuildState InNewState);
-	void			ApplyState();
+	void							SetState(EDC1BuildState InNewState);
+	void							ApplyState();
 
 private:
-	void			CreateTranslucentMIDs();
-	void			BuildCompleted();
+	void							CreateTranslucentMIDs();
+	void							BuildCompleted();
 
-	float			ComputeTotalWorkSpeed();
+	void							CancelWorkersAbility();
+	float							ComputeTotalWorkSpeed();
 
-	void			SetMaterialTranslucentColor(const FLinearColor& InColor);
-	void			SetMaterialBuildProgress();
-	void			SetMaterialFlash();
+	void							SetMaterialTranslucentColor(const FLinearColor& InColor);
+	void							SetMaterialBuildProgress();
+	void							SetMaterialFlash();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UStaticMeshComponent>		BuildMesh = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UBoxComponent>			InteractCollider = { nullptr };
+	TObjectPtr<UBoxComponent>				InteractCollider = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
@@ -115,9 +122,6 @@ protected:
 	// 이 건물 위에 다른 건물을 지을 수 있는가 ex) 바닥 = true
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	bool									IsBuildableSurface = { false };
-
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0"), Category = "Build|Interact")
-	float									InteractDistance = { 200.f };
 
 	// Preview, Constrction 상태에서 사용할 Materail
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
@@ -140,6 +144,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							ConstructionColor = { FLinearColor::Blue };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
+	FGameplayTag							InteractAbilityTag = { FGameplayTag::EmptyTag };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
+	FGameplayTag							OnFocusedUITag = { FGameplayTag::EmptyTag };
 
 private:
 	UPROPERTY(Replicated)

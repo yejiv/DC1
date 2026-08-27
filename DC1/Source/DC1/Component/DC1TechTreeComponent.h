@@ -46,8 +46,11 @@ public:
 	virtual void			BeginPlay() override;
 	virtual void			GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-
 public:
+	void			RequestUnlockTech(const FGameplayTag& InTechTag);
+	void			RequestUnlockAncientTech(const FGameplayTag& InTechTag);
+
+private:
 	UFUNCTION(Server, Reliable)
 	void			Server_UnlockTech(const FGameplayTag& InTechTag);
 	

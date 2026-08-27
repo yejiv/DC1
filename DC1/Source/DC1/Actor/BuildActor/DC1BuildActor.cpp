@@ -13,6 +13,8 @@
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 
+#include "Subsystem/DC1UIManagerSubsystem.h"
+
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -30,6 +32,7 @@ ADC1BuildActor::ADC1BuildActor()
 
 	InteractCollider = CreateDefaultSubobject<UBoxComponent>("InteractCollider");
 	InteractCollider->SetupAttachment(BuildMesh);
+	InteractCollider->SetGenerateOverlapEvents(true);
 
 	BuildCheckComp = CreateDefaultSubobject<UDC1BuildCheckComponent>("BuildCheckComp");
 	BuildCheckComp->SetupAttachment(BuildMesh);
@@ -45,26 +48,6 @@ EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
 FTransform ADC1BuildActor::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
 {
 	return (::IsValid(BuildCheckComp) ? BuildCheckComp->ComputePlaceTransform(InHit, InYaw) : FTransform::Identity);
-}
-
-const bool ADC1BuildActor::IsInInteractRange(const APawn* InPawn) const
-{
-	if (false == ::IsValid(InPawn) || false == ::IsValid(InteractCollider))
-	{
-		return false;
-	}
-
-	FVector PawnLocation = InPawn->GetActorLocation();
-
-	float DistanceSquared = 0.f;
-	FVector ClosetPoint;
-
-	if (false == InteractCollider->GetSquaredDistanceToCollision(PawnLocation, DistanceSquared, ClosetPoint))
-	{
-		return false;
-	}
-
-	return DistanceSquared <= (InteractDistance * InteractDistance);
 }
 
 // Called when the game starts or when spawned
@@ -139,6 +122,61 @@ void ADC1BuildActor::Tick(float DeltaTime)
  	}
 }
 
+UPrimitiveComponent* ADC1BuildActor::GetInteractCollider() const
+{
+	if (false == ::IsValid(InteractCollider))
+	{
+		return nullptr;
+	}
+
+	return InteractCollider;
+}
+
+FGameplayTag ADC1BuildActor::GetInteractAbilityTag() const
+{
+	if (BuildState == EDC1BuildState::Construction)
+	{
+		return InteractAbilityTag;
+	}
+
+	return FGameplayTag::EmptyTag;
+}
+
+void ADC1BuildActor::OnInteractableFocused()
+{
+	if (false == OnFocusedUITag.IsValid())
+	{
+		return;
+	}
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	// TODO Push World UI
+	//UIManager->PushScreen(OnFocusedUITag);
+}
+
+void ADC1BuildActor::OnInteractableUnfocused()
+{
+	if (false == OnFocusedUITag.IsValid())
+	{
+		return;
+	}
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	// TODO Pop World UI
+}
+
 void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState)
 {
 	BuildActorData = InBuildActorData;
@@ -183,6 +221,7 @@ bool ADC1BuildActor::UpdatePreview()
 void ADC1BuildActor::BuildDestroy()
 {
 	// TODO Despawn, Cost Return
+	CancelWorkersAbility();
 	Workers.Empty();
 }
 
@@ -259,7 +298,9 @@ void ADC1BuildActor::ApplyState()
 			SetActorTickEnabled(true);
 		}
 
+		CancelWorkersAbility();
 		Workers.Empty();
+
 		break;
 	}
 	}
@@ -321,6 +362,29 @@ void ADC1BuildActor::BuildCompleted()
 	BuildMIDs.Reset();
 
 	SetActorTickEnabled(false);
+}
+
+void ADC1BuildActor::CancelWorkersAbility()
+{
+	FGameplayTagContainer WorkTags;
+	WorkTags.AddTag(DC1StateTags::State_Build_Working);
+
+	for (TWeakObjectPtr<const ADC1Character> Worker : Workers)
+	{
+		const ADC1Character* WorkCharacter = Worker.Get();
+		if (false == ::IsValid(WorkCharacter))
+		{
+			continue;
+		}
+
+		UAbilitySystemComponent* ASC = WorkCharacter->GetAbilitySystemComponent();
+		if (false == ::IsValid(ASC))
+		{
+			continue;
+		}
+		
+		ASC->CancelAbilities(&WorkTags);
+	}
 }
 
 float ADC1BuildActor::ComputeTotalWorkSpeed()

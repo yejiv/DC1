@@ -82,6 +82,26 @@ void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME_CONDITION(UDC1TechTreeComponent, UnlockedTechTags, COND_OwnerOnly);
 }
 
+void UDC1TechTreeComponent::RequestUnlockTech(const FGameplayTag& InTechTag)
+{
+	if (false == InTechTag.IsValid())
+	{
+		return;
+	}
+
+	Server_UnlockTech(InTechTag);
+}
+
+void UDC1TechTreeComponent::RequestUnlockAncientTech(const FGameplayTag& InTechTag)
+{
+	if (false == InTechTag.IsValid())
+	{
+		return;
+	}
+
+	Server_UnlockAncientTech(InTechTag);
+}
+
 
 void UDC1TechTreeComponent::AddTechPoints(int32 InPoints)
 {
