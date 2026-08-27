@@ -67,13 +67,6 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 		AddItem(ItemID, 1);
 
 		FText ItemName = Row->ItemName;
-
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.0f,
-			FColor::Cyan,
-			FString::Printf(TEXT("Item Name %s"), *ItemName.ToString())
-		);
 	}
 
 	if (ItemDataTable->GetRowNames().Num() > 1)
@@ -81,13 +74,6 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 		FName SecondItemID = ItemDataTable->GetRowNames()[1];
 		AddItem(SecondItemID, 1);	
 	}
-
-	GEngine->AddOnScreenDebugMessage(
-		-1,
-		5.0f,
-		FColor::Cyan,
-		FString::Printf(TEXT("%s"), *Slots[20].ItemID.ToString())
-	);
 }
 
 void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(
@@ -154,9 +140,9 @@ bool UDC1PlayerInventoryComponent::CanAddItem(FName InItemID, int32 InCount) con
 // 장비 슬롯 관련 함수 구현
 // ========================
 
-const FDC1InventorySlot& UDC1PlayerInventoryComponent::GetEquipmentSlot(int32 InSlotIndex) const
+const FDC1InventorySlotInfo& UDC1PlayerInventoryComponent::GetEquipmentSlot(int32 InSlotIndex) const
 {
-	static const FDC1InventorySlot EmptySlot = FDC1InventorySlot();
+	static const FDC1InventorySlotInfo EmptySlot = FDC1InventorySlotInfo();
 
 	if (!EquipmentSlots.IsValidIndex(InSlotIndex))
 	{
@@ -180,8 +166,8 @@ bool UDC1PlayerInventoryComponent::EquipItem(int32 InSlotIndex, int32 InEquipSlo
 		return false;
 	}
 
-	FDC1InventorySlot& InvSlot = Slots[InSlotIndex];
-	FDC1InventorySlot& EquipSlot = EquipmentSlots[InEquipSlotIndex];
+	FDC1InventorySlotInfo& InvSlot = Slots[InSlotIndex];
+	FDC1InventorySlotInfo& EquipSlot = EquipmentSlots[InEquipSlotIndex];
 
 	// 인벤토리 슬롯이 비어있으면 실패
 	if (InvSlot.IsEmpty())
@@ -219,7 +205,7 @@ bool UDC1PlayerInventoryComponent::UnequipItem(int32 InEquipSlotIndex)
 		return false;
 	}
 
-	FDC1InventorySlot& EquipSlot = EquipmentSlots[InEquipSlotIndex];
+	FDC1InventorySlotInfo& EquipSlot = EquipmentSlots[InEquipSlotIndex];
 
 	// 장비 슬롯이 비어있으면 실패
 	if (EquipSlot.IsEmpty())
@@ -255,11 +241,11 @@ void UDC1PlayerInventoryComponent::SortInventory()
 	}
 
 	// 간단한 정렬: 아이템을 앞쪽에 모음
-	TArray<FDC1InventorySlot> SortedSlots;
+	TArray<FDC1InventorySlotInfo> SortedSlots;
 	SortedSlots.Reserve(Slots.Num());
 
 	// 아이템이 있는 슬롯 먼저
-	for (const FDC1InventorySlot& Slot : Slots)
+	for (const FDC1InventorySlotInfo& Slot : Slots)
 	{
 		if (!Slot.IsEmpty())
 		{
@@ -270,7 +256,7 @@ void UDC1PlayerInventoryComponent::SortInventory()
 	// 빈 슬롯을 뒤에 추가
 	while (SortedSlots.Num() < Slots.Num())
 	{
-		SortedSlots.Add(FDC1InventorySlot());
+		SortedSlots.Add(FDC1InventorySlotInfo());
 	}
 
 	Slots = SortedSlots;
@@ -287,7 +273,7 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 	CurrentWeight = 0.0f;
 
 	// 인벤토리 슬롯의 무게 계산
-	for (const FDC1InventorySlot& Slot : Slots)
+	for (const FDC1InventorySlotInfo& Slot : Slots)
 	{
 		if (!Slot.IsEmpty())
 		{
@@ -296,7 +282,7 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 	}
 
 	// 장비 슬롯의 무게 계산
-	for (const FDC1InventorySlot& Slot : EquipmentSlots)
+	for (const FDC1InventorySlotInfo& Slot : EquipmentSlots)
 	{
 		if (!Slot.IsEmpty())
 		{
@@ -315,7 +301,7 @@ void UDC1PlayerInventoryComponent::InitializeEquipmentSlots()
 	// 기본 4개 장비 슬롯 생성 (머리, 몸통, 다리, 발 등)
 	for (int32 i = 0; i < 4; ++i)
 	{
-		EquipmentSlots.Add(FDC1InventorySlot());
+		EquipmentSlots.Add(FDC1InventorySlotInfo());
 	}
 
 	// UE_LOG(LogTemp, Warning, TEXT("[%s] Equipment slots initialized: 4 slots"),
@@ -344,4 +330,63 @@ void UDC1PlayerInventoryComponent::OnInventoryUpdated_Internal()
 
 	// 부모 이벤트 브로드캐스트
 	Super::OnInventoryUpdated_Internal();
+}
+
+// ========================
+// 드래그 드롭 아이템 이동
+// ========================
+
+void UDC1PlayerInventoryComponent::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex)
+{
+	Server_MoveItem(FromSlotIndex, ToSlotIndex);
+}
+
+bool UDC1PlayerInventoryComponent::Server_MoveItem_Validate(int32 FromSlotIndex, int32 ToSlotIndex)
+{
+	if (!Slots.IsValidIndex(FromSlotIndex) || !Slots.IsValidIndex(ToSlotIndex))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void UDC1PlayerInventoryComponent::Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex)
+{
+	if (!Slots.IsValidIndex(FromSlotIndex) || !Slots.IsValidIndex(ToSlotIndex))
+	{
+		return;
+	}
+
+	if (FromSlotIndex == ToSlotIndex)
+	{
+		return;
+	}
+
+	FDC1InventorySlotInfo SourceSlot = Slots[FromSlotIndex];
+	if (SourceSlot.IsEmpty())
+	{
+		return;
+	}
+
+	FDC1InventorySlotInfo& TargetSlot = Slots[ToSlotIndex];
+
+	if (TargetSlot.IsEmpty())
+	{
+		TargetSlot = SourceSlot;
+		Slots[FromSlotIndex].Clear();
+	}
+	else if (TargetSlot.ItemID == SourceSlot.ItemID)
+	{
+		TargetSlot.StackCount += SourceSlot.StackCount;
+		Slots[FromSlotIndex].Clear();
+	}
+	else
+	{
+		Swap(Slots[FromSlotIndex], Slots[ToSlotIndex]);
+	}
+
+	OnSlotChanged.Broadcast(FromSlotIndex);
+	OnSlotChanged.Broadcast(ToSlotIndex);
+	OnInventoryUpdated_Internal();
 }

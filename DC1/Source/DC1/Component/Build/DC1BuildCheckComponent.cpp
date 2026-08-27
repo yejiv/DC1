@@ -2,8 +2,13 @@
 
 
 #include "Component/Build/DC1BuildCheckComponent.h"
+
 #include "Components/BoxComponent.h"
+
+#include "Actor/BuildActor/DC1BuildActor.h"
 #include "DrawDebugHelpers.h"
+#include "Enum/DC1Enums.h"
+
 
 // Sets default values for this component's properties
 UDC1BuildCheckComponent::UDC1BuildCheckComponent()
@@ -98,7 +103,22 @@ bool UDC1BuildCheckComponent::CheckSurface()
 
 			FHitResult Hit;
 
-			const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+			const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), Params);
+			bool CanBuildFromProbe = true;
+
+			if (const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(Hit.GetActor()))
+			{
+				if (false == HitBuildActor->GetIsBuildableSurface())
+				{
+					CanBuildFromProbe = false;
+				}
+			}
+
+			const FVector ExpectedNormal = IsDown ? FVector::UpVector : (FVector::UpVector * -1.f);
+
+			const float NormalDot = FMath::Clamp(FVector::DotProduct(Hit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
+			const float SurfaceAngle = FMath::RadiansToDegrees(FMath::Acos(NormalDot));
+			CanBuildFromProbe = (IsHit && SurfaceAngle <= BuildProbeData.MaxSurfaceAngle);
 
 			if (true == DrawDebugProbes)
 			{
@@ -106,7 +126,7 @@ bool UDC1BuildCheckComponent::CheckSurface()
 				DrawDebugLine(World, Start, End, DebugColor);
 			}
 
-			if (false == IsHit)
+			if (false == CanBuildFromProbe)
 			{
 				if (false == DrawDebugProbes)
 				{

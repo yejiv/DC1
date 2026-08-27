@@ -33,9 +33,9 @@ void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(
 // 조회 함수 구현
 // ========================
 
-const FDC1InventorySlot& UDC1InventoryComponentBase::GetSlot(int32 InIndex) const
+const FDC1InventorySlotInfo& UDC1InventoryComponentBase::GetSlot(int32 InIndex) const
 {
-	static const FDC1InventorySlot EmptySlot = FDC1InventorySlot();
+	static const FDC1InventorySlotInfo EmptySlot = FDC1InventorySlotInfo();
 
 	if (!Slots.IsValidIndex(InIndex))
 	{
@@ -57,7 +57,7 @@ bool UDC1InventoryComponentBase::IsSlotEmpty(int32 InIndex) const
 
 bool UDC1InventoryComponentBase::IsInventoryFull() const
 {
-	for (const FDC1InventorySlot& Slot : Slots)
+	for (const FDC1InventorySlotInfo& Slot : Slots)
 	{
 		if (Slot.IsEmpty())
 		{
@@ -118,12 +118,18 @@ bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 	{
 		// 기존 수량에 누적 (덮어쓰기 방지)
 		Slots[SlotIndex].StackCount += InCount;
+		OnSlotChanged.Broadcast(SlotIndex);
 		OnInventoryUpdated_Internal();
 		return true;
 	}
 
-	if (AddItemToEmptySlot(InItemID, InCount))
+	// 새 슬롯에 추가
+	int32 NewSlotIndex = FindEmptySlot();
+	if (NewSlotIndex != INDEX_NONE)
 	{
+		Slots[NewSlotIndex].ItemID = InItemID;
+		Slots[NewSlotIndex].StackCount = InCount;
+		OnSlotChanged.Broadcast(NewSlotIndex);
 		OnInventoryUpdated_Internal();
 		return true;
 	}
@@ -145,7 +151,7 @@ bool UDC1InventoryComponentBase::RemoveItem(int32 InSlotIndex, int32 InCount)
 		return false;
 	}
 
-	FDC1InventorySlot& Slot = Slots[InSlotIndex];
+	FDC1InventorySlotInfo& Slot = Slots[InSlotIndex];
 
 	// 슬롯이 비어있으면 실패
 	if (Slot.IsEmpty())
@@ -168,6 +174,7 @@ bool UDC1InventoryComponentBase::RemoveItem(int32 InSlotIndex, int32 InCount)
 		Slot.Clear();
 	}
 
+	OnSlotChanged.Broadcast(InSlotIndex);
 	OnInventoryUpdated_Internal();
 	return true;
 }
@@ -195,6 +202,9 @@ void UDC1InventoryComponentBase::SwapSlots(int32 InIndex1, int32 InIndex2)
 	// 슬롯 교환
 	Swap(Slots[InIndex1], Slots[InIndex2]);
 
+	// 두 슬롯 모두 변경 알림
+	OnSlotChanged.Broadcast(InIndex1);
+	OnSlotChanged.Broadcast(InIndex2);
 	OnInventoryUpdated_Internal();
 }
 
@@ -212,9 +222,16 @@ void UDC1InventoryComponentBase::ClearSlot(int32 InSlotIndex)
 		return;
 	}
 
+	// 이미 비어있으면 무시
+	if (Slots[InSlotIndex].IsEmpty())
+	{
+		return;
+	}
+
 	// 슬롯 비우기
 	Slots[InSlotIndex].Clear();
 
+	OnSlotChanged.Broadcast(InSlotIndex);
 	OnInventoryUpdated_Internal();
 }
 
@@ -244,7 +261,7 @@ void UDC1InventoryComponentBase::SetCapacityAndColumns(int32 InTotalCapacity, in
 		Slots.Reserve(InTotalCapacity);
 		for (int32 i = Slots.Num(); i < InTotalCapacity; ++i)
 		{
-			Slots.Add(FDC1InventorySlot());
+			Slots.Add(FDC1InventorySlotInfo());
 		}
 	}
 
@@ -268,7 +285,7 @@ void UDC1InventoryComponentBase::InitializeSlots()
 
 	for (int32 i = 0; i < TotalCapacity; ++i)
 	{
-		Slots.Add(FDC1InventorySlot());
+		Slots.Add(FDC1InventorySlotInfo());
 	}
 
 	// UE_LOG(LogTemp, Warning, TEXT("[%s] Inventory initialized: %d slots (%d x %d)"),

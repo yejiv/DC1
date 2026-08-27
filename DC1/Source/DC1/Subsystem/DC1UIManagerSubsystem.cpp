@@ -9,8 +9,8 @@
 
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DA/UI/DC1UILoadingData.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Helper/DC1Helper.h"
 
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -322,20 +322,17 @@ void UDC1UIManagerSubsystem::RollLoadingType(EDC1FadeType InType)
     }
 
     // EDC1FadeType::Loading
-    const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-    if (true == ::IsValid(DataTable))
+
+    const UDataTable* TipTable = DC1DataTableHelper::GetDataTable(DC1DataTableTags::DataTable_UI_LoadingTip);
+    if (true == ::IsValid(TipTable))
     {
-        UDataTable* TipTable = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_LoadingTip);
-        if (true == ::IsValid(TipTable))
+        TArray<FName> RowNames = TipTable->GetRowNames();
+        if (false == RowNames.IsEmpty())
         {
-            TArray<FName> RowNames = TipTable->GetRowNames();
-            if (false == RowNames.IsEmpty())
+            const FName Picked = RowNames[FMath::RandRange(0, RowNames.Num() - 1)];
+            if (const FDC1LoadingTipRow* Row = TipTable->FindRow<FDC1LoadingTipRow>(Picked, TEXT("RollLoadingContent")))
             {
-                const FName Picked = RowNames[FMath::RandRange(0, RowNames.Num() - 1)];
-                if (const FDC1LoadingTipRow* Row = TipTable->FindRow<FDC1LoadingTipRow>(Picked, TEXT("RollLoadingContent")))
-                {
-                    PendingTip = &(Row->Tip);
-                }
+                PendingTip = &(Row->Tip);
             }
         }
     }

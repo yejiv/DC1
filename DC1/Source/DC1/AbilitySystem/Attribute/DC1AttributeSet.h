@@ -37,6 +37,10 @@ public:
 	FGameplayAttributeData Level;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Level)
 
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_WorkSpeed, Category = "Attributes")
+	FGameplayAttributeData WorkSpeed;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, WorkSpeed)
+
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Experience, Category = "Attributes")
 	FGameplayAttributeData Experience;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Experience)
@@ -65,4 +69,7 @@ protected:
 	void OnRep_Level(const FGameplayAttributeData& OldLevel);
 	UFUNCTION()
 	void OnRep_Experience(const FGameplayAttributeData& OldExperience);
+
+	UFUNCTION()
+	void OnRep_WorkSpeed(const FGameplayAttributeData& OldWorkSpeed);
 };

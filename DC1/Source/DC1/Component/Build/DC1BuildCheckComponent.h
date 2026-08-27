@@ -28,12 +28,16 @@ struct FDC1BuildProbeData
 	float MaxTraceDistance = { 10.f };
 
 	// 모서리에서의 Probe 거리 비율. 1.f = 모서리에서 시작, 0.5f = 모서리에서 ( 반지름 * 0.5f ) 만큼 떨어짐
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.1", ClampMax = "1.0"))
 	float ProbeDistanceFromCorner = { 0.95f };
 
 	// 표면의 기울기를 적용할것인가 ( false라면 항상 수직 유지 )
 	UPROPERTY(EditAnywhere)
 	bool AlignToSurface = { true };
+
+	// 표면의 기울기를 어느정도까지 허용할 것인가
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	float MaxSurfaceAngle = { 30.f };
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

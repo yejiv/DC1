@@ -5,7 +5,7 @@
 #include "DC1InventoryTypes.generated.h"
 
 USTRUCT(BlueprintType)
-struct FDC1InventorySlot
+struct FDC1InventorySlotInfo
 {
 	GENERATED_BODY()
 
@@ -27,27 +27,22 @@ namespace DC1InventoryRarityColor
 		switch (Rarity)
 		{
 		case EDC1ItemRarity::Common:
-			// 일반: 부드러운 차콜 그레이 (#7F8C8D)
-			return FLinearColor(0.216f, 0.275f, 0.279f, 1.0f);
+			return FLinearColor(0.0f, 0.0f, 0.0f, 0.7f);
 
 		case EDC1ItemRarity::Uncommon:
-			// 고급: 에메랄드 그린 (#2ECC71)
-			return FLinearColor(0.026f, 0.604f, 0.168f, 1.0f);
+			return FLinearColor(0.026f, 0.604f, 0.168f, 0.7f);
 
 		case EDC1ItemRarity::Rare:
-			// 희귀: 비비드 스카이 블루 (#3498DB)
-			return FLinearColor(0.034f, 0.319f, 0.701f, 1.0f);
+			return FLinearColor(0.034f, 0.319f, 0.701f, 0.7f);
 
 		case EDC1ItemRarity::Epic:
-			// 영웅: 딥 바이올렛 (#9B59B6)
-			return FLinearColor(0.332f, 0.095f, 0.473f, 1.0f);
+			return FLinearColor(0.332f, 0.095f, 0.473f, 0.7f);
 
 		case EDC1ItemRarity::Legendary:
-			// 전설: 앰버 오렌지 / 황금빛 (#E67E22)
-			return FLinearColor(0.791f, 0.216f, 0.017f, 1.0f);
+			return FLinearColor(0.791f, 0.216f, 0.017f, 0.7f);
 
 		default:
-			return FLinearColor(0.216f, 0.275f, 0.279f, 1.0f); // Fallback: Common
+			return FLinearColor(0.0f, 0.0f, 0.0f, 0.7f);
 		}
 	}
 }

@@ -10,6 +10,9 @@
 // 인벤토리 변경 이벤트
 DECLARE_MULTICAST_DELEGATE(FOnInventoryUpdated);
 
+// 특정 슬롯 변경 이벤트 (부분 갱신용)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotChanged, int32);
+
 /**
  * 인벤토리의 기본 기능을 제공하는 부모 컴포넌트
  * 플레이어, 상자 등 모든 인벤토리 액터에 부착 가능
@@ -21,9 +24,13 @@ class DC1_API UDC1InventoryComponentBase : public UActorComponent
 
 public:
 	UDC1InventoryComponentBase();
-	
+
 public:
+	/** 전체 인벤토리 변경 이벤트 (레거시) */
 	FOnInventoryUpdated OnInventoryUpdated;
+
+	/** 특정 슬롯 변경 이벤트 (부분 갱신용) */
+	FOnSlotChanged OnSlotChanged;
 
 public:
 	virtual void BeginPlay() override;
@@ -31,10 +38,10 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	const TArray<FDC1InventorySlot>& GetSlots() const { return Slots; }
+	const TArray<FDC1InventorySlotInfo>& GetSlots() const { return Slots; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	const FDC1InventorySlot& GetSlot(int32 InIndex) const;
+	const FDC1InventorySlotInfo& GetSlot(int32 InIndex) const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	int32 GetCapacity() const { return TotalCapacity; }
@@ -76,7 +83,7 @@ private:
 
 protected:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory")
-	TArray<FDC1InventorySlot> Slots;
+	TArray<FDC1InventorySlotInfo> Slots;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings", meta = (ClampMin = "1"))
 	int32 TotalCapacity = 42;

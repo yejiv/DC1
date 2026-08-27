@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -9,6 +9,7 @@
 
 class UDC1InventoryViewModel;
 class UDC1InventorySlotWidget;
+class UDC1InventoryEntryWidget;
 class UScrollBox;
 class UUniformGridPanel;
 
@@ -35,10 +36,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RefreshAllSlots();
 
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	int32 GetSlotIndexFromPosition(FVector2D MousePosition) const;
+
 protected:
 	void CreateSlotWidgets(int32 TotalSlots);
 	void UpdateSlotDisplay(int32 SlotIndex);
+
 	void HandleInventoryUpdated();
+	void HandleSlotUpdated(int32 SlotIndex);
 
 private:
 	static constexpr int32 InventoryColumns = 6;
@@ -50,14 +56,15 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUniformGridPanel> SlotGrid;
 
-	UPROPERTY()
-	TArray<TObjectPtr<UDC1InventorySlotWidget>> SlotWidgets;
-
-	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
-	TSubclassOf<UDC1InventorySlotWidget> SlotWidgetClass;
-
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	FMargin SlotMargin = FMargin(2.0f);
+
+private:
+	UPROPERTY()
+	TSubclassOf<UDC1InventorySlotWidget> SlotWidgetClass;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UDC1InventorySlotWidget>> SlotWidgets;
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;

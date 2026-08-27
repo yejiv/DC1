@@ -13,6 +13,9 @@
 class UDC1PlayerInventoryComponent;
 class UDC1ChestInventoryComponent;
 
+// 특정 슬롯 갱신 이벤트
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotUIUpdated, int32);
+
 UCLASS()
 class DC1_API UDC1InventoryViewModel : public UObject
 {
@@ -22,7 +25,11 @@ public:
 	UDC1InventoryViewModel();
 
 public:
+	/** 전체 인벤토리 갱신 이벤트 (레거시, 사용 권장 안함) */
 	FOnInventoryUpdated OnInventoryUpdated;
+
+	/** 특정 슬롯만 갱신하는 이벤트 (성능 최적화) */
+	FOnSlotUIUpdated OnSlotUIUpdated;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -41,18 +48,34 @@ public:
 	bool IsChestOpen() const { return TargetChestComp != nullptr; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	const TArray<FDC1InventorySlot>& GetInventorySlots() const;
+	const TArray<FDC1InventorySlotInfo>& GetInventorySlots() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	int32 GetSlotCount() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
-	const FDC1InventorySlot& GetSlot(int32 Index) const;
+	const FDC1InventorySlotInfo& GetSlot(int32 Index) const;
 
 	const FDC1ItemRow* GetItemData(FName ItemID) const;
 
+	/**
+	 * 특정 슬롯을 갱신
+	 * @param SlotIndex 갱신할 슬롯 인덱스
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RefreshSlot(int32 SlotIndex);
+
+	/**
+	 * 인벤토리 아이템 이동 요청
+	 * @param FromSlotIndex 출발 슬롯
+	 * @param ToSlotIndex 목표 슬롯
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex);
+
 protected:
 	void HandleInventoryUpdated();
+	void HandleSlotUpdated(int32 SlotIndex);
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")

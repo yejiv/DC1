@@ -7,6 +7,14 @@
 #include "Helper/DC1Helper.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
+#include "Character/Player/DC1PlayerController.h"
+#include "Tags/Input/DC1GameplayTag_Input.h"
+
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "System/DC1AssetManager.h"
+#include "Data/DA/Input/DC1InputData.h"
+
 UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -22,11 +30,12 @@ void UDC1BuildPlacementComponent::BeginPlay()
 	Super::BeginPlay();
 
 	CacheBuildRows();
+	SetUpBuildInput();
 }
 
 void UDC1BuildPlacementComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	StopPlacement();
+	CancelPlacement();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -35,7 +44,7 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (false == IsPlacing())
+	if (false == ::IsValid(PreviewActor))
 	{
 		return;
 	}
@@ -48,16 +57,11 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	CanBuilding = PreviewActor->UpdatePreview();
 }
 
-bool UDC1BuildPlacementComponent::IsPlacing() const
-{
-	return ::IsValid(PreviewActor);
-}
-
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 {
-	if (true == IsPlacing())
+	if (true == ::IsValid(PreviewActor))
 	{
-		StopPlacement();
+		CancelPlacement();
 	}
 
 	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
@@ -80,12 +84,13 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 
 	SetComponentTickEnabled(true);
 
-	// IMC_Build Add - PC에 구현
+	// Build IMC 추가
+	SetBuildInputMode(true);
 
 	return true;
 }
 
-void UDC1BuildPlacementComponent::StopPlacement()
+void UDC1BuildPlacementComponent::CancelPlacement()
 {
 	SetComponentTickEnabled(false);
 
@@ -98,18 +103,51 @@ void UDC1BuildPlacementComponent::StopPlacement()
 	CurrentBuildTag = FGameplayTag::EmptyTag;
 	CurrentYaw = 0.f;
 	CanBuilding = false;
+
+	// Build IMC 제거
+	SetBuildInputMode(false);
 }
 
 void UDC1BuildPlacementComponent::ConfirmPlacement()
 {
-}
+	if (false == ::IsValid(PreviewActor) || false == CanBuilding)
+	{
+		return;
+	}
 
-void UDC1BuildPlacementComponent::AddRotation(float InDeltaYaw)
-{
+	Server_PlaceBuild(CurrentBuildTag, PreviewActor->GetActorTransform());
 }
 
 void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGameplayTag& InBuildTag, const FTransform& InTransform)
 {
+	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
+	if (nullptr == BuildRow)
+	{
+		return;
+	}
+
+	const APawn* Pawn = GetOwnerPawn();
+	if (nullptr == Pawn)
+	{
+		return;
+	}
+
+	const FVector PawnLocation = Pawn->GetActorLocation();
+	const FVector ActorLocation = InTransform.GetLocation();
+
+	const float Distance = FVector::Dist2D(PawnLocation, ActorLocation);
+
+	// 서버 검증 여유 수치
+	if (Distance > ( PlaceDistance * DistanceMarginFactor ))
+	{
+		return;
+	}
+
+	// TODO Cost 감소
+	// ..
+
+	EDC1BuildState ConfirmState = (BuildRow->RequiredWork > 0.f) ? EDC1BuildState::Construction : EDC1BuildState::Completed;
+	SpawnBuildActor(*BuildRow, ConfirmState, InTransform);
 }
 
 void UDC1BuildPlacementComponent::CacheBuildRows()
@@ -196,30 +234,25 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 
 bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 {
-	APlayerController* PC = GetOwner<APlayerController>();
-	if (false == ::IsValid(PC))
-	{
-		return false;
-	}
-
-	APawn* Pawn = PC->GetPawn();
-	if (false == ::IsValid(Pawn))
+	const APawn* Pawn = GetOwnerPawn();
+	if (nullptr == Pawn)
 	{
 		return false;
 	}
 
 	// 컨트롤러가 바라보는 방향
-	FVector FowardDirection = FRotationMatrix(FRotator(0.f, PC->GetControlRotation().Yaw, 0.f)).GetUnitAxis(EAxis::X);
+	FVector FowardDirection = FRotationMatrix(FRotator(0.f, Pawn->GetControlRotation().Yaw, 0.f)).GetUnitAxis(EAxis::X);
 	
 	// Pawn(Player) 위치
 	FVector PawnLocation = Pawn->GetActorLocation();
+	const float PawnFootZ = PawnLocation.Z - Pawn->GetSimpleCollisionHalfHeight();
 
 	// Build Actor가 위치할 지점 ( X, Y 만 사용 )
 	FVector TargetLocation = PawnLocation + (FowardDirection * PlaceDistance);
 
 	// Build Actor Trace 지점들
-	FVector TopPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnLocation.Z + RangeUpHeight);
-	FVector BottomPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnLocation.Z - RangeDownHeight);
+	FVector TopPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ + RangeUpHeight);
+	FVector BottomPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ - RangeDownHeight);
 
 	bool IsDown = (PreviewActor->GetProbeDirection() == EDC1BuildProbeDirection::Down);
 	
@@ -235,11 +268,11 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	HitParams.AddIgnoredActor(PreviewActor);
 
 	// 충돌 채널 추가 필요
-	const bool IsHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, HitParams);
+	const bool IsHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), HitParams);
 
 	if (false == IsHit)
 	{
-		OutHit.ImpactPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnLocation.Z);
+		OutHit.ImpactPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ);
 		OutHit.ImpactNormal = IsDown ? FVector::UpVector : (FVector::UpVector * -1.f);
 		
 		return false;
@@ -250,7 +283,76 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	return true;
 }
 
-void UDC1BuildPlacementComponent::ApplyPreviewTransform(const FHitResult& InHit)
+void UDC1BuildPlacementComponent::SetUpBuildInput()
 {
-	FQuat SlopeQuat = FQuat::FindBetweenNormals(FVector::UpVector, InHit.ImpactNormal);
+	APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC) || false == PC->IsLocalController())
+	{
+		return;
+	}
+
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PC->InputComponent);
+	if (false == ::IsValid(EnhancedInputComponent))
+	{
+		return;
+	}
+
+	const UDC1InputData* InputData = UDC1AssetManager::GetAssetByTag<UDC1InputData>(DC1AssetTags::Asset_InputData);
+	if (false == ::IsValid(InputData))
+	{
+		return;
+	}
+
+	if (const UInputAction* ConfirmAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Confirm))
+	{
+		EnhancedInputComponent->BindAction(ConfirmAction, ETriggerEvent::Started, this, &ThisClass::ConfirmPlacement);
+	}
+
+	if (const UInputAction* CancelAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Cancel))
+	{
+		EnhancedInputComponent->BindAction(CancelAction, ETriggerEvent::Started, this, &ThisClass::CancelPlacement);
+	}
+
+	if (const UInputAction* RotateAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Rotate))
+	{
+		EnhancedInputComponent->BindAction(RotateAction, ETriggerEvent::Triggered, this, &ThisClass::OnRotateInput);
+	}
+}
+
+void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
+{
+	if (false == ::IsValid(PreviewActor))
+	{
+		return;
+	}
+
+	float InYaw = Value.Get<float>();
+
+	CurrentYaw = FMath::UnwindDegrees(CurrentYaw + (InYaw * RotationStep));
+}
+
+void UDC1BuildPlacementComponent::SetBuildInputMode(bool InEnabled)
+{
+	ADC1PlayerController* PC = GetOwner<ADC1PlayerController>();
+	if (nullptr != PC)
+	{
+		PC->SetIMCEnabled(DC1IMCTags::IMC_Build, InEnabled);
+	}
+}
+
+const APawn* UDC1BuildPlacementComponent::GetOwnerPawn() const
+{
+	const APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return nullptr;
+	}
+
+	const APawn* Pawn = PC->GetPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return nullptr;
+	}
+
+	return Pawn;
 }

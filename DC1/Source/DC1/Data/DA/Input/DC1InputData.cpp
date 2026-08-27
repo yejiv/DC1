@@ -19,6 +19,21 @@ const UInputMappingContext* UDC1InputData::FindInputMappingContextbyTag(const FG
 	return nullptr;
 }
 
+const FDC1InputMappingContext* UDC1InputData::FindIMCEntrybyTag(const FGameplayTag& Tag) const
+{
+	for (const FDC1InputMappingContext& IMC : InputMappingContexts)
+	{
+		if (IMC.InputMappingContext && IMC.IMCTag == Tag)
+		{
+			return &IMC;
+		}
+	}
+
+	UE_LOG(LogWindows, Error, TEXT("Can't find IMC for InputTag [%s]"), *Tag.ToString());
+
+	return nullptr;
+}
+
 const UInputAction* UDC1InputData::FindInputActionbyTag(const FGameplayTag& Tag) const
 {
 	for (const FDC1InputAction& IA : InputActions)
