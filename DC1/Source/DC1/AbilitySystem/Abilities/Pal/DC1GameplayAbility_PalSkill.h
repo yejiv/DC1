@@ -23,6 +23,7 @@ public:
 	UDC1GameplayAbility_PalSkill(const FObjectInitializer& ObjectInitializer);
 
 	float					GetMaxRange() const { return MaxRange; }
+	float					GetApproachRange() const { return ApproachRange; }
 
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -45,5 +46,8 @@ protected:
 	FGameplayTag			TriggerEventTag;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
-	float					MaxRange = { 150.f };
+	float					MaxRange = { 150.f };		// 공격이 닿는 한계
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
+	float					ApproachRange = { 150.f };	// 접근해서 멈출 자리
 };

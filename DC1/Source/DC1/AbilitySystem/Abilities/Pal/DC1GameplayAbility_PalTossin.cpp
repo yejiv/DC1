@@ -25,7 +25,8 @@ UDC1GameplayAbility_PalTossin::UDC1GameplayAbility_PalTossin(const FObjectInitia
 	MontageTag = DC1PalTags::Anim_Pal_Tossin;
 	TriggerEventTag = DC1PalTags::Event_Pal_Attack_Hit;
 
-	MaxRange = 900.f;
+	MaxRange = 800.f;
+	ApproachRange = 500.f;
 }
 
 void UDC1GameplayAbility_PalTossin::PerformSkillEffect()
