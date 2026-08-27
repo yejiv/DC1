@@ -9,6 +9,9 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon_None, "State.Weapon.None");
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon_Melee, "State.Weapon.Melee");
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon_Bow, "State.Weapon.Bow");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Build_Placement, "State.Build.Placement");
+	UE_DEFINE_GAMEPLAY_TAG(State_Build_Working, "State.Build.Working");
 #pragma endregion
 
 #pragma region Common

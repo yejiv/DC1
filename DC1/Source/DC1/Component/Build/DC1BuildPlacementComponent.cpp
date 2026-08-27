@@ -84,8 +84,8 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 
 	SetComponentTickEnabled(true);
 
-	// Build IMC 추가
-	SetBuildInputMode(true);
+	// Build IMC 추가, State_Build Tag 추가, InteractComp 비활성화
+	SetBuildMode(true);
 
 	return true;
 }
@@ -104,8 +104,8 @@ void UDC1BuildPlacementComponent::CancelPlacement()
 	CurrentYaw = 0.f;
 	CanBuilding = false;
 
-	// Build IMC 제거
-	SetBuildInputMode(false);
+	// Build IMC 제거, State_Build Tag 제거, InteractComp 활성화
+	SetBuildMode(false);
 }
 
 void UDC1BuildPlacementComponent::ConfirmPlacement()
@@ -331,12 +331,13 @@ void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
 	CurrentYaw = FMath::UnwindDegrees(CurrentYaw + (InYaw * RotationStep));
 }
 
-void UDC1BuildPlacementComponent::SetBuildInputMode(bool InEnabled)
+void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
 {
 	ADC1PlayerController* PC = GetOwner<ADC1PlayerController>();
 	if (nullptr != PC)
 	{
 		PC->SetIMCEnabled(DC1IMCTags::IMC_Build, InEnabled);
+		PC->SetBuildMode(InEnabled);
 	}
 }
 

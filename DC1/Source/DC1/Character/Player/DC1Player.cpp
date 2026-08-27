@@ -54,12 +54,17 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	Camera->SetRelativeLocation(FVector(0.f, 50.f, 0.f));
 	Camera->bUsePawnControlRotation = false;
 
-	// Collider
+	// Attack Collider
 	HandAttackCollider = CreateDefaultSubobject<USphereComponent>("HandAttackCollider");
 	HandAttackCollider->SetupAttachment(RootComponent);
 	HandAttackCollider->SetRelativeLocation(FVector(60.f, 0.f, 0.f));
 	HandAttackCollider->SetSphereRadius(50.f);
 	HandAttackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Interact Collider
+	InteractDetectCollider = CreateDefaultSubobject<USphereComponent>("InteractDetectCollider ");
+	InteractDetectCollider->SetupAttachment(RootComponent);
+	InteractDetectCollider->SetGenerateOverlapEvents(true);
 
 	// Equipment
 	Equipment = CreateDefaultSubobject<UDC1EquipComponent>("Equipment");

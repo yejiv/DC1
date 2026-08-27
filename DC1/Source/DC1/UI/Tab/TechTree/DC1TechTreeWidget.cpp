@@ -174,7 +174,7 @@ void UDC1TechTreeWidget::InitTechTree()
 					const FGameplayTag& CurrentSlotTag = Row.TechTag;
 
 					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotTag, TechComp]() {
-							TechComp->Server_UnlockTech(CurrentSlotTag);
+							TechComp->RequestUnlockTech(CurrentSlotTag);
 						});
 
 					TechSlot->SetState(TechComp->GetTechState(CurrentSlotTag));

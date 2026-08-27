@@ -3,6 +3,8 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Data/DA/DataTable/DC1DataTableData.h"
 
+#pragma region DataTable Helper
+
 const UDataTable* DC1DataTableHelper::GetDataTable(const FGameplayTag& InTableTag)
 {
 	const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
@@ -21,3 +23,5 @@ const UDataTable* DC1DataTableHelper::GetDataTable(const FGameplayTag& InTableTa
 
     return OutTable;
 }
+
+#pragma endregion

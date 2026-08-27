@@ -26,6 +26,7 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_LockOn, "Input.Default.LockOn");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ChangeWeapon, "Input.Default.ChangeWeapon");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Interact, "Input.Default.Interact");
 #pragma endregion
 
 #pragma region UI

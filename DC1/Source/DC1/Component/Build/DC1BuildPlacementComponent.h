@@ -49,7 +49,7 @@ private:
 
 	void				SetUpBuildInput();
 	void				OnRotateInput(const FInputActionValue& Value);
-	void				SetBuildInputMode(bool InEnabled);
+	void				SetBuildMode(bool InEnabled);
 
 	const APawn*		GetOwnerPawn() const;
 

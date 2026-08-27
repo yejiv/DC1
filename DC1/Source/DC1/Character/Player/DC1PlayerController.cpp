@@ -23,7 +23,9 @@
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
 #include "Component/Build/DC1BuildPlacementComponent.h"
-#include "Component/Build/DC1InteractComponent.h"
+#include "Component/Interact/DC1InteractComponent.h"
+
+#include "Interface/DC1InteractableInterface.h"
 
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
@@ -68,6 +70,34 @@ void ADC1PlayerController::SetIMCEnabled(const FGameplayTag& IMCTag, bool Enable
 			}
 		}
 	}
+}
+
+void ADC1PlayerController::SetBuildMode(bool Enabled)
+{
+	if (false == ::IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (true == ::IsValid(InteractComponent))
+	{
+		InteractComponent->SetInteractEnabled(!Enabled);
+	}
+
+	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent());
+	if (true == ::IsValid(ASC))
+	{
+		if (true == Enabled)
+		{
+			ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_BuildWork);
+			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 1);
+		}
+		else
+		{
+			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 0);
+		}
+	}
+
 }
 
 void ADC1PlayerController::BeginPlay()
@@ -181,6 +211,13 @@ void ADC1PlayerController::SetupInputComponent()
 		if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
 		{
 			EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
+		}
+
+		// Interact
+		if (const UInputAction* InteractAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Interact))
+		{
+			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ThisClass::OnInteractionPressed);
+			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::OnInteractionReleased);
 		}
 
 		SetUpUIInput(EnhancedInputComponent, InputData);
@@ -351,6 +388,51 @@ void ADC1PlayerController::OnAttackReleased(const FInputActionValue& Value)
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
 		ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
+void ADC1PlayerController::OnInteractionPressed(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		IDC1InteractableInterface* Interactable = InteractComponent->GetCurrentInteractable();
+		if (nullptr != Interactable)
+		{
+			const FGameplayTag AbilityTag = Interactable->GetInteractAbilityTag();
+
+			if (true == AbilityTag.IsValid())
+			{
+				ASC->AbilityInputPressedByTag(AbilityTag);
+				PressedInteractAbilityTag = AbilityTag;
+			}
+			else
+			{
+				Interactable->Interact(ControlObject);	
+			}
+		}
+		else
+		{
+			// TODO Ride
+		}
+	}
+}
+
+void ADC1PlayerController::OnInteractionReleased(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject) || false == PressedInteractAbilityTag.IsValid())
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->AbilityInputReleasedByTag(PressedInteractAbilityTag);
+		PressedInteractAbilityTag = FGameplayTag::EmptyTag;
 	}
 }
 

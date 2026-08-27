@@ -4,6 +4,8 @@
 
 struct FGameplayTag;
 
+#pragma region DataTable Helper
+
 namespace DC1DataTableHelper
 {
 	const UDataTable* GetDataTable(const FGameplayTag& InTableTag);
@@ -34,3 +36,6 @@ namespace DC1DataTableHelper
 		return (false == OutRows.IsEmpty());
 	}
 }
+
+#pragma endregion
+

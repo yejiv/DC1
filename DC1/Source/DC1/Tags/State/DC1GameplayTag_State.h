@@ -11,6 +11,9 @@ namespace DC1StateTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon_None);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon_Melee);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon_Bow);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Build_Placement);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Build_Working);
 #pragma endregion
 
 #pragma region Common

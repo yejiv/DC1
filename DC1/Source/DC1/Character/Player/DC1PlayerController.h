@@ -29,9 +29,13 @@ public:
 	void SetCursorMode(bool OnTurn);
 	// Priority 0 초과인 IMC들을 추가/삭제 - Priority 0은 Add / Remove 예외처리 후 return
 	void SetIMCEnabled(const FGameplayTag& IMCTag, bool Enabled);
+
+	// State Build 관리, InteractComp Tick 관리
+	void SetBuildMode(bool Enabled);
+
 	UDC1InventoryViewModel* GetInventoryViewModel() const { return InventoryViewModel; }
 	UDC1BuildPlacementComponent* GetBuildPlacementComponent() const { return BuildPlacementComponent; }
-
+	UDC1InteractComponent* GetInteractComponent() const { return InteractComponent; }
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -57,6 +61,9 @@ private:
 	void OnAttack(const FInputActionValue& Value);
 	void OnAttackPressed(const FInputActionValue& Value);
 	void OnAttackReleased(const FInputActionValue& Value);
+
+	void OnInteractionPressed(const FInputActionValue& Value);
+	void OnInteractionReleased(const FInputActionValue& Value);
 
 	void ChangeWeapon(const FInputActionValue& Value);
 
@@ -100,6 +107,7 @@ private:
 	TObjectPtr<UDC1InteractComponent> InteractComponent = { nullptr };
 
 private:
-	bool	IsTurn = { true };
-	bool	IsActiveScreen = { false };
+	bool			IsTurn = { true };
+	bool			IsActiveScreen = { false };
+	FGameplayTag	PressedInteractAbilityTag = { FGameplayTag::EmptyTag };
 };

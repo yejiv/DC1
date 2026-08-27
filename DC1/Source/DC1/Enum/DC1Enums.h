@@ -97,10 +97,8 @@ enum class EDC1CollisionLayer : uint8
 	ECC_AllyAttack = ECC_GameTraceChannel3,
 	ECC_EnemyAttack = ECC_GameTraceChannel4,
 	ECC_Resource = ECC_GameTraceChannel5,
-	ECC_ItemInteraction = ECC_GameTraceChannel6,
+	ECC_Interact = ECC_GameTraceChannel6,			// Object, 상호작용 가능여부 판단
 	ECC_Projectile = ECC_GameTraceChannel7,
-	ECC_BuildSurface = ECC_GameTraceChannel8,		// Trace
-	ECC_Building = ECC_GameTraceChannel9,			// Object
-	ECC_BuildInteraction = ECC_GameTraceChannel10,	// Trace
-	ECC_Interact = ECC_GameTraceChannel11,			// Object
+	ECC_BuildSurface = ECC_GameTraceChannel8,		// Trace, 건설 가능여부 판단
+	ECC_Building = ECC_GameTraceChannel9,			// Object, Build
 };

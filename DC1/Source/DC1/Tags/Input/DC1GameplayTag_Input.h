@@ -30,6 +30,7 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_LockOn);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_ChangeWeapon);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Interact);
 #pragma endregion
 
 
