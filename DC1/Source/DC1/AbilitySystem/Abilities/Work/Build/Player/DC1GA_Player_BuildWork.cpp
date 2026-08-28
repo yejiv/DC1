@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilitySystem/Abilities/Build/Player/DC1GA_Player_BuildWork.h"
+#include "AbilitySystem/Abilities/Work/Build/Player/DC1GA_Player_BuildWork.h"
 
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Character/Player/DC1PlayerController.h"

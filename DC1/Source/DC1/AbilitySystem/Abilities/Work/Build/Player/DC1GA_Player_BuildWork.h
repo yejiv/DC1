@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/Build/DC1GA_Base_BuildWork.h"
+#include "AbilitySystem/Abilities/Work/Build/DC1GA_Base_BuildWork.h"
 #include "DC1GA_Player_BuildWork.generated.h"
 
 class UDC1InteractComponent;
