@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilitySystem/Abilities/Build/DC1GA_Base_BuildWork.h"
+#include "AbilitySystem/Abilities/Work/Build/DC1GA_Base_BuildWork.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 
 UDC1GA_Base_BuildWork::UDC1GA_Base_BuildWork(const FObjectInitializer& ObjectInitializer)

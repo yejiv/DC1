@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/DC1GameplayAbility.h"
+#include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
 
 #include "Actor/BuildActor/DC1BuildActor.h"
 
 #include "DC1GA_Base_BuildWork.generated.h"
 
 UCLASS(Abstract)
-class DC1_API UDC1GA_Base_BuildWork : public UDC1GameplayAbility
+class DC1_API UDC1GA_Base_BuildWork : public UDC1GA_Base_Work
 {
 	GENERATED_BODY()
 	
@@ -21,7 +21,6 @@ public:
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-
 
 // PURE_VIRTUAL
 protected:
