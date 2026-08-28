@@ -3,9 +3,13 @@
 
 #include "Tags/Item/DC1GameplayTag_Item.h"
 
-namespace DC1EffectTags
+namespace DC1ItemTags
 {
-#pragma region SetByCaller
+#pragma region Tool
+	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_Hammer, "Item.Tool.Hammer");
+#pragma endregion
+
+#pragma region Consumption
 	UE_DEFINE_GAMEPLAY_TAG(Item_PalSphere, "Item.PalSphere");
 #pragma endregion
 }

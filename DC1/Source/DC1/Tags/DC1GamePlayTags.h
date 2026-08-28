@@ -7,3 +7,4 @@
 #include "Tags/Player/DC1GameplayTag_Player.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
+#include "Tags/Item/DC1GameplayTag_Item.h"

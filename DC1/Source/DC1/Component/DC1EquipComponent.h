@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "GameplayTagContainer.h"
 #include "DC1EquipComponent.generated.h"
 
 class ADC1Weapon;
+class ADC1Tool;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1EquipComponent : public UActorComponent
@@ -66,4 +68,22 @@ private:
 	TArray<TObjectPtr<ADC1Weapon>>		WeaponSlots;
 
 
+// Tool
+public:
+	// GA가 도구 태그를 넘겨 착용/해제를 요청한다. 서버에서만 유효
+	void		EquipTool(const FGameplayTag& ToolTag);
+	void		UnequipTool(const FGameplayTag& ToolTag);
+
+public:
+	// 무기와 달리 교체 대상이 아닌 고정 목록. 식별 태그는 각 ADC1Tool이 들고 있다
+	UPROPERTY(EditDefaultsOnly, Category = "Equip")
+	TArray<TSubclassOf<ADC1Tool>>		ToolClass;
+
+private:
+	UPROPERTY()
+	TArray<TObjectPtr<ADC1Tool>>		ToolSlots;
+
+	// 표시만 바꾸므로 복제하지 않는다. 서버에서만 갱신된다
+	UPROPERTY()
+	TObjectPtr<ADC1Tool>				CurrentTool = { nullptr };
 };

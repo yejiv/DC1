@@ -9,6 +9,7 @@
 
 #include "Character/Player/DC1Player.h"
 #include "Item/Equip/Weapon/DC1Weapon.h"
+#include "Item/Equip/Tool/DC1Tool.h"
 
 #include "Component/DC1AbilitySystemComponent.h"
 
@@ -73,6 +74,21 @@ void UDC1EquipComponent::Init_Equip()
 		Weapon->SetActorHiddenInGame(true);
 
 		WeaponSlots[Index] = Weapon;
+	}
+
+	ToolSlots.Reset();
+
+	for (const TSubclassOf<ADC1Tool>& ToolType : ToolClass)
+	{
+		if (nullptr == ToolType) continue;
+
+		ADC1Tool* Tool = GetWorld()->SpawnActor<ADC1Tool>(ToolType, Player->GetActorTransform(), SpawnParams);
+		if (false == IsValid(Tool)) continue;
+
+		Tool->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		Tool->SetActorHiddenInGame(true);
+
+		ToolSlots.Add(Tool);
 	}
 
 	ApplyWeaponAttach();
@@ -140,6 +156,9 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 
 	if (WeaponState == WEAPONSTATE::ATTACH)
 	{
+		// 도구 착용 중에는 무기 표시를 보류한다. UnequipTool에서 다시 꺼낸다
+		if (nullptr != CurrentTool) return;
+
 		CurrentWeapon->SetActorHiddenInGame(false);
 		if (ADC1Player* Player = Cast<ADC1Player>(GetOwner()))
 		{
@@ -154,6 +173,48 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 	{
 		CurrentWeapon->SetActorHiddenInGame(true);
 	}
+}
+
+void UDC1EquipComponent::EquipTool(const FGameplayTag& ToolTag)
+{
+	ADC1Player* Player = Cast<ADC1Player>(GetOwner());
+	if (false == IsValid(Player) || false == Player->HasAuthority()) return;
+
+	ADC1Tool* Tool = nullptr;
+	for (const TObjectPtr<ADC1Tool>& Candidate : ToolSlots)
+	{
+		if (true == IsValid(Candidate) && Candidate->ToolTag == ToolTag)
+		{
+			Tool = Candidate;
+			break;
+		}
+	}
+
+	if (nullptr == Tool) return;
+
+	SetWeaponState(WEAPONSTATE::DETACH);
+
+	CurrentTool = Tool;
+	CurrentTool->AttachToComponent(
+		Player->GetMesh(),
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		CurrentTool->AttachSocketName
+	);
+	CurrentTool->SetActorHiddenInGame(false);
+}
+
+void UDC1EquipComponent::UnequipTool(const FGameplayTag& ToolTag)
+{
+	AActor* Owner = GetOwner();
+	if (false == IsValid(Owner) || false == Owner->HasAuthority()) return;
+
+	// 다른 GA가 착용시킨 도구를 벗기지 않도록 요청자와 일치할 때만 처리한다
+	if (nullptr == CurrentTool || CurrentTool->ToolTag != ToolTag) return;
+
+	CurrentTool->SetActorHiddenInGame(true);
+	CurrentTool = nullptr;
+
+	SetWeaponState(WEAPONSTATE::ATTACH);
 }
 
 
