@@ -14,18 +14,21 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Hit, "Ability.Pal.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Tossin, "Ability.Pal.Tossin");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_FarSkill, "Ability.Pal.FarSkill");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Encount, "Ability.Pal.Encount");
 #pragma endregion
 
 #pragma region State
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Attacking, "State.Pal.Attacking");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Idling, "State.Pal.Idling");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_HitReacting, "State.Pal.HitReacting");
+	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Encounting, "State.Pal.Encounting");
 #pragma endregion
 
 #pragma region Anim
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Hit, "Anim.Pal.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Tossin, "Anim.Pal.Tossin");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_FarSkill, "Anim.Pal.FarSkill");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Encount, "Anim.Pal.Encount");
 
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_LookAround, "Anim.Pal.Idle.LookAround");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_Eat, "Anim.Pal.Idle.Eat");
