@@ -24,7 +24,8 @@ UDC1GameplayAbility_PalFarSkill::UDC1GameplayAbility_PalFarSkill(const FObjectIn
 	ProjectileTag = DC1PalTags::Ability_Pal_FarSkill;
 
 	MaxRange = 1200.f;
-	ApproachRange = 1000.f;
+	ApproachRange = 700.f;
+	MinRange = 400.f;
 }
 
 void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()

@@ -110,8 +110,9 @@ namespace DC1PalTaskHelper
 			: EStateTreeRunStatus::Succeeded;
 	}
 
-	// 실패하면 갈 곳이 없다는 뜻
-	static bool RequestFleeMove(ADC1PalAIController& AIController, const ADC1PalCharacter& Pal, const AActor& Target, float AcceptanceRadius)
+	// 표적 반대쪽으로 StepDistance 만큼 물러날 지점을 잡아 이동시킨다.
+	// 도주와 후퇴가 같은 일을 하고 거리만 달라서 함께 쓴다. 실패하면 갈 곳이 없다는 뜻
+	static bool RequestFleeMove(ADC1PalAIController& AIController, const ADC1PalCharacter& Pal, const AActor& Target, float AcceptanceRadius, float StepDistance)
 	{
 		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Pal.GetWorld());
 		if (nullptr == NavSystem)
@@ -129,12 +130,12 @@ namespace DC1PalTaskHelper
 			AwayDirection = Pal.GetActorForwardVector().GetSafeNormal2D();
 		}
 
-		const FVector ProjectExtent(FleeStepDistance, FleeStepDistance, FleeStepDistance);
+		const FVector ProjectExtent(StepDistance, StepDistance, StepDistance);
 
 		for (const float Angle : FleeFanAngles)
 		{
 			const FVector Direction = AwayDirection.RotateAngleAxis(Angle, FVector::UpVector);
-			const FVector IdealPoint = SelfLocation + (Direction * FleeStepDistance);
+			const FVector IdealPoint = SelfLocation + (Direction * StepDistance);
 
 			FNavLocation Destination;
 			if (false == NavSystem->ProjectPointToNavigation(IdealPoint, Destination, ProjectExtent))
@@ -373,7 +374,7 @@ EStateTreeRunStatus FDC1PalFleeTask::EnterState(FStateTreeExecutionContext& Cont
 	}
 
 	Pal->SetOrientToMovement(true);
-	DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius);
+	DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius, DC1PalTaskHelper::FleeStepDistance);
 
 	return EStateTreeRunStatus::Running;
 }
@@ -403,7 +404,7 @@ EStateTreeRunStatus FDC1PalFleeTask::Tick(FStateTreeExecutionContext& Context, c
 	}
 
 	// 다시 타겟 발견
-	DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius);
+	DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius, DC1PalTaskHelper::FleeStepDistance);
 
 	return EStateTreeRunStatus::Running;
 }
@@ -426,6 +427,97 @@ void FDC1PalFleeTask::ExitState(FStateTreeExecutionContext& Context, const FStat
 		AIController->SetHomeLocation(Pal->GetActorLocation());
 	}
 }
+
+
+EStateTreeRunStatus FDC1PalBackoffTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	const AActor* Target = AIController->GetCurrentTarget();
+	if (nullptr == PalData || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	Pal->SetOrientToMovement(true);
+
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+
+	// 벽에 몰린 상황
+	if (false == DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius, InstanceData.StepDistance))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalBackoffTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	// 아직 물러나는 중
+	if (EPathFollowingStatus::Idle != AIController->GetMoveStatus())
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	// 더 가기
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	const AActor* Target = AIController->GetCurrentTarget();
+	if (false == IsValid(Pal) || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (false == DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius, InstanceData.StepDistance))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+void FDC1PalBackoffTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	if (false == IsValid(AIController))
+	{
+		return;
+	}
+
+	AIController->StopMovement();
+
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(AIController->GetPawn());
+	if (false == IsValid(Pal))
+	{
+		return;
+	}
+
+	Pal->SetOrientToMovement(false);
+
+	if (const UDC1PalData* PalData = Pal->GetPalData())
+	{
+		Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+	}
+}
+
 
 EStateTreeRunStatus FDC1PalFollowTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
 {

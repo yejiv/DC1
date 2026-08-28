@@ -19,6 +19,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Hit);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Tossin);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_FarSkill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Encount);
 #pragma endregion
 
 #pragma region State
@@ -26,6 +27,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Attacking);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Idling);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_HitReacting);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Encounting);
 #pragma endregion
 
 #pragma region Anim
@@ -33,6 +35,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Hit);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Tossin);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_FarSkill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Encount);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_LookAround);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_Eat);

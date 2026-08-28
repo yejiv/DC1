@@ -20,6 +20,12 @@ public:
 	UFUNCTION()
 	void					OnInputReleased(float TimeHeld);
 
+	UFUNCTION()
+	void					OnMontageCompleted();
+
+	UFUNCTION()
+	void					OnMontageAborted();
+
 protected:
 	// BuildActor 탐색 기능 구현
 	virtual ADC1BuildActor* FindBuildTarget() const override;
@@ -35,8 +41,24 @@ protected:
 
 private:
 	UDC1InteractComponent*	GetInteractComponent() const;
+	
+	void					FinishWork();
+	void					HandleBuildCompleted();
+
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
-	FGameplayTag	WorkMontageTag;
+	FGameplayTag	WorkMontageTag = { FGameplayTag::EmptyTag };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
+	FName			StartSectionName = { "Start" };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
+	FName			EndSectionName = { "End" };
+
+private:
+	TWeakObjectPtr<ADC1BuildActor>	WorkTarget = { nullptr };
+	FDelegateHandle					BuildCompletedDelegateHandle;
+	bool							IsSectionEnd = { false };
+	bool							IsPlayingMontage = { false };
 };

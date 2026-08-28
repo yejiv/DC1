@@ -222,6 +222,7 @@ void ADC1BuildActor::BuildDestroy()
 {
 	// TODO Despawn, Cost Return
 	CancelWorkersAbility();
+	
 	Workers.Empty();
 }
 
@@ -298,7 +299,8 @@ void ADC1BuildActor::ApplyState()
 			SetActorTickEnabled(true);
 		}
 
-		CancelWorkersAbility();
+		OnBuildCompleted.Broadcast();
+
 		Workers.Empty();
 
 		break;
