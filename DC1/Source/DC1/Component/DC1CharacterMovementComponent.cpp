@@ -128,6 +128,11 @@ void UDC1CharacterMovementComponent::ToggleMove()
 	Safe_bWantsToWalk = ~Safe_bWantsToWalk;
 }
 
+void UDC1CharacterMovementComponent::SetWalk(bool IsWalk)
+{
+	Safe_bWantsToWalk = IsWalk;
+}
+
 void UDC1CharacterMovementComponent::SetSprint(bool Sprint)
 {
 	Safe_bWantsToSprint = Sprint;

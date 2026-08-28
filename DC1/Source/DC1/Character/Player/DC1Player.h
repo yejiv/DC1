@@ -36,6 +36,9 @@ public:
 	void OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
+	bool GetAimingState() const { return IsAiming; }
+
+public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
@@ -79,6 +82,7 @@ private:
 
 private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
+	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
 
 private:
 	UPROPERTY()
@@ -89,5 +93,8 @@ private:
 
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;
+	FDelegateHandle								AimStateTagHandle;
 
+private:
+	bool	IsAiming = {};
 };

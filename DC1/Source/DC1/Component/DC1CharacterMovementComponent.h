@@ -52,6 +52,7 @@ private:
 
 public:
 	void ToggleMove();
+	void SetWalk(bool IsWalk);
 	void SetSprint(bool Sprint);
 
 public:

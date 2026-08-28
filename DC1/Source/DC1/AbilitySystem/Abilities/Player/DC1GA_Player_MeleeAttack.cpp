@@ -32,11 +32,6 @@ void UDC1GA_Player_MeleeAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 		return;
 	}
 
-	if (ADC1Character* Character = Cast<ADC1Character>(GetAvatarActorFromActorInfo()))
-	{
-		Character->bUseControllerRotationYaw = true;
-	}
-
 	// Hit Event Bind
 	if (HitEventTag.IsValid())
 	{
