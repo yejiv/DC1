@@ -312,6 +312,7 @@ void ADC1PalAIController::UpdateSelectedSkill()
 	SelectedSkillTag = Candidates[PickedIndex].Key;
 	SelectedMaxRange = Candidates[PickedIndex].Value->GetMaxRange();
 	SelectedApproachRange = Candidates[PickedIndex].Value->GetApproachRange();
+	SelectedMinRange = Candidates[PickedIndex].Value->GetMinRange();
 }
 
 void ADC1PalAIController::ClearSelectedSkill()
@@ -319,6 +320,7 @@ void ADC1PalAIController::ClearSelectedSkill()
 	SelectedSkillTag = FGameplayTag::EmptyTag;
 	SelectedMaxRange = 0.f;
 	SelectedApproachRange = 0.f;
+	SelectedMinRange = 0.f;
 }
 
 void ADC1PalAIController::ProvokeBy(AActor* InInstigator)

@@ -24,6 +24,7 @@ public:
 
 	float					GetMaxRange() const { return MaxRange; }
 	float					GetApproachRange() const { return ApproachRange; }
+	float					GetMinRange() const { return MinRange; }
 
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -50,4 +51,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
 	float					ApproachRange = { 150.f };	// 접근해서 멈출 자리
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
+	float					MinRange = { 0.f };			// 물러날 거리
 };

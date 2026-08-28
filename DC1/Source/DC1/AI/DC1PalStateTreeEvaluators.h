@@ -38,6 +38,9 @@ struct FDC1PalTargetEvaluatorInstanceData
 
 	UPROPERTY(EditAnywhere, Category = Output)
 	float						SelectedApproachRange = { 0.f };	// Chase 종료 판단용
+
+	UPROPERTY(EditAnywhere, Category = Output)
+	float						SelectedMinRange = { 0.f };			// Backoff 판단용. 0이면 안 물러남
 };
 
 
