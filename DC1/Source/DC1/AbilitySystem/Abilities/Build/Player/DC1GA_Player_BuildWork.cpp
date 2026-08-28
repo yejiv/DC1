@@ -22,7 +22,17 @@ UDC1GA_Player_BuildWork::UDC1GA_Player_BuildWork(const FObjectInitializer& Objec
 
 void UDC1GA_Player_BuildWork::OnInputReleased(float TimeHeld)
 {
+	FinishWork();
+}
+
+void UDC1GA_Player_BuildWork::OnMontageCompleted()
+{
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UDC1GA_Player_BuildWork::OnMontageAborted()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
 ADC1BuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
@@ -44,6 +54,12 @@ ADC1BuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
 
 void UDC1GA_Player_BuildWork::StartWork(ADC1BuildActor* InBuildTarget)
 {
+	if (true == ::IsValid(InBuildTarget))
+	{
+		BuildCompletedDelegateHandle = InBuildTarget->OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
+		WorkTarget = InBuildTarget;
+	}
+
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
 	if (nullptr == InteractComp)
 	{
@@ -56,19 +72,28 @@ void UDC1GA_Player_BuildWork::StartWork(ADC1BuildActor* InBuildTarget)
 
 void UDC1GA_Player_BuildWork::StopWork()
 {
+	if (nullptr != WorkTarget.Get())
+	{
+		WorkTarget.Get()->OnBuildCompleted.Remove(BuildCompletedDelegateHandle);
+	}
+
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
 	if (nullptr == InteractComp)
 	{
 		return;
 	}
 
+	// 건설 완료, 키입력 Completed가 아닌 다른 경로로 EndAbility가 호출된 경우를 위해 다시 호출
 	InteractComp->RequestStopWork();
+
 	InteractComp->SetTargetLocked(false);
 }
 
 void UDC1GA_Player_BuildWork::OnWorkStarted()
 {
-	// TODO Play Montage
+	IsSectionEnd = false;
+	IsPlayingMontage = false;
+
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true);
 	if(true == ::IsValid(ReleaseTask))
 	{
@@ -76,25 +101,26 @@ void UDC1GA_Player_BuildWork::OnWorkStarted()
 		ReleaseTask->ReadyForActivation();
 	}
 
-	//if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
-	//{
-	//	if (UAnimMontage* Montage = AnimData->FindMontageByTag(WorkMontageTag))
-	//	{
-	//		if (UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f, "Start"))
-	//		{
-	//			PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageCompleted);
-	//			PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageCompleted);
-	//			PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
-	//			PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
-	//			PlayMontageTask->ReadyForActivation();
-	//		}
-	//	}
-	//	else
-	//	{
-	//		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-	//		return;
-	//	}
-	//}
+	const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player);
+	if (true == ::IsValid(AnimData))
+	{
+		UAnimMontage* Montage = AnimData->FindMontageByTag(WorkMontageTag);
+		if (true == ::IsValid(Montage))
+		{
+			UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f, StartSectionName);
+			if (true == ::IsValid(PlayMontageTask))
+			{
+				PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageCompleted);
+				PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageCompleted);
+				PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
+				PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
+
+				PlayMontageTask->ReadyForActivation();
+
+				IsPlayingMontage = true;
+			}
+		}
+	}
 }
 
 UDC1InteractComponent* UDC1GA_Player_BuildWork::GetInteractComponent() const
@@ -112,4 +138,34 @@ UDC1InteractComponent* UDC1GA_Player_BuildWork::GetInteractComponent() const
 	}
 
 	return PC->GetInteractComponent();
+}
+
+void UDC1GA_Player_BuildWork::FinishWork()
+{
+	if (true == IsSectionEnd)
+	{
+		return;
+	}
+
+	IsSectionEnd = true;
+
+	UDC1InteractComponent* InteractComp = GetInteractComponent();
+	if (nullptr != InteractComp)
+	{
+		InteractComp->RequestStopWork();
+	}
+
+	if (false == IsPlayingMontage)
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	}
+	else
+	{
+		MontageJumpToSection(EndSectionName);
+	}
+}
+
+void UDC1GA_Player_BuildWork::HandleBuildCompleted()
+{
+	FinishWork();
 }

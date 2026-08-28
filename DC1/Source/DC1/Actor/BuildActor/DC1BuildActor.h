@@ -31,6 +31,8 @@ namespace DC1BuildMaterialParams
 	static const FName SourceBaseColorParamName = FName("BaseColor");
 }
 
+DECLARE_MULTICAST_DELEGATE(FDC1OnBuildCompleted);
+
 USTRUCT()
 struct FDC1BuildActorData
 {
@@ -50,6 +52,9 @@ UCLASS()
 class DC1_API ADC1BuildActor : public AActor, public IDC1InteractableInterface
 {
 	GENERATED_BODY()
+
+public:
+	FDC1OnBuildCompleted			OnBuildCompleted;
 
 public:
 	ADC1BuildActor();

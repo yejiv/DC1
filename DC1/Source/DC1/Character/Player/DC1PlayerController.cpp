@@ -216,7 +216,7 @@ void ADC1PlayerController::SetupInputComponent()
 		// Interact
 		if (const UInputAction* InteractAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Interact))
 		{
-			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ThisClass::OnInteractionPressed);
+			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::OnInteractionPressed);
 			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::OnInteractionReleased);
 		}
 
