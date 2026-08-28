@@ -3,6 +3,8 @@
 
 #include "Character/Player/DC1Player.h"
 
+#include "Helper/DC1Macro.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -115,6 +117,9 @@ void ADC1Player::ToggleMove()
 
 void ADC1Player::SetSprint(bool Sprint)
 {
+	// 조준 중에는 스프린트 진입만 막는다. 해제(false)는 통과시켜야 한다
+	if (true == Sprint && true == IsAiming) return;
+
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetSprint(Sprint);
 }
 
@@ -192,17 +197,25 @@ void ADC1Player::InitializeAbilitySystem()
 	ASC->InitAbilitySystem(PS, this, DC1AssetTags::Asset_Ability_Player);
 
 	// Weapon State Change Delegate Register
-	if (WeaponStateTagHandles.Num() > 0) return;
-
-	if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
+	if (WeaponStateTagHandles.Num() == 0)
 	{
-		for (const FGameplayTag& Tag : AnimData->GetAnimInstanceKeys())
+		if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
 		{
-			WeaponStateTagHandles.Add(Tag, 
-				ASC->RegisterAndCallGameplayTagEvent(Tag, 
-					FOnGameplayEffectTagCountChanged::FDelegate::CreateUObject(
-				this, &ThisClass::OnWeaponStateChanged)));
+			for (const FGameplayTag& Tag : AnimData->GetAnimInstanceKeys())
+			{
+				WeaponStateTagHandles.Add(Tag,
+					ASC->RegisterAndCallGameplayTagEvent(Tag,
+						FOnGameplayEffectTagCountChanged::FDelegate::CreateUObject(
+							this, &ThisClass::OnWeaponStateChanged)));
+			}
 		}
+	}
+
+	// Aim State Delegate Register
+	if (false == AimStateTagHandle.IsValid())
+	{
+		AimStateTagHandle = ASC->RegisterAndCallGameplayTagEvent(DC1StateTags::State_Aiming,
+			FOnGameplayEffectTagCountChanged::FDelegate::CreateUObject(this, &ThisClass::OnAimStateChanged));
 	}
 }
 
@@ -218,6 +231,12 @@ void ADC1Player::Clear_Resource()
 			ASC->UnregisterGameplayTagEvent(pair.Value, pair.Key);
 		}
 		WeaponStateTagHandles.Reset();
+
+		if (AimStateTagHandle.IsValid())
+		{
+			ASC->UnregisterGameplayTagEvent(AimStateTagHandle, DC1StateTags::State_Aiming);
+			AimStateTagHandle.Reset();
+		}
 	}
 }
 
@@ -233,6 +252,34 @@ void ADC1Player::OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount)
 			{
 				Instance->LinkAnimClassLayers(LayerClass);
 			}
+		}
+	}
+}
+
+void ADC1Player::OnAimStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	IsAiming = NewCount > 0;
+
+	if (IsAiming)
+	{
+		bUseControllerRotationYaw = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+
+		// 스프린트 의도의 주인은 소유 클라다. 서버에서 꺼봐야 다음 ServerMove가 되돌린다
+		if (true == IsLocallyControlled())
+		{
+			SetSprint(false);
+			CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetWalk(true);
+		}
+	}
+	else
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+
+		if (true == IsLocallyControlled())
+		{
+			CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetWalk(false);
 		}
 	}
 }

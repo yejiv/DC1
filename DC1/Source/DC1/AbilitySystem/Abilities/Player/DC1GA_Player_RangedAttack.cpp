@@ -29,11 +29,6 @@ void UDC1GA_Player_RangedAttack::ActivateAbility(const FGameplayAbilitySpecHandl
 		return;
 	}
 
-	if (ADC1Character* Character = Cast<ADC1Character>(GetAvatarActorFromActorInfo()))
-	{
-		Character->bUseControllerRotationYaw = true;
-	}
-
 	// 뗄 때 격발. ASC가 InputPressed/Released를 전달해줘야 이 태스크가 깨어난다
 	if (UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true))
 	{
