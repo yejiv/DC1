@@ -22,7 +22,6 @@ void UDC1GA_Player_Attack::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 	if (ADC1Character* Character = Cast<ADC1Character>(GetAvatarActorFromActorInfo()))
 	{
 		Character->SetAttackCollision(false);
-		Character->bUseControllerRotationYaw = false;
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
