@@ -6,8 +6,10 @@
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
 #include "DC1GA_Base_Work.generated.h"
 
+class UDC1EquipComponent;
+
 /**
- * 
+ *
  */
 UCLASS()
 class DC1_API UDC1GA_Base_Work : public UDC1GameplayAbility
@@ -21,4 +23,7 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|EquipTool")
 	FGameplayTag			EquipToolTag = { FGameplayTag::EmptyTag };
+
+private:
+	UDC1EquipComponent*		GetEquipComponent() const;
 };
