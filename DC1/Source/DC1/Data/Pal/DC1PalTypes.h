@@ -1,0 +1,46 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
+#include "DC1PalTypes.generated.h"
+
+/**
+ *
+ *
+ */
+USTRUCT(BlueprintType)
+struct FDC1PalInstance
+{
+	GENERATED_BODY()
+
+	// 어떤 종인가. UDC1PalRegistryData 조회 키
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	FGameplayTag			SpeciesTag;
+
+	// 개체 식별자. 같은 종 여러 마리를 위치와 무관하게 지목한다.
+	// 인덱스로 참조하면 한 마리 방출할 때 뒤가 전부 밀린다
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	FGuid					PalID;
+
+	// 비어 있으면 UI가 종 이름을 대신 표시
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	FString					Nickname;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	int32					Level = { 1 };
+
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	float					Experience = { 0.f };
+
+	// 다쳐서 잡힌 팰은 그 상태가 유지된다. 최대 체력은 저장하지 않는다
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	float					CurrentHealth = { 0.f };
+
+	// 포획할 때 굴려서 붙는다. 같은 종도 개체마다 다르게 만드는 값
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	TArray<FGameplayTag>	PassiveTags;
+
+	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }
+};

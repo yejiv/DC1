@@ -133,7 +133,7 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	}
 }
 
-void ADC1PalCharacter::OnDeath()
+void ADC1PalCharacter::StopAndUnregister()
 {
 	if (IsValid(AbilitySystemComponent))
 	{
@@ -145,11 +145,114 @@ void ADC1PalCharacter::OnDeath()
 		PalController->StopBehavior();
 	}
 
-	// 시체를 계속 감지해 쫓지 않도록
+	// 남들이 계속 감지해 쫓지 않도록
 	if (UAIPerceptionSystem* PerceptionSystem = UAIPerceptionSystem::GetCurrent(this))
 	{
 		PerceptionSystem->UnregisterSource(*this);
 	}
+}
+
+float ADC1PalCharacter::GetHealthRatio() const
+{
+	if (false == IsValid(PalAttributeSet))
+	{
+		return 0.f;
+	}
+
+	const float Max = PalAttributeSet->GetMaxHealth();
+	if (Max <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return FMath::Clamp(PalAttributeSet->GetHealth() / Max, 0.f, 1.f);
+}
+
+float ADC1PalCharacter::GetCaptureRate() const
+{
+	return (nullptr != PalData) ? PalData->CaptureRate : 0.f;
+}
+
+FDC1PalInstance ADC1PalCharacter::Fold()
+{
+	FDC1PalInstance Instance;
+
+	Instance.SpeciesTag = SpeciesTag;
+
+	// 소환됐던 개체면 원래 ID를 유지
+	Instance.PalID = InstanceID.IsValid() ? InstanceID : FGuid::NewGuid();
+
+	if (IsValid(PalAttributeSet))
+	{
+		Instance.CurrentHealth = PalAttributeSet->GetHealth();
+	}
+
+	StopAndUnregister();
+	Destroy();
+
+	return Instance;
+}
+
+void ADC1PalCharacter::OnCaptureFailed(AActor* InThrower)
+{
+	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
+	{
+		PalController->ProvokeBy(InThrower);
+	}
+}
+
+ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform)
+{
+	if (nullptr == InWorld || false == InInstance.IsValidPal())
+	{
+		return nullptr;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == IsValid(Registry))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] Spawn: Can't find PalRegistryData. Check PDA_AssetData."));
+		return nullptr;
+	}
+
+	const UDC1PalData* SpeciesData = Registry->FindPalDataByTag(InInstance.SpeciesTag).LoadSynchronous();
+	if (false == IsValid(SpeciesData))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] Spawn: Failed to load PalData [%s]."), *InInstance.SpeciesTag.ToString());
+		return nullptr;
+	}
+
+	UClass* PalClass = SpeciesData->PalClass.LoadSynchronous();
+	if (nullptr == PalClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] Spawn: No PalClass for [%s]. Check DA_Pal_*."), *InInstance.SpeciesTag.ToString());
+		return nullptr;
+	}
+
+
+	ADC1PalCharacter* Pal = InWorld->SpawnActorDeferred<ADC1PalCharacter>(PalClass, InTransform, nullptr, nullptr,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+	if (false == IsValid(Pal))
+	{
+		return nullptr;
+	}
+
+	Pal->SpeciesTag = InInstance.SpeciesTag;
+	Pal->InstanceID = InInstance.PalID;
+	Pal->Team = EDC1Team::Player;
+	Pal->FinishSpawning(InTransform);
+
+	if (IsValid(Pal->PalAttributeSet))
+	{
+		Pal->PalAttributeSet->SetHealth(InInstance.CurrentHealth);
+	}
+
+	return Pal;
+}
+
+void ADC1PalCharacter::OnDeath()
+{
+	StopAndUnregister();
 
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{

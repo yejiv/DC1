@@ -9,6 +9,7 @@
 
 class UAnimMontage;
 class ADC1PalProjectile;
+class ADC1PalCharacter;
 
 /**
  *
@@ -33,6 +34,12 @@ class DC1_API UDC1PalData : public UDataAsset
 	GENERATED_BODY()
 
 public:
+#pragma region Species
+	// 이 종을 소환할 때 쓸 폰. 데이터에서 액터로 되돌릴 떄 필요
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
+	TSoftClassPtr<ADC1PalCharacter>	PalClass;
+#pragma endregion
+
 #pragma region Locomotion
 	// 추격 속도. AnimInstance의 NormalizedSpeed 분모
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
@@ -76,6 +83,11 @@ public:
 	// 이 종이 어떤 탄을 쏘는가. 키는 스킬 태그. 메시/속도/속성은 투사체 BP가 갖는다. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
 	TMap<FGameplayTag, TSubclassOf<ADC1PalProjectile>>	Projectiles;
+#pragma endregion
+
+#pragma region Capture
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Capture", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float							CaptureRate = { 0.5f };
 #pragma endregion
 
 #pragma region AI
