@@ -168,58 +168,7 @@ void ADC1PlayerController::SetupInputComponent()
 	{
 		UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
 
-		// Move
-		if (const UInputAction* MoveAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Move))
-		{
-			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::OnMove);
-		}
-		// Turn
-		if (const UInputAction* TurnAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Turn))
-		{
-			EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &ThisClass::OnTurn);
-		}
-		// Sprint
-		if (const UInputAction* SprintAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Sprint))
-		{
-			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ThisClass::OnSprint);
-			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::RestoreSprint);
-		}
-		// ToggleMove
-		if (const UInputAction* ToggleMoveAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Toggle_Move))
-		{
-			EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
-		}
-		// Jump
-		if (const UInputAction* JumpAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Jump))
-		{
-			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
-			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
-		}
-		// Crouch
-		if (const UInputAction* CrouchAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Crouch))
-		{
-			EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::OnCrouch);
-		}
-		// Attack
-		if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
-		{
-			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::OnAttackPressed);
-			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
-			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ThisClass::OnAttackReleased);
-		}
-		// ChangeWeapon
-		if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
-		{
-			EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
-		}
-
-		// Interact
-		if (const UInputAction* InteractAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Interact))
-		{
-			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::OnInteractionPressed);
-			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::OnInteractionReleased);
-		}
-
+		SetUpDefaultInput(EnhancedInputComponent, InputData);
 		SetUpUIInput(EnhancedInputComponent, InputData);
 	}
 
@@ -465,6 +414,32 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 	ControlObject->Equipment->Server_ChangeWeapon(Delta);
 }
 
+void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		//ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
+void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		//ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
 #pragma region Debug
 // TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
 //        (.h 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
@@ -473,33 +448,6 @@ void ADC1PlayerController::SetUp_DebugInput()
 	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugWeaponNone);
 	InputComponent->BindKey(EKeys::NumPadTwo, IE_Pressed, this, &ThisClass::OnDebugWeaponMelee);
 	InputComponent->BindKey(EKeys::NumPadThree, IE_Pressed, this, &ThisClass::OnDebugWeaponBow);
-}
-
-void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData)
-{
-	// Open Tab - Inventory Widget
-	if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
-	{
-		EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_Inventory.GetTag());
-	}
-
-	// Open Tab - HasPal Widget
-	if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
-	{
-		EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_HasPal.GetTag());
-	}
-
-	// Open Tab - TechTree Widget
-	if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
-	{
-		EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_TechTree.GetTag());
-	}
-
-	// Open Build Widget
-	if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
-	{
-		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
-	}
 }
 
 void ADC1PlayerController::OnDebugWeaponNone()
@@ -606,3 +554,92 @@ void ADC1PlayerController::OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTa
 	}
 }
 #pragma endregion
+
+void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData)
+{
+	// Move
+	if (const UInputAction* MoveAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Move))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::OnMove);
+	}
+	// Turn
+	if (const UInputAction* TurnAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Turn))
+	{
+		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &ThisClass::OnTurn);
+	}
+	// Sprint
+	if (const UInputAction* SprintAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Sprint))
+	{
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ThisClass::OnSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::RestoreSprint);
+	}
+	// ToggleMove
+	if (const UInputAction* ToggleMoveAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Toggle_Move))
+	{
+		EnhancedInputComponent->BindAction(ToggleMoveAction, ETriggerEvent::Started, this, &ThisClass::OnToggleMove);
+	}
+	// Jump
+	if (const UInputAction* JumpAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Jump))
+	{
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnJump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
+	}
+	// Crouch
+	if (const UInputAction* CrouchAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Crouch))
+	{
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::OnCrouch);
+	}
+	// Attack
+	if (const UInputAction* AttackAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Attack))
+	{
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::OnAttackPressed);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ThisClass::OnAttackReleased);
+	}
+	// ChangeWeapon
+	if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
+	{
+		EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
+	}
+
+	// Interact
+	if (const UInputAction* InteractAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Interact))
+	{
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::OnInteractionPressed);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::OnInteractionReleased);
+	}
+
+	// Throw
+	if (const UInputAction* ThrowAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Throw))
+	{
+		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Started, this, &ThisClass::OnThrowPressed);
+		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ThisClass::OnThrowReleased);
+	}
+}
+
+void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData)
+{
+	// Open Tab - Inventory Widget
+	if (const UInputAction* OpenInventory = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Inventory))
+	{
+		EnhancedInputComponent->BindAction(OpenInventory, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_Inventory.GetTag());
+	}
+
+	// Open Tab - HasPal Widget
+	if (const UInputAction* OpenHasPal = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_HasPal))
+	{
+		EnhancedInputComponent->BindAction(OpenHasPal, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_HasPal.GetTag());
+	}
+
+	// Open Tab - TechTree Widget
+	if (const UInputAction* OpenTechTree = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_TechTree))
+	{
+		EnhancedInputComponent->BindAction(OpenTechTree, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_TechTree.GetTag());
+	}
+
+	// Open Build Widget
+	if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
+	{
+		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
+	}
+}
