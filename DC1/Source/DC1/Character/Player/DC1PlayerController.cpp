@@ -415,7 +415,7 @@ void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
-		//ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_Attack);
+		ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_PalSphere);
 	}
 }
 
@@ -428,7 +428,7 @@ void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
-		//ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
+		ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_PalSphere);
 	}
 }
 

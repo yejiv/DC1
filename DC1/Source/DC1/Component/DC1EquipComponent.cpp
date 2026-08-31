@@ -1,6 +1,5 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Component/DC1EquipComponent.h"
 
 #include "Net/UnrealNetwork.h"
@@ -156,8 +155,8 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 
 	if (WeaponState == WEAPONSTATE::ATTACH)
 	{
-		// 도구 착용 중에는 무기 표시를 보류한다. UnequipTool에서 다시 꺼낸다
-		if (nullptr != CurrentTool) return;
+		// 도구/팰스피어 착용 중에는 무기 표시를 보류한다. 각 Unequip에서 다시 꺼낸다
+		if (nullptr != CurrentTool || true == IsPalSphereEquipped) return;
 
 		CurrentWeapon->SetActorHiddenInGame(false);
 		if (ADC1Player* Player = Cast<ADC1Player>(GetOwner()))
@@ -217,4 +216,24 @@ void UDC1EquipComponent::UnequipTool(const FGameplayTag& ToolTag)
 	SetWeaponState(WEAPONSTATE::ATTACH);
 }
 
+void UDC1EquipComponent::EquipPalSphere()
+{
+	AActor* Owner = GetOwner();
+	if (false == IsValid(Owner) || false == Owner->HasAuthority()) return;
 
+	IsPalSphereEquipped = true;
+
+	SetWeaponState(WEAPONSTATE::DETACH);
+}
+
+void UDC1EquipComponent::UnequipPalSphere()
+{
+	AActor* Owner = GetOwner();
+	if (false == IsValid(Owner) || false == Owner->HasAuthority()) return;
+
+	if (false == IsPalSphereEquipped) return;
+
+	IsPalSphereEquipped = false;
+
+	SetWeaponState(WEAPONSTATE::ATTACH);
+}

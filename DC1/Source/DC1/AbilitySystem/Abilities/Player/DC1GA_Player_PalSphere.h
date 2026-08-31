@@ -1,0 +1,42 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "AbilitySystem/Abilities/DC1GameplayAbility.h"
+#include "GameplayTagContainer.h"
+#include "DC1GA_Player_PalSphere.generated.h"
+
+class UAnimMontage;
+class UDC1EquipComponent;
+
+/**
+ * 팰스피어 던지기.
+ * 키를 누르고 있는 동안 Loop 섹션으로 조준, 떼면 Throw 섹션으로 점프한다.
+ */
+UCLASS()
+class DC1_API UDC1GA_Player_PalSphere : public UDC1GameplayAbility
+{
+	GENERATED_BODY()
+
+public:
+	UDC1GA_Player_PalSphere(const FObjectInitializer& ObjectInitializer);
+
+public:
+	UFUNCTION()
+	void OnInputReleased(float TimeHeld);
+
+	UFUNCTION()
+	void OnMontageCompleted();
+	UFUNCTION()
+	void OnMontageAborted();
+
+private:
+	virtual void	ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void	EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+
+	UDC1EquipComponent*	GetEquipComponent() const;
+
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
+	FGameplayTag	ThrowMontageTag;
+};
