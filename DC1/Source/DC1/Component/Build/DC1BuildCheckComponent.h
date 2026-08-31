@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Enum/DC1Enums.h"
+#include "GameplayTagContainer.h"
 #include "DC1BuildCheckComponent.generated.h"
 
 USTRUCT(BlueprintType)
@@ -12,32 +13,67 @@ struct FDC1BuildProbeData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	EDC1BuildProbeDirection ProbeDirection = { EDC1BuildProbeDirection::Down };
 
 	// 상, 하 면에서 X * Y 몇개의 Probe로 검사할건지
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	int32 ProbeCountX = { 1 };
 
 	// 상, 하 면에서 X * Y 몇개의 Probe로 검사할건지
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	int32 ProbeCountY = { 1 };
 
 	// 건설이 가능한 Probe와 표면사이의 거리
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	float MaxTraceDistance = { 10.f };
 
 	// 모서리에서의 Probe 거리 비율. 1.f = 모서리에서 시작, 0.5f = 모서리에서 ( 반지름 * 0.5f ) 만큼 떨어짐
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.1", ClampMax = "1.0"))
 	float ProbeDistanceFromCorner = { 0.95f };
 
 	// 표면의 기울기를 적용할것인가 ( false라면 항상 수직 유지 )
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	bool AlignToSurface = { true };
 
 	// 표면의 기울기를 어느정도까지 허용할 것인가
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.0", ClampMax = "90.0"))
 	float MaxSurfaceAngle = { 30.f };
+};
+
+USTRUCT()
+struct FDC1BuildSnapPoint
+{
+	GENERATED_BODY()
+	// 액터 로컬 기준 Snap Point 위치
+	FVector LocalLocation = { FVector::ZeroVector };
+
+	// 액터 로컬 기준 Snap Point 법선
+	FVector LocalNormal = { FVector::ZeroVector };
+
+	// Snap Point 타입
+	FGameplayTag SnapType = { FGameplayTag::EmptyTag };
+
+	// Snap 가능한 상대 타입
+	FGameplayTagContainer AcceptTypes;
+};
+
+USTRUCT(BlueprintType)
+struct FDC1BuildSnapData
+{
+	GENERATED_BODY()
+
+	// 박스 중심에서 면을 향하는 방향, ex) 1,0,0 - 우측면 중앙, 
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	FVector SnapDirection = { FVector::ZeroVector };
+
+	// Snap Point 타입
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag SnapType;
+
+	// Snap 가능한 상대 타입
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer AcceptTypes;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -59,17 +95,22 @@ public:
 private:
 	bool			CheckSurface();
 	bool			CheckOverlap();
+	void			CreateSnapPoints();
 
 	float			ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 	FVector			GetAttachLocalOffset() const;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
-	FDC1BuildProbeData	BuildProbeData;
+	FDC1BuildProbeData			BuildProbeData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
-	bool				DrawDebugProbes = false;
+	bool						DrawDebugProbes = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
+	TArray<FDC1BuildSnapData>	SnapDatas;
 
 private:
-	bool	IsSnap = false;
+	TArray<FDC1BuildSnapPoint>	SnapPoints;
+	bool						IsSnap = false;
 };

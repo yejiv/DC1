@@ -160,6 +160,25 @@ bool UDC1BuildCheckComponent::CheckOverlap()
 	return true;
 }
 
+void UDC1BuildCheckComponent::CreateSnapPoints()
+{
+	SnapPoints.Reset();
+
+	const AActor* Onwer = GetOwner();
+	if (false == ::IsValid(Onwer))
+	{
+		return;
+	}
+
+	const FVector CheckBoxExtent = GetScaledBoxExtent();
+	const FVector CheckBoxLocalLocation = FVector::ZeroVector;
+
+	for (const FDC1BuildSnapData& Data : SnapDatas)
+	{
+
+	}
+}
+
 float UDC1BuildCheckComponent::ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const
 {
 	if (InCount <= 1)
