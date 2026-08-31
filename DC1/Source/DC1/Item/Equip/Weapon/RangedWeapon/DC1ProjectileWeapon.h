@@ -9,6 +9,7 @@
 
 class ADC1Projectile;
 class UPrimitiveComponent;
+class USkeletalMeshComponent;
 
 UCLASS()
 class DC1_API ADC1ProjectileWeapon : public ADC1Weapon
@@ -27,7 +28,11 @@ public:
 	FTransform			GetMuzzleTransform() const;
 
 public:
-	// ItemMesh 기준 발사 지점. 손에 붙일 때 쓰는 AttackSocketName과는 별개다
+	// 상속받은 ItemMesh(Static)를 쓰지 않고 스켈레탈 메시를 쓴다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
+	TObjectPtr<USkeletalMeshComponent>	RangedMesh = { nullptr };
+
+	// RangedMesh 기준 발사 지점. 손에 붙일 때 쓰는 AttackSocketName과는 별개다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
 	FName									MuzzleSocketName;
 

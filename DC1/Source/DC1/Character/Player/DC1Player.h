@@ -13,6 +13,7 @@ class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
 
+class UDC1AbilitySystemComponent;
 class UDC1EquipComponent;
 /**
  * 
@@ -48,6 +49,7 @@ public:
 private:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void PossessedBy(AController* NewController) override;
@@ -83,6 +85,9 @@ private:
 private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
+	void	OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount);
+
+	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
 
 private:
 	UPROPERTY()
@@ -94,7 +99,14 @@ private:
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;
 	FDelegateHandle								AimStateTagHandle;
+	FDelegateHandle								ZoomInStateTagHandle;
+	TMap<FGameplayTag, FDelegateHandle>	PlayerStateTagHandles;
 
 private:
 	bool	IsAiming = {};
+
+	float	FixedTargetArmLength = {};
+	float	CurrentTargetArmLength = {};
+	float	ZoomInLength = { 70.f };
+	float	ZoomInSpeed = {5.f};
 };

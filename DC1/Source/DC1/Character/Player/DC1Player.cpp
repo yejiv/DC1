@@ -50,6 +50,9 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	SpringArm->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
 	SpringArm->TargetArmLength = 200.f;
 	SpringArm->bUsePawnControlRotation = true;
+
+	FixedTargetArmLength = SpringArm->TargetArmLength;
+	CurrentTargetArmLength = FixedTargetArmLength;
 	// Camera
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm);
@@ -160,6 +163,13 @@ void ADC1Player::BeginPlay()
 	//HandAttackCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
 }
 
+void ADC1Player::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, CurrentTargetArmLength, DeltaTime, ZoomInSpeed);
+}
+
 void ADC1Player::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Clear_Resource();
@@ -212,11 +222,10 @@ void ADC1Player::InitializeAbilitySystem()
 	}
 
 	// Aim State Delegate Register
-	if (false == AimStateTagHandle.IsValid())
-	{
-		AimStateTagHandle = ASC->RegisterAndCallGameplayTagEvent(DC1StateTags::State_Aiming,
-			FOnGameplayEffectTagCountChanged::FDelegate::CreateUObject(this, &ThisClass::OnAimStateChanged));
-	}
+	RegisterStateHandle(DC1StateTags::State_Aiming, &ThisClass::OnAimStateChanged, ASC);
+
+	// ZoomIn State Delegate Register
+	RegisterStateHandle(DC1StateTags::State_ZoomIn, &ThisClass::OnZoomStateChanged, ASC);
 }
 
 void ADC1Player::Clear_Resource()
@@ -232,10 +241,13 @@ void ADC1Player::Clear_Resource()
 		}
 		WeaponStateTagHandles.Reset();
 
-		if (AimStateTagHandle.IsValid())
+		for (auto& Pair : PlayerStateTagHandles)
 		{
-			ASC->UnregisterGameplayTagEvent(AimStateTagHandle, DC1StateTags::State_Aiming);
-			AimStateTagHandle.Reset();
+			if (Pair.Value.IsValid())
+			{
+				ASC->UnregisterGameplayTagEvent(Pair.Value, Pair.Key);
+				Pair.Value.Reset();
+			}
 		}
 	}
 }
@@ -282,4 +294,19 @@ void ADC1Player::OnAimStateChanged(const FGameplayTag Tag, int32 NewCount)
 			CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetWalk(false);
 		}
 	}
+}
+
+void ADC1Player::OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	CurrentTargetArmLength = NewCount > 0 ? FixedTargetArmLength - ZoomInLength : FixedTargetArmLength;
+}
+
+void ADC1Player::RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC)
+{
+	if (nullptr == ASC || nullptr != PlayerStateTagHandles.Find(Tag))
+		return;
+
+	PlayerStateTagHandles.Add(Tag, 
+		ASC->RegisterAndCallGameplayTagEvent(Tag,
+		FOnGameplayEffectTagCountChanged::FDelegate::CreateUObject(this, InFunc)));
 }

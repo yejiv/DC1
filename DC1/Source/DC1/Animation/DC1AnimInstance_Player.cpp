@@ -39,6 +39,18 @@ void UDC1AnimInstance_Player::NativeUpdateAnimation(float DeltaSeconds)
 	IsAiming = Player->GetAimingState();
 
 	Compute_Direction();
+	Compute_AimPitch(DeltaSeconds);
+}
+
+void UDC1AnimInstance_Player::Compute_AimPitch(float DeltaSeconds)
+{
+	// GetControlRotation은 시뮬레이티드 프록시에서 유효하지 않다.
+	// GetBaseAimRotation은 프록시일 때 복제된 RemoteViewPitch를 대신 돌려준다
+	const FRotator Delta = (Player->GetBaseAimRotation() - Player->GetActorRotation()).GetNormalized();
+	const float TargetPitch = FMath::Clamp(Delta.Pitch, -MaxAimPitch, MaxAimPitch);
+
+	// RemoteViewPitch는 1바이트로 압축돼 오므로 프록시에서는 값이 계단처럼 튄다. 보간으로 눌러준다
+	AimPitch = FMath::FInterpTo(AimPitch, TargetPitch, DeltaSeconds, AimPitchInterpSpeed);
 }
 
 void UDC1AnimInstance_Player::Compute_Direction()
