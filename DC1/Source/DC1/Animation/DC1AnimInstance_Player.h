@@ -28,8 +28,22 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FVector2D		MoveXY = {};
 
+	// 위/아래 조준각. 척추에 나눠서 먹인다. 액터 정면 기준 상대값
+	UPROPERTY(BlueprintReadOnly)
+	float				AimPitch = {};
+
+public:
+	// 척추가 꺾이는 한계각
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aim")
+	float				MaxAimPitch = { 60.f };
+
+	// 클수록 조준각이 빠르게 따라붙는다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aim")
+	float				AimPitchInterpSpeed = { 15.f };
+
 private:
 	void			Compute_Direction();
+	void			Compute_AimPitch(float DeltaSeconds);
 
 private:
 	UPROPERTY()

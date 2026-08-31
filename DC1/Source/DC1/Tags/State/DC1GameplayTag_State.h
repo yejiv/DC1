@@ -8,6 +8,7 @@ namespace DC1StateTags
 {
 #pragma region Player
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Aiming);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_ZoomIn);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Weapon_None);

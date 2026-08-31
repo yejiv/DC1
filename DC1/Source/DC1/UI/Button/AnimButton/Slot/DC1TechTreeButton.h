@@ -19,7 +19,7 @@ public:
 	const FGameplayTag&	GetTechTag() const { return TechTag; }
 
 protected:
-	virtual void	NativeOnInitialized() override;
+	virtual void	NativeConstruct() override;
 
 protected:
 	virtual void	HandleHovered() override;

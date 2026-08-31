@@ -8,6 +8,11 @@ void ADC1LogoController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (false == IsLocalController())
+	{
+		return;
+	}
+
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{

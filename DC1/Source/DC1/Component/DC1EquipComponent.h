@@ -86,4 +86,15 @@ private:
 	// 표시만 바꾸므로 복제하지 않는다. 서버에서만 갱신된다
 	UPROPERTY()
 	TObjectPtr<ADC1Tool>				CurrentTool = { nullptr };
+
+
+// PalSphere
+public:
+	// 팰스피어를 드는 동안 무기를 넣어둔다. 팰스피어 액터 자체는 여기서 다루지 않는다
+	void		EquipPalSphere();
+	void		UnequipPalSphere();
+
+private:
+	// 무기 표시 보류 판단용. 서버에서만 갱신된다
+	bool		IsPalSphereEquipped = { false };
 };

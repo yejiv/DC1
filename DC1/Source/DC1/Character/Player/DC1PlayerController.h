@@ -48,6 +48,8 @@ public:
 	// UI가 열려있는 상태에서 InputKey 전달
 	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 
+	virtual void OnRep_PlayerState() override;
+
 private:
 	void OnMove(const FInputActionValue& Value);
 	void OnTurn(const FInputActionValue& Value);
@@ -67,6 +69,12 @@ private:
 
 	void ChangeWeapon(const FInputActionValue& Value);
 
+	void OnThrowPressed(const FInputActionValue& Value);
+	void OnThrowReleased(const FInputActionValue& Value);
+
+private:
+	void InitPlayerStateBindings();
+
 // UI 
 private:
 	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
@@ -77,7 +85,6 @@ private:
 	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
 private:
 	void SetUp_DebugInput();
-	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
 	void OnDebugWeaponNone();
 	void OnDebugWeaponMelee();
@@ -86,6 +93,9 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetWeaponState(FGameplayTag NewStateTag);
 #pragma endregion
+
+	void SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
+	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
 private:
 	// InputMappingContext Set MappingContext Priority 0

@@ -21,7 +21,7 @@ class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void	NativeOnInitialized() override;
+	virtual void			NativeConstruct() override;
 
 private:
 	UDC1TechTreeComponent*	GetTechTreeComponent();
@@ -59,4 +59,6 @@ private:
 	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
 
 	int32										CachedLevel = { 0 };
+
+	bool										IsInit = { false };
 };

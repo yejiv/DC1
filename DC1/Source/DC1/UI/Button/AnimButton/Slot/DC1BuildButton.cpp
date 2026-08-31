@@ -5,6 +5,21 @@
 
 #include "Components/Image.h"
 
+void UDC1BuildButton::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (true == ::IsValid(IconBackImage))
+	{
+		IconBackImage->SetBrush(UnHoverIconBackImageBrush);
+	}
+
+	if (true == ::IsValid(ButtonImage))
+	{
+		ButtonImage->SetBrush(UnHoverButtonImageBrush);
+	}
+}
+
 void UDC1BuildButton::HandleHovered()
 {
 	Super::HandleHovered();
