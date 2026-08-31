@@ -45,12 +45,12 @@ public:
 	UDC1UserWidget*				FindWidget(const FGameplayTag& InUITag);
 
 private:
+	APlayerController*			GetLocalPC() const;
 	UDC1UserWidget*				CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder);
 	UDC1UserWidget*				PushScreenInternal(UDC1UserWidget* InWidget);
 	UDC1UserWidget*				PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass);
-
 	TSubclassOf<UDC1UserWidget> FindWidgetClass(const FGameplayTag& InUITag);
-	void						UpdateInputMode();
+	void						UpdateInputMode(APlayerController* InLocalPC);
 	
 	void						RollLoadingType(EDC1FadeType InType);
 	void						OnPostLoadMap(UWorld* InLoadedWorld);

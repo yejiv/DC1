@@ -4,7 +4,6 @@
 
 #include "UI/DC1UserWidget.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 
 #include "Data/DA/UI/DC1UIData.h"
@@ -32,6 +31,12 @@ void UDC1UIManagerSubsystem::Deinitialize()
 
 UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& InUITag, bool InIsPop)
 {
+    // Server 확인
+    if (false == ::IsValid(GetLocalPC()))
+    {
+        return nullptr;
+    }
+
     bool IsCreated = false;
 
     TObjectPtr<UDC1UserWidget>* FoundWidget = CreatedWidget.Find(InUITag);
@@ -60,6 +65,13 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& InUITag, 
 
 void UDC1UIManagerSubsystem::PopScreen()
 {
+    // Server 확인
+    APlayerController* LocalPC = GetLocalPC();
+    if (false == ::IsValid(LocalPC))
+    {
+        return;
+    }
+
     if (ScreenStack.Num() <= 0)
     {
         return;
@@ -72,24 +84,26 @@ void UDC1UIManagerSubsystem::PopScreen()
         TopWidget->RemoveFromParent();
     }
 
-    UpdateInputMode();
+    UpdateInputMode(LocalPC);
 }
 
 UDC1UserWidget* UDC1UIManagerSubsystem::CreateWidgetWithTag(const FGameplayTag& InUITag)
 {
+    // Server 확인
+    APlayerController* LocalPC = GetLocalPC();
+    if (false == ::IsValid(LocalPC))
+    {
+        return nullptr;
+    }
+
     TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
     if (false == ::IsValid(WidgetClass))
     {
         return nullptr;
     }
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (false == ::IsValid(PC))
-    {
-        return nullptr;
-    }
 
-    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, WidgetClass);
+    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(LocalPC, WidgetClass);
     if (true == ::IsValid(NewWidget))
     {
         CreatedWidget.Add(InUITag, NewWidget);
@@ -104,6 +118,12 @@ UDC1UserWidget* UDC1UIManagerSubsystem::CreateWidgetWithTag(const FGameplayTag& 
 
 void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, FSimpleDelegate InOnComplete)
 {
+    // Server 확인
+    if (false == ::IsValid(GetLocalPC()))
+    {
+        return;
+    }
+
     if (false == ::IsValid(FadeWidget))
     {
         FadeWidget = Cast<UDC1FadeWidget>(CreateOverlay(DC1UITags::UI_Fade, FadeZOrder));
@@ -131,6 +151,12 @@ void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, F
 
 void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate InOnComplete)
 {
+    // Server 확인
+    if (false == ::IsValid(GetLocalPC()))
+    {
+        return;
+    }
+
     if (false == ::IsValid(FadeWidget))
     {
         InOnComplete.ExecuteIfBound();
@@ -187,6 +213,17 @@ UDC1UserWidget* UDC1UIManagerSubsystem::FindWidget(const FGameplayTag& InUITag)
     return nullptr;
 }
 
+APlayerController* UDC1UIManagerSubsystem::GetLocalPC() const
+{
+    const UGameInstance* GameInstance = GetGameInstance();
+    if (false == ::IsValid(GameInstance))
+    {
+        return nullptr;
+    }
+
+    return GameInstance->GetFirstLocalPlayerController(GetWorld());
+}
+
 UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder)
 {
     TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
@@ -207,6 +244,13 @@ UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITa
 
 UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* InWidget)
 {
+    // Server 확인
+    APlayerController* LocalPC = GetLocalPC();
+    if (false == ::IsValid(LocalPC))
+    {
+        return nullptr;
+    }
+
     if (false == ::IsValid(InWidget))
     {
         return nullptr;
@@ -216,21 +260,21 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* InWid
     ScreenStack.Add(InWidget);
     InWidget->Activate();
 
-    UpdateInputMode();
+    UpdateInputMode(LocalPC);
 
     return InWidget;
 }
 
 UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass)
 {
-    // 레벨 전환 시점 Player 생성 확인
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (false == ::IsValid(PC))
+    // 레벨 전환 시점 Player 생성 확인 + Server 확인
+    APlayerController* LocalPC = GetLocalPC();
+    if (false == ::IsValid(LocalPC))
     {
         return nullptr;
     }
 
-    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, InWidgetClass);
+    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(LocalPC, InWidgetClass);
     if (true == ::IsValid(NewWidget))
     {
         CreatedWidget.Add(InUITag, NewWidget);
@@ -244,7 +288,7 @@ UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& I
     ScreenStack.Add(NewWidget);
     NewWidget->Activate();
 
-    UpdateInputMode();
+    UpdateInputMode(LocalPC);
 
     return NewWidget;
 }
@@ -264,26 +308,20 @@ TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGamep
     return CachedUIData->FindUserWidgetClassByTag(InUITag);
 }
 
-void UDC1UIManagerSubsystem::UpdateInputMode()
+void UDC1UIManagerSubsystem::UpdateInputMode(APlayerController* InLocalPC)
 {
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (false == ::IsValid(PC))
-    {
-        return;
-    }
-
     if (ScreenStack.Num() <= 0)
     {
         FInputModeGameOnly InputMode;
-        PC->SetInputMode(InputMode);
-        PC->SetShowMouseCursor(false);
+        InLocalPC->SetInputMode(InputMode);
+        InLocalPC->SetShowMouseCursor(false);
     }
     else
     {
         FInputModeGameAndUI InputMode;
         InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-        PC->SetInputMode(InputMode);
-        PC->SetShowMouseCursor(true);
+        InLocalPC->SetInputMode(InputMode);
+        InLocalPC->SetShowMouseCursor(true);
     }
 
     OnScreenStackChanged.Broadcast();

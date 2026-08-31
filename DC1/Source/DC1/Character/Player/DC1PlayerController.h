@@ -48,6 +48,8 @@ public:
 	// UI가 열려있는 상태에서 InputKey 전달
 	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 
+	virtual void OnRep_PlayerState() override;
+
 private:
 	void OnMove(const FInputActionValue& Value);
 	void OnTurn(const FInputActionValue& Value);
@@ -66,6 +68,8 @@ private:
 	void OnInteractionReleased(const FInputActionValue& Value);
 
 	void ChangeWeapon(const FInputActionValue& Value);
+
+	void InitPlayerStateBindings();
 
 // UI 
 private:

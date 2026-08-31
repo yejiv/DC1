@@ -22,9 +22,14 @@
 
 #include "Components/ScrollBox.h"
 
-void UDC1TechTreeWidget::NativeOnInitialized()
+void UDC1TechTreeWidget::NativeConstruct()
 {
-	Super::NativeOnInitialized();
+	Super::NativeConstruct();
+
+	if (true == IsInit)
+	{
+		return;
+	}
 
 	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
 	if (true == ::IsValid(TechComp))
@@ -50,6 +55,8 @@ void UDC1TechTreeWidget::NativeOnInitialized()
 
 	// Init Point
 	UpdatePoint(TechComp);
+
+	IsInit = true;
 }
 
 UDC1TechTreeComponent* UDC1TechTreeWidget::GetTechTreeComponent()
