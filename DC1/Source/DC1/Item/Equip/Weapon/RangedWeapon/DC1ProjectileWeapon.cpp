@@ -2,12 +2,16 @@
 
 #include "Item/Equip/Weapon/RangedWeapon/DC1ProjectileWeapon.h"
 
-#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/SphereComponent.h"
 #include "Projectile/DC1Projectile.h"
 
 ADC1ProjectileWeapon::ADC1ProjectileWeapon()
 	: Super()
 {
+	RangedMesh = CreateDefaultSubobject<USkeletalMeshComponent>("RangedMesh");
+	RangedMesh->SetupAttachment(InteractCollider);
+	RangedMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 UPrimitiveComponent* ADC1ProjectileWeapon::GetAttackCollider()
@@ -39,12 +43,12 @@ ADC1Projectile* ADC1ProjectileWeapon::FireProjectile(const FGameplayEffectSpecHa
 
 FTransform ADC1ProjectileWeapon::GetMuzzleTransform() const
 {
-	if (false == MuzzleSocketName.IsNone() && ItemMesh->DoesSocketExist(MuzzleSocketName))
+	if (false == MuzzleSocketName.IsNone() && RangedMesh->DoesSocketExist(MuzzleSocketName))
 	{
-		return ItemMesh->GetSocketTransform(MuzzleSocketName);
+		return RangedMesh->GetSocketTransform(MuzzleSocketName);
 	}
 
-	return ItemMesh->GetComponentTransform();
+	return RangedMesh->GetComponentTransform();
 }
 
 FVector ADC1ProjectileWeapon::GetAimDirection()
