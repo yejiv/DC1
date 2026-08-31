@@ -37,10 +37,10 @@ public:
 
 public:
 	// Manager에서 활성화될 때 호출
-	void Activate();
+	virtual void Activate();
 
 	// Manager에서 비활성화될 때 호출
-	void Deactivate();
+	virtual void Deactivate();
 
 protected:
 	virtual void	NativeOnActivated();

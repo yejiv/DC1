@@ -52,7 +52,7 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	FHitResult SurfaceHit;
 	TraceSurface(SurfaceHit);
 
-	PreviewActor->SetActorTransform(PreviewActor->ComputePlaceTransform(SurfaceHit, CurrentYaw));
+	PreviewActor->SetActorTransform(PreviewActor->ComputePlaceTransform(SurfaceHit, GetPlaceYaw()));
 
 	CanBuilding = PreviewActor->UpdatePreview();
 }
@@ -241,7 +241,7 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	}
 
 	// 컨트롤러가 바라보는 방향
-	FVector FowardDirection = FRotationMatrix(FRotator(0.f, Pawn->GetControlRotation().Yaw, 0.f)).GetUnitAxis(EAxis::X);
+	FVector FowardDirection = FRotationMatrix(FRotator(0.f, GetControlYaw(), 0.f)).GetUnitAxis(EAxis::X);
 	
 	// Pawn(Player) 위치
 	FVector PawnLocation = Pawn->GetActorLocation();
@@ -356,4 +356,22 @@ const APawn* UDC1BuildPlacementComponent::GetOwnerPawn() const
 	}
 
 	return Pawn;
+}
+
+float UDC1BuildPlacementComponent::GetPlaceYaw() const
+{
+	float BaseYaw = IsSnapping ? SnapBaseYaw : GetControlYaw();
+
+	return FMath::UnwindDegrees(BaseYaw + CurrentYaw);
+}
+
+float UDC1BuildPlacementComponent::GetControlYaw() const
+{
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return 0.f;
+	}
+
+	return Pawn->GetControlRotation().Yaw;;
 }

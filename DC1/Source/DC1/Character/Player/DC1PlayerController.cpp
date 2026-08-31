@@ -104,6 +104,11 @@ void ADC1PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (false == IsLocalController())
+	{
+		return;
+	}
+
 	SetBaseIMC(DC1IMCTags::IMC_Default);
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
@@ -122,27 +127,7 @@ void ADC1PlayerController::BeginPlay()
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
 
-	UDC1TabWidget* MainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
-
-	// 인벤토리 ViewModel 생성
-	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
-	if (IsValid(InventoryViewModel))
-	{
-		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
-		if (IsValid(OwnerPlayerState))
-		{
-			if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
-			{
-				InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
-
-				UDC1InventoryWidget* PlayerInventoryWidget = MainTabWidget->GetInventoryWidget();
-				if (PlayerInventoryWidget)
-				{
-					PlayerInventoryWidget->SetViewModel(InventoryViewModel);
-				}
-			}
-		}
-	}
+	OnRep_PlayerState();
 }
 
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -194,6 +179,13 @@ bool ADC1PlayerController::InputKey(const FInputKeyEventArgs& Params)
 	}
 
 	return Super::InputKey(Params);
+}
+
+void ADC1PlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	InitPlayerStateBindings();
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -437,6 +429,40 @@ void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
 		//ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
+	}
+}
+
+void ADC1PlayerController::InitPlayerStateBindings()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	// 인벤토리 ViewModel 생성
+	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
+	if (IsValid(InventoryViewModel))
+	{
+		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
+		if (IsValid(OwnerPlayerState))
+		{
+			UDC1TabWidget* MainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
+			if (MainTabWidget)
+			{
+				if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
+				{
+					InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+
+					UDC1InventoryWidget* PlayerInventoryWidget = MainTabWidget->GetInventoryWidget();
+					if (PlayerInventoryWidget)
+					{
+						PlayerInventoryWidget->SetViewModel(InventoryViewModel);
+					}
+				}
+			}
+		}
 	}
 }
 

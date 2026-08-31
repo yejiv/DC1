@@ -52,6 +52,8 @@ private:
 	void				SetBuildMode(bool InEnabled);
 
 	const APawn*		GetOwnerPawn() const;
+	float				GetPlaceYaw() const;
+	float				GetControlYaw() const;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
@@ -77,4 +79,7 @@ private:
 	float									CurrentYaw = { 0.f };
 	bool									CanBuilding = { false };
 	float									DistanceMarginFactor = { 1.1f };
+
+	bool									IsSnapping = { false };
+	float									SnapBaseYaw = { 0.f };
 };

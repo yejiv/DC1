@@ -10,9 +10,20 @@
 #include "Components/Image.h"
 #include "Components/Overlay.h"
 
-void UDC1TechTreeButton::NativeOnInitialized()
+
+void UDC1TechTreeButton::NativeConstruct()
 {
-	Super::NativeOnInitialized();
+	Super::NativeConstruct();
+
+	if (SlotState == EDC1TechSlotState::Locked)
+	{
+		return;
+	}
+
+	if (true == ::IsValid(ButtonImage) && SlotState == EDC1TechSlotState::Available)
+	{
+		ButtonImage->SetBrush(AvailableButtonImageBrush);
+	}
 }
 
 void UDC1TechTreeButton::HandleHovered()
