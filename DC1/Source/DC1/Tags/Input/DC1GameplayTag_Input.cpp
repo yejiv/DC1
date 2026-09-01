@@ -45,4 +45,5 @@ namespace DC1InputBuildTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Confirm, "Input.Build.Confirm");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Cancel, "Input.Build.Cancel");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Rotate, "Input.Build.Rotate");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Snap, "Input.Build.Snap");
 }
