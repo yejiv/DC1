@@ -4,7 +4,7 @@
 
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "DC1DataTableTypes.generated.h"
 
 USTRUCT(BlueprintType)

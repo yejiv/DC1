@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "DC1InventoryTypes.generated.h"
 
 USTRUCT(BlueprintType)

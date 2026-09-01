@@ -40,14 +40,24 @@ ADC1BuildActor::ADC1BuildActor()
 	SetRootComponent(BuildMesh);
 }
 
-EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
+const EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
 {
-	return (::IsValid(BuildCheckComp) ? BuildCheckComp->GetProbeDirection() : EDC1BuildProbeDirection::Down);
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetProbeDirection() : EDC1BuildProbeDirection::Down;
 }
 
-FTransform ADC1BuildActor::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
+const FVector ADC1BuildActor::GetCheckBoxCenter() const
 {
-	return (::IsValid(BuildCheckComp) ? BuildCheckComp->ComputePlaceTransform(InHit, InYaw) : FTransform::Identity);
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetCheckBoxCenter() : FVector::ZeroVector;
+}
+
+const FTransform ADC1BuildActor::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
+{
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->ComputePlaceTransform(InHit, InYaw) : FTransform::Identity;
+}
+
+const float ADC1BuildActor::GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const
+{
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetExtentCenterToDirection(InWorldDirection, InQuat) : 0.f;
 }
 
 // Called when the game starts or when spawned
@@ -203,9 +213,9 @@ void ADC1BuildActor::RemoveWorker(const ADC1Character* InWorker)
 	Workers.Remove(InWorker);
 }
 
-bool ADC1BuildActor::UpdatePreview()
+bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 {
-	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild();
+	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange);
 
 	if (CanBuilding != CurrentCanBuilding)
 	{
@@ -216,6 +226,42 @@ bool ADC1BuildActor::UpdatePreview()
 	}
 
 	return CanBuilding;
+}
+
+bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FDC1BuildSnapPoint& OutSnapPoint) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	FHitResult Hit;
+
+	if (false == BuildCheckComp->LineTraceComponent(Hit, InRayStart, InRayEnd, InParams))
+	{
+		return false;
+	}
+
+	/*if (true == Hit.bStartPenetrating)
+	{
+		return false;
+	}*/
+
+	OutSnapPoint = BuildCheckComp->MakeSideSnapPoint(Hit.ImpactNormal);
+
+	return true;
+}
+
+bool ADC1BuildActor::SelectSnapPointByPoint(const FVector& InWorldPoint, FDC1BuildSnapPoint& OutSnapPoint) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	OutSnapPoint = BuildCheckComp->MakeNearestSideSnapPoint(InWorldPoint);
+
+	return true;
 }
 
 void ADC1BuildActor::BuildDestroy()

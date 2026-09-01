@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UI/Button/AnimButton/DC1BracketButton.h"
 #include "GameplayTagContainer.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "DC1TabHeaderButton.generated.h"
 
 UCLASS()

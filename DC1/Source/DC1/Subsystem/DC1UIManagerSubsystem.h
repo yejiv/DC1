@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "UI/Fade/Dc1FadeWidget.h"
 #include "DC1UIManagerSubsystem.generated.h"
 

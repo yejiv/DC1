@@ -7,7 +7,7 @@
 #include "UI/Button/AnimButton/Slot/DC1TechTreeButton.h"
 #include "UI/Tab/TechTree/DC1TechTreePointWidget.h"
 
-#include "Helper/DC1Helper.h"
+#include "Define/DC1Helper.h"
 
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"

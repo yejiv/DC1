@@ -2,7 +2,7 @@
 
 
 #include "Component/Interact/DC1InteractComponent.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "Character/Player/DC1Player.h"
 
@@ -19,7 +19,6 @@ UDC1InteractComponent::UDC1InteractComponent()
 
 	SetIsReplicatedByDefault(true);
 }
-
 
 IDC1InteractableInterface* UDC1InteractComponent::GetCurrentInteractable() const
 {

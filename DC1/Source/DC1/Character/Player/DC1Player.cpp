@@ -3,7 +3,7 @@
 
 #include "Character/Player/DC1Player.h"
 
-#include "Helper/DC1Macro.h"
+#include "Define/DC1Macro.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"

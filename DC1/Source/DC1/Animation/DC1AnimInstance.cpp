@@ -3,7 +3,7 @@
 
 #include "Animation/DC1AnimInstance.h"
 
-#include "Helper/DC1Macro.h"
+#include "Define/DC1Macro.h"
 
 #include "Character/DC1Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
