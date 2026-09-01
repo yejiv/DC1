@@ -16,4 +16,8 @@ class DC1_API UDC1PlayerSet : public UDC1AttributeSet
 
 public:
 	UDC1PlayerSet();
+
+protected:
+	// 무적 상태(회피 중)면 데미지 적용 막기
+	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
 };

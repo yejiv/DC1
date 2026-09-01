@@ -297,6 +297,16 @@ void ADC1PlayerController::OnCrouch(const FInputActionValue& Value)
 	}
 }
 
+void ADC1PlayerController::OnDodge(const FInputActionValue& Value)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Dodge);
+}
+
 void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
 {
 	if (false == IsValid(ControlObject))
@@ -637,6 +647,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttack);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ThisClass::OnAttackReleased);
 	}
+	// Dodge
+	if (const UInputAction* DodgeAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Dodge))
+	{
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ThisClass::OnDodge);
+	}
+
 	// ChangeWeapon
 	if (const UInputAction* ChangeWeaponAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ChangeWeapon))
 	{
