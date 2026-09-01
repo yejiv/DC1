@@ -276,6 +276,7 @@ void ADC1PalCharacter::OnDeath()
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
 
+	// 반드시 맨 끝. 받는 쪽이 이 액터를 파괴할 수 있다
 	OnPalDied.Broadcast();
 }
 
