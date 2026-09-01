@@ -4,7 +4,8 @@
 #include "Component/Build/DC1BuildPlacementComponent.h"
 #include "Actor/BuildActor/DC1BuildActor.h"
 
-#include "Helper/DC1Helper.h"
+#include "Define/DC1Helper.h"
+#include "Define/DC1Structs.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "Character/Player/DC1PlayerController.h"
@@ -15,6 +16,10 @@
 #include "System/DC1AssetManager.h"
 #include "Data/DA/Input/DC1InputData.h"
 
+#include "Engine/OverlapResult.h"
+#include "DrawDebugHelpers.h"
+
+
 UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -23,6 +28,11 @@ UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 
 	SetIsReplicatedByDefault(true);
+}
+
+const float UDC1BuildPlacementComponent::GetMaxPlaceDistance() const
+{
+	return (true == IsSnapping) ? MaxPlaceDistance : PlaceDistance;
 }
 
 void UDC1BuildPlacementComponent::BeginPlay()
@@ -54,7 +64,26 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	PreviewActor->SetActorTransform(PreviewActor->ComputePlaceTransform(SurfaceHit, GetPlaceYaw()));
 
-	CanBuilding = PreviewActor->UpdatePreview();
+	CanBuilding = PreviewActor->UpdatePreview(IsInPlaceRange(PreviewActor->GetActorLocation()));
+
+	if (true == IsSnapping)
+	{
+		DrawDebugSphere(GetWorld(), SnapPointWorld, 12.f, 12, FColor::Yellow);
+		DrawDebugDirectionalArrow(GetWorld(), SnapPointWorld,
+			SnapPointWorld + (SnapNormalWorld * 80.f), 16.f, FColor::Yellow);		// 슬라이드 축
+		DrawDebugLine(GetWorld(), SnapPointWorld, PreviewActor->GetActorLocation(), FColor::Yellow);
+	}
+	else
+	{
+		FDC1BuildSnapPoint Debug;
+		const ADC1BuildActor* Target = nullptr;
+		if (true == FindSnapFace(Debug, Target))
+		{
+			DrawDebugSphere(GetWorld(), Debug.WorldLocation, 12.f, 12, FColor::Cyan);
+			DrawDebugDirectionalArrow(GetWorld(), Debug.WorldLocation,
+				Debug.WorldLocation + (Debug.WorldNormal * 60.f), 16.f, FColor::Cyan);
+		}
+	}
 }
 
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
@@ -90,6 +119,19 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 	return true;
 }
 
+bool UDC1BuildPlacementComponent::IsInPlaceRange(const FVector& InLocation) const
+{
+	const APawn* Pawn = GetOwnerPawn();
+	if (nullptr == Pawn)
+	{
+		return false;
+	}
+
+	float Distance = FVector::Dist2D(Pawn->GetActorLocation(), InLocation);
+
+	return Distance <= GetMaxPlaceDistance();
+}
+
 void UDC1BuildPlacementComponent::CancelPlacement()
 {
 	SetComponentTickEnabled(false);
@@ -106,16 +148,19 @@ void UDC1BuildPlacementComponent::CancelPlacement()
 
 	// Build IMC 제거, State_Build Tag 제거, InteractComp 활성화
 	SetBuildMode(false);
+	ClearSnap();
 }
 
 void UDC1BuildPlacementComponent::ConfirmPlacement()
 {
 	if (false == ::IsValid(PreviewActor) || false == CanBuilding)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ConfirmPlacement :: CanBuilding false"));
 		return;
 	}
 
 	Server_PlaceBuild(CurrentBuildTag, PreviewActor->GetActorTransform());
+	ChangeSnapConfirmTarget();
 }
 
 void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGameplayTag& InBuildTag, const FTransform& InTransform)
@@ -138,8 +183,9 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	const float Distance = FVector::Dist2D(PawnLocation, ActorLocation);
 
 	// 서버 검증 여유 수치
-	if (Distance > ( PlaceDistance * DistanceMarginFactor ))
+	if (Distance > ( MaxPlaceDistance * DistanceMarginFactor ))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Too Far : %.1f"), Distance);
 		return;
 	}
 
@@ -204,6 +250,12 @@ FDC1BuildActorData UDC1BuildPlacementComponent::MakeBuildActorData(const FDC1Bui
 
 ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform)
 {
+	UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return nullptr;
+	}
+
 	// SoftclassPtr 동기 Load
 	if (nullptr == InRow.BuildActorClass)
 	{
@@ -219,7 +271,7 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 	}
 
 	// State 세팅을 위해 SpawnActorDeferred | AlwaysSpawn - 스폰 위치에 다른 충돌체가 있어도 스폰
-	ADC1BuildActor* NewBuildActor = GetWorld()->SpawnActorDeferred<ADC1BuildActor>(LoadedClass, InTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	ADC1BuildActor* NewBuildActor = World->SpawnActorDeferred<ADC1BuildActor>(LoadedClass, InTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (nullptr == NewBuildActor)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cant Spawn Build Actor : %s"), *(InRow.BuildTag).ToString());
@@ -234,21 +286,25 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 
 bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 {
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return false;
+	}
+
 	const APawn* Pawn = GetOwnerPawn();
 	if (nullptr == Pawn)
 	{
 		return false;
 	}
 
-	// 컨트롤러가 바라보는 방향
-	FVector FowardDirection = FRotationMatrix(FRotator(0.f, GetControlYaw(), 0.f)).GetUnitAxis(EAxis::X);
-	
+	// Build Actor가 위치할 지점 ( X, Y 만 사용 )
+	FVector TargetLocation = GetPlacePoint(Pawn);
+
 	// Pawn(Player) 위치
 	FVector PawnLocation = Pawn->GetActorLocation();
 	const float PawnFootZ = PawnLocation.Z - Pawn->GetSimpleCollisionHalfHeight();
 
-	// Build Actor가 위치할 지점 ( X, Y 만 사용 )
-	FVector TargetLocation = PawnLocation + (FowardDirection * PlaceDistance);
 
 	// Build Actor Trace 지점들
 	FVector TopPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ + RangeUpHeight);
@@ -268,7 +324,7 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	HitParams.AddIgnoredActor(PreviewActor);
 
 	// 충돌 채널 추가 필요
-	const bool IsHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), HitParams);
+	const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), HitParams);
 
 	if (false == IsHit)
 	{
@@ -317,6 +373,12 @@ void UDC1BuildPlacementComponent::SetUpBuildInput()
 	{
 		EnhancedInputComponent->BindAction(RotateAction, ETriggerEvent::Triggered, this, &ThisClass::OnRotateInput);
 	}
+
+	if (const UInputAction* SnapAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Snap))
+	{
+		EnhancedInputComponent->BindAction(SnapAction, ETriggerEvent::Started, this, &ThisClass::OnSnapPressed);
+		EnhancedInputComponent->BindAction(SnapAction, ETriggerEvent::Completed, this, &ThisClass::OnSnapReleased);
+	}
 }
 
 void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
@@ -329,6 +391,57 @@ void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
 	float InYaw = Value.Get<float>();
 
 	CurrentYaw = FMath::UnwindDegrees(CurrentYaw + (InYaw * RotationStep));
+}
+
+void UDC1BuildPlacementComponent::OnSnapPressed()
+{
+	if (false == ::IsValid(PreviewActor))
+	{
+		return;
+	}
+
+	FDC1BuildSnapPoint SnapPoint;
+	const ADC1BuildActor* Target = nullptr;
+
+	if (false == FindSnapFace(SnapPoint, Target))
+	{
+		return;
+	}
+
+	SnapPointWorld = SnapPoint.WorldLocation;
+	SnapNormalWorld = SnapPoint.WorldNormal;
+	
+	SnapBaseYaw = Target->GetActorRotation().Yaw;
+
+	const FQuat SnapQuat = FRotator(0.f, SnapBaseYaw, 0.f).Quaternion();
+	SnapMinDistance = PreviewActor->GetExtentCenterToDirection(SnapNormalWorld, SnapQuat) + SnapContactMargin;
+
+	SnapTarget = Target;
+
+	CurrentYaw = 0.f;
+	IsSnapping = true;
+}
+
+void UDC1BuildPlacementComponent::OnSnapReleased()
+{
+	if (false == IsSnapping)
+	{
+		return;
+	}
+
+	const float LastYaw = GetPlaceYaw();
+
+	ClearSnap();
+
+	CurrentYaw = FMath::UnwindDegrees(LastYaw - GetControlYaw());
+}
+
+void UDC1BuildPlacementComponent::ClearSnap()
+{
+	IsSnapping = false;
+	SnapTarget = nullptr;
+	SnapPointWorld = FVector::ZeroVector;
+	SnapNormalWorld = FVector::ZeroVector;
 }
 
 void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
@@ -374,4 +487,188 @@ float UDC1BuildPlacementComponent::GetControlYaw() const
 	}
 
 	return Pawn->GetControlRotation().Yaw;;
+}
+
+FVector UDC1BuildPlacementComponent::GetAimPoint(const APawn* InOwnerPawn) const
+{
+	// 컨트롤러가 바라보는 방향
+	FVector FowardDirection = FRotationMatrix(FRotator(0.f, GetControlYaw(), 0.f)).GetUnitAxis(EAxis::X);
+
+	// Pawn(Player) 위치
+	FVector PawnLocation = InOwnerPawn->GetActorLocation();
+
+	// Build Actor가 위치할 지점 ( X, Y 만 사용 )
+	FVector AimPoint = PawnLocation + (FowardDirection * PlaceDistance);
+
+	return AimPoint;
+}
+
+FVector UDC1BuildPlacementComponent::GetPlacePoint(const APawn* InOwnerPawn) const
+{
+	const FVector AimPoint = GetAimPoint(InOwnerPawn);
+
+	if (false == IsSnapping)
+	{
+		return AimPoint;
+	}
+
+	const float SnapDot = FVector::DotProduct(AimPoint - SnapPointWorld, SnapNormalWorld);
+
+	const float Distance = FMath::Max(SnapDot, SnapMinDistance);
+
+	return SnapPointWorld + (SnapNormalWorld * Distance);
+}
+
+bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd) const
+{
+	const APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return false;
+	}
+
+	FVector ViewLocation;
+	FRotator ViewRotation;
+	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+	OutStart = ViewLocation;
+	OutEnd = ViewLocation + (ViewRotation.Vector() * MaxPlaceDistance);
+
+	return true;
+}
+
+bool UDC1BuildPlacementComponent::FindSnapFace(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+{
+	if (true == FindSnapFaceByRay(OutSnapPoint, OutTarget))
+	{
+		return true;
+	}
+
+	return FindSnapFaceByRange(OutSnapPoint, OutTarget);
+}
+
+bool UDC1BuildPlacementComponent::FindSnapFaceByRay(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+{
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return false;
+	}
+
+	FVector RayStart;
+	FVector RayEnd;
+	if (false == GetViewRay(RayStart, RayEnd))
+	{
+		return false;
+	}
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Building));
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwnerPawn());
+	Params.AddIgnoredActor(PreviewActor);
+
+	FHitResult Hit;
+	if (false == World->LineTraceSingleByObjectType(Hit, RayStart, RayEnd, ObjectParams, Params))
+	{
+		return false;
+	}
+
+	const ADC1BuildActor* Target = Cast<ADC1BuildActor>(Hit.GetActor());
+	if (nullptr == Target || EDC1BuildState::Preview == Target->GetBuildState())
+	{
+		return false;
+	}
+
+	OutTarget = Target;
+
+	return Target->SelectSnapPointByRay(RayStart, RayEnd, Params, OutSnapPoint);
+}
+
+bool UDC1BuildPlacementComponent::FindSnapFaceByRange(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+{
+	const APawn* Pawn = GetOwnerPawn();
+	if (nullptr == Pawn)
+	{
+		return false;
+	}
+
+	const FVector AimPoint = GetAimPoint(Pawn);
+
+	TSet<ADC1BuildActor*> Candidates;
+	FindSnapCandidates(AimPoint, Candidates);
+
+	float BestDistSquared = FLT_MAX;
+	bool IsFind = false;
+
+	for (const ADC1BuildActor* Candidate : Candidates)
+	{
+		FDC1BuildSnapPoint SnapPoint;
+		if (false == Candidate->SelectSnapPointByPoint(AimPoint, SnapPoint))
+		{
+			continue;
+		}
+
+		const float DistSquared = FVector::DistSquaredXY(SnapPoint.WorldLocation, AimPoint);
+
+		if (DistSquared < BestDistSquared)
+		{
+			BestDistSquared = DistSquared;
+			OutSnapPoint = SnapPoint;
+			OutTarget = Candidate;
+			IsFind = true;
+		}
+	}
+
+	return IsFind;
+}
+
+void UDC1BuildPlacementComponent::FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const
+{
+	OutCandidates.Reset();
+
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return;
+	}
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Building));
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwnerPawn());
+	Params.AddIgnoredActor(PreviewActor);
+
+	TArray<FOverlapResult> Overlaps;
+
+	if (false == World->OverlapMultiByObjectType(Overlaps, InAimPoint, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(SnapSearchRadius), Params))
+	{
+		return;
+	}
+
+	for (const FOverlapResult Result : Overlaps)
+	{
+		ADC1BuildActor* OverlapActor = Cast<ADC1BuildActor>(Result.GetActor());
+		if (false == ::IsValid(OverlapActor))
+		{
+			continue;
+		}
+
+		OutCandidates.Add(OverlapActor);
+	}
+}
+
+void UDC1BuildPlacementComponent::ChangeSnapConfirmTarget()
+{
+	if (false == IsSnapping)
+	{
+		return;
+	}
+
+	const FVector NewBoxCenter = PreviewActor->GetCheckBoxCenter();
+	const float HalfExtent = SnapMinDistance - SnapContactMargin;
+
+	SnapPointWorld = NewBoxCenter + (SnapNormalWorld * HalfExtent);
 }

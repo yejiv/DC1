@@ -5,15 +5,32 @@
 
 #include "Components/BoxComponent.h"
 
+
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "DrawDebugHelpers.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
+
+#include "Tags/Build/DC1GameplayTag_Build.h"
 
 
 // Sets default values for this component's properties
 UDC1BuildCheckComponent::UDC1BuildCheckComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+const float UDC1BuildCheckComponent::GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const
+{
+	FVector CheckBoxExtents = GetScaledBoxExtent();
+
+	const FQuat CheckBoxQuat = InQuat * GetRelativeRotation().Quaternion();
+	const FVector LocalDirection = CheckBoxQuat.UnrotateVector(InWorldDirection.GetSafeNormal());
+
+	float DirectionExtent = (FMath::Abs(LocalDirection.X) * CheckBoxExtents.X) +
+		(FMath::Abs(LocalDirection.Y) * CheckBoxExtents.Y) +
+		(FMath::Abs(LocalDirection.Z) * CheckBoxExtents.Z);
+
+	return DirectionExtent;
 }
 
 bool UDC1BuildCheckComponent::CheckCanBuild()
@@ -31,7 +48,7 @@ bool UDC1BuildCheckComponent::CheckCanBuild()
 	return (IsNoneOverlap && IsAttachedSurface);
 }
 
-FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
+const FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const
 {
 	const AActor* Owner = GetOwner();
 	if (false == ::IsValid(Owner))
@@ -58,6 +75,77 @@ FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult& InHi
 
 	return FTransform(FinalQuat, Location, Owner->GetActorScale3D());
 }
+
+const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPoint(const FVector& InWorldNormal) const
+{
+	const FVector LocalNormal = GetComponentTransform().InverseTransformVectorNoScale(InWorldNormal);
+
+	const float AbsX = FMath::Abs(LocalNormal.X);
+	const float AbsY = FMath::Abs(LocalNormal.Y);
+
+	const bool IsAxisX = AbsX > AbsY;
+
+	const float Direction = IsAxisX ? LocalNormal.X : LocalNormal.Y;
+
+	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
+
+	return MakeSideSnapPointFromAxis(IsAxisX, AxisSign);
+}
+
+const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeNearestSideSnapPoint(const FVector& InWorldPoint) const
+{
+	const FVector LocalPoint = GetComponentTransform().InverseTransformPosition(InWorldPoint);
+	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
+
+	float OverX = FMath::Abs(LocalPoint.X) - CheckBoxExtent.X;
+	float OverY = FMath::Abs(LocalPoint.Y) - CheckBoxExtent.Y;
+
+	const bool IsAxisX = OverX > OverY;
+
+	const float Direction = IsAxisX ? LocalPoint.X : LocalPoint.Y;
+
+	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
+
+	return MakeSideSnapPointFromAxis(IsAxisX, AxisSign);
+}
+
+//void UDC1BuildCheckComponent::InitSnapPoints(TArray<FDC1BuildSnapPoint>& OutSnapPoints) const
+//{
+//	const AActor* Owner = GetOwner();
+//	if (false == ::IsValid(Owner))
+//	{
+//		return;
+//	}
+//
+//	OutSnapPoints.Reset();
+//	OutSnapPoints.Reserve(SnapDatas.Num());
+//
+//	const FVector CheckBoxExtents = GetUnscaledBoxExtent();
+//	const FTransform CheckBoxTransform = GetComponentTransform();
+//
+//	for (const FDC1BuildSnapData& SnapData : SnapDatas)
+//	{
+//		if (true == SnapData.SnapDirection.IsNearlyZero())
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildCheckComponent :: Invalid SnapDirection : %s"), *Owner->GetName());
+//			continue;
+//		}
+//
+//		const FVector PointLocalLocation = (CheckBoxExtents * SnapData.SnapDirection);
+//
+//		const FVector PointWorldLocation = CheckBoxTransform.TransformPosition(PointLocalLocation);
+//		const FVector PointWorldNomral = CheckBoxTransform.TransformVectorNoScale(PointLocalLocation).GetSafeNormal();
+//
+//		FDC1BuildSnapPoint SnapPoint;
+//
+//		SnapPoint.WorldLocation = PointWorldLocation;
+//		SnapPoint.WorldNormal = PointWorldNomral;
+//		SnapPoint.SnapType = SnapData.SnapType;
+//		SnapPoint.AcceptTypes = SnapData.AcceptTypes;
+//
+//		OutSnapPoints.Add(SnapPoint);
+//	}
+//}
 
 bool UDC1BuildCheckComponent::CheckSurface()
 {
@@ -160,25 +248,6 @@ bool UDC1BuildCheckComponent::CheckOverlap()
 	return true;
 }
 
-void UDC1BuildCheckComponent::CreateSnapPoints()
-{
-	SnapPoints.Reset();
-
-	const AActor* Onwer = GetOwner();
-	if (false == ::IsValid(Onwer))
-	{
-		return;
-	}
-
-	const FVector CheckBoxExtent = GetScaledBoxExtent();
-	const FVector CheckBoxLocalLocation = FVector::ZeroVector;
-
-	for (const FDC1BuildSnapData& Data : SnapDatas)
-	{
-
-	}
-}
-
 float UDC1BuildCheckComponent::ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const
 {
 	if (InCount <= 1)
@@ -207,4 +276,21 @@ FVector UDC1BuildCheckComponent::GetAttachLocalOffset() const
 
 	// 회전 제거
 	return Owner->GetActorQuat().UnrotateVector(WorldOffset - Owner->GetActorLocation());
+}
+
+const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPointFromAxis(bool InIsAxisX, float InAxisSign) const
+{
+	const FVector CheckBoxExtent = GetScaledBoxExtent();
+
+	const FVector Axis = (InIsAxisX ? GetForwardVector() : GetRightVector()) * InAxisSign;
+
+	const float AxisExtent = InIsAxisX ? CheckBoxExtent.X : CheckBoxExtent.Y;
+
+	FDC1BuildSnapPoint SnapPoint;
+	SnapPoint.WorldLocation = GetComponentLocation() + (Axis * AxisExtent);
+	SnapPoint.WorldNormal = Axis;
+	SnapPoint.SnapType = DC1BuildTags::Build_Snap_Side;
+	SnapPoint.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side);
+
+	return SnapPoint;
 }

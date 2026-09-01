@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayTagContainer.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Interface/DC1InteractableInterface.h"
 #include "DC1BuildActor.generated.h"
+
+struct FDC1BuildSnapPoint;
 
 class UStaticMeshComponent;
 class UBoxComponent;
@@ -64,13 +66,15 @@ public:
 	const FGameplayTag&				GetBuildTag() const { return BuildActorData.BuildTag; }
 	const float						GetRequiredWork() const { return BuildActorData.RequiredWork; }
 	const TArray<FDC1ItemCost>&		GetBuildCosts() const { return BuildActorData.BuildCosts; }
-	EDC1BuildState					GetBuildState() const { return BuildState; }
+	const EDC1BuildState			GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
 	const bool						IsUnderConstruction() const { return BuildState == EDC1BuildState::Construction; }
 
-	EDC1BuildProbeDirection			GetProbeDirection() const;
-	FTransform						ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+	const EDC1BuildProbeDirection	GetProbeDirection() const;
+	const FVector					GetCheckBoxCenter() const;
+	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
 protected:
 	virtual void					BeginPlay() override;
@@ -85,8 +89,10 @@ public:
 	virtual void					OnInteractableUnfocused();
 
 public:
-	virtual bool					UpdatePreview();
-
+	virtual bool					UpdatePreview(bool InIsInRange);
+	virtual bool					SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, 
+															FDC1BuildSnapPoint& OutSnapPoint) const;
+	virtual bool					SelectSnapPointByPoint(const FVector& InWorldPoint, FDC1BuildSnapPoint& OutSnapPoint) const;
 	void							InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
 
 	void							AddWorker(const ADC1Character* InWorker);

@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
-#include "Enum/DC1Enums.h"
-#include "GameplayTagContainer.h"
+#include "Define/DC1Enums.h"
+#include "Define/DC1Structs.h"
 #include "DC1BuildCheckComponent.generated.h"
+
+struct FDC1BuildSnapPoint;
 
 USTRUCT(BlueprintType)
 struct FDC1BuildProbeData
@@ -41,23 +43,6 @@ struct FDC1BuildProbeData
 	float MaxSurfaceAngle = { 30.f };
 };
 
-USTRUCT()
-struct FDC1BuildSnapPoint
-{
-	GENERATED_BODY()
-	// 액터 로컬 기준 Snap Point 위치
-	FVector LocalLocation = { FVector::ZeroVector };
-
-	// 액터 로컬 기준 Snap Point 법선
-	FVector LocalNormal = { FVector::ZeroVector };
-
-	// Snap Point 타입
-	FGameplayTag SnapType = { FGameplayTag::EmptyTag };
-
-	// Snap 가능한 상대 타입
-	FGameplayTagContainer AcceptTypes;
-};
-
 USTRUCT(BlueprintType)
 struct FDC1BuildSnapData
 {
@@ -87,18 +72,22 @@ public:
 public:
 	void							SetSnapped(bool InIsSnap) { IsSnap = InIsSnap; }
 	const EDC1BuildProbeDirection	GetProbeDirection() const { return BuildProbeData.ProbeDirection; }
+	const FVector					GetCheckBoxCenter() const  { return GetComponentLocation(); }
+	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
 public:
-	bool			CheckCanBuild();
-	FTransform		ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+	bool							CheckCanBuild();
+	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
+	const FDC1BuildSnapPoint		MakeSideSnapPoint(const FVector& InWorldNormal) const;
+	const FDC1BuildSnapPoint		MakeNearestSideSnapPoint(const FVector& InWorldPoint) const;
 
 private:
-	bool			CheckSurface();
-	bool			CheckOverlap();
-	void			CreateSnapPoints();
+	bool							CheckSurface();
+	bool							CheckOverlap();
 
-	float			ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
-	FVector			GetAttachLocalOffset() const;
+	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
+	FVector							GetAttachLocalOffset() const;
+	const FDC1BuildSnapPoint		MakeSideSnapPointFromAxis(bool InIsAxisX, float InAxisSign) const;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
