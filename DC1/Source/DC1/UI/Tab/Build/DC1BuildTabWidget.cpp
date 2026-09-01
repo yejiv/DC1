@@ -9,7 +9,7 @@
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
-#include "Helper/DC1Helper.h"
+#include "Define/DC1Helper.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 

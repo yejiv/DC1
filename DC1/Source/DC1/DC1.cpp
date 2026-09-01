@@ -2,7 +2,7 @@
 
 #include "DC1.h"
 #include "Modules/ModuleManager.h"
-#include "Helper/DC1Macro.h"
+#include "Define/DC1Macro.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, DC1, "DC1" );
 

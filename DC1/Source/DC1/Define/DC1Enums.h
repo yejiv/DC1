@@ -88,7 +88,6 @@ enum class EDC1ItemRarity : uint8
 
 };
 
-
 UENUM()
 enum class EDC1CollisionLayer : uint8
 {

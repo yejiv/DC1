@@ -9,7 +9,7 @@
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DA/UI/DC1UILoadingData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
-#include "Helper/DC1Helper.h"
+#include "Define/DC1Helper.h"
 
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -221,7 +221,13 @@ APlayerController* UDC1UIManagerSubsystem::GetLocalPC() const
         return nullptr;
     }
 
-    return GameInstance->GetFirstLocalPlayerController(GetWorld());
+    const UWorld* World = GetWorld();
+    if (false == ::IsValid(World))
+    {
+        return nullptr;
+    }
+
+    return GameInstance->GetFirstLocalPlayerController(World);
 }
 
 UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder)

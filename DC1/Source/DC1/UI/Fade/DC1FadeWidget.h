@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "DC1FadeWidget.generated.h"
 
 struct FUILoadingEntry;
