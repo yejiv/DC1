@@ -35,6 +35,13 @@ public:
 protected:
 	void					ToggleDeploy();
 
+	// 회수 한 번. 목록 반영 + 액터 파괴 + 예약된 타이머 정리.
+	// E 회수와 사망 회수가 같은 일을 하므로 공유한다
+	void					RetrieveDeployed();
+
+	// 꺼내둔 팰의 OnPalDied 진입점. 래그돌을 잠깐 보여주고 회수한다
+	void					HandleDeployedPalDied();
+
 	// 회수한 상태를 목록에 반영한다. PalID로 찾아 덮어쓴다
 	void					UpdatePal(const FDC1PalInstance& InPal);
 
@@ -52,7 +59,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.0"))
 	float					DeployDistance = { 300.f };
 
+	// 죽고 나서 회수까지의 유예. 이 시간 동안 래그돌이 보인다.
+	// SetTimer는 0 이하를 타이머 해제로 처리하므로 0을 허용하지 않는다
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.1"))
+	float					DeathRetrieveDelay = { 2.f };
+
 private:
 	// 꺼내둔 팰. 회수하려면 액터를 붙들고 있어야 한다. 서버에서만 갱신된다
 	TWeakObjectPtr<ADC1PalCharacter>	DeployedPal;
+
+	FTimerHandle						DeathRetrieveTimer;
 };

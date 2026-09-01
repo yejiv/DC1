@@ -14,6 +14,8 @@ class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
 
+DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
+
 /**
  *
  */
@@ -50,9 +52,11 @@ public:
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패
 
-	// 데이터에서 액터로. 파티/팰박스에서 꺼낼 때 사용. 위치는 호출한 쪽이 정함
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform);
 #pragma endregion
+
+	// 죽었다. 파티가 받아서 자동 회수한다. OnDeath의 맨 끝에서 발화한다
+	FDC1OnPalDied						OnPalDied;
 
 protected:
 	virtual void						PostInitializeComponents() override;
@@ -85,8 +89,6 @@ protected:
 	UPROPERTY(Transient) //디스크에 저장X
 	TObjectPtr<const UDC1PalData> PalData = { nullptr };
 
-	// 데이터에서 소환된 개체면 그때의 PalID. 야생이면 무효.
-	// 회수할 때 이 값으로 원래 항목을 찾아 덮어쓴다. 없으면 회수마다 새 개체가 되어 중복이 쌓인다
 	UPROPERTY(Transient)
 	FGuid InstanceID;
 

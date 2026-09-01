@@ -4,9 +4,11 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 
+#include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 UDC1PalPartyComponent::UDC1PalPartyComponent()
 {
@@ -28,7 +30,7 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 		return;
 	}
 
-	// TODO : 팰박스가 생기면 파티가 꽉 찼을 때 그쪽으로 넘긴다
+	// TODO : 팰박스가 생기면?
 	if (Pals.Num() >= Capacity)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Pal] Party is full (%d). Captured pal was dropped."), Capacity);
@@ -50,17 +52,22 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	// 꺼내둔 게 있으면 접는다. Fold가 액터를 파괴하므로 반환값으로 목록을 갱신해야
-	// 싸우다 깎인 체력이 남는다
-	if (ADC1PalCharacter* Deployed = DeployedPal.Get())
+	// 꺼내둔 게 있으면 접는다
+	if (DeployedPal.IsValid())
 	{
-		UpdatePal(Deployed->Fold());
-		DeployedPal = nullptr;
+		RetrieveDeployed();
 		return;
 	}
 
 	if (0 == Pals.Num())
 	{
+		return;
+	}
+
+	// TODO : 파티 슬롯 UI가 생기면 첫 마리가 아니라 선택된 팰을 꺼낸다
+	if (false == Pals[0].IsDeployable())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: the pal is down."));
 		return;
 	}
 
@@ -71,8 +78,39 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	// TODO : 파티 슬롯 UI가 생기면 첫 마리가 아니라 선택된 팰을 꺼낸다
-	DeployedPal = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[0], SpawnTransform);
+	ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[0], SpawnTransform);
+	if (false == ::IsValid(Spawned))
+	{
+		return;
+	}
+
+	Spawned->OnPalDied.AddUObject(this, &ThisClass::HandleDeployedPalDied);
+	DeployedPal = Spawned;
+}
+
+void UDC1PalPartyComponent::RetrieveDeployed()
+{
+	GetWorld()->GetTimerManager().ClearTimer(DeathRetrieveTimer);
+
+	ADC1PalCharacter* Deployed = DeployedPal.Get();
+	DeployedPal = nullptr;
+
+	if (false == ::IsValid(Deployed))
+	{
+		return;
+	}
+
+	UpdatePal(Deployed->Fold());
+}
+
+void UDC1PalPartyComponent::HandleDeployedPalDied()
+{
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(DeathRetrieveTimer, this, &ThisClass::RetrieveDeployed, DeathRetrieveDelay, false);
 }
 
 void UDC1PalPartyComponent::UpdatePal(const FDC1PalInstance& InPal)

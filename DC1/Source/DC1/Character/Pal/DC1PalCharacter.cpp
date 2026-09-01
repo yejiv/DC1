@@ -275,6 +275,8 @@ void ADC1PalCharacter::OnDeath()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
+
+	OnPalDied.Broadcast();
 }
 
 UAbilitySystemComponent* ADC1PalCharacter::GetAbilitySystemComponent() const

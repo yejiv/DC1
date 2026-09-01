@@ -43,4 +43,6 @@ struct FDC1PalInstance
 	TArray<FGameplayTag>	PassiveTags;
 
 	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }
+
+	bool IsDeployable() const { return IsValidPal() && (CurrentHealth > 0.f); }
 };
