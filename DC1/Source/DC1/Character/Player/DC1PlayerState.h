@@ -11,6 +11,7 @@ class UDC1AbilitySystemComponent;
 class UDC1PlayerSet;
 class UDC1TechTreeComponent;
 class UDC1PlayerInventoryComponent;
+class UDC1PalPartyComponent;
 
 /**
  * 
@@ -27,6 +28,7 @@ public:
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
+	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
@@ -40,4 +42,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 	TObjectPtr<UDC1PlayerInventoryComponent> InventoryComponent = { nullptr };
+
+	// 잡은 팰 목록. 아이템 슬롯과 구조가 달라 따로 둔다
+	UPROPERTY(VisibleAnywhere, Category = "Pal")
+	TObjectPtr<UDC1PalPartyComponent> PalPartyComponent = { nullptr };
 };

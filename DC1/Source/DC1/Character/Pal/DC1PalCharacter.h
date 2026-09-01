@@ -46,7 +46,6 @@ public:
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;
-	
 	FDC1PalInstance						Fold(); // 데이터화
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패

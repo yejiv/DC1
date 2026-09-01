@@ -7,6 +7,7 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1TechTreeComponent.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -24,6 +25,9 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 
 	InventoryComponent = CreateDefaultSubobject<UDC1PlayerInventoryComponent>(TEXT("InventoryComponent"));
 	InventoryComponent->SetIsReplicated(true);
+
+	PalPartyComponent = CreateDefaultSubobject<UDC1PalPartyComponent>(TEXT("PalPartyComponent"));
+	PalPartyComponent->SetIsReplicated(true);
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const

@@ -15,6 +15,7 @@
 
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -432,6 +433,20 @@ void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
 	}
 }
 
+void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->Server_ToggleDeploy();
+	}
+}
+
 void ADC1PlayerController::InitPlayerStateBindings()
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
@@ -640,6 +655,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	{
 		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Started, this, &ThisClass::OnThrowPressed);
 		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ThisClass::OnThrowReleased);
+	}
+
+	// CallPal
+	if (const UInputAction* CallPalAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_CallPal))
+	{
+		EnhancedInputComponent->BindAction(CallPalAction, ETriggerEvent::Started, this, &ThisClass::OnCallPalPressed);
 	}
 }
 

@@ -8,6 +8,7 @@
 
 class UAnimMontage;
 class UDC1EquipComponent;
+class ADC1PalSphere;
 
 /**
  * 팰스피어 던지기.
@@ -39,4 +40,17 @@ private:
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
 	FGameplayTag	ThrowMontageTag;
+
+public:
+	// 던질 스피어. 등급이 늘면 BP를 바꿔 끼운다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	TSubclassOf<ADC1PalSphere>	SphereClass;
+
+	// 손에서 떠나는 지점. 소켓이 없으면 눈높이 앞쪽에서 나간다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	FName						ThrowSocketName;
+
+	// 소켓이 없을 때만 쓰는 폴백 오프셋
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere", meta = (ClampMin = "0.0"))
+	float						ThrowForwardOffset = { 80.f };
 };

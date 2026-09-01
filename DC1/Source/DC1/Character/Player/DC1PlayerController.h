@@ -72,6 +72,9 @@ private:
 	void OnThrowPressed(const FInputActionValue& Value);
 	void OnThrowReleased(const FInputActionValue& Value);
 
+	// 팰 소환/회수 토글
+	void OnCallPalPressed(const FInputActionValue& Value);
+
 private:
 	void InitPlayerStateBindings();
 
