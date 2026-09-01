@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "GameplayTagContainer.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1TechTreeComponent.generated.h"

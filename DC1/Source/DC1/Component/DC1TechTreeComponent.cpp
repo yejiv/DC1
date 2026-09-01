@@ -5,7 +5,7 @@
 #include "Net/UnrealNetwork.h"
 
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
-#include "Helper/DC1Helper.h"
+#include "Define/DC1Helper.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
