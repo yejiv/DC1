@@ -8,19 +8,12 @@
 #include "Data/DataTable/DC1DataTableTypes.h"
 
 #include "Components/TextBlock.h"
-#include "Components/HorizontalBox.h"
+#include "Components/PanelWidget.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
-#include "Character/Player/DC1PlayerController.h"
-#include "Component/Build/DC1BuildPlacementComponent.h"
 
+#include "ViewModel/Build/DC1BuildViewModel.h"
 
-void UDC1BuildRowWidget::NativeOnInitialized()
-{
-	Super::NativeOnInitialized();
-
-	
-}
 
 void UDC1BuildRowWidget::InitRow(const FGameplayTag& InRowTag, const FText& InRowName)
 {
@@ -37,7 +30,7 @@ void UDC1BuildRowWidget::InitRow(const FGameplayTag& InRowTag, const FText& InRo
 	SetVisibility(ESlateVisibility::Collapsed);
 }
 
-UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow)
+UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow, UDC1BuildViewModel* InViewModel)
 {
 	if (false == ::IsValid(SlotContainer) || false == ::IsValid(SlotWidgetClass))
 	{
@@ -58,21 +51,9 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 
 	const FGameplayTag BuildTag = InBuildRow.BuildTag;
 
-	SlotWidget->OnClickedDelegate.AddWeakLambda(this, [this, BuildTag]()
+	SlotWidget->OnClickedDelegate.AddWeakLambda(this, [this, BuildTag, InViewModel]()
 		{
-			ADC1PlayerController* PC = GetOwningPlayer<ADC1PlayerController>();
-			if (false == ::IsValid(PC))
-			{
-				return;
-			}
-
-			UDC1BuildPlacementComponent* BuildPlacementComp = PC->GetBuildPlacementComponent();
-			if (false == ::IsValid(BuildPlacementComp))
-			{
-				return;
-			}
-
-			if (false == BuildPlacementComp->StartPlacement(BuildTag))
+			if (false == ::IsValid(InViewModel) || false == InViewModel->RequestStartPlacement(BuildTag))
 			{
 				return;
 			}
@@ -83,7 +64,6 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 				UIManager->PopScreen();
 			}
 		});
-
 
 	return SlotWidget;
 }

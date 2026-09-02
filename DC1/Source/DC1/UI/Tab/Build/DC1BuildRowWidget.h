@@ -10,20 +10,19 @@
 struct FDC1BuildRow;
 struct FDC1TechRow;
 
+class UDC1BuildViewModel;
 class UDC1BuildButton;
 class UTextBlock;
+class UPanelWidget;
 
 UCLASS()
 class DC1_API UDC1BuildRowWidget : public UDC1UserWidget
 {
 	GENERATED_BODY()
 
-protected:
-	virtual void		NativeOnInitialized() override;
-
 public:
 	void				InitRow(const FGameplayTag& InRowTag, const FText& RowName);
-	UDC1BuildButton*	AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow);
+	UDC1BuildButton*	AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow, UDC1BuildViewModel* InViewModel);
 
 	bool				VisibleSlot(const FGameplayTag& InSlotTag);
 

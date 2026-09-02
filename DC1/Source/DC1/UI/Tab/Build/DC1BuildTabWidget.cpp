@@ -6,67 +6,27 @@
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
 #include "UI/Tab/Build/DC1BuildWidget.h"
 
-
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
-#include "Define/DC1Helper.h"
-#include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
-#include "Data/DataTable/DC1DataTableTypes.h"
-
-#include "Character/Player/DC1PlayerState.h"
-#include "Component/DC1TechTreeComponent.h"
+#include "ViewModel/Build/DC1BuildViewModel.h"
+#include "Subsystem/DC1ViewModelSubsystem.h"
 
 void UDC1BuildTabWidget::NativeOnInitialized()
 {
+	// 베이스가 탭 버튼을 수집하고 ButtonInitialize를 부른다. RefreshAll보다 먼저여야 한다
 	Super::NativeOnInitialized();
 
-	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
-	if (false == ::IsValid(TechComp))
+	ULocalPlayer* OwnerLocalPlayer = GetOwningLocalPlayer();
+	if (false == ::IsValid(OwnerLocalPlayer))
 	{
 		return;
 	}
 
-	TechComp->OnTechUnlocked.AddUObject(this, &ThisClass::OnTechUnlocked);
-}
-
-void UDC1BuildTabWidget::ButtonInitialize()
-{
-	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
-	if (false == ::IsValid(TechComp))
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = OwnerLocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
 	{
-		return;
-	}
-
-	TArray<FDC1BuildRow> BuildRows;
-
-	if (false == FindSortBuildData(BuildRows))
-	{
-		return;
-	}
-
-	for (const TPair<FGameplayTag, int32>& Pair : TabToSwitchIndex)
-	{
-		UDC1BuildWidget* BuildWidget = GetTabWidget<UDC1BuildWidget>(Pair.Key);
-		if (false == ::IsValid(BuildWidget))
-		{
-			continue;
-		}
-
-		BuildWidget->InitBuild(BuildRows, TechComp);
-
-		UDC1TabHeaderButton* TabButton = GetTabButton(Pair.Key);
-		if (false == ::IsValid(TabButton))
-		{
-			continue;
-		}
-
-		bool HasUnlock = TechComp->HasUnlockedTag(Pair.Key);
-
-		EDC1TabButtonState ButtonState = HasUnlock ? EDC1TabButtonState::Inactive : EDC1TabButtonState::Disable;
-		
-		TabButton->SetState(ButtonState);
+		SetViewModel(ViewModelSubsystem->GetViewModel<UDC1BuildViewModel>());
 	}
 }
 
@@ -87,53 +47,76 @@ void UDC1BuildTabWidget::CloseWidget(const FKey& InKey)
 	UIManager->PopScreen();
 }
 
-UDC1TechTreeComponent* UDC1BuildTabWidget::GetTechTreeComponent()
+void UDC1BuildTabWidget::SetViewModel(UDC1BuildViewModel* InViewModel)
 {
-	ADC1PlayerState* PS = GetOwningPlayerState<ADC1PlayerState>();
-	if (false == ::IsValid(PS))
+	if (CachedViewModel == InViewModel)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildTabWidget :: Can't Find PS"));
-		return nullptr;
+		return;
 	}
 
-	UDC1TechTreeComponent* TechComp = PS->GetTechTreeComponent();
-	if (false == ::IsValid(TechComp))
+	if (true == ::IsValid(CachedViewModel))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildTabWidget :: Can't Find TechComp"));
-		return nullptr;
+		CachedViewModel->OnBuildStateChanged.RemoveAll(this);
+		CachedViewModel->OnBuildUnlocked.RemoveAll(this);
 	}
 
-	return TechComp;
+	CachedViewModel = InViewModel;
+
+	if (true == ::IsValid(CachedViewModel))
+	{
+		CachedViewModel->OnBuildStateChanged.AddUObject(this, &ThisClass::RefreshAll);
+		CachedViewModel->OnBuildUnlocked.AddUObject(this, &ThisClass::HandleBuildUnlocked);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildTabWidget :: Can't Find BuildViewModel"));
+		return;
+	}
+
+	RefreshAll();
 }
 
-bool UDC1BuildTabWidget::FindSortBuildData(TArray<FDC1BuildRow>& OutBuildRows)
+void UDC1BuildTabWidget::RefreshAll()
 {
-	TArray<FDC1BuildRow> AllBuildRows;
-
-	if (false == DC1DataTableHelper::GetAllRows<FDC1BuildRow>(DC1DataTableTags::DataTable_UI_Build, AllBuildRows))
+	if (false == ::IsValid(CachedViewModel) || false == CachedViewModel->HasModel())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Build DataTable is NULL"));
-		return false;
+		return;
 	}
 
-	for (const FDC1BuildRow& BuildRow : AllBuildRows)
+	for (const TPair<FGameplayTag, int32>& Pair : TabToSwitchIndex)
 	{
-		const FGameplayTag& BuildTag = BuildRow.BuildTag;
-		if (true == BuildTag.IsValid())
+		UDC1BuildWidget* BuildWidget = GetTabWidget<UDC1BuildWidget>(Pair.Key);
+		if (false == ::IsValid(BuildWidget))
 		{
-			OutBuildRows.Add(BuildRow);
+			continue;
+		}
+
+		if (false == IsInit)
+		{
+			BuildWidget->InitBuild(CachedViewModel);
+		}
+
+		if (true == CachedViewModel->IsUnlocked(Pair.Key))
+		{
+			EnableTab(Pair.Key);
+		}
+		else
+		{
+			UDC1TabHeaderButton* TabButton = GetTabButton(Pair.Key);
+			if (true == ::IsValid(TabButton))
+			{
+				TabButton->SetState(EDC1TabButtonState::Disable);
+			}
 		}
 	}
 
-	OutBuildRows.Sort([](const FDC1BuildRow& Src, const FDC1BuildRow& Dst)
-		{
-			return Src.SortOrder < Dst.SortOrder;
-		});
-
-	return OutBuildRows.Num() > 0;
+	if (false == IsInit)
+	{
+		IsInit = true;
+	}
 }
 
-void UDC1BuildTabWidget::OnTechUnlocked(const FGameplayTag& InUnlockedTag)
+void UDC1BuildTabWidget::HandleBuildUnlocked(const FGameplayTag& InUnlockedTag)
 {
 	if (false == InUnlockedTag.MatchesTag(DC1TechTags::Build))
 	{
@@ -142,7 +125,7 @@ void UDC1BuildTabWidget::OnTechUnlocked(const FGameplayTag& InUnlockedTag)
 
 	const FGameplayTag& RowTag = InUnlockedTag.RequestDirectParent();
 	const FGameplayTag& TabTag = RowTag.RequestDirectParent();
-	
+
 	if (false == TabTag.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildTabWidget :: Invalid TabTag : %s"), *InUnlockedTag.ToString());

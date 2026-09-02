@@ -7,11 +7,8 @@
 #include "GameplayTagContainer.h"
 #include "DC1BuildWidget.generated.h"
 
-struct FDC1BuildRow;
-struct FDC1TechRow;
-
 class UDC1BuildRowWidget;
-class UDC1TechTreeComponent;
+class UDC1BuildViewModel;
 
 class UScrollBox;
 class UTextBlock;
@@ -36,7 +33,7 @@ class DC1_API UDC1BuildWidget : public UDC1UserWidget
 	GENERATED_BODY()
 	
 public:
-	void	InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const UDC1TechTreeComponent* InTechComp);
+	void	InitBuild(UDC1BuildViewModel* InViewModel);
 
 	bool	VisibleSlot(const FGameplayTag& InRowTag, const FGameplayTag& InSlotTag);
 
@@ -58,5 +55,8 @@ private:
 
 private:
 	UPROPERTY()
-	TMap<FGameplayTag, TObjectPtr<UDC1BuildRowWidget>> BuildRows;
+	TMap<FGameplayTag, TObjectPtr<UDC1BuildRowWidget>> BuildRowsByTag;
+
+	// 행/슬롯 위젯 생성은 1회만. RefreshAll은 상태가 바뀔 때마다 불린다
+	bool	IsInit = { false };
 };
