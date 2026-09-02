@@ -21,8 +21,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
+
 #include "Component/Build/DC1BuildPlacementComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
 
@@ -130,7 +131,7 @@ void ADC1PlayerController::BeginPlay()
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
 
-	OnRep_PlayerState();
+	InitPlayerStateBindings();
 }
 
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -469,41 +470,53 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 
 void ADC1PlayerController::InitPlayerStateBindings()
 {
-	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-	if (false == ::IsValid(UIManager))
+	ADC1PlayerState* OwnerPlayerState = GetPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(OwnerPlayerState))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;		// 아직 도착 전. OnRep_PlayerState가 다시 부른다
+	}
+
+	ULocalPlayer* OwnerLocalPlayer = GetLocalPlayer();
+	if (false == ::IsValid(OwnerLocalPlayer))
+	{
 		return;
 	}
 
-	// ViewModel Bind
-	if (ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>()))
+	// VM 생성/조회는 서브시스템이, 위젯은 스스로
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = OwnerLocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
 	{
-		GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>()->BindAll(OwnerPlayerState);
+		ViewModelSubsystem->BindAll(OwnerPlayerState);
 	}
 
-	// 인벤토리 ViewModel 생성
-	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
-	if (IsValid(InventoryViewModel))
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
 	{
-		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
-		if (IsValid(OwnerPlayerState))
-		{
-			UDC1TabWidget* MainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
-			if (MainTabWidget)
-			{
-				if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
-				{
-					InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+		return;
+	}
 
-					UDC1InventoryWidget* PlayerInventoryWidget = MainTabWidget->GetInventoryWidget();
-					if (PlayerInventoryWidget)
-					{
-						PlayerInventoryWidget->SetViewModel(InventoryViewModel);
-					}
-				}
-			}
-		}
+	if (false == ::IsValid(CachedMainTabWidget))
+	{
+		CachedMainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
+	}
+
+	if (false == ::IsValid(CachedMainTabWidget))
+	{
+		return;
+	}
+
+	if (false == ::IsValid(InventoryViewModel))
+	{
+		InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
+	}
+
+	if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
+	{
+		InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+	}
+
+	if (UDC1InventoryWidget* PlayerInventoryWidget = CachedMainTabWidget->GetInventoryWidget())
+	{
+		PlayerInventoryWidget->SetViewModel(InventoryViewModel);
 	}
 }
 

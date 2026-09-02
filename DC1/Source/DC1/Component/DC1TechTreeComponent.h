@@ -40,7 +40,9 @@ public:
 	EDC1TechSlotState		GetTechState(const FGameplayTag& InTechTag) const;
 	bool					HasUnlockedTag(const FGameplayTag& Tag) const { return UnlockedTechTags.HasTag(Tag); }
 
+	const FDC1TechRow*		FindTechRow(const FGameplayTag& InTechTag) const;
 	const TMap<FGameplayTag, const FDC1TechRow>& GetTechRowsByTag() const { return TechRowsByTag; }
+
 
 public:
 	virtual void			BeginPlay() override;
@@ -60,10 +62,7 @@ private:
 	void			AddTechPoints(int32 InPoints);
 	void			AddAncientTechPoints(int32 InPoints);
 
-
 private:
-	const FDC1TechRow* FindTechRow(const FGameplayTag& InTechTag) const;
-	
 	UFUNCTION()
 	void			OnRep_TechState();
 

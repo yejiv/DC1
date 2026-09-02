@@ -6,14 +6,12 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1TechTreeWidget.generated.h"
 
-struct FOnAttributeChangeData;
-class UDataTable;
 class UScrollBox;
 class UDC1TechTreeRowWidget;
 class UDC1TechTreeButton;
 class UDC1TechTreePointWidget;
-class UDC1TechTreeComponent;
 
+class UDC1TechTreeViewModel;
 
 UCLASS()
 class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
@@ -21,21 +19,23 @@ class DC1_API UDC1TechTreeWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void			NativeConstruct() override;
+	virtual void			NativeOnInitialized() override;
+
+public:
+	void					SetViewModel(UDC1TechTreeViewModel* InViewModel);
 
 private:
-	UDC1TechTreeComponent*	GetTechTreeComponent();
 	void					InitRows(int32 InNewLevel);
 	
 	void					UpdateRows(int32 InNewLevel);
-	void					UpdatePoint(const UDC1TechTreeComponent* InTechComp);
-	void					UpdateSlots(const UDC1TechTreeComponent* InTechComp);
+	void					UpdatePoint();
+	void					UpdateSlots();
 
 	// DataTable 읽어서 Row, Slot 생성
 	void					InitTechTree();
 
 	// TechTree Slot 상태 변화 ( Lock, Available, Unlock )
-	void					OnTechStateChanged();
+	void					RefreshAll();
 
 
 private:
@@ -57,6 +57,9 @@ private:
 
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
+
+	UPROPERTY()
+	TObjectPtr<UDC1TechTreeViewModel>			CachedViewModel;
 
 	int32										CachedLevel = { 0 };
 

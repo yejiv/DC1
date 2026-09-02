@@ -5,6 +5,7 @@
 
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
+#include "UI/Tab/TechTree/DC1TechTreeWidget.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
@@ -246,4 +247,9 @@ void UDC1TabWidget::SelectFirstInactiveTab()
 UDC1InventoryWidget* UDC1TabWidget::GetInventoryWidget() const
 {
 	return GetTabWidget<UDC1InventoryWidget>(DC1UITags::UI_Main_Tab_Inventory);
+}
+
+UDC1TechTreeWidget* UDC1TabWidget::GetTechTreeWidget() const
+{
+	return GetTabWidget<UDC1TechTreeWidget>(DC1UITags::UI_Main_Tab_TechTree);
 }

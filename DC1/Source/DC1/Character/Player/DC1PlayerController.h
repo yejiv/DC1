@@ -13,7 +13,9 @@ class ADC1Player;
 
 class UDC1InputData;
 
+class UDC1TabWidget;
 class UDC1InventoryViewModel;
+
 class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
 
@@ -95,8 +97,12 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADC1Player>	ControlObject = { nullptr };
 
+	// 인벤토리는 기존 방식 유지 — PC가 VM을 만들어 위젯에 주입한다
 	UPROPERTY()
-	TObjectPtr<UDC1InventoryViewModel> InventoryViewModel = { nullptr };
+	TObjectPtr<UDC1TabWidget>			CachedMainTabWidget = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UDC1InventoryViewModel>	InventoryViewModel = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
 
