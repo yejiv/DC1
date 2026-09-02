@@ -28,6 +28,8 @@
 
 #include "Interface/DC1InteractableInterface.h"
 
+#include "Subsystem/DC1ViewModelSubsystem.h"
+
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -462,6 +464,12 @@ void ADC1PlayerController::InitPlayerStateBindings()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
 		return;
+	}
+
+	// ViewModel Bind
+	if (ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>()))
+	{
+		GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>()->BindAll(OwnerPlayerState);
 	}
 
 	// 인벤토리 ViewModel 생성
