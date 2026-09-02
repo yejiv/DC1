@@ -147,6 +147,11 @@ void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	// Change IMC Binding Remove
 	UIManager->OnScreenStackChanged.RemoveAll(this);
 
+	if (false == IsLocalController())
+	{
+		return;
+	}
+
 	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
 	{
 		ViewModelSubsystem->ClearAll();
