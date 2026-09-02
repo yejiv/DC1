@@ -64,5 +64,5 @@ private:
 	float GetAttributeValue(const FGameplayAttribute& InAttribute) const;
 
 private:
-	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = { nullptr };
+	TWeakObjectPtr<UAbilitySystemComponent>	AbilitySystemComponent = { nullptr };
 };
