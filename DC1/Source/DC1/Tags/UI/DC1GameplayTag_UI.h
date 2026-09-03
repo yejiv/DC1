@@ -12,6 +12,10 @@ namespace DC1UITags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Logo_Title);
 #pragma endregion
 
+#pragma region HUD
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_HUD);
+#pragma endregion
+
 #pragma region MAIN_TAB
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Tab);

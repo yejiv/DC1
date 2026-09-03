@@ -10,6 +10,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Logo_Title, "UI.Logo.Title");
 #pragma endregion
 
+#pragma region HUD
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_HUD, "UI.Main.HUD");
+#pragma endregion
+
 #pragma region MAIN TAB
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab, "UI.Main.Tab");
 	
