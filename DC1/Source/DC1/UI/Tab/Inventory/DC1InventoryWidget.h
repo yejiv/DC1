@@ -8,7 +8,7 @@
 
 class UDC1InventoryViewModel;
 class UDC1InventorySlotsWidget;
-class UDC1ItemDragWidget;
+class UDC1InventorySlotWidget;
 
 class UTextBlock;
 class UBorder;
@@ -28,9 +28,8 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -55,13 +54,26 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;
 
+	UPROPERTY(EditAnywhere, Category = "Inventory|Drag")
+	TSubclassOf<UDC1InventorySlotWidget> DragSlotWidgetClass;
+
+	/** 드래그 복제본이 마우스를 따라가는 보간 속도 (클수록 빠르게 따라붙음) */
+	UPROPERTY(EditAnywhere, Category = "Inventory|Drag")
+	float DragFollowSpeed = 15.0f;
+
 private:
+	// 드래그 복제 Slot 크기 (기존 100x100의 80%)
+	static constexpr float DragSlotSize = 80.0f;
+
 	// 선택된 아이템 정보
 	int32 DragSourceSlotIndex = -1;
 	int32 DragStackCount = 0;
 	const FDC1ItemRow* DragItemData = nullptr;
 
-	// 드래그 위젯
+	// 드래그 복제 Slot 위젯
 	UPROPERTY()
-	TObjectPtr<UDC1ItemDragWidget> DragWidgetContainer = nullptr;
+	TObjectPtr<UDC1InventorySlotWidget> DraggedSlotCopy = nullptr;
+
+	// 드래그 복제 Slot의 현재 보간 위치 (뷰포트 좌표계)
+	FVector2D DraggedSlotCurrentPosition = FVector2D::ZeroVector;
 };

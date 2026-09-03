@@ -39,6 +39,25 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	UDC1InventoryEntryWidget* GetEntryWidget() const { return EntryWidget; }
 
+	/**
+	 * 무게 텍스트 표시 제어
+	 * @param bVisible 표시 여부
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetWeightVisibility(bool bVisible);
+
+	/**
+	 * 드래그용 복제본 위젯 초기화
+	 * C++에서 생성된 복제본이 제대로 렌더링되도록 설정
+	 */
+	void InitializeDragCopy();
+
+	/**
+	 * 표시되는 개수를 덮어씀 (Ctrl/Shift로 부분 선택된 개수를 드래그 복제본에 표시할 때 사용)
+	 * @param NewCount 표시할 개수
+	 */
+	void OverrideDisplayCount(int32 NewCount);
+
 protected:
 	void UpdateRarityColor(EDC1ItemRarity Rarity);
 	void ShowHoverImage();

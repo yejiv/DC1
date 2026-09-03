@@ -20,8 +20,9 @@ void UDC1InventorySlotWidget::NativePreConstruct()
 void UDC1InventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
 	// EntryWidget 생성 (자식 위젯으로 추가)
-	if (IsValid(SizeBox_Root) && !IsValid(EntryWidget))
+	if (!IsValid(EntryWidget) && IsValid(SizeBox_Root))
 	{
 		EntryWidget = CreateWidget<UDC1InventoryEntryWidget>(this);
 		if (IsValid(EntryWidget))
@@ -139,4 +140,35 @@ void UDC1InventorySlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEve
 	Super::NativeOnMouseLeave(InMouseEvent);
 
 	HideHoverImage();
+}
+
+void UDC1InventorySlotWidget::SetWeightVisibility(bool bVisible)
+{
+	if (IsValid(EntryWidget))
+	{
+		EntryWidget->SetWeightVisibility(bVisible);
+	}
+}
+
+void UDC1InventorySlotWidget::OverrideDisplayCount(int32 NewCount)
+{
+	if (IsValid(EntryWidget))
+	{
+		EntryWidget->RefreshItemCount(NewCount);
+	}
+}
+
+void UDC1InventorySlotWidget::InitializeDragCopy()
+{
+	// 드래그 복제본용 스타일 설정
+	// HitTestInvisible: 화면에는 보이지만 마우스 입력(클릭, Hover)은 무시하고 아래 위젯으로 통과시킴
+	// (마우스를 항상 따라다니므로 Visible로 두면 자기 자신이 클릭/Hover를 가로채 드롭 및 Hover 로직이 깨짐)
+	SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	// SlotBorder 스타일 설정 (기본 Common 레어도 색상)
+	if (IsValid(SlotBorder))
+	{
+		UpdateRarityColor(EDC1ItemRarity::Common);
+		SlotBorder->SetPadding(FMargin(2.0f));
+	}
 }

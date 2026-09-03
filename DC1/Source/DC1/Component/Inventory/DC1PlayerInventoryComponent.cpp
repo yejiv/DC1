@@ -82,6 +82,7 @@ void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	// 플레이어 전용 데이터 - COND_OwnerOnly (플레이어 본인과 서버만)
+	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, Slots, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, CurrentWeight, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, EquipmentSlots, COND_OwnerOnly);
 }
@@ -292,6 +293,11 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 
 	// 최대 무게 초과 방지
 	CurrentWeight = FMath::Min(CurrentWeight, MaxWeight);
+}
+
+void UDC1PlayerInventoryComponent::OnRep_EquipmentSlots()
+{
+	OnInventoryUpdated.Broadcast();
 }
 
 void UDC1PlayerInventoryComponent::InitializeEquipmentSlots()

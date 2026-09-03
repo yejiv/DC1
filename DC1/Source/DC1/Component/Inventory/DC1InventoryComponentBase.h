@@ -78,11 +78,15 @@ protected:
 	virtual void InitializeSlots();
 	virtual void OnInventoryUpdated_Internal();
 
+	/** 클라이언트에서 Slots 복제 수신 시 호출되어 UI 갱신 이벤트를 발생시킴 */
+	UFUNCTION()
+	void OnRep_Slots(const TArray<FDC1InventorySlotInfo>& OldSlots);
+
 private:
 	bool AddItemToEmptySlot(FName InItemID, int32 InCount);
 
 protected:
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory")
+	UPROPERTY(ReplicatedUsing = OnRep_Slots, BlueprintReadOnly, Category = "Inventory")
 	TArray<FDC1InventorySlotInfo> Slots;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings", meta = (ClampMin = "1"))
