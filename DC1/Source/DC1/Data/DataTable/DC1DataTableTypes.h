@@ -38,6 +38,7 @@ struct FDC1TechRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText CategoryName;
 
+	// Icon Image
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> Icon;
 
@@ -63,6 +64,10 @@ struct FDC1BuildRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
+	// 해금 TechTag - 1:N 관계 ( ex) TechTag = Build_Building_Wood 인 경우 해금되는 Build는 Build_Building_Wood_Floor, Build_Building_Wood_Wall 등등 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag RequiredTechTag;
+
 	//	4단계 고정 - ex) Build_Crafting_CraftAndRepair_WorkBench00
 	//	Page = Build.Crafing 
 	//	Row = BuildCrafting.CraftAndRepair
@@ -81,6 +86,14 @@ struct FDC1BuildRow : public FTableRowBase
 	// Build 시간 ( 작업량 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RequiredWork;
+
+	// Mouse Hover UI 전용 Name
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	// Icon Image
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UTexture2D> Icon;
 
 	// Build Actor
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

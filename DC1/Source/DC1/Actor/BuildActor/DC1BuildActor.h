@@ -10,7 +10,7 @@
 #include "Interface/DC1InteractableInterface.h"
 #include "DC1BuildActor.generated.h"
 
-struct FDC1BuildSnapPoint;
+struct FDC1BuildSnapSocket;
 
 class UStaticMeshComponent;
 class UBoxComponent;
@@ -83,7 +83,7 @@ protected:
 public:
 	virtual void					Tick(float DeltaTime) override;
 	virtual UPrimitiveComponent*	GetInteractCollider() const override;
-	virtual FGameplayTag			GetInteractAbilityTag() const;
+	virtual FGameplayTag			GetInteractAbilityTag() const override;
 	
 	virtual void					OnInteractableFocused();
 	virtual void					OnInteractableUnfocused();
@@ -91,8 +91,8 @@ public:
 public:
 	virtual bool					UpdatePreview(bool InIsInRange);
 	virtual bool					SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, 
-															FDC1BuildSnapPoint& OutSnapPoint) const;
-	virtual bool					SelectSnapPointByPoint(const FVector& InWorldPoint, FDC1BuildSnapPoint& OutSnapPoint) const;
+													FDC1BuildSnapSocket& OutSnapSocket) const;
+	virtual bool					SelectSnapPointByPoint(const FVector& InWorldLocation, FDC1BuildSnapSocket& OutSnapSocket) const;
 	void							InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
 
 	void							AddWorker(const ADC1Character* InWorker);

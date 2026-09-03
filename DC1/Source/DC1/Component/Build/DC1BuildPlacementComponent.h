@@ -10,7 +10,7 @@
 
 struct FDC1BuildActorData;
 struct FInputActionValue;
-struct FDC1BuildSnapPoint;
+struct FDC1BuildSnapSocket;
 
 class ADC1BuildActor;
 
@@ -68,9 +68,9 @@ private:
 	bool				GetViewRay(FVector& OutStart, FVector& OutEnd) const;
 	void				ChangeSnapConfirmTarget();
 	
-	bool				FindSnapFace(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const;
-	bool				FindSnapFaceByRay(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const;
-	bool				FindSnapFaceByRange(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const;
+	bool				FindSnapFace(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
+	bool				FindSnapFaceByRay(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
+	bool				FindSnapFaceByRange(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
 	void				FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const;
 
 private:
@@ -110,8 +110,8 @@ private:
 	bool									IsSnapping = { false };
 	float									SnapBaseYaw = { 0.f };
 
-	FVector									SnapPointWorld = { FVector::ZeroVector };
-	FVector									SnapNormalWorld = { FVector::ZeroVector };
+	FVector									SnapSocketLocationWorld = { FVector::ZeroVector };
+	FVector									SnapSocketNormalWorld = { FVector::ZeroVector };
 	float									SnapMinDistance = { 0.f };
 	float									SnapContactMargin = { 1.f };
 

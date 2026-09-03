@@ -30,7 +30,7 @@ void UDC1BuildRowWidget::InitRow(const FGameplayTag& InRowTag, const FText& InRo
 	SetVisibility(ESlateVisibility::Collapsed);
 }
 
-UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow, UDC1BuildViewModel* InViewModel)
+UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow, UDC1BuildViewModel* InViewModel)
 {
 	if (false == ::IsValid(SlotContainer) || false == ::IsValid(SlotWidgetClass))
 	{
@@ -44,7 +44,7 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 	}
 
 	// Init Slot Button - Setting Tag, Cost, Image, Visible
-	SlotWidget->InitBuildButton(InBuildRow, InTechRow);
+	SlotWidget->InitBuildButton(InBuildRow);
 
 	SlotContainer->AddChild(SlotWidget);
 	Slots.FindOrAdd(InBuildRow.BuildTag, SlotWidget);

@@ -16,7 +16,22 @@
 // Sets default values for this component's properties
 UDC1BuildCheckComponent::UDC1BuildCheckComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+}
+
+void UDC1BuildCheckComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	SetComponentTickEnabled(DrawDebugSocket);
+}
+
+void UDC1BuildCheckComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	DrawDebugSockets();
 }
 
 const float UDC1BuildCheckComponent::GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const
@@ -76,7 +91,7 @@ const FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult
 	return FTransform(FinalQuat, Location, Owner->GetActorScale3D());
 }
 
-const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPoint(const FVector& InWorldNormal) const
+const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeSnapSocketSide(const FVector& InWorldNormal) const
 {
 	const FVector LocalNormal = GetComponentTransform().InverseTransformVectorNoScale(InWorldNormal);
 
@@ -89,63 +104,58 @@ const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPoint(const FVecto
 
 	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
 
-	return MakeSideSnapPointFromAxis(IsAxisX, AxisSign);
+	return MakeSnapSocketSideFromAxis(IsAxisX, AxisSign);
 }
 
-const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeNearestSideSnapPoint(const FVector& InWorldPoint) const
+const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeNearestSnapSocketSide(const FVector& InWorldLocation) const
 {
-	const FVector LocalPoint = GetComponentTransform().InverseTransformPosition(InWorldPoint);
+	const FVector LocalLocation = GetComponentTransform().InverseTransformPosition(InWorldLocation);
 	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
 
-	float OverX = FMath::Abs(LocalPoint.X) - CheckBoxExtent.X;
-	float OverY = FMath::Abs(LocalPoint.Y) - CheckBoxExtent.Y;
+	float OverX = FMath::Abs(LocalLocation.X) - CheckBoxExtent.X;
+	float OverY = FMath::Abs(LocalLocation.Y) - CheckBoxExtent.Y;
 
 	const bool IsAxisX = OverX > OverY;
 
-	const float Direction = IsAxisX ? LocalPoint.X : LocalPoint.Y;
+	const float Direction = IsAxisX ? LocalLocation.X : LocalLocation.Y;
 
 	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
 
-	return MakeSideSnapPointFromAxis(IsAxisX, AxisSign);
+	return MakeSnapSocketSideFromAxis(IsAxisX, AxisSign);
 }
 
-//void UDC1BuildCheckComponent::InitSnapPoints(TArray<FDC1BuildSnapPoint>& OutSnapPoints) const
-//{
-//	const AActor* Owner = GetOwner();
-//	if (false == ::IsValid(Owner))
-//	{
-//		return;
-//	}
-//
-//	OutSnapPoints.Reset();
-//	OutSnapPoints.Reserve(SnapDatas.Num());
-//
-//	const FVector CheckBoxExtents = GetUnscaledBoxExtent();
-//	const FTransform CheckBoxTransform = GetComponentTransform();
-//
-//	for (const FDC1BuildSnapData& SnapData : SnapDatas)
-//	{
-//		if (true == SnapData.SnapDirection.IsNearlyZero())
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildCheckComponent :: Invalid SnapDirection : %s"), *Owner->GetName());
-//			continue;
-//		}
-//
-//		const FVector PointLocalLocation = (CheckBoxExtents * SnapData.SnapDirection);
-//
-//		const FVector PointWorldLocation = CheckBoxTransform.TransformPosition(PointLocalLocation);
-//		const FVector PointWorldNomral = CheckBoxTransform.TransformVectorNoScale(PointLocalLocation).GetSafeNormal();
-//
-//		FDC1BuildSnapPoint SnapPoint;
-//
-//		SnapPoint.WorldLocation = PointWorldLocation;
-//		SnapPoint.WorldNormal = PointWorldNomral;
-//		SnapPoint.SnapType = SnapData.SnapType;
-//		SnapPoint.AcceptTypes = SnapData.AcceptTypes;
-//
-//		OutSnapPoints.Add(SnapPoint);
-//	}
-//}
+bool UDC1BuildCheckComponent::GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const
+{
+	OutSockets.Reset();
+	OutSockets.Reserve(SnapDatas.Num());
+
+	const FTransform CheckBoxTransform = GetComponentTransform();
+
+	for (const FDC1BuildSnapSocketData& SnapData : SnapDatas)
+	{
+		if (false == SnapData.SnapType.IsValid())
+		{
+			continue;
+		}
+
+		FDC1BuildSnapSocket SnapSocket;
+
+		// UE는 자식 * 부모
+		SnapSocket.SocketTransform = MakeSnapSocketLocalTransform(SnapData) * CheckBoxTransform;
+
+		SnapSocket.SnapType = SnapData.SnapType;
+		SnapSocket.AcceptTypes = SnapData.AcceptTypes;
+
+		OutSockets.Add(SnapSocket);
+	}
+
+	if (OutSockets.IsEmpty())
+	{
+		return false;
+	}
+
+	return true;
+}
 
 bool UDC1BuildCheckComponent::CheckSurface()
 {
@@ -278,7 +288,7 @@ FVector UDC1BuildCheckComponent::GetAttachLocalOffset() const
 	return Owner->GetActorQuat().UnrotateVector(WorldOffset - Owner->GetActorLocation());
 }
 
-const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPointFromAxis(bool InIsAxisX, float InAxisSign) const
+const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeSnapSocketSideFromAxis(bool InIsAxisX, float InAxisSign) const
 {
 	const FVector CheckBoxExtent = GetScaledBoxExtent();
 
@@ -286,11 +296,57 @@ const FDC1BuildSnapPoint UDC1BuildCheckComponent::MakeSideSnapPointFromAxis(bool
 
 	const float AxisExtent = InIsAxisX ? CheckBoxExtent.X : CheckBoxExtent.Y;
 
-	FDC1BuildSnapPoint SnapPoint;
-	SnapPoint.WorldLocation = GetComponentLocation() + (Axis * AxisExtent);
-	SnapPoint.WorldNormal = Axis;
-	SnapPoint.SnapType = DC1BuildTags::Build_Snap_Side;
-	SnapPoint.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side);
+	FDC1BuildSnapSocket SnapSocket;
+	SnapSocket.SocketTransform = FTransform(FRotationMatrix::MakeFromXZ(Axis, GetUpVector()).ToQuat(), GetComponentLocation() + (Axis * AxisExtent));
 
-	return SnapPoint;
+	SnapSocket.SnapType = DC1BuildTags::Build_Snap_Side;
+	SnapSocket.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side);
+
+	return SnapSocket;
+}
+
+const FTransform UDC1BuildCheckComponent::MakeSnapSocketLocalTransform(const FDC1BuildSnapSocketData& InData) const
+{
+	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
+	const FVector LocalLocation = CheckBoxExtent * InData.SnapDirection;
+
+	const FVector AttachAxis = InData.AttachAxis.GetSafeNormal();
+	const FVector TangentAxis = InData.TangentAxis.GetSafeNormal();
+
+	if (false == FMath::IsNearlyZero(FVector::DotProduct(AttachAxis, TangentAxis)))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SnapData Axis Not Orthogonal : %s"), *GetOwner()->GetName());
+		return FTransform::Identity;
+	}
+
+	const FQuat LocalRotation = FRotationMatrix::MakeFromXZ(AttachAxis, TangentAxis).ToQuat();
+
+	return FTransform(LocalRotation, LocalLocation);
+}
+
+void UDC1BuildCheckComponent::DrawDebugSockets()
+{
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return;
+	}
+
+	DrawDebugBox(World, GetComponentLocation(), GetScaledBoxExtent(), GetComponentQuat(), FColor::Silver);
+
+	TArray<FDC1BuildSnapSocket> Sockets;
+	
+	if (false == GetBuildSocketsWorld(Sockets))
+	{
+		return;
+	}
+
+	for (const FDC1BuildSnapSocket& Socket : Sockets)
+	{
+		const FVector Location = Socket.SocketTransform.GetLocation();
+		const FRotator Rotator = Socket.SocketTransform.GetRotation().Rotator();
+
+		DrawDebugCoordinateSystem(World, Location, Rotator, 40.f, false, -1.f, 0, 1.f);
+		DrawDebugSphere(World, Location, 20.f, 8, FColor::White);
+	}
 }

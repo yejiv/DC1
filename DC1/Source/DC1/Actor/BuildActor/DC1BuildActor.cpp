@@ -228,7 +228,7 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 	return CanBuilding;
 }
 
-bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FDC1BuildSnapPoint& OutSnapPoint) const
+bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FDC1BuildSnapSocket& OutSnapSocket) const
 {
 	if (false == ::IsValid(BuildCheckComp))
 	{
@@ -247,19 +247,19 @@ bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVect
 		return false;
 	}*/
 
-	OutSnapPoint = BuildCheckComp->MakeSideSnapPoint(Hit.ImpactNormal);
+	OutSnapSocket = BuildCheckComp->MakeSnapSocketSide(Hit.ImpactNormal);
 
 	return true;
 }
 
-bool ADC1BuildActor::SelectSnapPointByPoint(const FVector& InWorldPoint, FDC1BuildSnapPoint& OutSnapPoint) const
+bool ADC1BuildActor::SelectSnapPointByPoint(const FVector& InWorldLocation, FDC1BuildSnapSocket& OutSnapSocket) const
 {
 	if (false == ::IsValid(BuildCheckComp))
 	{
 		return false;
 	}
 
-	OutSnapPoint = BuildCheckComp->MakeNearestSideSnapPoint(InWorldPoint);
+	OutSnapSocket = BuildCheckComp->MakeNearestSnapSocketSide(InWorldLocation);
 
 	return true;
 }
