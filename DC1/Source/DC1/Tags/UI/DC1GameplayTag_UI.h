@@ -25,6 +25,11 @@ namespace DC1UITags
 #pragma region MAIN_BUILD
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Build);
 #pragma endregion
+
+#pragma region CHEST_LOOT
+	// 상자 개방 시 플레이어 인벤토리 + 상자 인벤토리를 함께 보여주는 화면
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Chest_Loot);
+#pragma endregion
 }
 
 

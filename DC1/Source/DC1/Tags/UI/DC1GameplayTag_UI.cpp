@@ -29,6 +29,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Food, "UI.Main.Food");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Infrastructure, "UI.Main.Infrastructure");
 #pragma endregion
+
+#pragma region CHEST_LOOT
+	UE_DEFINE_GAMEPLAY_TAG(UI_Chest_Loot, "UI.Chest.Loot");
+#pragma endregion
 }
 
 namespace DC1TechTags

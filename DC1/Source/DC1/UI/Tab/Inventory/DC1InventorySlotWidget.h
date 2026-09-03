@@ -28,7 +28,7 @@ protected:
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 public:
-	void InitSlot(int32 SlotIndex, float SlotSize);
+	void InitSlot(int32 SlotIndex, float SlotSize, bool bInIsChestSlot = false);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetSlotData(const UDC1InventoryViewModel* ViewModel);
@@ -82,4 +82,5 @@ private:
 private:
 	int32 CurrentSlotIndex = -1;
 	bool bIsBeingDragged = false;
+	bool bIsChestSlot = false;
 };
