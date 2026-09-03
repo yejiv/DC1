@@ -6,32 +6,31 @@
 #include "UI/Tab/DC1TabWidget.h"
 #include "DC1BuildTabWidget.generated.h"
 
-struct FDC1BuildRow;
-struct FDC1TechRow;
-
-class UDC1TechTreeComponent;
-class UDC1BuildWidget;
+class UDC1BuildViewModel;
 
 UCLASS()
 class DC1_API UDC1BuildTabWidget : public UDC1TabWidget
 {
 	GENERATED_BODY()
-	
+
 protected:
 	virtual void			NativeOnInitialized() override;
-
-protected:
-	virtual void			ButtonInitialize() override;
 	virtual void			CloseWidget(const FKey& InKey) override;
 
+public:
+	void					SetViewModel(UDC1BuildViewModel* InViewModel);
+
 private:
-	UDC1TechTreeComponent*	GetTechTreeComponent();
-
-	bool					FindSortBuildData(TArray<FDC1BuildRow>& OutBuildRows);
-
-	void					OnTechUnlocked(const FGameplayTag& InUnlockedTag);
+	void					RefreshAll();
+	void					HandleBuildUnlocked(const FGameplayTag& InUnlockedTag);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Build")
 	FDC1KeyList				BuildCloseKeys;
+
+private:
+	UPROPERTY()
+	TObjectPtr<UDC1BuildViewModel>	CachedViewModel;
+
+	bool							IsInit = false;
 };

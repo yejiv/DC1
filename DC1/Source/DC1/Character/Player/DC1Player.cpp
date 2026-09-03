@@ -34,6 +34,7 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 
 	USkeletalMeshComponent* BodyMesh = GetMesh();
 	BodyMesh->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -90.f), FRotator(0.f, -90.f, 0.f));
+	BodyMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 
 	// HeadMesh
 	HeadMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HeadMesh");

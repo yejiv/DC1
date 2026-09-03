@@ -9,73 +9,61 @@
 
 #include "Define/DC1Helper.h"
 
-#include "Data/DA/UI/DC1UIData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
-#include "Tags/UI/DC1GameplayTag_UI.h"
-
-#include "Character/Player/DC1PlayerState.h"
-#include "Component/DC1TechTreeComponent.h"
-
-#include "AbilitySystemComponent.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
 #include "Components/ScrollBox.h"
 
-void UDC1TechTreeWidget::NativeConstruct()
-{
-	Super::NativeConstruct();
+#include "ViewModel/TechTree/DC1TechTreeViewModel.h"
+#include "Subsystem/DC1ViewModelSubsystem.h"
 
-	if (true == IsInit)
+void UDC1TechTreeWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	ULocalPlayer* OwnerLocalPlayer = GetOwningLocalPlayer();
+	if (false == ::IsValid(OwnerLocalPlayer))
 	{
 		return;
 	}
 
-	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
-	if (true == ::IsValid(TechComp))
+	// VM은 소스보다 먼저 존재한다. 늦게 오는 소스는 VM이 브로드캐스트로 알린다
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = OwnerLocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
 	{
-		TechComp->OnTechStateChange.AddUObject(this, &ThisClass::OnTechStateChanged);
+		SetViewModel(ViewModelSubsystem->GetViewModel<UDC1TechTreeViewModel>());
+	}
+}
 
-		TechComp->OnTechUnlocked.AddWeakLambda(this, [](const FGameplayTag& Tag)
+void UDC1TechTreeWidget::SetViewModel(UDC1TechTreeViewModel* InViewModel)
+{
+	if (CachedViewModel == InViewModel)
+	{
+		return;
+	}
+
+	if (true == ::IsValid(CachedViewModel))
+	{
+		CachedViewModel->OnTechStateChanged.RemoveAll(this);
+		CachedViewModel->OnTechUnlocked.RemoveAll(this);
+	}
+
+	CachedViewModel = InViewModel;
+
+	if (true == ::IsValid(CachedViewModel))
+	{
+		CachedViewModel->OnTechStateChanged.AddUObject(this, &ThisClass::RefreshAll);
+		CachedViewModel->OnTechUnlocked.AddWeakLambda(this, [](const FGameplayTag& Tag)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Unlocked : %s "), *Tag.ToString());
 			});
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find TechTreeComponent"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find TechTreeViewModel"));
 		return;
 	}
 
-	// Init TechTree Row + Slot + Init Slot State
-	InitTechTree();
-
-	// Init Rows
-	InitRows(TechComp->GetPlayerLevel());
-
-	// Init Point
-	UpdatePoint(TechComp);
-
-	IsInit = true;
-}
-
-UDC1TechTreeComponent* UDC1TechTreeWidget::GetTechTreeComponent()
-{
-	ADC1PlayerState* PS = GetOwningPlayerState<ADC1PlayerState>();
-	if (false == ::IsValid(PS))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find PS"));
-		return nullptr;
-	}
-
-	UDC1TechTreeComponent* TechComp = PS->GetTechTreeComponent();
-	if (false == ::IsValid(TechComp))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find TechComp"));
-		return nullptr;
-	}
-
-	return TechComp;
+	RefreshAll();
 }
 
 void UDC1TechTreeWidget::InitRows(int32 InNewLevel)
@@ -113,21 +101,21 @@ void UDC1TechTreeWidget::UpdateRows(int32 InNewLevel)
 	}
 }
 
-void UDC1TechTreeWidget::UpdatePoint(const UDC1TechTreeComponent* InTechComp)
+void UDC1TechTreeWidget::UpdatePoint()
 {
-	int32 NumTechPoint = InTechComp->GetTechPoints();
-	int32 NumAncientTechPoint = InTechComp->GetAncientTechPoints();
+	int32 NumTechPoint = CachedViewModel->GetTechPoints();
+	int32 NumAncientTechPoint = CachedViewModel->GetAncientTechPoints();
 
 	TechPointWidget->SetPoint(NumTechPoint);
 	AncientTechPointWidget->SetPoint(NumAncientTechPoint);
 }
 
-void UDC1TechTreeWidget::UpdateSlots(const UDC1TechTreeComponent* InTechComp)
+void UDC1TechTreeWidget::UpdateSlots()
 {
 	for (UDC1TechTreeButton* TechSlot : TechSlots)
 	{
 		const FGameplayTag& CurrentSlotTag = TechSlot->GetTechTag();
-		TechSlot->SetState(InTechComp->GetTechState(CurrentSlotTag));
+		TechSlot->SetState(CachedViewModel->GetTechState(CurrentSlotTag));
 	}
 }
 
@@ -172,20 +160,15 @@ void UDC1TechTreeWidget::InitTechTree()
 		for (const FDC1TechRow Row : RowsByLevel[AddLevel])
 		{
 			UDC1TechTreeButton* TechSlot = RowWidget->AddTechSlot(Row);
-			if (true == ::IsValid(TechSlot))
+			if (true == ::IsValid(TechSlot) && true == ::IsValid(CachedViewModel))
 			{
+				const FGameplayTag& CurrentSlotTag = Row.TechTag;
 
-				UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
-				if (true == ::IsValid(TechComp))
-				{
-					const FGameplayTag& CurrentSlotTag = Row.TechTag;
+				TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotTag]() {
+					CachedViewModel->RequestUnlockTech(CurrentSlotTag);
+					});
 
-					TechSlot->OnClickedDelegate.AddWeakLambda(this, [this, CurrentSlotTag, TechComp]() {
-							TechComp->RequestUnlockTech(CurrentSlotTag);
-						});
-
-					TechSlot->SetState(TechComp->GetTechState(CurrentSlotTag));
-				}
+				TechSlot->SetState(CachedViewModel->GetTechState(CurrentSlotTag));
 
 				TechSlots.Add(TechSlot);
 			}
@@ -193,21 +176,25 @@ void UDC1TechTreeWidget::InitTechTree()
 	}
 }
 
-void UDC1TechTreeWidget::OnTechStateChanged()
+void UDC1TechTreeWidget::RefreshAll()
 {
-	UDC1TechTreeComponent* TechComp = GetTechTreeComponent();
-	if (false == ::IsValid(TechComp))
+	if (false == ::IsValid(CachedViewModel) || false == CachedViewModel->HasModel())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Can't Find TechTreeComponent"));
 		return;
 	}
 
-	UpdateSlots(TechComp);
-	UpdatePoint(TechComp);
-
-	int32 NewLevel = TechComp->GetPlayerLevel();
-	if (CachedLevel != NewLevel)
+	if (false == IsInit)
 	{
-		UpdateRows(NewLevel);
+		// Init TechTree Row + UpdateSlots + Init Slot State
+		InitTechTree();
+		InitRows(CachedViewModel->GetPlayerLevel());
+		IsInit = true;
 	}
+	else
+	{
+		UpdateRows(CachedViewModel->GetPlayerLevel());
+	}
+
+	UpdatePoint();
+	UpdateSlots();
 }

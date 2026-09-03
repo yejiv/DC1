@@ -5,24 +5,31 @@
 
 #include "UI/Tab/Build/DC1BuildRowWidget.h"
 
-#include "Component/DC1TechTreeComponent.h"
-
 #include "Data/DataTable/DC1DataTableTypes.h"
 
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 
-void UDC1BuildWidget::InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const UDC1TechTreeComponent* InTechComp)
+#include "ViewModel/Build/DC1BuildViewModel.h"
+
+void UDC1BuildWidget::InitBuild(UDC1BuildViewModel* InViewModel)
 {
 	if (true == ::IsValid(BuildTextLabel) && false == BuildText.IsEmpty())
 	{
 		BuildTextLabel->SetText(BuildText);
 	}
 
-	if (false == ::IsValid(BuildScrollBox) || false == ::IsValid(RowWidgetClass) || false == ::IsValid(InTechComp))
+	if (false == ::IsValid(BuildScrollBox) || false == ::IsValid(RowWidgetClass) || false == ::IsValid(InViewModel))
 	{
 		return;
 	}
+
+	if (true == IsInit)
+	{
+		return;
+	}
+
+	IsInit = true;
 
 	for (const FDC1BuildRowInfo& RowInfo : RowInfos)
 	{
@@ -36,33 +43,33 @@ void UDC1BuildWidget::InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const U
 		RowWidget->InitRow(RowInfo.RowTag, RowInfo.RowName);
 
 		BuildScrollBox->AddChild(RowWidget);
-		BuildRows.Add(RowInfo.RowTag, RowWidget);
+		BuildRowsByTag.Add(RowInfo.RowTag, RowWidget);
 	}
 
-	const TMap<FGameplayTag, const FDC1TechRow>& TechRowsByTag = InTechComp->GetTechRowsByTag();
-
-	for (const FDC1BuildRow& BuildRow : InBuildRows)
+	const TArray<FDC1BuildRow>& BuildRows = InViewModel->GetBuildRows();
+	for (const FDC1BuildRow& BuildRow : BuildRows)
 	{
 		const FGameplayTag& BuildTag = BuildRow.BuildTag;
 		const FGameplayTag& RowTag = BuildTag.RequestDirectParent();
 
-		const FDC1TechRow* FoundTech = TechRowsByTag.Find(BuildTag);
+		const FDC1TechRow* FoundTech = InViewModel->FindTechRow(BuildTag);
+
 		if (nullptr == FoundTech)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
 			continue;
 		}
 
-		TObjectPtr<UDC1BuildRowWidget>* FoundRow = BuildRows.Find(RowTag);
+		TObjectPtr<UDC1BuildRowWidget>* FoundRow = BuildRowsByTag.Find(RowTag);
 		if (nullptr == FoundRow)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
 			continue;
 		}
-		
-		(*FoundRow)->AddBuildSlot(BuildRow, *FoundTech);
 
-		if (true == ::IsValid(InTechComp) && true == InTechComp->HasUnlockedTag(BuildTag))
+		(*FoundRow)->AddBuildSlot(BuildRow, *FoundTech, InViewModel);
+
+		if (true == InViewModel->IsUnlocked(BuildTag))
 		{
 			(*FoundRow)->VisibleSlot(BuildTag);
 		}
@@ -71,7 +78,7 @@ void UDC1BuildWidget::InitBuild(const TArray<FDC1BuildRow>& InBuildRows, const U
 
 bool UDC1BuildWidget::VisibleSlot(const FGameplayTag& InRowTag, const FGameplayTag& InSlotTag)
 {
-	TObjectPtr<UDC1BuildRowWidget>* Found = BuildRows.Find(InRowTag);
+	TObjectPtr<UDC1BuildRowWidget>* Found = BuildRowsByTag.Find(InRowTag);
 	if (nullptr == Found)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *InRowTag.ToString());

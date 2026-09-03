@@ -21,12 +21,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
+#include "Component/Inventory/DC1PlayerInventoryComponent.h"
+
 #include "Component/Build/DC1BuildPlacementComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
 
 #include "Interface/DC1InteractableInterface.h"
+
+#include "Subsystem/DC1ViewModelSubsystem.h"
 
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
@@ -128,7 +131,7 @@ void ADC1PlayerController::BeginPlay()
 			UIManager->FadeOut(2.f);
 		}), 2.f, false);
 
-	OnRep_PlayerState();
+	InitPlayerStateBindings();
 }
 
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -144,6 +147,16 @@ void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	// Change IMC Binding Remove
 	UIManager->OnScreenStackChanged.RemoveAll(this);
+
+	if (false == IsLocalController())
+	{
+		return;
+	}
+
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		ViewModelSubsystem->ClearAll();
+	}
 }
 
 void ADC1PlayerController::SetupInputComponent()
@@ -157,8 +170,6 @@ void ADC1PlayerController::SetupInputComponent()
 		SetUpDefaultInput(EnhancedInputComponent, InputData);
 		SetUpUIInput(EnhancedInputComponent, InputData);
 	}
-
-	SetUp_DebugInput(); // TODO : Debug region 제거 시 같이 삭제
 }
 
 void ADC1PlayerController::SetPawn(APawn* InPawn)
@@ -457,80 +468,85 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 	}
 }
 
+void ADC1PlayerController::OnPalSlotPrevPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->CycleSlot(-1);
+	}
+}
+
+void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->CycleSlot(1);
+	}
+}
+
 void ADC1PlayerController::InitPlayerStateBindings()
 {
+	ADC1PlayerState* OwnerPlayerState = GetPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(OwnerPlayerState))
+	{
+		return;		// 아직 도착 전. OnRep_PlayerState가 다시 부른다
+	}
+
+	ULocalPlayer* OwnerLocalPlayer = GetLocalPlayer();
+	if (false == ::IsValid(OwnerLocalPlayer))
+	{
+		return;
+	}
+
+	// VM 생성/조회는 서브시스템이, 위젯은 스스로
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = OwnerLocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		ViewModelSubsystem->BindAll(OwnerPlayerState);
+	}
+
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
 		return;
 	}
 
-	// 인벤토리 ViewModel 생성
-	InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
-	if (IsValid(InventoryViewModel))
+	if (false == ::IsValid(CachedMainTabWidget))
 	{
-		ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetPlayerState<APlayerState>());
-		if (IsValid(OwnerPlayerState))
-		{
-			UDC1TabWidget* MainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
-			if (MainTabWidget)
-			{
-				if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
-				{
-					InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
-
-					UDC1InventoryWidget* PlayerInventoryWidget = MainTabWidget->GetInventoryWidget();
-					if (PlayerInventoryWidget)
-					{
-						PlayerInventoryWidget->SetViewModel(InventoryViewModel);
-					}
-				}
-			}
-		}
+		CachedMainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
 	}
-}
 
-#pragma region Debug
-// TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
-//        (.h 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
-void ADC1PlayerController::SetUp_DebugInput()
-{
-	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugWeaponNone);
-	InputComponent->BindKey(EKeys::NumPadTwo, IE_Pressed, this, &ThisClass::OnDebugWeaponMelee);
-	InputComponent->BindKey(EKeys::NumPadThree, IE_Pressed, this, &ThisClass::OnDebugWeaponBow);
-}
-
-void ADC1PlayerController::OnDebugWeaponNone()
-{
-	ServerSetWeaponState(DC1StateTags::State_Weapon_None);
-}
-
-void ADC1PlayerController::OnDebugWeaponMelee()
-{
-	ServerSetWeaponState(DC1StateTags::State_Weapon_Melee);
-}
-
-void ADC1PlayerController::OnDebugWeaponBow()
-{
-	ServerSetWeaponState(DC1StateTags::State_Weapon_Bow);
-}
-
-void ADC1PlayerController::ServerSetWeaponState_Implementation(FGameplayTag NewStateTag)
-{
-	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
-	if (false == IsValid(PS))
+	if (false == ::IsValid(CachedMainTabWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[DebugWeapon] PlayerState X"));
 		return;
 	}
 
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent()))
+	if (false == ::IsValid(InventoryViewModel))
 	{
-		ASC->SetExclusiveStateTag(DC1StateTags::State_Weapon, NewStateTag);
+		InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
+	}
+
+	if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
+	{
+		InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
+	}
+
+	if (UDC1InventoryWidget* PlayerInventoryWidget = CachedMainTabWidget->GetInventoryWidget())
+	{
+		PlayerInventoryWidget->SetViewModel(InventoryViewModel);
 	}
 }
-#pragma endregion
 
 void ADC1PlayerController::OnUIChange()
 {
@@ -677,6 +693,17 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* CallPalAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_CallPal))
 	{
 		EnhancedInputComponent->BindAction(CallPalAction, ETriggerEvent::Started, this, &ThisClass::OnCallPalPressed);
+	}
+
+	// PalSlot Prev / Next
+	if (const UInputAction* PalSlotPrevAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotPrev))
+	{
+		EnhancedInputComponent->BindAction(PalSlotPrevAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotPrevPressed);
+	}
+
+	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
+	{
+		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
 	}
 }
 
