@@ -30,6 +30,8 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_LockOn);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Throw);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_CallPal);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_PalSlotPrev);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_PalSlotNext);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_ChangeWeapon);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Interact);

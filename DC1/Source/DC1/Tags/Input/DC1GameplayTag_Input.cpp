@@ -26,6 +26,8 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_LockOn, "Input.Default.LockOn");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Throw, "Input.Default.Throw");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_CallPal, "Input.Default.CallPal");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_PalSlotPrev, "Input.Default.PalSlotPrev");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_PalSlotNext, "Input.Default.PalSlotNext");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ChangeWeapon, "Input.Default.ChangeWeapon");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Interact, "Input.Default.Interact");

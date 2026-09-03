@@ -58,22 +58,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SortInventory();
 
-	/**
-	 * 인벤토리 아이템 이동 요청 (클라이언트에서 호출)
-	 * 서버에서 검증 후 처리
-	 * @param FromSlotIndex 출발 슬롯 인덱스
-	 * @param ToSlotIndex 목표 슬롯 인덱스
-	 * @param MoveCount 이동할 개수 (기본값: -1, 전체 이동)
-	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
 
 protected:
-	/**
-	 * 서버에서만 실행되는 RPC
-	 * 아이템 이동 검증 및 처리
-	 * @param MoveCount -1이면 전체 이동, 양수면 해당 개수 이동
-	 */
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
 	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
@@ -90,6 +78,10 @@ protected:
 	virtual void InitializeSlots() override;
 	virtual void OnInventoryUpdated_Internal() override;
 
+	/** 클라이언트에서 EquipmentSlots 복제 수신 시 호출되어 UI 갱신 이벤트를 발생시킴 */
+	UFUNCTION()
+	void OnRep_EquipmentSlots();
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Weight")
 	float MaxWeight = 100.0f;
@@ -97,14 +89,13 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory|Weight")
 	float CurrentWeight = 0.0f;
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory|Equipment")
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentSlots, BlueprintReadOnly, Category = "Inventory|Equipment")
 	TArray<FDC1InventorySlotInfo> EquipmentSlots;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings")
 	bool bAutoSort = false;
 
 private:
-	/** 개별 아이템의 무게 (임시, 데이터 연동 필요) */
 	UPROPERTY(EditAnywhere, Category = "Inventory|Weight")
 	float ItemWeightPerUnit = 1.0f;
 };

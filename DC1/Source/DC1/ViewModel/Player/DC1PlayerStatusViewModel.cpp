@@ -4,81 +4,114 @@
 #include "ViewModel/Player/DC1PlayerStatusViewModel.h"
 
 #include "AbilitySystemComponent.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1PlayerState.h"
 
 void UDC1PlayerStatusViewModel::BindSource(ADC1PlayerState* InPlayerState)
 {
-	// TODO : 기존 구독이 있으면 ClearSource로 먼저 해제
-	// TODO : InPlayerState에서 ASC를 꺼내 AbilitySystemComponent에 캐싱
-	// TODO : Health / MaxHealth / Stamina / MaxStamina 변경 델리게이트 구독
-	// TODO : BroadcastAll로 현재 값 초기 전달
+	ClearSource();
+
+	if (nullptr == InPlayerState)
+		return;
+
+	AbilitySystemComponent = InPlayerState->GetAbilitySystemComponent();
+
+	if (nullptr == AbilitySystemComponent)
+		return;
+
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetHealthAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleHealthChanged);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxHealthAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleMaxHealthChanged);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleStaminaChanged);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleMaxStaminaChanged);
+
+	BroadcastAll();
 }
 
 void UDC1PlayerStatusViewModel::ClearSource()
 {
-	// TODO : 구독한 어트리뷰트 델리게이트들을 RemoveAll(this)로 해제
-	// TODO : AbilitySystemComponent 무효화
+	if (false == AbilitySystemComponent.IsValid())
+		return;
+
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetHealthAttribute()).RemoveAll(this);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxHealthAttribute()).RemoveAll(this);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).RemoveAll(this);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).RemoveAll(this);
+
+	AbilitySystemComponent.Reset();
 }
 
 float UDC1PlayerStatusViewModel::GetHealth() const
 {
-	return 0.f;
+	return GetAttributeValue(UDC1PlayerSet::GetHealthAttribute());
 }
 
 float UDC1PlayerStatusViewModel::GetMaxHealth() const
 {
-	return 0.f;
+	return GetAttributeValue(UDC1PlayerSet::GetMaxHealthAttribute());
 }
 
 float UDC1PlayerStatusViewModel::GetHealthPercent() const
 {
-	// TODO : MaxHealth가 0 이하일 때 0 반환 (나눗셈 방어는 위젯이 아니라 여기서)
-	return 0.f;
+	float MaxHealth = GetMaxHealth();
+	if (MaxHealth <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetHealth() / MaxHealth;
 }
 
 float UDC1PlayerStatusViewModel::GetStamina() const
 {
-	return 0.f;
+	return GetAttributeValue(UDC1PlayerSet::GetStaminaAttribute());
 }
 
 float UDC1PlayerStatusViewModel::GetMaxStamina() const
 {
-	return 0.f;
+	return GetAttributeValue(UDC1PlayerSet::GetMaxStaminaAttribute());
 }
 
 float UDC1PlayerStatusViewModel::GetStaminaPercent() const
 {
-	return 0.f;
+	float MaxStamina = GetMaxStamina();
+	if (MaxStamina <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetStamina() / MaxStamina;
 }
 
 void UDC1PlayerStatusViewModel::HandleHealthChanged(const FOnAttributeChangeData& Data)
 {
-	// TODO : OnHealthChanged 브로드캐스트
+	OnHealthChanged.Broadcast(GetHealth(), GetMaxHealth());
 }
 
 void UDC1PlayerStatusViewModel::HandleMaxHealthChanged(const FOnAttributeChangeData& Data)
 {
-	// TODO : OnHealthChanged 브로드캐스트
+	OnHealthChanged.Broadcast(GetHealth(), GetMaxHealth());
 }
 
 void UDC1PlayerStatusViewModel::HandleStaminaChanged(const FOnAttributeChangeData& Data)
 {
-	// TODO : OnStaminaChanged 브로드캐스트
+	OnStaminaChanged.Broadcast(GetStamina(), GetMaxStamina());
 }
 
 void UDC1PlayerStatusViewModel::HandleMaxStaminaChanged(const FOnAttributeChangeData& Data)
 {
-	// TODO : OnStaminaChanged 브로드캐스트
+	OnStaminaChanged.Broadcast(GetStamina(), GetMaxStamina());
 }
 
 void UDC1PlayerStatusViewModel::BroadcastAll()
 {
-	// TODO : OnHealthChanged / OnStaminaChanged 현재 값으로 브로드캐스트
+	OnHealthChanged.Broadcast(GetHealth(), GetMaxHealth());
+	OnStaminaChanged.Broadcast(GetStamina(), GetMaxStamina());
 }
 
 float UDC1PlayerStatusViewModel::GetAttributeValue(const FGameplayAttribute& InAttribute) const
 {
-	// TODO : ASC 유효성 확인 후 GetNumericAttribute 반환, 아니면 0
-	return 0.f;
+	if (false == AbilitySystemComponent.IsValid())
+		return 0.f;
+
+	return AbilitySystemComponent->GetNumericAttribute(InAttribute);
 }
