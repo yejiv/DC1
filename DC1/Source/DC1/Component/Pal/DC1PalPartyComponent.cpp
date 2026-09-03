@@ -59,15 +59,15 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	if (0 == Pals.Num())
+	if (false == Pals.IsValidIndex(SelectedSlot))
 	{
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d is empty."), SelectedSlot + 1);
 		return;
 	}
 
-	// TODO : 파티 슬롯 UI가 생기면 첫 마리가 아니라 선택된 팰을 꺼낸다
-	if (false == Pals[0].IsDeployable())
+	if (false == Pals[SelectedSlot].IsDeployable())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: the pal is down."));
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d pal is down."), SelectedSlot + 1);
 		return;
 	}
 
@@ -78,7 +78,7 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[0], SpawnTransform);
+	ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[SelectedSlot], SpawnTransform);
 	if (false == ::IsValid(Spawned))
 	{
 		return;
@@ -86,6 +86,41 @@ void UDC1PalPartyComponent::ToggleDeploy()
 
 	Spawned->OnPalDied.AddUObject(this, &ThisClass::HandleDeployedPalDied);
 	DeployedPal = Spawned;
+}
+
+void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
+{
+	if (0 == InDelta || Capacity <= 0)
+	{
+		return;
+	}
+
+	SelectedSlot = (SelectedSlot + InDelta + Capacity) % Capacity;
+
+	LogSlot(SelectedSlot);
+
+	Server_SetSelectedSlot(SelectedSlot);
+}
+
+void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
+{
+	SelectedSlot = FMath::Clamp(InSlotIndex, 0, Capacity - 1);
+}
+
+void UDC1PalPartyComponent::LogSlot(int32 InSlotIndex) const
+{
+	if (false == Pals.IsValidIndex(InSlotIndex) || false == Pals[InSlotIndex].IsValidPal())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Slot %d/%d : empty"), InSlotIndex + 1, Capacity);
+		return;
+	}
+
+	const FDC1PalInstance& Pal = Pals[InSlotIndex];
+
+	UE_LOG(LogTemp, Log, TEXT("[Pal] Slot %d/%d : %s  HP %.0f%s"),
+		InSlotIndex + 1, Capacity,
+		*Pal.SpeciesTag.ToString(), Pal.CurrentHealth,
+		Pal.IsDeployable() ? TEXT("") : TEXT("  (down)"));
 }
 
 void UDC1PalPartyComponent::RetrieveDeployed()

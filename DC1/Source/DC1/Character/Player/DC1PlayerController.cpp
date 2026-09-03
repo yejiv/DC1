@@ -457,6 +457,34 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 	}
 }
 
+void ADC1PlayerController::OnPalSlotPrevPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->CycleSlot(-1);
+	}
+}
+
+void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->CycleSlot(1);
+	}
+}
+
 void ADC1PlayerController::InitPlayerStateBindings()
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
@@ -677,6 +705,17 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* CallPalAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_CallPal))
 	{
 		EnhancedInputComponent->BindAction(CallPalAction, ETriggerEvent::Started, this, &ThisClass::OnCallPalPressed);
+	}
+
+	// PalSlot Prev / Next
+	if (const UInputAction* PalSlotPrevAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotPrev))
+	{
+		EnhancedInputComponent->BindAction(PalSlotPrevAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotPrevPressed);
+	}
+
+	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
+	{
+		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
 	}
 }
 

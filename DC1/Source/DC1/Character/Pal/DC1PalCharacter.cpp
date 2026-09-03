@@ -260,8 +260,6 @@ void ADC1PalCharacter::OnDeath()
 		Movement->DisableMovement();
 	}
 
-	// 래그돌 -> 더 찾아보기
-	// 캡슐을 먼저 끄기
 	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
 		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -270,13 +268,18 @@ void ADC1PalCharacter::OnDeath()
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
 		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
+
+		// 발에 치이게
+		MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
 		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		MeshComp->SetSimulatePhysics(true);
+
+		MeshComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
 
-	// 반드시 맨 끝. 받는 쪽이 이 액터를 파괴할 수 있다
 	OnPalDied.Broadcast();
 }
 

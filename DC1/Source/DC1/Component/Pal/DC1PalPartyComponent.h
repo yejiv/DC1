@@ -32,8 +32,19 @@ public:
 	UFUNCTION(Server, Reliable)
 	void					Server_ToggleDeploy();
 
+	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
+	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
+	void					CycleSlot(int32 InDelta);
+
 protected:
 	void					ToggleDeploy();
+
+	// 소환은 서버가 하므로 선택 슬롯도 서버가 알아야 한다
+	UFUNCTION(Server, Reliable)
+	void					Server_SetSelectedSlot(int32 InSlotIndex);
+
+	// 슬롯 하나를 한 줄로 찍는다. UI가 붙기 전까지의 확인 수단
+	void					LogSlot(int32 InSlotIndex) const;
 
 	// 회수 한 번. 목록 반영 + 액터 파괴 + 예약된 타이머 정리.
 	// E 회수와 사망 회수가 같은 일을 하므로 공유한다
@@ -69,4 +80,7 @@ private:
 	TWeakObjectPtr<ADC1PalCharacter>	DeployedPal;
 
 	FTimerHandle						DeathRetrieveTimer;
+
+	// 선택된 슬롯. 클라는 입력으로, 서버는 Server_SetSelectedSlot으로 각자 갱신한다
+	int32								SelectedSlot = { 0 };
 };

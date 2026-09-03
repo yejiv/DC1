@@ -75,6 +75,8 @@ private:
 
 	// 팰 소환/회수 토글
 	void OnCallPalPressed(const FInputActionValue& Value);
+	void OnPalSlotPrevPressed(const FInputActionValue& Value);
+	void OnPalSlotNextPressed(const FInputActionValue& Value);
 
 private:
 	void InitPlayerStateBindings();
