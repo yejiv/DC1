@@ -13,7 +13,9 @@ class ADC1Player;
 
 class UDC1InputData;
 
+class UDC1TabWidget;
 class UDC1InventoryViewModel;
+
 class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
 
@@ -86,20 +88,6 @@ private:
 	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
 	void OnUIChange();
 
-#pragma region Debug
-	// TODO : 무기 상태 전환 테스트용. 정식 장착 로직 나오면 이 region 통째로 제거
-	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
-private:
-	void SetUp_DebugInput();
-
-	void OnDebugWeaponNone();
-	void OnDebugWeaponMelee();
-	void OnDebugWeaponBow();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetWeaponState(FGameplayTag NewStateTag);
-#pragma endregion
-
 	void SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
@@ -111,8 +99,12 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADC1Player>	ControlObject = { nullptr };
 
+	// 인벤토리는 기존 방식 유지 — PC가 VM을 만들어 위젯에 주입한다
 	UPROPERTY()
-	TObjectPtr<UDC1InventoryViewModel> InventoryViewModel = { nullptr };
+	TObjectPtr<UDC1TabWidget>			CachedMainTabWidget = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UDC1InventoryViewModel>	InventoryViewModel = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
 

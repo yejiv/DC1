@@ -25,7 +25,7 @@ public:
 	ADC1PlayerState(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent*		GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }

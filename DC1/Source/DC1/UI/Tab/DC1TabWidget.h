@@ -11,6 +11,7 @@
 class UPanelWidget;
 class UDC1TabHeaderButton;
 class UDC1InventoryWidget;
+class UDC1TechTreeWidget;
 
 USTRUCT(BlueprintType)
 struct FDC1KeyList
@@ -45,6 +46,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Tab")
 	UDC1InventoryWidget* GetInventoryWidget() const;
+	
+	UDC1TechTreeWidget* GetTechTreeWidget() const;
 
 protected:
 	virtual void	ButtonInitialize();
