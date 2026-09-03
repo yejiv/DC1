@@ -4,6 +4,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerState.h"
 #include "Tags/DC1GamePlayTags.h"
 
 #include "Character/Player/DC1Player.h"
@@ -50,7 +51,7 @@ void UDC1EquipComponent::Init_Equip()
 	AActor* Owner = GetOwner();
 	if (false == IsValid(Owner) || false == Owner->HasAuthority()) return;
 
-	ADC1Player* Player = Cast<ADC1Player>(Owner);
+	ADC1Player* Player = GetOwningPlayer();
 	if (false == IsValid(Player)) return;
 
 	WeaponSlots.SetNum(CanWeaponEquip);
@@ -93,6 +94,24 @@ void UDC1EquipComponent::Init_Equip()
 	ApplyWeaponAttach();
 }
 
+void UDC1EquipComponent::HandlePawnReady()
+{
+	// 스폰과 부착은 서버만. 권한 검사는 Init_Equip이 한다
+	Init_Equip();
+
+	// 클라 포함. PlayerState가 폰보다 먼저 도착하면 OnRep_CurrentWeapon이 폰을 못 찾고
+	// 그냥 지나간다. 그때 놓친 콜라이더 적용을 여기서 만회한다
+	ApplyWeaponCollider();
+}
+
+ADC1Player* UDC1EquipComponent::GetOwningPlayer() const
+{
+	const APlayerState* OwnerState = Cast<APlayerState>(GetOwner());
+	if (nullptr == OwnerState) return nullptr;
+
+	return Cast<ADC1Player>(OwnerState->GetPawn());
+}
+
 void UDC1EquipComponent::Server_ChangeWeapon_Implementation(int32 Delta)
 {
 	CurrentWeaponIndex += Delta;
@@ -114,7 +133,7 @@ void UDC1EquipComponent::OnRep_CurrentWeapon()
 
 void UDC1EquipComponent::ApplyWeaponCollider()
 {
-	if (ADC1Player* Player = Cast<ADC1Player>(GetOwner()))
+	if (ADC1Player* Player = GetOwningPlayer())
 	{
 		if (nullptr == CurrentWeapon)
 		{
@@ -129,7 +148,7 @@ void UDC1EquipComponent::ApplyWeaponCollider()
 
 void UDC1EquipComponent::ApplyWeaponStateTag()
 {
-	if (ADC1Player* Player = Cast<ADC1Player>(GetOwner()))
+	if (ADC1Player* Player = GetOwningPlayer())
 	{
 		if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(Player->GetAbilitySystemComponent()))
 		{
@@ -141,6 +160,9 @@ void UDC1EquipComponent::ApplyWeaponStateTag()
 
 void UDC1EquipComponent::ApplyWeaponAttach()
 {
+	// 폰이 없어 Init_Equip이 아직 못 돌았으면 슬롯이 비어 있다
+	if (false == WeaponSlots.IsValidIndex(CurrentWeaponIndex)) return;
+
 	SetWeaponState(WEAPONSTATE::DETACH);
 	CurrentWeapon = WeaponSlots[CurrentWeaponIndex];
 	SetWeaponState(WEAPONSTATE::ATTACH);
@@ -159,7 +181,7 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 		if (nullptr != CurrentTool || true == IsPalSphereEquipped) return;
 
 		CurrentWeapon->SetActorHiddenInGame(false);
-		if (ADC1Player* Player = Cast<ADC1Player>(GetOwner()))
+		if (ADC1Player* Player = GetOwningPlayer())
 		{
 			CurrentWeapon->AttachToComponent(
 				Player->GetMesh(),
@@ -176,7 +198,7 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 
 void UDC1EquipComponent::EquipTool(const FGameplayTag& ToolTag)
 {
-	ADC1Player* Player = Cast<ADC1Player>(GetOwner());
+	ADC1Player* Player = GetOwningPlayer();
 	if (false == IsValid(Player) || false == Player->HasAuthority()) return;
 
 	ADC1Tool* Tool = nullptr;

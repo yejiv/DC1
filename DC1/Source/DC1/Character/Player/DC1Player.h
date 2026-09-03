@@ -14,7 +14,6 @@ class UPrimitiveComponent;
 class USphereComponent;
 
 class UDC1AbilitySystemComponent;
-class UDC1EquipComponent;
 /**
  * 
  */
@@ -74,12 +73,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USphereComponent>			InteractDetectCollider = { nullptr };
 
-public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UDC1EquipComponent>		Equipment = { nullptr };
-
 private:
 	void	InitializeAbilitySystem();
+	// 장착 컴포넌트는 PlayerState 소유다. 폰이 준비됐음을 알려 스폰/부착을 트리거한다
+	void	InitializeEquip();
 	void	Clear_Resource();
 
 private:

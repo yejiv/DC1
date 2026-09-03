@@ -410,7 +410,8 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 		return;
 	}
 
-	if (false == IsValid(ControlObject->Equipment))
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS) || false == IsValid(PS->GetEquipComponent()))
 	{
 		return;
 	}
@@ -429,7 +430,7 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 	// 절대 인덱스가 아니라 증감량을 보낸다. 빠르게 굴려도 서버에서 순서대로 누적된다
 	const int32 Delta = (AxisValue > 0.f) ? 1 : -1;
 
-	ControlObject->Equipment->Server_ChangeWeapon(Delta);
+	PS->GetEquipComponent()->Server_ChangeWeapon(Delta);
 }
 
 void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)

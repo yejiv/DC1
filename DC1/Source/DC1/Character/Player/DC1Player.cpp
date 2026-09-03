@@ -71,9 +71,6 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	InteractDetectCollider = CreateDefaultSubobject<USphereComponent>("InteractDetectCollider ");
 	InteractDetectCollider->SetupAttachment(RootComponent);
 	InteractDetectCollider->SetGenerateOverlapEvents(true);
-
-	// Equipment
-	Equipment = CreateDefaultSubobject<UDC1EquipComponent>("Equipment");
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -181,8 +178,7 @@ void ADC1Player::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
-
-	Equipment->Init_Equip();
+	InitializeEquip();
 }
 
 void ADC1Player::UnPossessed()
@@ -195,6 +191,18 @@ void ADC1Player::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 	InitializeAbilitySystem();
+	InitializeEquip();
+}
+
+void ADC1Player::InitializeEquip()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS)) return;
+
+	if (UDC1EquipComponent* Equip = PS->GetEquipComponent())
+	{
+		Equip->HandlePawnReady();
+	}
 }
 
 void ADC1Player::InitializeAbilitySystem()

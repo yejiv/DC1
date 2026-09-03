@@ -7,6 +7,7 @@
 
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
 #include "Item/Equip/Weapon/DC1Weapon.h"
 #include "Tags/DC1GamePlayTags.h"
@@ -29,11 +30,12 @@ void UDC1GA_Player_Attack::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 
 ADC1Weapon* UDC1GA_Player_Attack::GetEquippedWeapon() const
 {
-	if (const ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo()))
+	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
+	if (const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo()))
 	{
-		if (nullptr != Player->Equipment)
+		if (UDC1EquipComponent* EquipComp = PS->GetEquipComponent())
 		{
-			return Player->Equipment->CurrentWeapon;
+			return EquipComp->CurrentWeapon;
 		}
 	}
 

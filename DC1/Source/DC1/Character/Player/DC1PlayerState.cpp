@@ -5,6 +5,7 @@
 
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1EquipComponent.h"
 #include "Component/DC1TechTreeComponent.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
@@ -28,6 +29,9 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 
 	PalPartyComponent = CreateDefaultSubobject<UDC1PalPartyComponent>(TEXT("PalPartyComponent"));
 	PalPartyComponent->SetIsReplicated(true);
+
+	EquipComponent = CreateDefaultSubobject<UDC1EquipComponent>(TEXT("EquipComponent"));
+	EquipComponent->SetIsReplicated(true);
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const

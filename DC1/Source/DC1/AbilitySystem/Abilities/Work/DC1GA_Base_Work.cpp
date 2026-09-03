@@ -4,6 +4,7 @@
 #include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
 
 #include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
 
 void UDC1GA_Base_Work::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -41,11 +42,12 @@ void UDC1GA_Base_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 
 UDC1EquipComponent* UDC1GA_Base_Work::GetEquipComponent() const
 {
-	const ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
-	if (false == ::IsValid(Player))
+	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo());
+	if (false == ::IsValid(PS))
 	{
 		return nullptr;
 	}
 
-	return Player->Equipment;
+	return PS->GetEquipComponent();
 }

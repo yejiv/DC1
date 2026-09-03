@@ -83,13 +83,14 @@ void UDC1GA_Player_PalSphere::EndAbility(const FGameplayAbilitySpecHandle Handle
 
 UDC1EquipComponent* UDC1GA_Player_PalSphere::GetEquipComponent() const
 {
-	const ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
-	if (false == ::IsValid(Player))
+	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo());
+	if (false == ::IsValid(PS))
 	{
 		return nullptr;
 	}
 
-	return Player->Equipment;
+	return PS->GetEquipComponent();
 }
 
 void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
