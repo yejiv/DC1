@@ -39,6 +39,8 @@ public:
 	void						FadeIn(float InDuration, EDC1FadeType InFadeType = EDC1FadeType::Default, FSimpleDelegate InOnComplete = FSimpleDelegate());
 	void						FadeOut(float InDuration, FSimpleDelegate InOnComplete = FSimpleDelegate());
 
+	void						ShowHUD();
+
 	void						RouteInputKey(const FKey& InKey);
 	void						BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel);
 
@@ -66,6 +68,9 @@ private:
 	TObjectPtr<UDC1FadeWidget>			FadeWidget = { nullptr };
 
 	UPROPERTY()
+	TObjectPtr<UDC1UserWidget>			HUDWidget = { nullptr };
+
+	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDC1UserWidget>> CreatedWidget;
 
 private:
@@ -74,5 +79,6 @@ private:
 	const FText*						PendingTip = { nullptr };
 	bool								IsTraveling = { false };
 
+	static constexpr int32				HUDZOrder = { 0 };
 	static constexpr int32				FadeZOrder = { 100 };
 };

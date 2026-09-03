@@ -171,6 +171,22 @@ void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate InOnCompl
     FadeWidget->FadeOut(InDuration, InOnComplete);
 }
 
+void UDC1UIManagerSubsystem::ShowHUD()
+{
+	// Server 확인
+	if (false == ::IsValid(GetLocalPC()))
+	{
+		return;
+	}
+
+	if (nullptr != HUDWidget)
+	{
+		return;
+	}
+
+	HUDWidget = CreateOverlay(DC1UITags::UI_Main_HUD, HUDZOrder);
+}
+
 void UDC1UIManagerSubsystem::RouteInputKey(const FKey& InKey)
 {
     if (ScreenStack.Num() <= 0)
@@ -391,6 +407,7 @@ void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
 {
     ScreenStack.Empty();
     FadeWidget = nullptr;
+	HUDWidget = nullptr;
 
     CreatedWidget.Empty();
 

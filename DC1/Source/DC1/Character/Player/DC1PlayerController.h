@@ -88,6 +88,18 @@ private:
 	void OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTab);
 	void OnUIChange();
 
+#pragma region Debug
+	// TODO : HP 감소 / HUD 확인용. 테스트 끝나면 이 region 통째로 제거
+	//        (.cpp 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
+	void SetUp_DebugInput();
+
+	void OnDebugDamageSelf();
+
+	// 어트리뷰트 변경은 서버 권한이므로 RPC로 넘긴다
+	UFUNCTION(Server, Reliable)
+	void ServerDebugDamageSelf(float InDamageAmount);
+#pragma endregion
+
 	void SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
