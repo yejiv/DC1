@@ -25,7 +25,8 @@ void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UDC1InventoryComponentBase, Slots);
+	// Slots의 복제 조건은 용도에 따라 다르므로(플레이어: 본인만 / 상자: 전체 공개)
+	// 자식 클래스(DC1PlayerInventoryComponent, DC1ChestInventoryComponent)에서 각자 등록함
 }
 
 const FDC1InventorySlotInfo& UDC1InventoryComponentBase::GetSlot(int32 InIndex) const
@@ -293,6 +294,24 @@ void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()
 	OnInventoryUpdated.Broadcast();
 
 	// 추가 처리는 자식 클래스에서 오버라이드
+}
+
+void UDC1InventoryComponentBase::OnRep_Slots(const TArray<FDC1InventorySlotInfo>& OldSlots)
+{
+	// 실제로 변경된 슬롯만 찾아 개별 갱신 이벤트 발생 (서버의 부분 갱신 최적화와 동일한 방식)
+	const int32 NumSlots = FMath::Max(Slots.Num(), OldSlots.Num());
+	for (int32 i = 0; i < NumSlots; ++i)
+	{
+		const bool bOldValid = OldSlots.IsValidIndex(i);
+		const bool bNewValid = Slots.IsValidIndex(i);
+
+		if (!bOldValid || !bNewValid || !(OldSlots[i] == Slots[i]))
+		{
+			OnSlotChanged.Broadcast(i);
+		}
+	}
+
+	OnInventoryUpdated.Broadcast();
 }
 
 bool UDC1InventoryComponentBase::AddItemToEmptySlot(FName InItemID, int32 InCount)
