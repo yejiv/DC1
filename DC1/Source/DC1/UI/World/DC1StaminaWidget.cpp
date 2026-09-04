@@ -56,12 +56,12 @@ void UDC1StaminaWidget::HandleStaminaChanged(float Current, float Max)
 	StaminaBar->SetPercent(StatusViewModel->GetStaminaPercent());
 
 	// 꽉 차면 Visiblity Off
-	//if (Current >= Max)
-	//{
-	//	StaminaBar->SetVisibility(ESlateVisibility::Collapsed);
-	//}
-	//else
-	//{
-	//	StaminaBar->SetVisibility(ESlateVisibility::HitTestInvisible);
-	//}
+	if (Current >= Max)
+	{
+		StaminaBar->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else
+	{
+		StaminaBar->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
 }
