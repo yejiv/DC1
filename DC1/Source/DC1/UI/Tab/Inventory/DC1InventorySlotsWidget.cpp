@@ -28,10 +28,18 @@ void UDC1InventorySlotsWidget::NativeConstruct()
 
 	if (CachedViewModel)
 	{
-		// 부분 갱신 이벤트 구독 (성능 최적화)
-		CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-		// 레거시 전체 갱신 이벤트도 유지 (필요시)
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		if (bIsChestSlots)
+		{
+			CachedViewModel->OnChestSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+			CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		}
+		else
+		{
+			// 부분 갱신 이벤트 구독 (성능 최적화)
+			CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+			// 레거시 전체 갱신 이벤트도 유지 (필요시)
+			CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		}
 		RefreshAllSlots();
 	}
 }
@@ -42,6 +50,8 @@ void UDC1InventorySlotsWidget::NativeDestruct()
 	{
 		CachedViewModel->OnSlotUIUpdated.RemoveAll(this);
 		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
+		CachedViewModel->OnChestSlotUIUpdated.RemoveAll(this);
+		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
@@ -54,16 +64,26 @@ void UDC1InventorySlotsWidget::SetInventoryViewModel(UDC1InventoryViewModel* InV
 	{
 		CachedViewModel->OnSlotUIUpdated.RemoveAll(this);
 		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
+		CachedViewModel->OnChestSlotUIUpdated.RemoveAll(this);
+		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
 	}
 
 	CachedViewModel = InViewModel;
 
 	if (CachedViewModel)
 	{
-		// 부분 갱신 이벤트 구독 (성능 최적화)
-		CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-		// 레거시 전체 갱신 이벤트도 유지 (필요시)
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		if (bIsChestSlots)
+		{
+			CachedViewModel->OnChestSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+			CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		}
+		else
+		{
+			// 부분 갱신 이벤트 구독 (성능 최적화)
+			CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+			// 레거시 전체 갱신 이벤트도 유지 (필요시)
+			CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		}
 		RefreshAllSlots();
 	}
 }
@@ -80,7 +100,6 @@ void UDC1InventorySlotsWidget::RefreshAllSlots()
 		return;
 	}
 
-	const int32 SlotCount = CachedViewModel->GetSlotCount();
 	for (int32 i = 0; i < SlotWidgets.Num(); ++i)
 	{
 		UpdateSlotDisplay(i);
@@ -153,7 +172,7 @@ void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 			const int32 Row = Index / InventoryColumns;
 			const int32 Column = Index % InventoryColumns;
 
-			NewSlotWidget->InitSlot(Index, SlotSize);
+			NewSlotWidget->InitSlot(Index, SlotSize, bIsChestSlots);
 
 			UUniformGridSlot* GridSlot = SlotGrid->AddChildToUniformGrid(NewSlotWidget, Row, Column);
 			if (GridSlot)

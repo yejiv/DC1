@@ -14,8 +14,6 @@ class UTextBlock;
 class UBorder;
 class UVerticalBox;
 
-struct FDC1ItemRow;
-
 UCLASS()
 class DC1_API UDC1InventoryWidget : public UDC1UserWidget
 {
@@ -37,6 +35,7 @@ public:
 
 protected:
 	void HandleInventoryUpdated();
+	void HandleDragEnded();
 
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -65,12 +64,7 @@ private:
 	// 드래그 복제 Slot 크기 (기존 100x100의 80%)
 	static constexpr float DragSlotSize = 80.0f;
 
-	// 선택된 아이템 정보
-	int32 DragSourceSlotIndex = -1;
-	int32 DragStackCount = 0;
-	const FDC1ItemRow* DragItemData = nullptr;
-
-	// 드래그 복제 Slot 위젯
+	// 드래그 복제 Slot 위젯 (드래그 세션 자체는 ViewModel이 공유 상태로 관리)
 	UPROPERTY()
 	TObjectPtr<UDC1InventorySlotWidget> DraggedSlotCopy = nullptr;
 

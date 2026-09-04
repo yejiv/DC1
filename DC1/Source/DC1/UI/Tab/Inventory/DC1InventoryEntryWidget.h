@@ -22,7 +22,7 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex);
+	void SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, bool bIsChestSlot = false);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void ClearEntry();

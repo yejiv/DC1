@@ -15,7 +15,7 @@ UDC1InventoryEntryWidget::UDC1InventoryEntryWidget(const FObjectInitializer& Obj
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex)
+void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, bool bIsChestSlot /* = false */)
 {
 	if (!IsValid(ViewModel))
 	{
@@ -24,7 +24,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 	}
 
 	CurrentSlotIndex = SlotIndex;
-	const FDC1InventorySlotInfo& InventorySlotInfo = ViewModel->GetSlot(SlotIndex);
+	const FDC1InventorySlotInfo& InventorySlotInfo = bIsChestSlot ? ViewModel->GetChestSlot(SlotIndex) : ViewModel->GetSlot(SlotIndex);
 
 	if (InventorySlotInfo.IsEmpty())
 	{

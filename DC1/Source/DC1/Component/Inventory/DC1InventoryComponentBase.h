@@ -60,6 +60,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SwapSlots(int32 InIndex1, int32 InIndex2);
 
+	/**
+	 * 두 슬롯 사이의 아이템을 이동/병합/교환 (드래그 앤 드롭용)
+	 * 같은 아이템이면 병합, 다른 아이템이면 교환, 빈 슬롯이면 이동
+	 * @param FromIndex 출발 슬롯
+	 * @param ToIndex 목표 슬롯
+	 * @param MoveCount 이동할 개수 (기본값: -1, 전체 이동)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void MoveOrMergeSlot(int32 FromIndex, int32 ToIndex, int32 MoveCount = -1);
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void ClearSlot(int32 InSlotIndex);
 
