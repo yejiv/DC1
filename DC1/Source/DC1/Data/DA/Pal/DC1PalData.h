@@ -49,6 +49,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							WalkSpeed = { 150.f };
 
+	// 도망 속도. 플레이어보다 조금 느려야 잡힘
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
+	float							FleeSpeed = { 500.f };
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RotationRateYaw = { 360.f };
 #pragma endregion

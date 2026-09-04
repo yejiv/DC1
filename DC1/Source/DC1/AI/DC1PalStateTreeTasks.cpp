@@ -373,6 +373,8 @@ EStateTreeRunStatus FDC1PalFleeTask::EnterState(FStateTreeExecutionContext& Cont
 		return EStateTreeRunStatus::Failed;
 	}
 
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->FleeSpeed;
+
 	Pal->SetOrientToMovement(true);
 	DC1PalTaskHelper::RequestFleeMove(*AIController, *Pal, *Target, InstanceData.AcceptanceRadius, DC1PalTaskHelper::FleeStepDistance);
 
@@ -425,6 +427,11 @@ void FDC1PalFleeTask::ExitState(FStateTreeExecutionContext& Context, const FStat
 	{
 		Pal->SetOrientToMovement(false);
 		AIController->SetHomeLocation(Pal->GetActorLocation());
+
+		if (const UDC1PalData* PalData = Pal->GetPalData())
+		{
+			Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+		}
 	}
 }
 
