@@ -241,13 +241,8 @@ void ADC1PlayerController::OnSprint(const FInputActionValue& Value)
 		return;
 	}
 
-	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
-	{
-		if (true == CMC->IsCrouching())
-			return;
-	}
-
-	ControlObject->SetSprint(true);
+	// 웅크림/스태미나 검사는 GA_Player_Sprint의 CanActivateAbility가 한다
+	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Sprint);
 }
 
 void ADC1PlayerController::RestoreSprint(const FInputActionValue& Value)
@@ -256,7 +251,7 @@ void ADC1PlayerController::RestoreSprint(const FInputActionValue& Value)
 	{
 		return;
 	}
-	ControlObject->SetSprint(false);
+	ControlObject->CancelAbility(DC1PlayerTags::Ability_Player_Sprint);
 }
 
 void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
@@ -307,7 +302,7 @@ void ADC1PlayerController::OnCrouch(const FInputActionValue& Value)
 		if (false == IsCrouch && false == ControlObject->CanCrouch())
 			return;
 
-		ControlObject->SetSprint(false);
+		ControlObject->CancelAbility(DC1PlayerTags::Ability_Player_Sprint);
 		IsCrouch ? ControlObject->UnCrouch() : ControlObject->Crouch();
 	}
 }

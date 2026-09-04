@@ -11,6 +11,10 @@ void FDC1AbilitySetGrantedHandles::AddAbilitySpecHandle(const FGameplayAbilitySp
 {
 	AbilitySpecHandles.Add(Handle);
 }
+void FDC1AbilitySetGrantedHandles::AddEffectHandle(const FActiveGameplayEffectHandle& Handle)
+{
+	EffectHandles.Add(Handle);
+}
 void FDC1AbilitySetGrantedHandles::TakeFromAbilitySystem(UDC1AbilitySystemComponent* ASC)
 {
 	if (nullptr == ASC || false == ASC->IsOwnerActorAuthoritative()) return;
@@ -24,6 +28,16 @@ void FDC1AbilitySetGrantedHandles::TakeFromAbilitySystem(UDC1AbilitySystemCompon
 	}
 
 	AbilitySpecHandles.Reset();
+
+	for (const FActiveGameplayEffectHandle& handle : EffectHandles)
+	{
+		if (handle.IsValid())
+		{
+			ASC->RemoveActiveGameplayEffect(handle);
+		}
+	}
+
+	EffectHandles.Reset();
 }
 #pragma endregion
 

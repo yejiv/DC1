@@ -35,6 +35,22 @@ void UDC1AbilityData::GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC, FDC1A
 		if (true == Entry.IsPassive)
 			ASC->TryActivateAbility(SpecHandle);
 	}
+
+	// Startup Effect
+	for (const TSubclassOf<UGameplayEffect>& EffectClass : StartupEffects)
+	{
+		if (nullptr == EffectClass) continue;
+
+		// BaseAbilityData 합성으로 같은 GE가 두 번 들어오면 회복량이 두 배가 된다
+		FGameplayEffectQuery Query;
+		Query.EffectDefinition = EffectClass;
+		if (ASC->GetActiveEffects(Query).Num() > 0) continue;
+
+		FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(EffectClass, 1.f, ASC->MakeEffectContext());
+		if (false == Spec.IsValid()) continue;
+
+		OutHandles.AddEffectHandle(ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get()));
+	}
 }
 
 TSubclassOf<UGameplayEffect> UDC1AbilityData::FindEffectByTag(const FGameplayTag& EffectTag) const

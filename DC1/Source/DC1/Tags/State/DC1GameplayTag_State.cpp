@@ -9,6 +9,7 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_ZoomIn, "State.ZoomIn");
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Dodging, "State.Dodging");
+	UE_DEFINE_GAMEPLAY_TAG(State_Sprinting, "State.Sprinting");
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon, "State.Weapon");
 	UE_DEFINE_GAMEPLAY_TAG(State_Weapon_None, "State.Weapon.None");
@@ -22,5 +23,7 @@ namespace DC1StateTags
 #pragma region Common
 	UE_DEFINE_GAMEPLAY_TAG(State_Dead, "State.Dead");
 	UE_DEFINE_GAMEPLAY_TAG(State_Invincible, "State.Invincible");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Stamina_RegenBlocked, "State.Stamina.RegenBlocked");
 #pragma endregion
 }

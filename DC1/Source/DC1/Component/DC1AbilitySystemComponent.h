@@ -14,6 +14,7 @@ struct FDC1AbilitySetGrantedHandles
 
 public:
 	void AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle);
+	void AddEffectHandle(const FActiveGameplayEffectHandle& Handle);
 	void TakeFromAbilitySystem(UDC1AbilitySystemComponent* ASC);
 
 public:
