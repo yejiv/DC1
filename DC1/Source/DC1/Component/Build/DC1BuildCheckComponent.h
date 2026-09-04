@@ -8,7 +8,7 @@
 #include "Define/DC1Structs.h"
 #include "DC1BuildCheckComponent.generated.h"
 
-struct FDC1BuildSnapPoint;
+struct FDC1BuildSnapSocket;
 
 USTRUCT(BlueprintType)
 struct FDC1BuildProbeData
@@ -44,13 +44,21 @@ struct FDC1BuildProbeData
 };
 
 USTRUCT(BlueprintType)
-struct FDC1BuildSnapData
+struct FDC1BuildSnapSocketData
 {
 	GENERATED_BODY()
 
-	// 박스 중심에서 면을 향하는 방향, ex) 1,0,0 - 우측면 중앙, 
+	// 박스 Extent와 곱 - 소켓 위치
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
 	FVector SnapDirection = { FVector::ZeroVector };
+
+	// Snap Point의 X축
+	// 
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	FVector AttachAxis = { FVector::UpVector};
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	FVector TangentAxis = { FVector::ForwardVector};
 
 	// Snap Point 타입
 	UPROPERTY(EditDefaultsOnly)
@@ -69,6 +77,12 @@ class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 public:	
 	UDC1BuildCheckComponent();
 
+protected:
+	virtual void					BeginPlay() override;
+
+public:
+	virtual void					TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 public:
 	void							SetSnapped(bool InIsSnap) { IsSnap = InIsSnap; }
 	const EDC1BuildProbeDirection	GetProbeDirection() const { return BuildProbeData.ProbeDirection; }
@@ -78,8 +92,9 @@ public:
 public:
 	bool							CheckCanBuild();
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
-	const FDC1BuildSnapPoint		MakeSideSnapPoint(const FVector& InWorldNormal) const;
-	const FDC1BuildSnapPoint		MakeNearestSideSnapPoint(const FVector& InWorldPoint) const;
+	const FDC1BuildSnapSocket		MakeSnapSocketSide(const FVector& InWorldNormal) const;
+	const FDC1BuildSnapSocket		MakeNearestSnapSocketSide(const FVector& InWorldPoint) const;
+	bool							GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
 
 private:
 	bool							CheckSurface();
@@ -87,7 +102,10 @@ private:
 
 	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 	FVector							GetAttachLocalOffset() const;
-	const FDC1BuildSnapPoint		MakeSideSnapPointFromAxis(bool InIsAxisX, float InAxisSign) const;
+	const FDC1BuildSnapSocket		MakeSnapSocketSideFromAxis(bool InIsAxisX, float InAxisSign) const;
+	const FTransform				MakeSnapSocketLocalTransform(const FDC1BuildSnapSocketData& InData) const;
+
+	void							DrawDebugSockets();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
@@ -97,9 +115,11 @@ private:
 	bool						DrawDebugProbes = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
-	TArray<FDC1BuildSnapData>	SnapDatas;
+	TArray<FDC1BuildSnapSocketData>	SnapDatas;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Debug")
+	bool						DrawDebugSocket;
 
 private:
-	TArray<FDC1BuildSnapPoint>	SnapPoints;
 	bool						IsSnap = false;
 };

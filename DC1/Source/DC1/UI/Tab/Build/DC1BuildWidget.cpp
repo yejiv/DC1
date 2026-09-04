@@ -52,24 +52,16 @@ void UDC1BuildWidget::InitBuild(UDC1BuildViewModel* InViewModel)
 		const FGameplayTag& BuildTag = BuildRow.BuildTag;
 		const FGameplayTag& RowTag = BuildTag.RequestDirectParent();
 
-		const FDC1TechRow* FoundTech = InViewModel->FindTechRow(BuildTag);
-
-		if (nullptr == FoundTech)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
-			continue;
-		}
-
 		TObjectPtr<UDC1BuildRowWidget>* FoundRow = BuildRowsByTag.Find(RowTag);
 		if (nullptr == FoundRow)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *BuildTag.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find RowWidget by %s"), *BuildTag.ToString());
 			continue;
 		}
 
-		(*FoundRow)->AddBuildSlot(BuildRow, *FoundTech, InViewModel);
+		(*FoundRow)->AddBuildSlot(BuildRow, InViewModel);
 
-		if (true == InViewModel->IsUnlocked(BuildTag))
+		if (true == InViewModel->IsBuildUnlocked(BuildTag))
 		{
 			(*FoundRow)->VisibleSlot(BuildTag);
 		}

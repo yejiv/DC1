@@ -201,6 +201,45 @@ void ADC1PalCharacter::OnCaptureFailed(AActor* InThrower)
 	}
 }
 
+void ADC1PalCharacter::BeginCapture()
+{
+	// 파괴하지 않음. 실패 시 되돌려야 함
+	StopAndUnregister();
+
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->DisableMovement();
+	}
+
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+}
+
+void ADC1PalCharacter::CancelCapture()
+{
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->SetMovementMode(MOVE_Walking);
+	}
+
+	// StopAndUnregister가 뺀 지각 복구
+	if (UAIPerceptionSystem* PerceptionSystem = UAIPerceptionSystem::GetCurrent(this))
+	{
+		PerceptionSystem->RegisterSource(*this);
+	}
+
+	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
+	{
+		PalController->TryStartBehavior();
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Pal] %s escaped the sphere."), *GetName());
+}
+
 ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform)
 {
 	if (nullptr == InWorld || false == InInstance.IsValidPal())
@@ -328,6 +367,12 @@ void ADC1PalCharacter::OnRep_Team()
 
 void ADC1PalCharacter::OnTeamChanged()
 {
+	// EnemyPal 차단
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionProfileName((EDC1Team::Player == Team) ? TEXT("AllyPal") : TEXT("EnemyPal"));
+	}
+
 	// 적대 판정은 sight query 생성 시점에 한 번만 해서 진영이 바뀌면 양쪽을 다 갱신!
 
 	// 남들이 나를 다시 판정

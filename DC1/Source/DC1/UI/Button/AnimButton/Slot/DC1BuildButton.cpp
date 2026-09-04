@@ -51,7 +51,7 @@ void UDC1BuildButton::HandleUnhovered()
 	}
 }
 
-void UDC1BuildButton::InitBuildButton(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow)
+void UDC1BuildButton::InitBuildButton(const FDC1BuildRow& InBuildRow)
 {
 	if (true == InBuildRow.BuildTag.IsValid())
 	{
@@ -62,9 +62,9 @@ void UDC1BuildButton::InitBuildButton(const FDC1BuildRow& InBuildRow, const FDC1
 	
 	CachedCosts = InBuildRow.BuildCosts;
 
-	if (true == ::IsValid(BuildIconImage) && false == InTechRow.Icon.IsNull())
+	if (true == ::IsValid(BuildIconImage) && false == InBuildRow.Icon.IsNull())
 	{
-		BuildIconImage->SetBrushFromSoftTexture(InTechRow.Icon);
+		BuildIconImage->SetBrushFromSoftTexture(InBuildRow.Icon);
 	}
 
 	SetVisibility(ESlateVisibility::Collapsed);

@@ -17,13 +17,14 @@ void UDC1BuildViewModel::BindSource(ADC1PlayerState* InPlayerState)
 		return;
 	}
 
-	// 배치 컴포넌트는 PlayerController에 붙어 있다
+	// 배치 컴포넌트는 PlayerController에 존재
 	UDC1BuildPlacementComponent* PlacementComponent = nullptr;
 	if (ADC1PlayerController* PC = Cast<ADC1PlayerController>(InPlayerState->GetPlayerController()))
 	{
 		PlacementComponent = PC->GetBuildPlacementComponent();
 	}
 
+	CacheBuildRows();
 	SetModels(InPlayerState->GetTechTreeComponent(), PlacementComponent);
 }
 
@@ -49,19 +50,35 @@ void UDC1BuildViewModel::SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildP
 		TechComp->OnTechUnlocked.AddUObject(this, &ThisClass::HandleTechUnlocked);
 	}
 
-	CacheBuildRows();
-
 	OnBuildStateChanged.Broadcast();
 }
 
-const FDC1TechRow* UDC1BuildViewModel::FindTechRow(const FGameplayTag& InBuildTag) const
+bool UDC1BuildViewModel::IsTabUnlocked(const FGameplayTag& InTabTag) const
 {
-	return ::IsValid(TechComp) ? TechComp->FindTechRow(InBuildTag) : nullptr;
+	return ::IsValid(TechComp) ? TechComp->HasUnlockedTag(InTabTag) : false;
 }
 
-bool UDC1BuildViewModel::IsUnlocked(const FGameplayTag& InTechTag) const
+bool UDC1BuildViewModel::IsBuildUnlocked(const FGameplayTag& InBuildTag) const
 {
-	return ::IsValid(TechComp) ? TechComp->HasUnlockedTag(InTechTag) : false;
+	if (false == ::IsValid(TechComp))
+	{
+		return false;
+	}
+
+	const FGameplayTag* TechTag = TechTagByBuildTag.Find(InBuildTag);
+	if (nullptr == TechTag)
+	{
+		return false;
+	}
+
+	return TechComp->IsTechUnlocked(*TechTag);
+}
+
+void UDC1BuildViewModel::GetBuildTagsByTechTag(const FGameplayTag& InTechTag, TArray<FGameplayTag>& OutBuildTags) const
+{
+	OutBuildTags.Reset();
+
+	BuildTagsByTechTag.MultiFind(InTechTag, OutBuildTags);
 }
 
 bool UDC1BuildViewModel::RequestStartPlacement(const FGameplayTag& InBuildTag)
@@ -72,6 +89,9 @@ bool UDC1BuildViewModel::RequestStartPlacement(const FGameplayTag& InBuildTag)
 void UDC1BuildViewModel::CacheBuildRows()
 {
 	SortedBuildRows.Reset();
+
+	TechTagByBuildTag.Reset();
+	BuildTagsByTechTag.Reset();
 
 	TArray<FDC1BuildRow> AllBuildRows;
 
@@ -84,10 +104,24 @@ void UDC1BuildViewModel::CacheBuildRows()
 	for (const FDC1BuildRow& BuildRow : AllBuildRows)
 	{
 		const FGameplayTag& BuildTag = BuildRow.BuildTag;
-		if (true == BuildTag.IsValid())
+		const FGameplayTag& TechTag = BuildRow.RequiredTechTag;
+
+		if (false == BuildTag.IsValid())
 		{
-			SortedBuildRows.Add(BuildRow);
+			UE_LOG(LogTemp, Warning, TEXT("Build Tag is Invalid"));
+			continue;
 		}
+
+		if (false == TechTag.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Build Data Tech Tag is Invalid"));
+			continue;
+		}
+
+		SortedBuildRows.Add(BuildRow);
+
+		BuildTagsByTechTag.Add(TechTag, BuildTag);
+		TechTagByBuildTag.Add(BuildTag, TechTag);
 	}
 
 	SortedBuildRows.Sort([](const FDC1BuildRow& Src, const FDC1BuildRow& Dst)
@@ -103,5 +137,12 @@ void UDC1BuildViewModel::HandleTechStateChanged()
 
 void UDC1BuildViewModel::HandleTechUnlocked(const FGameplayTag& InTechTag)
 {
-	OnBuildUnlocked.Broadcast(InTechTag);
+	TArray<FGameplayTag> BuildTags;
+	GetBuildTagsByTechTag(InTechTag, BuildTags);
+
+	for (const FGameplayTag& BuildTag : BuildTags)
+	{
+		OnBuildUnlocked.Broadcast(BuildTag);
+	}
+
 }

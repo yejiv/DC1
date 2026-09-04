@@ -16,6 +16,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "TimerManager.h"
+#include "Define/DC1Enums.h"
 
 UDC1GameplayAbility_PalTossin::UDC1GameplayAbility_PalTossin(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -91,8 +92,10 @@ void UDC1GameplayAbility_PalTossin::SweepAndApplyDamage()
 	const FVector Origin = Pal->GetActorLocation() + (Forward * Pal->GetSimpleCollisionRadius());
 	const FVector End = Origin + (Forward * ChargeTraceLength);
 
+	// 플레이어 추가.
 	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Player));
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Pal));
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;

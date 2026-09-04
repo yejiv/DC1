@@ -18,6 +18,7 @@ class DC1_API UDC1BuildViewModel : public UDC1ViewModelBase
 public:
 	// Widget이 구독
 	FDC1OnTechStateChange	OnBuildStateChanged;
+
 	FDC1OnTechUnlocked		OnBuildUnlocked;
 
 public:
@@ -29,8 +30,10 @@ public:
 	bool						HasModel() const { return ::IsValid(TechComp); }
 
 	const TArray<FDC1BuildRow>& GetBuildRows() const { return SortedBuildRows; }
-	const FDC1TechRow*			FindTechRow(const FGameplayTag& InBuildTag) const;
-	bool						IsUnlocked(const FGameplayTag& InTechTag) const;
+
+	bool						IsTabUnlocked(const FGameplayTag& InTabTag) const;
+	bool						IsBuildUnlocked(const FGameplayTag& InBuildTag) const;
+	void						GetBuildTagsByTechTag(const FGameplayTag& InTechTag, TArray<FGameplayTag>& OutBuildTags) const;
 
 	bool						RequestStartPlacement(const FGameplayTag& InBuildTag);
 
@@ -49,4 +52,8 @@ private:
 	TObjectPtr<UDC1BuildPlacementComponent>	PlacementComp = { nullptr };
 
 	TArray<FDC1BuildRow>					SortedBuildRows;
+
+	TMap<FGameplayTag, FGameplayTag>		TechTagByBuildTag;
+
+	TMultiMap<FGameplayTag, FGameplayTag>	BuildTagsByTechTag;
 };

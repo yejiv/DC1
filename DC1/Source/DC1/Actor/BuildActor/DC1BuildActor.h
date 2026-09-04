@@ -7,17 +7,15 @@
 #include "GameplayTagContainer.h"
 #include "Define/DC1Enums.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
-#include "Interface/DC1InteractableInterface.h"
 #include "DC1BuildActor.generated.h"
 
-struct FDC1BuildSnapPoint;
+struct FDC1BuildSnapSocket;
 
 class UStaticMeshComponent;
 class UBoxComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UDC1BuildCheckComponent;
-class ADC1Character;
 
 // 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
@@ -32,8 +30,6 @@ namespace DC1BuildMaterialParams
 	// 원본 Material ( BaseColorTexture 추출용 )
 	static const FName SourceBaseColorParamName = FName("BaseColor");
 }
-
-DECLARE_MULTICAST_DELEGATE(FDC1OnBuildCompleted);
 
 USTRUCT()
 struct FDC1BuildActorData
@@ -51,12 +47,9 @@ struct FDC1BuildActorData
 };
 
 UCLASS()
-class DC1_API ADC1BuildActor : public AActor, public IDC1InteractableInterface
+class DC1_API ADC1BuildActor : public AActor
 {
 	GENERATED_BODY()
-
-public:
-	FDC1OnBuildCompleted			OnBuildCompleted;
 
 public:
 	ADC1BuildActor();
@@ -69,7 +62,6 @@ public:
 	const EDC1BuildState			GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
-	const bool						IsUnderConstruction() const { return BuildState == EDC1BuildState::Construction; }
 
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
@@ -81,51 +73,39 @@ protected:
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
-	virtual void					Tick(float DeltaTime) override;
-	virtual UPrimitiveComponent*	GetInteractCollider() const override;
-	virtual FGameplayTag			GetInteractAbilityTag() const;
-	
-	virtual void					OnInteractableFocused();
-	virtual void					OnInteractableUnfocused();
-
-public:
 	virtual bool					UpdatePreview(bool InIsInRange);
 	virtual bool					SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, 
-															FDC1BuildSnapPoint& OutSnapPoint) const;
-	virtual bool					SelectSnapPointByPoint(const FVector& InWorldPoint, FDC1BuildSnapPoint& OutSnapPoint) const;
-	void							InitBuild(const FDC1BuildActorData& InBuildActorData, EDC1BuildState InState);
+													FDC1BuildSnapSocket& OutSnapSocket) const;
+	virtual bool					SelectSnapPointByPoint(const FVector& InWorldLocation, FDC1BuildSnapSocket& OutSnapSocket) const;
+	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
 
-	void							AddWorker(const ADC1Character* InWorker);
-	void							RemoveWorker(const ADC1Character* InWorker);
-	void							BuildDestroy();
+	void							InitPreview(const FDC1BuildActorData& InBuildActorData);
+	virtual void					BuildDestroy();
 
 protected:
 	UFUNCTION()
 	void							OnRep_BuildState();
 
-	UFUNCTION()
-	void							OnRep_BuildProgress();
-
 	void							SetState(EDC1BuildState InNewState);
-	void							ApplyState();
-
-private:
 	void							CreateTranslucentMIDs();
-	void							BuildCompleted();
-
-	void							CancelWorkersAbility();
-	float							ComputeTotalWorkSpeed();
-
 	void							SetMaterialTranslucentColor(const FLinearColor& InColor);
-	void							SetMaterialBuildProgress();
-	void							SetMaterialFlash();
+
+	virtual void					ApplyState();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UStaticMeshComponent>		BuildMesh = { nullptr };
 
-	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UBoxComponent>				InteractCollider = { nullptr };
+	UPROPERTY(Replicated)
+	FDC1BuildActorData						BuildActorData;
+
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_BuildState)
+	EDC1BuildState							BuildState = { EDC1BuildState::Default };
+
+	UPROPERTY()
+	TArray<TObjectPtr<UMaterialInstanceDynamic>>	BuildMIDs;
+
+private:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
@@ -138,46 +118,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };
 
-	// Completed 시점 Flash 지속시간
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
-	float									CompleteFlashDuration = { 0.4f };
-
-	// 머테리얼 슬롯별 진행도 구간 ( ex) Body = 0 ~ 0.5, Head = 0.5 ~ 1 )
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
-	TArray<FVector2D>						MaterialProgressRanges;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
-	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f)};
+	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f) };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							PreviewInvalidColor = { FLinearColor::Red };
 
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
-	FLinearColor							ConstructionColor = { FLinearColor::Blue };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
-	FGameplayTag							InteractAbilityTag = { FGameplayTag::EmptyTag };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
-	FGameplayTag							OnFocusedUITag = { FGameplayTag::EmptyTag };
 
 private:
-	UPROPERTY(Replicated)
-	FDC1BuildActorData		BuildActorData;
-
-	// 테스트용 EditDefaultsOnly
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_BuildState)
-	EDC1BuildState			BuildState = { EDC1BuildState::Default };
-
-	UPROPERTY(ReplicatedUsing = OnRep_BuildProgress)
-	float					BuildProgress = { 0.f };
-
-	UPROPERTY()
-	TArray<TObjectPtr<UMaterialInstanceDynamic>>	BuildMIDs;
-
-private:
-	TSet<TWeakObjectPtr<const ADC1Character>> Workers;
 	bool					CanBuilding = { false };
-	float					CurrentWork = { 0.f };
-	float					FlashAmount = { 0.f };
 };

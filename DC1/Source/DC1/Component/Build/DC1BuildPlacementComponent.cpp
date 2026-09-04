@@ -68,20 +68,20 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	if (true == IsSnapping)
 	{
-		DrawDebugSphere(GetWorld(), SnapPointWorld, 12.f, 12, FColor::Yellow);
-		DrawDebugDirectionalArrow(GetWorld(), SnapPointWorld,
-			SnapPointWorld + (SnapNormalWorld * 80.f), 16.f, FColor::Yellow);		// 슬라이드 축
-		DrawDebugLine(GetWorld(), SnapPointWorld, PreviewActor->GetActorLocation(), FColor::Yellow);
+		DrawDebugSphere(GetWorld(), SnapSocketLocationWorld, 12.f, 12, FColor::Yellow);
+		DrawDebugDirectionalArrow(GetWorld(), SnapSocketLocationWorld,
+			SnapSocketLocationWorld + (SnapSocketNormalWorld * 80.f), 16.f, FColor::Yellow);		// 슬라이드 축
+		DrawDebugLine(GetWorld(), SnapSocketLocationWorld, PreviewActor->GetActorLocation(), FColor::Yellow);
 	}
 	else
 	{
-		FDC1BuildSnapPoint Debug;
+		FDC1BuildSnapSocket Debug;
 		const ADC1BuildActor* Target = nullptr;
 		if (true == FindSnapFace(Debug, Target))
 		{
-			DrawDebugSphere(GetWorld(), Debug.WorldLocation, 12.f, 12, FColor::Cyan);
-			DrawDebugDirectionalArrow(GetWorld(), Debug.WorldLocation,
-				Debug.WorldLocation + (Debug.WorldNormal * 60.f), 16.f, FColor::Cyan);
+			DrawDebugSphere(GetWorld(), Debug.SocketTransform.GetLocation(), 12.f, 12, FColor::Cyan);
+			DrawDebugDirectionalArrow(GetWorld(), Debug.SocketTransform.GetLocation(),
+				Debug.SocketTransform.GetLocation() + (Debug.SocketTransform.GetUnitAxis(EAxis::X) * 60.f), 16.f, FColor::Cyan);
 		}
 	}
 }
@@ -99,7 +99,7 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 		return false;
 	}
 
-	PreviewActor = SpawnBuildActor(*BuildRow, EDC1BuildState::Preview, FTransform::Identity);
+	PreviewActor = SpawnBuildActor(*BuildRow, FTransform::Identity, true);
 	if (nullptr == PreviewActor)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Cant Spawn Build Actor : %s"), *InBuildTag.ToString());
@@ -192,8 +192,7 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	// TODO Cost 감소
 	// ..
 
-	EDC1BuildState ConfirmState = (BuildRow->RequiredWork > 0.f) ? EDC1BuildState::Construction : EDC1BuildState::Completed;
-	SpawnBuildActor(*BuildRow, ConfirmState, InTransform);
+	SpawnBuildActor(*BuildRow, InTransform, false);
 }
 
 void UDC1BuildPlacementComponent::CacheBuildRows()
@@ -248,7 +247,7 @@ FDC1BuildActorData UDC1BuildPlacementComponent::MakeBuildActorData(const FDC1Bui
 	return Data;
 }
 
-ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform)
+ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow& InRow, const FTransform& InTransform, bool InIsPreview)
 {
 	UWorld* World = GetWorld();
 	if (false == ::IsValid(World))
@@ -278,7 +277,15 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 		return nullptr;
 	}
 
-	NewBuildActor->InitBuild(MakeBuildActorData(InRow), InState);
+	if (true == InIsPreview)
+	{
+		NewBuildActor->InitPreview(MakeBuildActorData(InRow));
+	}
+	else
+	{
+		NewBuildActor->InitBuild(MakeBuildActorData(InRow));
+	}
+
 	NewBuildActor->FinishSpawning(InTransform);
 
 	return NewBuildActor;
@@ -400,21 +407,21 @@ void UDC1BuildPlacementComponent::OnSnapPressed()
 		return;
 	}
 
-	FDC1BuildSnapPoint SnapPoint;
+	FDC1BuildSnapSocket SnapSocket;
 	const ADC1BuildActor* Target = nullptr;
 
-	if (false == FindSnapFace(SnapPoint, Target))
+	if (false == FindSnapFace(SnapSocket, Target))
 	{
 		return;
 	}
 
-	SnapPointWorld = SnapPoint.WorldLocation;
-	SnapNormalWorld = SnapPoint.WorldNormal;
+	SnapSocketLocationWorld = SnapSocket.SocketTransform.GetLocation();
+	SnapSocketNormalWorld = SnapSocket.SocketTransform.GetUnitAxis(EAxis::X);
 	
 	SnapBaseYaw = Target->GetActorRotation().Yaw;
 
 	const FQuat SnapQuat = FRotator(0.f, SnapBaseYaw, 0.f).Quaternion();
-	SnapMinDistance = PreviewActor->GetExtentCenterToDirection(SnapNormalWorld, SnapQuat) + SnapContactMargin;
+	SnapMinDistance = PreviewActor->GetExtentCenterToDirection(SnapSocketNormalWorld, SnapQuat) + SnapContactMargin;
 
 	SnapTarget = Target;
 
@@ -440,8 +447,8 @@ void UDC1BuildPlacementComponent::ClearSnap()
 {
 	IsSnapping = false;
 	SnapTarget = nullptr;
-	SnapPointWorld = FVector::ZeroVector;
-	SnapNormalWorld = FVector::ZeroVector;
+	SnapSocketLocationWorld = FVector::ZeroVector;
+	SnapSocketNormalWorld = FVector::ZeroVector;
 }
 
 void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
@@ -512,11 +519,11 @@ FVector UDC1BuildPlacementComponent::GetPlacePoint(const APawn* InOwnerPawn) con
 		return AimPoint;
 	}
 
-	const float SnapDot = FVector::DotProduct(AimPoint - SnapPointWorld, SnapNormalWorld);
+	const float SnapDot = FVector::DotProduct(AimPoint - SnapSocketLocationWorld, SnapSocketNormalWorld);
 
 	const float Distance = FMath::Max(SnapDot, SnapMinDistance);
 
-	return SnapPointWorld + (SnapNormalWorld * Distance);
+	return SnapSocketLocationWorld + (SnapSocketNormalWorld * Distance);
 }
 
 bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd) const
@@ -537,17 +544,17 @@ bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd)
 	return true;
 }
 
-bool UDC1BuildPlacementComponent::FindSnapFace(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+bool UDC1BuildPlacementComponent::FindSnapFace(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
 {
-	if (true == FindSnapFaceByRay(OutSnapPoint, OutTarget))
+	if (true == FindSnapFaceByRay(OutSnapSocket, OutTarget))
 	{
 		return true;
 	}
 
-	return FindSnapFaceByRange(OutSnapPoint, OutTarget);
+	return FindSnapFaceByRange(OutSnapSocket, OutTarget);
 }
 
-bool UDC1BuildPlacementComponent::FindSnapFaceByRay(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+bool UDC1BuildPlacementComponent::FindSnapFaceByRay(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
 {
 	const UWorld* World = GetWorld();
 	if (false == ::IsValid(World))
@@ -583,10 +590,10 @@ bool UDC1BuildPlacementComponent::FindSnapFaceByRay(FDC1BuildSnapPoint& OutSnapP
 
 	OutTarget = Target;
 
-	return Target->SelectSnapPointByRay(RayStart, RayEnd, Params, OutSnapPoint);
+	return Target->SelectSnapPointByRay(RayStart, RayEnd, Params, OutSnapSocket);
 }
 
-bool UDC1BuildPlacementComponent::FindSnapFaceByRange(FDC1BuildSnapPoint& OutSnapPoint, const ADC1BuildActor*& OutTarget) const
+bool UDC1BuildPlacementComponent::FindSnapFaceByRange(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
 {
 	const APawn* Pawn = GetOwnerPawn();
 	if (nullptr == Pawn)
@@ -604,18 +611,18 @@ bool UDC1BuildPlacementComponent::FindSnapFaceByRange(FDC1BuildSnapPoint& OutSna
 
 	for (const ADC1BuildActor* Candidate : Candidates)
 	{
-		FDC1BuildSnapPoint SnapPoint;
-		if (false == Candidate->SelectSnapPointByPoint(AimPoint, SnapPoint))
+		FDC1BuildSnapSocket SnapSocket;
+		if (false == Candidate->SelectSnapPointByPoint(AimPoint, SnapSocket))
 		{
 			continue;
 		}
 
-		const float DistSquared = FVector::DistSquaredXY(SnapPoint.WorldLocation, AimPoint);
+		const float DistSquared = FVector::DistSquaredXY(SnapSocket.SocketTransform.GetLocation(), AimPoint);
 
 		if (DistSquared < BestDistSquared)
 		{
 			BestDistSquared = DistSquared;
-			OutSnapPoint = SnapPoint;
+			OutSnapSocket = SnapSocket;
 			OutTarget = Candidate;
 			IsFind = true;
 		}
@@ -667,8 +674,12 @@ void UDC1BuildPlacementComponent::ChangeSnapConfirmTarget()
 		return;
 	}
 
+	const FQuat SnapQuat = FRotator(0.f, SnapBaseYaw, 0.f).Quaternion();
+	SnapMinDistance = PreviewActor->GetExtentCenterToDirection(SnapSocketNormalWorld, SnapQuat) + SnapContactMargin;
+
 	const FVector NewBoxCenter = PreviewActor->GetCheckBoxCenter();
 	const float HalfExtent = SnapMinDistance - SnapContactMargin;
 
-	SnapPointWorld = NewBoxCenter + (SnapNormalWorld * HalfExtent);
+	SnapSocketLocationWorld = NewBoxCenter + (SnapSocketNormalWorld * HalfExtent);
+
 }

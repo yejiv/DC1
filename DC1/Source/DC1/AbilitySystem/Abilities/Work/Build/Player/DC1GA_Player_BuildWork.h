@@ -28,12 +28,12 @@ public:
 
 protected:
 	// BuildActor 탐색 기능 구현
-	virtual ADC1BuildActor* FindBuildTarget() const override;
+	virtual ADC1InteractBuildActor* FindBuildTarget() const override;
 
-	// ADC1BuildActor->AddWorker를 서버 측에서 호출하는 기능 구현
-	virtual void			StartWork(ADC1BuildActor * InBuildTarget) override;
+	// ADC1InteractBuildActor->AddWorker를 서버 측에서 호출하는 기능 구현
+	virtual void			StartWork(ADC1InteractBuildActor * InBuildTarget) override;
 
-	// ADC1BuildActor->RemoveWorker를 서버 측에서 호출하는 기능 구현
+	// ADC1InteractBuildActor->RemoveWorker를 서버 측에서 호출하는 기능 구현
 	virtual void			StopWork()	override;
 
 	// Work 중 액션 - ex) PlayMontage
@@ -57,7 +57,7 @@ public:
 	FName			EndSectionName = { "End" };
 
 private:
-	TWeakObjectPtr<ADC1BuildActor>	WorkTarget = { nullptr };
+	TWeakObjectPtr<ADC1InteractBuildActor>	WorkTarget = { nullptr };
 	FDelegateHandle					BuildCompletedDelegateHandle;
 	bool							IsSectionEnd = { false };
 	bool							IsPlayingMontage = { false };
