@@ -34,7 +34,7 @@ void UDC1GA_Player_BuildWork::OnMontageAborted()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
-ADC1BuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
+ADC1InteractBuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
 {
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
 	if (nullptr == InteractComp)
@@ -48,10 +48,10 @@ ADC1BuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
 		return nullptr;
 	}
 
-	return Cast<ADC1BuildActor>(BuildTraget);
+	return Cast<ADC1InteractBuildActor>(BuildTraget);
 }
 
-void UDC1GA_Player_BuildWork::StartWork(ADC1BuildActor* InBuildTarget)
+void UDC1GA_Player_BuildWork::StartWork(ADC1InteractBuildActor* InBuildTarget)
 {
 	if (true == ::IsValid(InBuildTarget))
 	{

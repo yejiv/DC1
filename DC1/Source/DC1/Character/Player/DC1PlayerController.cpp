@@ -241,13 +241,8 @@ void ADC1PlayerController::OnSprint(const FInputActionValue& Value)
 		return;
 	}
 
-	if (UCharacterMovementComponent* CMC = ControlObject->GetCharacterMovement())
-	{
-		if (true == CMC->IsCrouching())
-			return;
-	}
-
-	ControlObject->SetSprint(true);
+	// 웅크림/스태미나 검사는 GA_Player_Sprint의 CanActivateAbility가 한다
+	ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_Sprint);
 }
 
 void ADC1PlayerController::RestoreSprint(const FInputActionValue& Value)
@@ -256,7 +251,7 @@ void ADC1PlayerController::RestoreSprint(const FInputActionValue& Value)
 	{
 		return;
 	}
-	ControlObject->SetSprint(false);
+	ControlObject->CancelAbility(DC1PlayerTags::Ability_Player_Sprint);
 }
 
 void ADC1PlayerController::OnToggleMove(const FInputActionValue& Value)
@@ -307,7 +302,7 @@ void ADC1PlayerController::OnCrouch(const FInputActionValue& Value)
 		if (false == IsCrouch && false == ControlObject->CanCrouch())
 			return;
 
-		ControlObject->SetSprint(false);
+		ControlObject->CancelAbility(DC1PlayerTags::Ability_Player_Sprint);
 		IsCrouch ? ControlObject->UnCrouch() : ControlObject->Crouch();
 	}
 }
@@ -410,7 +405,8 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 		return;
 	}
 
-	if (false == IsValid(ControlObject->Equipment))
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS) || false == IsValid(PS->GetEquipComponent()))
 	{
 		return;
 	}
@@ -429,7 +425,7 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 	// 절대 인덱스가 아니라 증감량을 보낸다. 빠르게 굴려도 서버에서 순서대로 누적된다
 	const int32 Delta = (AxisValue > 0.f) ? 1 : -1;
 
-	ControlObject->Equipment->Server_ChangeWeapon(Delta);
+	PS->GetEquipComponent()->Server_ChangeWeapon(Delta);
 }
 
 void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)

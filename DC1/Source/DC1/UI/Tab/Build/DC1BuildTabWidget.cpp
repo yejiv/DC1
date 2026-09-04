@@ -8,7 +8,7 @@
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
-#include "Tags/UI/DC1GameplayTag_UI.h"
+#include "Tags/Build/DC1GameplayTag_Build.h"
 
 #include "ViewModel/Build/DC1BuildViewModel.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
@@ -96,7 +96,7 @@ void UDC1BuildTabWidget::RefreshAll()
 			BuildWidget->InitBuild(CachedViewModel);
 		}
 
-		if (true == CachedViewModel->IsUnlocked(Pair.Key))
+		if (true == CachedViewModel->IsTabUnlocked(Pair.Key))
 		{
 			EnableTab(Pair.Key);
 		}
@@ -118,7 +118,7 @@ void UDC1BuildTabWidget::RefreshAll()
 
 void UDC1BuildTabWidget::HandleBuildUnlocked(const FGameplayTag& InUnlockedTag)
 {
-	if (false == InUnlockedTag.MatchesTag(DC1TechTags::Build))
+	if (false == InUnlockedTag.MatchesTag(DC1BuildTags::Build))
 	{
 		return;
 	}

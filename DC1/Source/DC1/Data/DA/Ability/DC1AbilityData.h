@@ -55,4 +55,8 @@ public:
 	// Effects
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
 	TMap<FGameplayTag, TSubclassOf<UGameplayEffect>> Effects;
+
+	// 부여 즉시 자기 자신에게 거는 GE. 자연회복처럼 계속 켜 두는 무한 GE가 여기 들어간다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
+	TArray<TSubclassOf<UGameplayEffect>> StartupEffects;
 };

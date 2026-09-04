@@ -34,9 +34,26 @@ void UDC1AttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	}
 
+	if (GetStaminaAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxStamina());
+	}
+
 	if (GetWorkSpeedAttribute() == Attribute)
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
+	}
+}
+
+void UDC1AttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
+{
+	Super::PreAttributeBaseChange(Attribute, NewValue);
+
+	// PreAttributeChange는 CurrentValue만 막는다. 즉시/주기 GE는 BaseValue를 직접 올리므로
+	// 여기서 막지 않으면 표시값만 Max에 붙어 있고 실제 base가 무한정 쌓인다
+	if (GetStaminaAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxStamina());
 	}
 }
 

@@ -23,7 +23,7 @@ public:
 	virtual UPrimitiveComponent*	GetInteractCollider() const = 0;
 
 	// Ability로 상호작용 처리 시 사용할 Tag - ex) 건설 Ability 실행 - Ability_Player_BuildWork, 즉발(아이템 줍기, UI 열기) - EmptyTag
-	virtual FGameplayTag GetInteractAbilityTag() const { return FGameplayTag::EmptyTag; }
+	virtual FGameplayTag			GetInteractAbilityTag() const { return FGameplayTag::EmptyTag; }
 
 	// 상호작용 GetInteractAbilityTag가 EmptyTag라면 실행될 상호작용
 	virtual void					Interact(ADC1Character* InInteractOwner) {}

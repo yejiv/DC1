@@ -8,6 +8,7 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Attack, "Ability.Player.Attack");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_PalSphere, "Ability.Player.PalSphere");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Dodge, "Ability.Player.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Sprint, "Ability.Player.Sprint");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_BuildWork, "Ability.Player.BuildWork");
 #pragma endregion

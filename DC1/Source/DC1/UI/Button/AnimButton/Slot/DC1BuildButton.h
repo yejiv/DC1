@@ -30,7 +30,7 @@ protected:
 	virtual void	HandleUnhovered() override;
 
 public:
-	void			InitBuildButton(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow);
+	void			InitBuildButton(const FDC1BuildRow& InBuildRow);
 	void			SetState(bool InCanBuild);
 
 private:

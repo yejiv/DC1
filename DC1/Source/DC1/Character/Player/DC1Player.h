@@ -12,9 +12,9 @@ class USpringArmComponent;
 class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
+class UWidgetComponent;
 
 class UDC1AbilitySystemComponent;
-class UDC1EquipComponent;
 /**
  * 
  */
@@ -43,6 +43,7 @@ public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
+	void CancelAbility(const FGameplayTag& AbilityTag);
 
 	void Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip);
 
@@ -55,7 +56,8 @@ private:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 	virtual void OnRep_PlayerState() override;
-	
+	virtual void NotifyControllerChanged() override;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HeadMesh = { nullptr };
@@ -74,12 +76,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USphereComponent>			InteractDetectCollider = { nullptr };
 
-public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UDC1EquipComponent>		Equipment = { nullptr };
+	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
 
 private:
 	void	InitializeAbilitySystem();
+	// 장착 컴포넌트는 PlayerState 소유다. 폰이 준비됐음을 알려 스폰/부착을 트리거한다
+	void	InitializeEquip();
 	void	Clear_Resource();
 
 private:

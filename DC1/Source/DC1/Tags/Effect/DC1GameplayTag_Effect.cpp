@@ -6,5 +6,6 @@ namespace DC1EffectTags
 {
 #pragma region SetByCaller
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Damage, "SetByCaller.Damage");
+	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_StaminaCost, "SetByCaller.StaminaCost");
 #pragma endregion
 }

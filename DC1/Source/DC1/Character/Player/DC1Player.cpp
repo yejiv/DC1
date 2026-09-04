@@ -9,6 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Camera/CameraComponent.h"
 
 #include "Character/Player/DC1PlayerState.h"
@@ -72,8 +73,11 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	InteractDetectCollider->SetupAttachment(RootComponent);
 	InteractDetectCollider->SetGenerateOverlapEvents(true);
 
-	// Equipment
-	Equipment = CreateDefaultSubobject<UDC1EquipComponent>("Equipment");
+	// Stamina Widget
+	StaminaWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("StaminaWidget");
+	StaminaWidgetComponent->SetupAttachment(RootComponent);
+	StaminaWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	StaminaWidgetComponent->SetVisibility(false);
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -135,6 +139,14 @@ void ADC1Player::PlayAbility(const FGameplayTag& AbilityTag)
 	}
 }
 
+void ADC1Player::CancelAbility(const FGameplayTag& AbilityTag)
+{
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent()))
+	{
+		ASC->CancelAbilityByTag(AbilityTag);
+	}
+}
+
 void ADC1Player::Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip)
 {
 	UPrimitiveComponent* NewCollider = (nullptr == AttackCollider && false == IsEquip) ? HandAttackCollider : AttackCollider;
@@ -159,9 +171,6 @@ void ADC1Player::PostInitializeComponents()
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//ActiveCollider = HandAttackCollider;
-	//HandAttackCollider->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnAttackColliderOverlap);
 }
 
 void ADC1Player::Tick(float DeltaTime)
@@ -181,8 +190,7 @@ void ADC1Player::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
-
-	Equipment->Init_Equip();
+	InitializeEquip();
 }
 
 void ADC1Player::UnPossessed()
@@ -195,6 +203,25 @@ void ADC1Player::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 	InitializeAbilitySystem();
+	InitializeEquip();
+}
+
+void ADC1Player::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+
+	StaminaWidgetComponent->SetVisibility(IsLocallyControlled());
+}
+
+void ADC1Player::InitializeEquip()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS)) return;
+
+	if (UDC1EquipComponent* Equip = PS->GetEquipComponent())
+	{
+		Equip->HandlePawnReady();
+	}
 }
 
 void ADC1Player::InitializeAbilitySystem()
@@ -281,7 +308,7 @@ void ADC1Player::OnAimStateChanged(const FGameplayTag Tag, int32 NewCount)
 		// 스프린트 의도의 주인은 소유 클라다. 서버에서 꺼봐야 다음 ServerMove가 되돌린다
 		if (true == IsLocallyControlled())
 		{
-			SetSprint(false);
+			CancelAbility(DC1PlayerTags::Ability_Player_Sprint);
 			CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->SetWalk(true);
 		}
 	}

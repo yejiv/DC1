@@ -23,7 +23,7 @@ void UDC1GA_Base_BuildWork::ActivateAbility(const FGameplayAbilitySpecHandle Han
 
 	if(true == ActorInfo->IsLocallyControlled())
 	{
-		ADC1BuildActor* BuildActor = FindBuildTarget();
+		ADC1InteractBuildActor* BuildActor = FindBuildTarget();
 		if (false == ::IsValid(BuildActor))
 		{
 			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);

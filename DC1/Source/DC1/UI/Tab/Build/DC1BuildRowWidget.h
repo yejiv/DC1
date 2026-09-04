@@ -22,7 +22,7 @@ class DC1_API UDC1BuildRowWidget : public UDC1UserWidget
 
 public:
 	void				InitRow(const FGameplayTag& InRowTag, const FText& RowName);
-	UDC1BuildButton*	AddBuildSlot(const FDC1BuildRow& InBuildRow, const FDC1TechRow& InTechRow, UDC1BuildViewModel* InViewModel);
+	UDC1BuildButton*	AddBuildSlot(const FDC1BuildRow& InBuildRow, UDC1BuildViewModel* InViewModel);
 
 	bool				VisibleSlot(const FGameplayTag& InSlotTag);
 

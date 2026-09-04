@@ -9,6 +9,7 @@
 
 class ADC1Weapon;
 class ADC1Tool;
+class ADC1Player;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1EquipComponent : public UActorComponent
@@ -32,11 +33,18 @@ public:
 	// TODO : 본문은 인벤토리 연동 전 임시 구현 (.cpp 의 동명 TODO 참고)
 	void		Init_Equip();
 
+	// 폰이 이 PlayerState에 붙은 시점에 폰이 직접 호출한다.
+	// 컴포넌트가 폰보다 오래 살기 때문에 폰이 필요한 작업은 전부 여기를 거친다
+	void		HandlePawnReady();
+
 public:
 	UFUNCTION(Server, Reliable)
 	void		Server_ChangeWeapon(int32 Delta);
 
 private:
+	// 소유자는 PlayerState다. 폰은 아직 없거나 교체됐을 수 있어 캐싱하지 않고 매번 얻는다
+	ADC1Player*	GetOwningPlayer() const;
+
 	UFUNCTION()
 	void		OnRep_CurrentWeaponIndex();
 	UFUNCTION()
