@@ -315,6 +315,25 @@ void ADC1PalAIController::UpdateSelectedSkill()
 	SelectedMinRange = Candidates[PickedIndex].Value->GetMinRange();
 }
 
+bool ADC1PalAIController::CanBackoff() const
+{
+	const UWorld* World = GetWorld();
+	if (nullptr == World)
+	{
+		return true;
+	}
+
+	return ((World->GetTimeSeconds() - LastBackoffTime) >= BackoffCooldown);
+}
+
+void ADC1PalAIController::NotifyBackoffPerformed()
+{
+	if (const UWorld* World = GetWorld())
+	{
+		LastBackoffTime = World->GetTimeSeconds();
+	}
+}
+
 void ADC1PalAIController::ClearSelectedSkill()
 {
 	SelectedSkillTag = FGameplayTag::EmptyTag;
@@ -399,25 +418,6 @@ void ADC1PalAIController::ApplyStateTreeForTeam()
 
 namespace DC1PalFollowAnchor
 {
-	// 자리 후보 방향. 주인이 향하는 쪽이 0도. 0/180도는 진행선을 막아 제외
-	static constexpr float AnchorAngles[] = { 40.f, -40.f, 75.f, -75.f, 110.f, -110.f, 145.f, -145.f };
-
-	// 앞쪽 자리 가중치. 1이면 이동 거리와 동등
-	static constexpr float FrontBias = 1.5f;
-
-	// 후보를 NavMesh로 당길 때 찾는 반경
-	static constexpr float ProjectExtent = 300.f;
-
-	// 후보를 놓을 반경. 실제 유지 거리는 태스크가 정하므로 방향만 얻으면 됨
-	static constexpr float SampleRadius = 500.f;
-
-	// 주인이 향하는 쪽. 서 있으면 보는 쪽
-	static FVector GetOwnerHeading(const AActor& Owner)
-	{
-		const FVector Velocity = Owner.GetVelocity().GetSafeNormal2D();
-		return (false == Velocity.IsNearlyZero()) ? Velocity : Owner.GetActorForwardVector().GetSafeNormal2D();
-	}
-
 	// 카메라를 알 수 없으면 보이는 것으로 봄
 	static bool IsInOwnerView(const AActor& Owner, const FVector& Point, float ScreenMargin)
 	{
@@ -451,50 +451,24 @@ namespace DC1PalFollowAnchor
 			&& ScreenPosition.Y >= InsetY && ScreenPosition.Y <= (ViewportY - InsetY));
 	}
 
-	// 링에서 화면에 보이고 갈 수 있는 자리 선택. 가깝고 앞쪽인 곳 선호. 없으면 실패
-	static bool ChooseVisible(const AActor& Owner, const FVector& PalLocation, float ScreenMargin, FVector& OutDirection)
+	// 설 자리 — 주인 카메라 기준 로컬 오프셋을 월드로 편다.
+	// X는 카메라 정면(멀어지는 방향), Y는 오른쪽. 두 값이 서로 얽히지 않는다.
+	// 컨트롤 회전은 서버에도 복제되므로 화면 투영 없이 구한다
+	static bool ChooseCameraOffset(const AActor& Owner, const FVector2D& LocalOffset, FVector& OutOffset)
 	{
-		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Owner.GetWorld());
-		if (nullptr == NavSystem)
+		const APawn* OwnerPawn = Cast<APawn>(&Owner);
+		const AController* OwnerController = (nullptr != OwnerPawn) ? OwnerPawn->GetController() : nullptr;
+		if (nullptr == OwnerController)
 		{
 			return false;
 		}
 
-		const FVector OwnerLocation = Owner.GetActorLocation();
-		const FVector Heading = GetOwnerHeading(Owner);
-		const FVector Extent(ProjectExtent);
+		const FRotationMatrix YawMatrix(FRotator(0.f, OwnerController->GetControlRotation().Yaw, 0.f));
 
-		float BestScore = -1.f;
+		OutOffset = (YawMatrix.GetUnitAxis(EAxis::X) * LocalOffset.X)
+			+ (YawMatrix.GetUnitAxis(EAxis::Y) * LocalOffset.Y);
 
-		for (const float Angle : AnchorAngles)
-		{
-			const FVector Direction = Heading.RotateAngleAxis(Angle, FVector::UpVector);
-			const FVector Candidate = OwnerLocation + (Direction * SampleRadius);
-
-			if (false == IsInOwnerView(Owner, Candidate, ScreenMargin))
-			{
-				continue;
-			}
-
-			FNavLocation Destination;
-			if (false == NavSystem->ProjectPointToNavigation(Candidate, Destination, Extent))
-			{
-				continue;
-			}
-
-			// 둘 다 0~1
-			const float TravelScore = 1.f - FMath::Clamp(FVector::Dist2D(PalLocation, Destination.Location) / (SampleRadius * 2.f), 0.f, 1.f);
-			const float FrontScore = (FVector::DotProduct(Direction, Heading) + 1.f) * 0.5f;
-			const float Score = TravelScore + (FrontScore * FrontBias);
-
-			if (Score > BestScore)
-			{
-				BestScore = Score;
-				OutDirection = Direction;
-			}
-		}
-
-		return (BestScore >= 0.f);
+		return true;
 	}
 }
 
@@ -509,13 +483,11 @@ bool ADC1PalAIController::UpdateFollowAnchor(float DeltaTime)
 
 	const FVector PalLocation = Pal->GetActorLocation();
 
+	// 아직 자리를 정한 적이 없다. 0이면 Goal 이 주인 위치가 되어 몸에 붙는다.
+	// 화면 밖 3초를 기다리지 않고 지금 바로 잡는다
 	if (true == FollowAnchor.IsNearlyZero())
 	{
-		FollowAnchor = (PalLocation - FollowTarget->GetActorLocation()).GetSafeNormal2D();
-		if (true == FollowAnchor.IsNearlyZero())
-		{
-			FollowAnchor = -DC1PalFollowAnchor::GetOwnerHeading(*FollowTarget);
-		}
+		return DC1PalFollowAnchor::ChooseCameraOffset(*FollowTarget, FollowOffset, FollowAnchor);
 	}
 
 	if (true == DC1PalFollowAnchor::IsInOwnerView(*FollowTarget, PalLocation, ScreenMargin))
@@ -533,7 +505,7 @@ bool ADC1PalAIController::UpdateFollowAnchor(float DeltaTime)
 	OutOfViewTime = 0.f;
 
 	FVector NewAnchor = FollowAnchor;
-	if (false == DC1PalFollowAnchor::ChooseVisible(*FollowTarget, PalLocation, ScreenMargin, NewAnchor))
+	if (false == DC1PalFollowAnchor::ChooseCameraOffset(*FollowTarget, FollowOffset, NewAnchor))
 	{
 		return false;
 	}
@@ -579,7 +551,9 @@ AActor* ADC1PalAIController::GetFollowTargetEnemy() const
 			continue;
 		}
 
-		if (FollowTarget == OtherController->GetCurrentTarget())
+		// 표적으로 삼은 것만으로는 부족하다. 야생 팰은 발견만 해도 주인을 표적에 넣는데,
+		// 도발되기 전까지는 싸우지 않고 도망친다. 실제로 교전 중일 때만 참전한다
+		if (FollowTarget == OtherController->GetCurrentTarget() && true == OtherController->IsProvoked())
 		{
 			return Candidate;
 		}

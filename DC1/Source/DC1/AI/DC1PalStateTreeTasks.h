@@ -115,9 +115,6 @@ struct FDC1PalFollowTaskInstanceData
 	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
 
 	
-	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							AnchorDistance = { 700.f };		// 주인과 오프셋
-
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "1.0"))
 	float							CatchUpDistance = { 400.f };	// 따라잡기 시작하는 거리
 
@@ -125,7 +122,7 @@ struct FDC1PalFollowTaskInstanceData
 	float							SpeedScale = { 1.3f };			// 따라잡을 때 주인 속도에 곱할 값
 
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							TeleportDistance = { 1500.f };	// 순간이동
+	float							TeleportDistance = { 2500.f };	// 순간이동. 데드존(1000)보다 커야 데드존이 먼저 걸린다
 
 	UPROPERTY()
 	FVector							LastRequestedLocation = { FVector::ZeroVector };
@@ -161,9 +158,11 @@ struct FDC1PalFaceOwnerTaskInstanceData
 	UPROPERTY(EditAnywhere, Category = Context)
 	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
 
-	// 회전 속도
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "1.0"))
 	float							TurnRate = { 150.f };
+
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							FollowDeadzone = { 1000.f };	//이상 움직이면 따라감
 };
 
 
@@ -188,59 +187,43 @@ struct FDC1PalFaceOwnerTask : public FStateTreeTaskCommonBase
 
 
 USTRUCT()
-struct FDC1PalFleeTaskInstanceData
+struct FDC1PalRetreatTaskInstanceData
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, Category = Context)
 	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
 
+	// 한 번에 물러나는 거리
 	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							AcceptanceRadius = { 100.f };	//도착으로 치는 거리
+	float							StepDistance = { 600.f };
+
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	float							LateralAngleMax = { 30.f };	//직선 말고 +-30
+
+	// 도착으로 치는 거리
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							AcceptanceRadius = { 60.f };
+
+	UPROPERTY(EditAnywhere, Category = Parameter)
+	bool							bRepeat = { false };	//계속 도주하는지 플래그
+
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							SafeDistance = { 1500.f };	//도주 끝
+
+	// 진입 시점의 위협. 표적이 기억에서 지워져도 이걸로 계속 달아난다
+	UPROPERTY()
+	TWeakObjectPtr<AActor>			Threat;
 };
 
 
-USTRUCT(DisplayName = "Pal Flee", Category = "Pal")
-struct FDC1PalFleeTask : public FStateTreeTaskCommonBase
+// 반대쪽으로 물러나기
+USTRUCT(DisplayName = "Pal Retreat", Category = "Pal")
+struct FDC1PalRetreatTask : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()
 
-	using FInstanceDataType = FDC1PalFleeTaskInstanceData;
-
-	virtual const UStruct* GetInstanceDataType() const override
-	{
-		return FInstanceDataType::StaticStruct();
-	}
-
-	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
-	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
-	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
-};
-
-
-USTRUCT()
-struct FDC1PalBackoffTaskInstanceData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = Context)
-	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
-
-	// 한 번에 물러나는 거리.
-	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							StepDistance = { 300.f };
-
-	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
-	float							AcceptanceRadius = { 60.f };	//도착으로 치는 거리
-};
-
-
-USTRUCT(DisplayName = "Pal Backoff", Category = "Pal")
-struct FDC1PalBackoffTask : public FStateTreeTaskCommonBase
-{
-	GENERATED_BODY()
-
-	using FInstanceDataType = FDC1PalBackoffTaskInstanceData;
+	using FInstanceDataType = FDC1PalRetreatTaskInstanceData;
 
 	virtual const UStruct* GetInstanceDataType() const override
 	{
