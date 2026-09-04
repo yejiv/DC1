@@ -1,6 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/DC1ChestInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
 #include "System/DC1AssetManager.h"
@@ -76,19 +77,16 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 	}
 }
 
-void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(
-	TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	// 플레이어 전용 데이터 - COND_OwnerOnly (플레이어 본인과 서버만)
+	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, Slots, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, CurrentWeight, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UDC1PlayerInventoryComponent, EquipmentSlots, COND_OwnerOnly);
 }
 
-// ========================
-// 무게 관련 함수
-// ========================
 
 float UDC1PlayerInventoryComponent::GetWeightPercentage() const
 {
@@ -294,6 +292,11 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 	CurrentWeight = FMath::Min(CurrentWeight, MaxWeight);
 }
 
+void UDC1PlayerInventoryComponent::OnRep_EquipmentSlots()
+{
+	OnInventoryUpdated.Broadcast();
+}
+
 void UDC1PlayerInventoryComponent::InitializeEquipmentSlots()
 {
 	EquipmentSlots.Empty();
@@ -358,57 +361,107 @@ bool UDC1PlayerInventoryComponent::Server_MoveItem_Validate(int32 FromSlotIndex,
 
 void UDC1PlayerInventoryComponent::Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
 {
-	if (!Slots.IsValidIndex(FromSlotIndex) || !Slots.IsValidIndex(ToSlotIndex))
+	MoveOrMergeSlot(FromSlotIndex, ToSlotIndex, MoveCount);
+}
+
+// ========================
+// 상자 연동 (드래그 앤 드롭)
+// ========================
+
+void UDC1PlayerInventoryComponent::RequestMoveChestItem(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
+{
+	Server_MoveChestItem(InChestComp, FromSlotIndex, ToSlotIndex, MoveCount);
+}
+
+bool UDC1PlayerInventoryComponent::Server_MoveChestItem_Validate(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
+{
+	if (!IsValid(InChestComp))
+	{
+		return false;
+	}
+
+	if (MoveCount < -1)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void UDC1PlayerInventoryComponent::Server_MoveChestItem_Implementation(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
+{
+	if (!IsValid(InChestComp))
 	{
 		return;
 	}
 
-	if (FromSlotIndex == ToSlotIndex)
+	InChestComp->MoveOrMergeSlot(FromSlotIndex, ToSlotIndex, MoveCount);
+}
+
+void UDC1PlayerInventoryComponent::RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount /* = -1 */)
+{
+	Server_TransferItem(InChestComp, bToChest, FromSlotIndex, MoveCount);
+}
+
+bool UDC1PlayerInventoryComponent::Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount)
+{
+	if (!IsValid(InChestComp))
+	{
+		return false;
+	}
+
+	if (MoveCount < -1)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void UDC1PlayerInventoryComponent::Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount)
+{
+	if (!IsValid(InChestComp))
 	{
 		return;
 	}
 
-	FDC1InventorySlotInfo SourceSlot = Slots[FromSlotIndex];
-	if (SourceSlot.IsEmpty())
+	if (bToChest)
 	{
-		return;
-	}
-
-	// MoveCount가 -1이면 전체 이동, 아니면 지정된 개수만 이동
-	int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
-
-	FDC1InventorySlotInfo& TargetSlot = Slots[ToSlotIndex];
-
-	if (TargetSlot.IsEmpty())
-	{
-		// 빈 슬롯으로 이동
-		TargetSlot.ItemID = SourceSlot.ItemID;
-		TargetSlot.StackCount = ActualMoveCount;
-		Slots[FromSlotIndex].StackCount -= ActualMoveCount;
-
-		if (Slots[FromSlotIndex].StackCount <= 0)
+		const FDC1InventorySlotInfo SourceSlot = GetSlot(FromSlotIndex);
+		if (SourceSlot.IsEmpty())
 		{
-			Slots[FromSlotIndex].Clear();
+			return;
 		}
-	}
-	else if (TargetSlot.ItemID == SourceSlot.ItemID)
-	{
-		// 같은 아이템이 있으면 병합
-		TargetSlot.StackCount += ActualMoveCount;
-		Slots[FromSlotIndex].StackCount -= ActualMoveCount;
 
-		if (Slots[FromSlotIndex].StackCount <= 0)
+		if (false == InChestComp->CanStoreItems())
 		{
-			Slots[FromSlotIndex].Clear();
+			return;
 		}
+
+		const int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
+		if (false == InChestComp->AddItem(SourceSlot.ItemID, ActualMoveCount))
+		{
+			return;
+		}
+
+		RemoveItem(FromSlotIndex, ActualMoveCount);
 	}
 	else
 	{
-		// 다른 아이템이 있으면 교환 (이동 개수 무시, 전체 교환)
-		Swap(Slots[FromSlotIndex], Slots[ToSlotIndex]);
-	}
+		const FDC1InventorySlotInfo SourceSlot = InChestComp->GetSlot(FromSlotIndex);
+		if (SourceSlot.IsEmpty())
+		{
+			return;
+		}
 
-	OnSlotChanged.Broadcast(FromSlotIndex);
-	OnSlotChanged.Broadcast(ToSlotIndex);
-	OnInventoryUpdated_Internal();
+		const int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
+		if (false == AddItem(SourceSlot.ItemID, ActualMoveCount))
+		{
+			return;
+		}
+
+		InChestComp->RemoveItem(FromSlotIndex, ActualMoveCount);
+	}
 }

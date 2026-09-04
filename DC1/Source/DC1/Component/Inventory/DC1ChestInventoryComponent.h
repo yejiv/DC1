@@ -44,6 +44,34 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	FName GetChestName() const { return ChestName; }
 
+	/**
+	 * 이 상자가 아이템을 보관(입고)할 수 있는지 조회
+	 * false인 경우 꺼내기(RemoveItem)만 허용되는 상자
+	 * @return 보관 가능 여부
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	bool CanStoreItems() const { return bCanStoreItems; }
+
+	/**
+	 * 이 상자의 보관 가능 여부 설정
+	 * @param InCanStoreItems 보관 가능 여부
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetCanStoreItems(bool InCanStoreItems) { bCanStoreItems = InCanStoreItems; }
+
+	// ========================
+	// 아이템 보관 함수
+	// ========================
+
+	/**
+	 * 아이템 보관 시도 ( 서버 권한 + 보관 가능 여부 체크 후 AddItem 호출 )
+	 * @param InItemID 보관할 아이템 ID
+	 * @param InCount 보관할 개수
+	 * @return 보관 성공 여부
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool TryStoreItem(FName InItemID, int32 InCount = 1);
+
 	// ========================
 	// 멤버 변수
 	// ========================
@@ -52,4 +80,8 @@ protected:
 	/** 상자 이름 (에디터에서 설정 가능) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	FName ChestName = FName("Chest");
+
+	/** 아이템 보관(입고) 가능 여부, false면 꺼내기 전용 상자 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	bool bCanStoreItems = true;
 };

@@ -31,6 +31,8 @@
 
 #include "Subsystem/DC1ViewModelSubsystem.h"
 
+#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -170,6 +172,8 @@ void ADC1PlayerController::SetupInputComponent()
 		SetUpDefaultInput(EnhancedInputComponent, InputData);
 		SetUpUIInput(EnhancedInputComponent, InputData);
 	}
+
+	SetUp_DebugInput();
 }
 
 void ADC1PlayerController::SetPawn(APawn* InPawn)
@@ -522,6 +526,8 @@ void ADC1PlayerController::InitPlayerStateBindings()
 		return;
 	}
 
+	UIManager->ShowHUD();
+
 	if (false == ::IsValid(CachedMainTabWidget))
 	{
 		CachedMainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
@@ -547,6 +553,59 @@ void ADC1PlayerController::InitPlayerStateBindings()
 		PlayerInventoryWidget->SetViewModel(InventoryViewModel);
 	}
 }
+
+#pragma region Debug
+// TODO : HP 감소 / HUD 확인용. 테스트 끝나면 이 region 통째로 제거
+//        (.h 의 동명 region, SetupInputComponent 의 SetUp_DebugInput() 호출 1줄도 같이)
+namespace
+{
+	constexpr float DebugDamageAmount = 10.f;
+}
+
+void ADC1PlayerController::SetUp_DebugInput()
+{
+	if (nullptr == InputComponent)
+	{
+		return;
+	}
+
+	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugDamageSelf);
+}
+
+void ADC1PlayerController::OnDebugDamageSelf()
+{
+	ServerDebugDamageSelf(DebugDamageAmount);
+}
+
+void ADC1PlayerController::ServerDebugDamageSelf_Implementation(float InDamageAmount)
+{
+	ADC1PlayerState* OwnerPlayerState = GetPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(OwnerPlayerState))
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = OwnerPlayerState->GetAbilitySystemComponent();
+	if (nullptr == ASC)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+	Context.AddSourceObject(this);
+
+	FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), 1.f, Context);
+	if (false == Spec.IsValid())
+	{
+		return;
+	}
+
+	// 체력 감산은 AttributeSet의 PostGameplayEffectExecute가 한다. 여기서는 양수로 넘긴다
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, InDamageAmount);
+
+	ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+}
+#pragma endregion
 
 void ADC1PlayerController::OnUIChange()
 {

@@ -17,6 +17,11 @@ struct FDC1InventorySlotInfo
 
 	bool IsEmpty() const { return ItemID == NAME_None || StackCount <= 0; }
 	void Clear() { ItemID = NAME_None; StackCount = 0; }
+
+	bool operator==(const FDC1InventorySlotInfo& Other) const
+	{
+		return ItemID == Other.ItemID && StackCount == Other.StackCount;
+	}
 };
 
 // 레어도별 색상 매핑

@@ -20,12 +20,12 @@ void UDC1InventoryComponentBase::BeginPlay()
 	}
 }
 
-void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(
-	TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UDC1InventoryComponentBase, Slots);
+	// Slots의 복제 조건은 용도에 따라 다르므로(플레이어: 본인만 / 상자: 전체 공개)
+	// 자식 클래스(DC1PlayerInventoryComponent, DC1ChestInventoryComponent)에서 각자 등록함
 }
 
 const FDC1InventorySlotInfo& UDC1InventoryComponentBase::GetSlot(int32 InIndex) const
@@ -203,6 +203,69 @@ void UDC1InventoryComponentBase::SwapSlots(int32 InIndex1, int32 InIndex2)
 	OnInventoryUpdated_Internal();
 }
 
+void UDC1InventoryComponentBase::MoveOrMergeSlot(int32 FromIndex, int32 ToIndex, int32 MoveCount /* = -1 */)
+{
+	// 서버에서만 실행
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return;
+	}
+
+	if (!Slots.IsValidIndex(FromIndex) || !Slots.IsValidIndex(ToIndex))
+	{
+		return;
+	}
+
+	if (FromIndex == ToIndex)
+	{
+		return;
+	}
+
+	FDC1InventorySlotInfo SourceSlot = Slots[FromIndex];
+	if (SourceSlot.IsEmpty())
+	{
+		return;
+	}
+
+	// MoveCount가 -1이면 전체 이동, 아니면 지정된 개수만 이동
+	int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
+	FDC1InventorySlotInfo& TargetSlot = Slots[ToIndex];
+
+	if (TargetSlot.IsEmpty())
+	{
+		// 빈 슬롯으로 이동
+		TargetSlot.ItemID = SourceSlot.ItemID;
+		TargetSlot.StackCount = ActualMoveCount;
+		Slots[FromIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromIndex].StackCount <= 0)
+		{
+			Slots[FromIndex].Clear();
+		}
+	}
+	else if (TargetSlot.ItemID == SourceSlot.ItemID)
+	{
+		// 같은 아이템이 있으면 병합
+		TargetSlot.StackCount += ActualMoveCount;
+		Slots[FromIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromIndex].StackCount <= 0)
+		{
+			Slots[FromIndex].Clear();
+		}
+	}
+	else
+	{
+		// 다른 아이템이 있으면 교환 (이동 개수 무시, 전체 교환)
+		Swap(Slots[FromIndex], Slots[ToIndex]);
+	}
+
+	OnSlotChanged.Broadcast(FromIndex);
+	OnSlotChanged.Broadcast(ToIndex);
+	OnInventoryUpdated_Internal();
+}
+
 void UDC1InventoryComponentBase::ClearSlot(int32 InSlotIndex)
 {
 	// 서버에서만 실행
@@ -293,6 +356,24 @@ void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()
 	OnInventoryUpdated.Broadcast();
 
 	// 추가 처리는 자식 클래스에서 오버라이드
+}
+
+void UDC1InventoryComponentBase::OnRep_Slots(const TArray<FDC1InventorySlotInfo>& OldSlots)
+{
+	// 실제로 변경된 슬롯만 찾아 개별 갱신 이벤트 발생 (서버의 부분 갱신 최적화와 동일한 방식)
+	const int32 NumSlots = FMath::Max(Slots.Num(), OldSlots.Num());
+	for (int32 i = 0; i < NumSlots; ++i)
+	{
+		const bool bOldValid = OldSlots.IsValidIndex(i);
+		const bool bNewValid = Slots.IsValidIndex(i);
+
+		if (!bOldValid || !bNewValid || !(OldSlots[i] == Slots[i]))
+		{
+			OnSlotChanged.Broadcast(i);
+		}
+	}
+
+	OnInventoryUpdated.Broadcast();
 }
 
 bool UDC1InventoryComponentBase::AddItemToEmptySlot(FName InItemID, int32 InCount)

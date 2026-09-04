@@ -10,6 +10,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Logo_Title, "UI.Logo.Title");
 #pragma endregion
 
+#pragma region HUD
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_HUD, "UI.Main.HUD");
+#pragma endregion
+
 #pragma region MAIN TAB
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab, "UI.Main.Tab");
 	
@@ -28,6 +32,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Storage, "UI.Main.Storage");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Food, "UI.Main.Food");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build_Infrastructure, "UI.Main.Infrastructure");
+#pragma endregion
+
+#pragma region CHEST_LOOT
+	UE_DEFINE_GAMEPLAY_TAG(UI_Chest_Loot, "UI.Chest.Loot");
 #pragma endregion
 }
 

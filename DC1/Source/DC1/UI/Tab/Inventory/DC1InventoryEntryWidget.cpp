@@ -1,7 +1,6 @@
 ﻿#include "UI/Tab/Inventory/DC1InventoryEntryWidget.h"
 
 #include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
-#include "UI/Item/Drag/DC1ItemDragWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
@@ -9,8 +8,6 @@
 #include "Components/Image.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
-#include "Blueprint/DragDropOperation.h"
 
 UDC1InventoryEntryWidget::UDC1InventoryEntryWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -18,7 +15,7 @@ UDC1InventoryEntryWidget::UDC1InventoryEntryWidget(const FObjectInitializer& Obj
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex)
+void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, bool bIsChestSlot /* = false */)
 {
 	if (!IsValid(ViewModel))
 	{
@@ -27,7 +24,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 	}
 
 	CurrentSlotIndex = SlotIndex;
-	const FDC1InventorySlotInfo& InventorySlotInfo = ViewModel->GetSlot(SlotIndex);
+	const FDC1InventorySlotInfo& InventorySlotInfo = bIsChestSlot ? ViewModel->GetChestSlot(SlotIndex) : ViewModel->GetSlot(SlotIndex);
 
 	if (InventorySlotInfo.IsEmpty())
 	{
@@ -73,6 +70,15 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 			Text_Count->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
+
+	// 무게 표시
+	if (IsValid(Text_Weight))
+	{
+		CurrentItemWeight = ItemData->Weight;
+		float TotalWeight = CurrentItemWeight * InventorySlotInfo.StackCount;
+		Text_Weight->SetText(FText::AsNumber(TotalWeight));
+		Text_Weight->SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
 void UDC1InventoryEntryWidget::ClearEntry()
@@ -80,6 +86,7 @@ void UDC1InventoryEntryWidget::ClearEntry()
 	CurrentSlotIndex = -1;
 	CurrentItemID = NAME_None;
 	CurrentStackCount = 0;
+	CurrentItemWeight = 0.0f;
 
 	if (IsValid(Image_Icon))
 	{
@@ -92,6 +99,12 @@ void UDC1InventoryEntryWidget::ClearEntry()
 	{
 		Text_Count->SetText(FText::AsNumber(0));
 		Text_Count->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (IsValid(Text_Weight))
+	{
+		Text_Weight->SetText(FText::AsNumber(0));
+		Text_Weight->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -106,5 +119,13 @@ void UDC1InventoryEntryWidget::RefreshItemCount(int32 NewItemCount)
 	if (IsValid(Text_Count))
 	{
 		Text_Count->SetText(FText::AsNumber(NewItemCount));
+	}
+}
+
+void UDC1InventoryEntryWidget::SetWeightVisibility(bool bVisible)
+{
+	if (IsValid(Text_Weight))
+	{
+		Text_Weight->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }

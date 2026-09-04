@@ -72,9 +72,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	FMargin SlotMargin = FMargin(2.0f);
 
+	/** true면 ViewModel의 상자 전용 데이터(GetChestSlot 등)를 조회, false면 플레이어 인벤토리 데이터를 조회 */
+	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
+	bool bIsChestSlots = false;
+
 
 private:
-	UPROPERTY()
+	// 다른 위젯 트리에 인스턴스로 배치되므로(WBP 서브클래싱이 아님) 인스턴스별로 설정 가능해야 함 - EditAnywhere 필요
+	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	TSubclassOf<UDC1InventorySlotWidget> SlotWidgetClass;
 
 	UPROPERTY()
