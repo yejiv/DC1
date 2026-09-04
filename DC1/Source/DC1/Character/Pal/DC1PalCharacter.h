@@ -52,6 +52,10 @@ public:
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패
 
+	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지
+
+	void								CancelCapture();// BeginCapture 되돌리기
+
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform);
 #pragma endregion
 

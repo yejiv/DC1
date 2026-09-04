@@ -7,6 +7,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GenericTeamAgentInterface.h"
+#include "Define/DC1Enums.h"
 
 ADC1PalProjectile::ADC1PalProjectile()
 	: Super()
@@ -14,14 +15,17 @@ ADC1PalProjectile::ADC1PalProjectile()
 	HitCollider->OnComponentHit.RemoveDynamic(this, &ThisClass::OnProjectileHit);
 	HitCollider->OnComponentHit.AddDynamic(this, &ThisClass::OnPalProjectileHit);
 
+	// Projectile 프리셋 변경 -> Player Ignore, WorldStatic Block 부분
 	HitCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	HitCollider->SetCollisionObjectType(ECC_WorldDynamic);
 	HitCollider->SetCollisionResponseToAllChannels(ECR_Ignore);
-	HitCollider->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	HitCollider->SetCollisionResponseToChannel(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Player), ECR_Block);
+	HitCollider->SetCollisionResponseToChannel(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Pal), ECR_Block);
 	HitCollider->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
 	// 부모 변경 필요
 	ProjectileMesh->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
+	InitialLifeSpan = 5.f;
 }
 
 void ADC1PalProjectile::OnPalProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
