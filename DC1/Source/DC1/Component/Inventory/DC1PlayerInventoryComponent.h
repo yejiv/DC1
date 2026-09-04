@@ -6,6 +6,8 @@
 #include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "DC1PlayerInventoryComponent.generated.h"
 
+class UDC1ChestInventoryComponent;
+
 /**
  * 플레이어 인벤토리 컴포넌트
  * 기본 인벤토리에 무게, 장비 슬롯 등의 플레이어 전용 기능 추가
@@ -61,6 +63,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
 
+	/**
+	 * 상자 내부 슬롯 재배치 요청 (상자 UI에서의 드래그 앤 드롭용)
+	 * @param InChestComp 대상 상자 컴포넌트
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestMoveChestItem(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
+
+	/**
+	 * 플레이어 인벤토리 <-> 상자 간 아이템 이전 요청
+	 * @param InChestComp 대상 상자 컴포넌트
+	 * @param bToChest true면 플레이어->상자, false면 상자->플레이어
+	 * @param FromSlotIndex 출발 슬롯 (bToChest 기준으로 플레이어 또는 상자 쪽 인덱스)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount = -1);
+
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
 	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
@@ -70,6 +88,20 @@ protected:
 
 	/** 서버 RPC 구현 함수 */
 	void Server_MoveItem_Implementation(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_MoveChestItem(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
+
+	bool Server_MoveChestItem_Validate(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
+
+	void Server_MoveChestItem_Implementation(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_TransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
+
+	bool Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
+
+	void Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
 
 protected:
 	virtual void CalculateWeight();

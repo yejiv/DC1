@@ -34,9 +34,10 @@ void UDC1InventorySlotWidget::NativeConstruct()
 	HideHoverImage();
 }
 
-void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex, float SlotSize)
+void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex, float SlotSize, bool bInIsChestSlot /* = false */)
 {
 	CurrentSlotIndex = SlotIndex;
+	bIsChestSlot = bInIsChestSlot;
 
 	if (IsValid(SizeBox_Root))
 	{
@@ -54,7 +55,7 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 		return;
 	}
 
-	const FDC1InventorySlotInfo& InventorySlot = ViewModel->GetSlot(CurrentSlotIndex);
+	const FDC1InventorySlotInfo& InventorySlot = bIsChestSlot ? ViewModel->GetChestSlot(CurrentSlotIndex) : ViewModel->GetSlot(CurrentSlotIndex);
 
 	if (InventorySlot.IsEmpty())
 	{
@@ -76,7 +77,7 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 	// EntryWidget에 데이터 전달
 	if (IsValid(EntryWidget))
 	{
-		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex);
+		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex, bIsChestSlot);
 	}
 }
 

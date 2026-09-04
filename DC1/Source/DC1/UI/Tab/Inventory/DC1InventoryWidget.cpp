@@ -36,6 +36,7 @@ void UDC1InventoryWidget::NativeConstruct()
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::HandleInventoryUpdated);
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
 	}
 }
 
@@ -44,7 +45,8 @@ void UDC1InventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	// 드래그 중일 때 항상 마우스 위치를 서서히 따라다님 (버튼 상태와 무관)
-	if (DragSourceSlotIndex != -1 && IsValid(DraggedSlotCopy))
+	// DraggedSlotCopy는 이 위젯에서 드래그를 시작했을 때만 존재함
+	if (IsValid(DraggedSlotCopy))
 	{
 		FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 		FVector2D TargetPos = MousePosition - FVector2D(DragSlotSize / 2.0f, DragSlotSize / 2.0f);
@@ -61,6 +63,7 @@ void UDC1InventoryWidget::NativeDestruct()
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
+		CachedViewModel->OnDragEnded.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
@@ -71,6 +74,7 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
+		CachedViewModel->OnDragEnded.RemoveAll(this);
 	}
 
 	CachedViewModel = NewViewModel;
@@ -84,6 +88,7 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 
 		// 이벤트 구독
 		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::HandleInventoryUpdated);
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
 		HandleInventoryUpdated();
 	}
 }
@@ -98,6 +103,16 @@ void UDC1InventoryWidget::HandleInventoryUpdated()
 	if (InventoryTitle)
 	{
 		InventoryTitle->SetText(FText::FromString(TEXT("Inventory")));
+	}
+}
+
+void UDC1InventoryWidget::HandleDragEnded()
+{
+	// 이 위젯에서 시작한 드래그였다면 시각 복제본을 정리 (다른 위젯에서 시작한 드래그라면 DraggedSlotCopy가 nullptr이라 무시됨)
+	if (IsValid(DraggedSlotCopy))
+	{
+		DraggedSlotCopy->RemoveFromParent();
+		DraggedSlotCopy = nullptr;
 	}
 }
 
@@ -122,7 +137,7 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 		return FReply::Unhandled();
 	}
 
-	if (DragSourceSlotIndex == -1)
+	if (!CachedViewModel->IsDragging())
 	{
 		const FDC1InventorySlotInfo& InventorySlotInfo = CachedViewModel->GetSlot(ClickedSlotIndex);
 		if (InventorySlotInfo.IsEmpty())
@@ -131,7 +146,7 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 		}
 
 		// 키 조합에 따른 개수 선택
-		DragStackCount = InventorySlotInfo.StackCount;
+		int32 DragStackCount = InventorySlotInfo.StackCount;
 		if (InMouseEvent.IsControlDown())
 		{
 			DragStackCount = 1;
@@ -141,14 +156,12 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 			DragStackCount = FMath::Max(1, InventorySlotInfo.StackCount / 2);
 		}
 
-		DragSourceSlotIndex = ClickedSlotIndex;
-		DragItemData = CachedViewModel->GetItemData(InventorySlotInfo.ItemID);
-
-		if (!DragItemData)
+		if (!CachedViewModel->GetItemData(InventorySlotInfo.ItemID))
 		{
-			DragSourceSlotIndex = -1;
 			return FReply::Unhandled();
 		}
+
+		CachedViewModel->BeginDrag(false, ClickedSlotIndex, DragStackCount);
 
 		// Slot 위젯 복제
 		if (!DraggedSlotCopy && IsValid(InventorySlotsWidget))
@@ -157,7 +170,7 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 			if (IsValid(DraggedSlotCopy))
 			{
 				// 복제본 초기화: 크기는 80x80 (기존 100x100의 80%)
-				DraggedSlotCopy->InitSlot(DragSourceSlotIndex, DragSlotSize);
+				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, false);
 				DraggedSlotCopy->SetSlotData(CachedViewModel);
 
 				// Ctrl/Shift로 선택한 부분 개수를 표시 (원본 슬롯의 전체 개수가 아님)
@@ -181,27 +194,12 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 
 		return FReply::Handled();
 	}
-	else if (DragSourceSlotIndex != -1)
+	else
 	{
-		// 드래그 중 다른 슬롯 클릭: 드롭 처리
-		if (ClickedSlotIndex != DragSourceSlotIndex)
-		{
-			CachedViewModel->RequestMoveItem(DragSourceSlotIndex, ClickedSlotIndex, DragStackCount);
-		}
-
-		// 드래그 상태 종료
-		DragSourceSlotIndex = -1;
-		DragStackCount = 0;
-		DragItemData = nullptr;
-
-		if (IsValid(DraggedSlotCopy))
-		{
-			DraggedSlotCopy->RemoveFromParent();
-			DraggedSlotCopy = nullptr;
-		}
+		// 드래그 중 슬롯 클릭: 드롭 처리
+		// 드래그 시작이 상자였다면 ViewModel이 플레이어<->상자 이전으로 자동 라우팅함
+		CachedViewModel->RequestDrop(false, ClickedSlotIndex);
 
 		return FReply::Handled();
 	}
-
-	return FReply::Unhandled();
 }

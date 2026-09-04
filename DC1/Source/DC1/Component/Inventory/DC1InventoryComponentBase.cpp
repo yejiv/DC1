@@ -20,8 +20,7 @@ void UDC1InventoryComponentBase::BeginPlay()
 	}
 }
 
-void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(
-	TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UDC1InventoryComponentBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -201,6 +200,69 @@ void UDC1InventoryComponentBase::SwapSlots(int32 InIndex1, int32 InIndex2)
 	// 두 슬롯 모두 변경 알림
 	OnSlotChanged.Broadcast(InIndex1);
 	OnSlotChanged.Broadcast(InIndex2);
+	OnInventoryUpdated_Internal();
+}
+
+void UDC1InventoryComponentBase::MoveOrMergeSlot(int32 FromIndex, int32 ToIndex, int32 MoveCount /* = -1 */)
+{
+	// 서버에서만 실행
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return;
+	}
+
+	if (!Slots.IsValidIndex(FromIndex) || !Slots.IsValidIndex(ToIndex))
+	{
+		return;
+	}
+
+	if (FromIndex == ToIndex)
+	{
+		return;
+	}
+
+	FDC1InventorySlotInfo SourceSlot = Slots[FromIndex];
+	if (SourceSlot.IsEmpty())
+	{
+		return;
+	}
+
+	// MoveCount가 -1이면 전체 이동, 아니면 지정된 개수만 이동
+	int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
+	FDC1InventorySlotInfo& TargetSlot = Slots[ToIndex];
+
+	if (TargetSlot.IsEmpty())
+	{
+		// 빈 슬롯으로 이동
+		TargetSlot.ItemID = SourceSlot.ItemID;
+		TargetSlot.StackCount = ActualMoveCount;
+		Slots[FromIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromIndex].StackCount <= 0)
+		{
+			Slots[FromIndex].Clear();
+		}
+	}
+	else if (TargetSlot.ItemID == SourceSlot.ItemID)
+	{
+		// 같은 아이템이 있으면 병합
+		TargetSlot.StackCount += ActualMoveCount;
+		Slots[FromIndex].StackCount -= ActualMoveCount;
+
+		if (Slots[FromIndex].StackCount <= 0)
+		{
+			Slots[FromIndex].Clear();
+		}
+	}
+	else
+	{
+		// 다른 아이템이 있으면 교환 (이동 개수 무시, 전체 교환)
+		Swap(Slots[FromIndex], Slots[ToIndex]);
+	}
+
+	OnSlotChanged.Broadcast(FromIndex);
+	OnSlotChanged.Broadcast(ToIndex);
 	OnInventoryUpdated_Internal();
 }
 
