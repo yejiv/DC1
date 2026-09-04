@@ -1,9 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Actor/BuildActor/DC1BuildActor.h"
+#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "DC1ChestActor.generated.h"
 
 class UDC1ChestInventoryComponent;
@@ -16,8 +16,9 @@ class UDC1ChestInventoryComponent;
  * 보관 가능 여부는 UDC1ChestInventoryComponent::CanStoreItems() 로 구분
  * ( 꺼내기만 가능한 상자 / 넣고 뺄 수 있는 상자 )
  */
+
 UCLASS()
-class DC1_API ADC1ChestActor : public ADC1BuildActor
+class DC1_API ADC1ChestActor : public ADC1InteractBuildActor
 {
 	GENERATED_BODY()
 

@@ -299,8 +299,8 @@ const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeSnapSocketSideFromAxis(bo
 	FDC1BuildSnapSocket SnapSocket;
 	SnapSocket.SocketTransform = FTransform(FRotationMatrix::MakeFromXZ(Axis, GetUpVector()).ToQuat(), GetComponentLocation() + (Axis * AxisExtent));
 
-	SnapSocket.SnapType = DC1BuildTags::Build_Snap_Side;
-	SnapSocket.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side);
+	SnapSocket.SnapType = DC1BuildTags::Build_Snap_Side_Default;
+	SnapSocket.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side_Default);
 
 	return SnapSocket;
 }

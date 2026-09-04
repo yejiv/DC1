@@ -5,7 +5,10 @@
 namespace DC1BuildTags
 {
 #pragma region Snap Point
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side);			// 단순 건축물 + 바닥 ( 옆면만 스냅 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side_Default);	// 단순 건축물 ( 옆면만 스냅 )
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side_Floor);		// 바닥끼리 스냅
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side_Roof);		// 지붕끼리 스냅
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Anchor_Wall);		// 벽이 붙을 위치
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Anchor_Roof);		// 지붕이 붙을 위치

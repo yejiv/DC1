@@ -44,7 +44,7 @@ private:
 	
 	const FDC1BuildRow* FindBuildRow(const FGameplayTag& InBuildTag) const;
 	FDC1BuildActorData	MakeBuildActorData(const FDC1BuildRow& InRow) const;
-	ADC1BuildActor*		SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform);
+	ADC1BuildActor*		SpawnBuildActor(const FDC1BuildRow& InRow, const FTransform& InTransform, bool InIsPreview);
 
 	void				CancelPlacement();
 	void				ConfirmPlacement();

@@ -99,7 +99,7 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 		return false;
 	}
 
-	PreviewActor = SpawnBuildActor(*BuildRow, EDC1BuildState::Preview, FTransform::Identity);
+	PreviewActor = SpawnBuildActor(*BuildRow, FTransform::Identity, true);
 	if (nullptr == PreviewActor)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Cant Spawn Build Actor : %s"), *InBuildTag.ToString());
@@ -192,8 +192,7 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	// TODO Cost 감소
 	// ..
 
-	EDC1BuildState ConfirmState = (BuildRow->RequiredWork > 0.f) ? EDC1BuildState::Construction : EDC1BuildState::Completed;
-	SpawnBuildActor(*BuildRow, ConfirmState, InTransform);
+	SpawnBuildActor(*BuildRow, InTransform, false);
 }
 
 void UDC1BuildPlacementComponent::CacheBuildRows()
@@ -248,7 +247,7 @@ FDC1BuildActorData UDC1BuildPlacementComponent::MakeBuildActorData(const FDC1Bui
 	return Data;
 }
 
-ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow& InRow, EDC1BuildState InState, const FTransform& InTransform)
+ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow& InRow, const FTransform& InTransform, bool InIsPreview)
 {
 	UWorld* World = GetWorld();
 	if (false == ::IsValid(World))
@@ -278,7 +277,15 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 		return nullptr;
 	}
 
-	NewBuildActor->InitBuild(MakeBuildActorData(InRow), InState);
+	if (true == InIsPreview)
+	{
+		NewBuildActor->InitPreview(MakeBuildActorData(InRow));
+	}
+	else
+	{
+		NewBuildActor->InitBuild(MakeBuildActorData(InRow));
+	}
+
 	NewBuildActor->FinishSpawning(InTransform);
 
 	return NewBuildActor;

@@ -31,13 +31,13 @@ public:
 	virtual void				TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	void						RequestStartWork(ADC1BuildActor* InBuildTarget);
+	void						RequestStartWork(ADC1InteractBuildActor* InBuildTarget);
 	void						RequestStopWork();
 	
 
 private:
 	UFUNCTION(Server, Reliable)
-	void						Server_StartWork(ADC1BuildActor* InBuildTarget);
+	void						Server_StartWork(ADC1InteractBuildActor* InBuildTarget);
 	
 	UFUNCTION(Server, Reliable)
 	void						Server_StopWork();
@@ -58,5 +58,5 @@ private:
 
 	bool							IsTargetLocked = { false };
 
-	TWeakObjectPtr<ADC1BuildActor>	ServerWorkTarget = { nullptr };
+	TWeakObjectPtr<ADC1InteractBuildActor>	ServerWorkTarget = { nullptr };
 };

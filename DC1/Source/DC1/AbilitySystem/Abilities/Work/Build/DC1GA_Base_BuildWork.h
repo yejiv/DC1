@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
 
-#include "Actor/BuildActor/DC1BuildActor.h"
+#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 
 #include "DC1GA_Base_BuildWork.generated.h"
 
@@ -25,12 +25,12 @@ protected:
 // PURE_VIRTUAL
 protected:
 	// BuildActor 탐색 기능 구현
-	virtual ADC1BuildActor* FindBuildTarget() const	PURE_VIRTUAL(UDC1GA_Base_BuildWork::FindBuildTarget, return nullptr;);
+	virtual ADC1InteractBuildActor* FindBuildTarget() const	PURE_VIRTUAL(UDC1GA_Base_BuildWork::FindBuildTarget, return nullptr;);
 
-	// ADC1BuildActor->AddWorker를 서버 측에서 호출하는 기능 구현
-	virtual void			StartWork(ADC1BuildActor* InBuildTarget) PURE_VIRTUAL(UDC1GA_Base_BuildWork::StartWork, );
+	// ADC1InteractBuildActor->AddWorker를 서버 측에서 호출하는 기능 구현
+	virtual void			StartWork(ADC1InteractBuildActor* InBuildTarget) PURE_VIRTUAL(UDC1GA_Base_BuildWork::StartWork, );
 
-	// ADC1BuildActor->RemoveWorker를 서버 측에서 호출하는 기능 구현
+	// ADC1InteractBuildActor->RemoveWorker를 서버 측에서 호출하는 기능 구현
 	virtual void			StopWork()	PURE_VIRTUAL(UDC1GA_Base_BuildWork::StopWork, );
 
 	// Work 중 액션 - ex) PlayMontage

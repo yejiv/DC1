@@ -3,7 +3,7 @@
 
 #include "Component/Interact/DC1InteractComponent.h"
 #include "Define/DC1Enums.h"
-#include "Actor/BuildActor/DC1BuildActor.h"
+#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "Character/Player/DC1Player.h"
 
 #include "Components/SphereComponent.h"
@@ -69,7 +69,7 @@ void UDC1InteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	SetCurrentTarget(FindBestTarget());
 }
 
-void UDC1InteractComponent::RequestStartWork(ADC1BuildActor* InBuildTarget)
+void UDC1InteractComponent::RequestStartWork(ADC1InteractBuildActor* InBuildTarget)
 {
 	Server_StartWork(InBuildTarget);
 }
@@ -79,7 +79,7 @@ void UDC1InteractComponent::RequestStopWork()
 	Server_StopWork();
 }
 
-void UDC1InteractComponent::Server_StartWork_Implementation(ADC1BuildActor* InBuildTarget)
+void UDC1InteractComponent::Server_StartWork_Implementation(ADC1InteractBuildActor* InBuildTarget)
 {
 	Server_StopWork_Implementation();
 
@@ -132,7 +132,7 @@ void UDC1InteractComponent::Server_StopWork_Implementation()
 {
 	if (nullptr != ServerWorkTarget)
 	{
-		ADC1BuildActor* BuildTarget = ServerWorkTarget.Get();
+		ADC1InteractBuildActor* BuildTarget = ServerWorkTarget.Get();
 		if (true == ::IsValid(BuildTarget))
 		{
 			APlayerController* PC = GetOwner<APlayerController>();

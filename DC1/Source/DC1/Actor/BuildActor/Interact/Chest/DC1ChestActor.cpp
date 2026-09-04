@@ -1,7 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Actor/BuildActor/Chest/DC1ChestActor.h"
+#include "Actor/BuildActor/Interact/Chest/DC1ChestActor.h"
 
 #include "Component/Inventory/DC1ChestInventoryComponent.h"
 #include "Character/DC1Character.h"
