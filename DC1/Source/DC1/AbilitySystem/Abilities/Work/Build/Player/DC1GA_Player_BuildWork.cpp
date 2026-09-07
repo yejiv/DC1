@@ -37,7 +37,7 @@ void UDC1GA_Player_BuildWork::OnMontageAborted()
 ADC1InteractBuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
 {
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
-	if (nullptr == InteractComp)
+	if (false == ::IsValid(InteractComp))
 	{
 		return nullptr;
 	}
@@ -60,7 +60,7 @@ void UDC1GA_Player_BuildWork::StartWork(ADC1InteractBuildActor* InBuildTarget)
 	}
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
-	if (nullptr == InteractComp)
+	if (false == ::IsValid(InteractComp)) 
 	{
 		return;
 	}
@@ -77,7 +77,7 @@ void UDC1GA_Player_BuildWork::StopWork()
 	}
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
-	if (nullptr == InteractComp)
+	if (false == ::IsValid(InteractComp))
 	{
 		return;
 	}

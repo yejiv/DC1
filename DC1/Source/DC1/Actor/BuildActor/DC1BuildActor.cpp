@@ -48,6 +48,43 @@ const float ADC1BuildActor::GetExtentCenterToDirection(const FVector& InWorldDir
 	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetExtentCenterToDirection(InWorldDirection, InQuat) : 0.f;
 }
 
+const bool ADC1BuildActor::GetIsAutoSnap() const
+{
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetIsAutoSnap() : false;
+}
+
+const float ADC1BuildActor::GetSnappedRotationStep() const
+{
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetSnappedRotationStep() : 0.f;
+}
+
+bool ADC1BuildActor::GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const
+{
+	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetBuildSocketsWorld(OutSockets) : false;
+}
+
+void ADC1BuildActor::SetCheckSurface(bool InIsCheckSurface)
+{
+	if (true == ::IsValid(BuildCheckComp))
+	{
+		BuildCheckComp->SetCheckSurface(InIsCheckSurface);
+	}
+}
+
+bool ADC1BuildActor::CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const
+{
+	if (false == ::IsValid(InOther) || false == ::IsValid(BuildCheckComp) || false == ::IsValid(InOther->BuildCheckComp))
+	{
+		return false;
+	}
+
+	const UDC1BuildCheckComponent* OtherCheckComp = InOther->BuildCheckComp;
+
+	const float Ratio = BuildCheckComp->ComputeOverlapRatio(OtherCheckComp->GetComponentTransform(), OtherCheckComp->GetScaledBoxExtent());
+
+	return Ratio < InAllowableRatio;
+}
+
 // Called when the game starts or when spawned
 void ADC1BuildActor::BeginPlay()
 {
@@ -79,6 +116,11 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 	BuildState = EDC1BuildState::Completed;
 }
 
+void ADC1BuildActor::BuildDestroy()
+{
+	// TODO Despawn, Cost Return
+}
+
 void ADC1BuildActor::InitPreview(const FDC1BuildActorData& InBuildActorData)
 {
 	BuildActorData = InBuildActorData;
@@ -102,7 +144,7 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 	return CanBuilding;
 }
 
-bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FDC1BuildSnapSocket& OutSnapSocket) const
+bool ADC1BuildActor::TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FVector& OutImpactPoint) const
 {
 	if (false == ::IsValid(BuildCheckComp))
 	{
@@ -116,31 +158,9 @@ bool ADC1BuildActor::SelectSnapPointByRay(const FVector& InRayStart, const FVect
 		return false;
 	}
 
-	/*if (true == Hit.bStartPenetrating)
-	{
-		return false;
-	}*/
-
-	OutSnapSocket = BuildCheckComp->MakeSnapSocketSide(Hit.ImpactNormal);
+	OutImpactPoint = Hit.ImpactPoint;
 
 	return true;
-}
-
-bool ADC1BuildActor::SelectSnapPointByPoint(const FVector& InWorldLocation, FDC1BuildSnapSocket& OutSnapSocket) const
-{
-	if (false == ::IsValid(BuildCheckComp))
-	{
-		return false;
-	}
-
-	OutSnapSocket = BuildCheckComp->MakeNearestSnapSocketSide(InWorldLocation);
-
-	return true;
-}
-
-void ADC1BuildActor::BuildDestroy()
-{
-	// TODO Despawn, Cost Return
 }
 
 void ADC1BuildActor::OnRep_BuildState()

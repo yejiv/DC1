@@ -23,7 +23,7 @@ public:
 	ADC1InteractBuildActor();
 
 public:
-	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == GetBuildState(); }
+	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == BuildState; }
 
 	virtual void					Tick(float DeltaTime) override;
 

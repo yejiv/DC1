@@ -173,8 +173,8 @@ AActor* UDC1InteractComponent::FindBestTarget() const
 	{
 		return nullptr;
 	}
-	
-	OverlapBuffer.Reset();
+
+	TArray<AActor*> OverlapBuffer;
 
 	InteractDetectCollider->GetOverlappingActors(OverlapBuffer);
 	if (true == OverlapBuffer.IsEmpty())
