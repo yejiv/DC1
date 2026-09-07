@@ -30,6 +30,7 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 	InstanceData.bProvoked = false;
 	InstanceData.bHitReacting = false;
 	InstanceData.bOwnerInCombat = false;
+	InstanceData.bShouldEngage = false;
 	InstanceData.DistanceToTarget = TNumericLimits<float>::Max();
 	InstanceData.SelectedMaxRange = 0.f;
 	InstanceData.SelectedApproachRange = 0.f;
@@ -64,9 +65,10 @@ void FDC1PalTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const flo
 		InstanceData.DistanceToTarget = DC1PalTargetEvaluator::GetSurfaceDistance2D(*SelfPawn, *Target);
 	}
 
-	// 스킬을 먼저 고르고, 거리 판단은 그 스킬의 사거리로 한다
+	InstanceData.bShouldEngage = InstanceData.bHasTarget && (InstanceData.bProvoked || InstanceData.bOwnerInCombat);
+
 	AIController->UpdateSelectedSkill();
 	InstanceData.SelectedMaxRange = AIController->GetSelectedMaxRange();
 	InstanceData.SelectedApproachRange = AIController->GetSelectedApproachRange();
-	InstanceData.SelectedMinRange = AIController->GetSelectedMinRange();
+	InstanceData.SelectedMinRange = AIController->CanBackoff() ? AIController->GetSelectedMinRange() : 0.f;
 }

@@ -48,13 +48,17 @@ public:
 	float					GetSelectedApproachRange() const { return SelectedApproachRange; }
 	float					GetSelectedMinRange() const { return SelectedMinRange; }
 
+	// 물러난 직후에는 false. 붙어오는 상대에게서 계속 물러나는 걸 막는다
+	bool					CanBackoff() const;
+
+	// Backoff 태스크가 끝날 때 알린다. 쿨다운이 여기서 시작된다
+	void					NotifyBackoffPerformed();
+
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
 
-	// 주인 기준 어느 쪽에 설지. 추종과 주시 상태가 공유하므로 태스크가 아니라 여기 둔다
+	// 주인 기준 월드 오프셋
 	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
-
-	// 화면 밖에 오래 있었으면 보이는 자리로 설 방향을 다시 고른다. 바뀌면 true
 	bool					UpdateFollowAnchor(float DeltaTime);
 
 	// 배회 기준점. 빙의 시점의 위치
@@ -95,10 +99,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI|Follow", meta = (ClampMin = "0.0"))
 	float					OutOfViewDelay = { 3.f };
 
-	// 화면 가장자리 여유 비율. 0.12면 안쪽 76퍼센트가 돼야 허용
+	// 화면 가장자리 여유 비율.
 	UPROPERTY(EditDefaultsOnly, Category = "AI|Follow", meta = (ClampMin = "0.0", ClampMax = "0.45"))
-	float					ScreenMargin = { 0.12f };
+	float					ScreenMargin = { 0.12f }; // 0.12면 안쪽 76퍼센트가 돼야 허용
 
+	// 카메라 기준 로컬 오프셋
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Follow")
+	FVector2D				FollowOffset = { 1200.f, 570.f };
+
+	// 매 틱 다시 구하면 카메라를 돌리는 즉시 팰이 따라 돈다. 지연을 만들려면 붙들고 있어야 한다
 	FVector					FollowAnchor = { FVector::ZeroVector };
 	float					OutOfViewTime = { 0.f };
 
@@ -121,6 +130,12 @@ protected:
 	float							SelectedMaxRange = { 0.f };
 	float							SelectedApproachRange = { 0.f };
 	float							SelectedMinRange = { 0.f };
+
+	// 한 번 물러난 뒤 다시 물러나기까지의 최소 간격
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Combat", meta = (ClampMin = "0.0"))
+	float							BackoffCooldown = { 3.f };
+
+	float							LastBackoffTime = { -1000.f };
 
 	FVector							HomeLocation = { FVector::ZeroVector };
 	float							LastSeenTime = { 0.f };
