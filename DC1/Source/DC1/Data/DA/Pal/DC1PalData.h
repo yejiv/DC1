@@ -8,6 +8,7 @@
 #include "DC1PalData.generated.h"
 
 class UAnimMontage;
+class UTexture2D;
 class ADC1PalProjectile;
 class ADC1PalCharacter;
 
@@ -38,6 +39,12 @@ public:
 	// 이 종을 소환할 때 쓸 폰. 데이터에서 액터로 되돌릴 떄 필요
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
 	TSoftClassPtr<ADC1PalCharacter>	PalClass;
+#pragma endregion
+
+#pragma region UI
+	// 파티 HUD 등에서 쓰는 종족 아이콘. 개체가 아니라 종 단위 값이라 여기에 둔다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSoftObjectPtr<UTexture2D>		Icon;
 #pragma endregion
 
 #pragma region Locomotion
