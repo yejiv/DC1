@@ -34,7 +34,6 @@ void UDC1EquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UDC1EquipComponent, CurrentWeaponIndex);
 	DOREPLIFETIME(UDC1EquipComponent, CurrentWeapon);
 }
 
@@ -121,14 +120,11 @@ void UDC1EquipComponent::Server_ChangeWeapon_Implementation(int32 Delta)
 	ApplyWeaponAttach();
 }
 
-void UDC1EquipComponent::OnRep_CurrentWeaponIndex()
-{
-	// UI
-}
-
 void UDC1EquipComponent::OnRep_CurrentWeapon()
 {
 	ApplyWeaponCollider();
+
+	OnWeaponChanged.Broadcast();
 }
 
 void UDC1EquipComponent::ApplyWeaponCollider()

@@ -21,6 +21,7 @@ public:
 
 public:
 	virtual UPrimitiveComponent* GetAttackCollider() override;
+	virtual bool UsesAmmo() const override { return true; }
 
 	// 데미지는 쏘는 쪽(GA)이 발사 시점 값으로 굳혀서 넘긴다
 	ADC1Projectile*		FireProjectile(const FGameplayEffectSpecHandle& DamageSpec);
