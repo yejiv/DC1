@@ -56,31 +56,36 @@ public:
 
 public:
 	const FDC1BuildActorData&		GetBuildActorData() const { return BuildActorData; }
-	const FGameplayTag&				GetBuildTag() const { return BuildActorData.BuildTag; }
-	const float						GetRequiredWork() const { return BuildActorData.RequiredWork; }
-	const TArray<FDC1ItemCost>&		GetBuildCosts() const { return BuildActorData.BuildCosts; }
-	const EDC1BuildState			GetBuildState() const { return BuildState; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
+	
+	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
 
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
 	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
+	const bool						GetIsAutoSnap() const;
+	const float						GetSnappedRotationStep() const;
+
+	bool							GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
+	void							SetCheckSurface(bool InIsCheckSurface);
+
+	bool							CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const;
+
 protected:
 	virtual void					BeginPlay() override;
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
-	virtual bool					UpdatePreview(bool InIsInRange);
-	virtual bool					SelectSnapPointByRay(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, 
-													FDC1BuildSnapSocket& OutSnapSocket) const;
-	virtual bool					SelectSnapPointByPoint(const FVector& InWorldLocation, FDC1BuildSnapSocket& OutSnapSocket) const;
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
+	virtual void					BuildDestroy();
+	
+	bool							UpdatePreview(bool InIsInRange);
+	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FVector& OutImpactPoint) const;
 
 	void							InitPreview(const FDC1BuildActorData& InBuildActorData);
-	virtual void					BuildDestroy();
 
 protected:
 	UFUNCTION()
@@ -126,5 +131,5 @@ private:
 
 
 private:
-	bool					CanBuilding = { false };
+	bool									CanBuilding = { false };
 };

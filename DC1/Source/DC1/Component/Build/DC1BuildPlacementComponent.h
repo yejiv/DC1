@@ -11,8 +11,10 @@
 struct FDC1BuildActorData;
 struct FInputActionValue;
 struct FDC1BuildSnapSocket;
+struct FDC1BuildSnapPair;
 
 class ADC1BuildActor;
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
@@ -68,10 +70,13 @@ private:
 	bool				GetViewRay(FVector& OutStart, FVector& OutEnd) const;
 	void				ChangeSnapConfirmTarget();
 	
-	bool				FindSnapFace(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
-	bool				FindSnapFaceByRay(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
-	bool				FindSnapFaceByRange(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const;
 	void				FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const;
+	bool				FindSnapPair(FDC1BuildSnapPair& OutPair) const;
+	bool				FindSnapCandidateByRay(TSet<ADC1BuildActor*>& OutCandidates, FVector& OutAimPoint) const;
+	bool				FindBestSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint, 
+											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, FDC1BuildSnapPair& OutPair) const;
+
+	const FTransform	MakeSnapTransform(const FDC1BuildSnapPair& InPair) const;
 
 private:
 	// 배치 거리
@@ -94,6 +99,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapSearchRadius = { 600.f };
 
+
 	
 private:
 	UPROPERTY()
@@ -108,6 +114,7 @@ private:
 	float									DistanceMarginFactor = { 1.1f };
 
 	bool									IsSnapping = { false };
+	bool									IsAutoSnapped = { false };
 	float									SnapBaseYaw = { 0.f };
 
 	FVector									SnapSocketLocationWorld = { FVector::ZeroVector };

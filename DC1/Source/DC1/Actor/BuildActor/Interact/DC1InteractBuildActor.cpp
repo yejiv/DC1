@@ -198,7 +198,7 @@ void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)
 
 void ADC1InteractBuildActor::RemoveWorker(const ADC1Character* InWorker)
 {
-	if (nullptr == InWorker || false == HasAuthority())
+	if (false == ::IsValid(InWorker) || false == HasAuthority())
 	{
 		return;
 	}

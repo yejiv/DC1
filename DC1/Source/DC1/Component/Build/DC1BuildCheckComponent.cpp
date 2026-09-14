@@ -12,7 +12,6 @@
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
 
-
 // Sets default values for this component's properties
 UDC1BuildCheckComponent::UDC1BuildCheckComponent()
 {
@@ -53,11 +52,11 @@ bool UDC1BuildCheckComponent::CheckCanBuild()
 	bool IsNoneOverlap = false;
 	bool IsAttachedSurface = true;
 
-	if (false == IsSnap)
+	if (false == IsCheckSurface)
 	{
 		IsAttachedSurface = CheckSurface();
 	}
-	
+
 	IsNoneOverlap = CheckOverlap();
 
 	return (IsNoneOverlap && IsAttachedSurface);
@@ -91,39 +90,6 @@ const FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult
 	return FTransform(FinalQuat, Location, Owner->GetActorScale3D());
 }
 
-const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeSnapSocketSide(const FVector& InWorldNormal) const
-{
-	const FVector LocalNormal = GetComponentTransform().InverseTransformVectorNoScale(InWorldNormal);
-
-	const float AbsX = FMath::Abs(LocalNormal.X);
-	const float AbsY = FMath::Abs(LocalNormal.Y);
-
-	const bool IsAxisX = AbsX > AbsY;
-
-	const float Direction = IsAxisX ? LocalNormal.X : LocalNormal.Y;
-
-	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
-
-	return MakeSnapSocketSideFromAxis(IsAxisX, AxisSign);
-}
-
-const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeNearestSnapSocketSide(const FVector& InWorldLocation) const
-{
-	const FVector LocalLocation = GetComponentTransform().InverseTransformPosition(InWorldLocation);
-	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
-
-	float OverX = FMath::Abs(LocalLocation.X) - CheckBoxExtent.X;
-	float OverY = FMath::Abs(LocalLocation.Y) - CheckBoxExtent.Y;
-
-	const bool IsAxisX = OverX > OverY;
-
-	const float Direction = IsAxisX ? LocalLocation.X : LocalLocation.Y;
-
-	const float AxisSign = (Direction >= 0.f) ? 1.f : -1.f;
-
-	return MakeSnapSocketSideFromAxis(IsAxisX, AxisSign);
-}
-
 bool UDC1BuildCheckComponent::GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const
 {
 	OutSockets.Reset();
@@ -155,6 +121,42 @@ bool UDC1BuildCheckComponent::GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& 
 	}
 
 	return true;
+}
+
+float UDC1BuildCheckComponent::ComputeOverlapRatio(const FTransform& InOtherTransform, const FVector& InOtherExtent) const
+{
+	const FTransform MyTransform = GetComponentTransform();
+	const FVector MyExtent = GetScaledBoxExtent();
+
+	const FVector LocalCenter = MyTransform.InverseTransformPosition(InOtherTransform.GetLocation());
+
+	FVector Overlap = FVector::ZeroVector;
+
+	for (int32 AxisIndex = 0; AxisIndex < 3; ++AxisIndex)
+	{
+		const FVector MyAxis = MyTransform.GetUnitAxis(static_cast<EAxis::Type>(EAxis::X + AxisIndex));
+
+		const FVector LocalAxis = InOtherTransform.GetRotation().UnrotateVector(MyAxis);
+
+		const float OtherRadius = (FMath::Abs(LocalAxis.X) * InOtherExtent.X) +
+			(FMath::Abs(LocalAxis.Y) * InOtherExtent.Y) +
+			(FMath::Abs(LocalAxis.Z) * InOtherExtent.Z);
+
+		const float MyRadius = MyExtent[AxisIndex];
+
+		const float AxisOverlap = (MyRadius + OtherRadius) - FMath::Abs(LocalCenter[AxisIndex]);
+
+		Overlap[AxisIndex] = FMath::Clamp(AxisOverlap, 0.f, (2.f * FMath::Min(MyRadius, OtherRadius)));
+	}
+
+	const float OverlapVolume = Overlap.X * Overlap.Y * Overlap.Z;
+
+	const float MyVolume = 8.f * MyExtent.X * MyExtent.Y * MyExtent.Z;
+	const float OtherVolume = 8.f * InOtherExtent.X * InOtherExtent.Y * InOtherExtent.Z;
+
+	const float MinVolume = FMath::Min(MyVolume, OtherVolume);
+
+	return (MinVolume > KINDA_SMALL_NUMBER) ? (OverlapVolume / MinVolume) : 0.f;
 }
 
 bool UDC1BuildCheckComponent::CheckSurface()
@@ -202,21 +204,19 @@ bool UDC1BuildCheckComponent::CheckSurface()
 			FHitResult Hit;
 
 			const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), Params);
-			bool CanBuildFromProbe = true;
-
-			if (const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(Hit.GetActor()))
-			{
-				if (false == HitBuildActor->GetIsBuildableSurface())
-				{
-					CanBuildFromProbe = false;
-				}
-			}
 
 			const FVector ExpectedNormal = IsDown ? FVector::UpVector : (FVector::UpVector * -1.f);
 
 			const float NormalDot = FMath::Clamp(FVector::DotProduct(Hit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
 			const float SurfaceAngle = FMath::RadiansToDegrees(FMath::Acos(NormalDot));
-			CanBuildFromProbe = (IsHit && SurfaceAngle <= BuildProbeData.MaxSurfaceAngle);
+			
+			bool CanBuildFromProbe = (IsHit && SurfaceAngle <= BuildProbeData.MaxSurfaceAngle);
+			
+			if (const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(Hit.GetActor()))
+			{
+				CanBuildFromProbe &= HitBuildActor->GetIsBuildableSurface();
+			}
+
 
 			if (true == DrawDebugProbes)
 			{
@@ -241,17 +241,33 @@ bool UDC1BuildCheckComponent::CheckSurface()
 
 bool UDC1BuildCheckComponent::CheckOverlap()
 {
-	TArray<AActor*> OverlapActors;
+	TArray<UPrimitiveComponent*> OverlapComps;
+	this->GetOverlappingComponents(OverlapComps);
 
-	this->GetOverlappingActors(OverlapActors);
-
-	for (AActor* OverlapActor : OverlapActors)
+	const ADC1BuildActor* MyBuild = GetOwner<ADC1BuildActor>();
+	if (false == ::IsValid(MyBuild))
 	{
-		if (OverlapActor == GetOwner())
+		return false;
+	}
+
+	for (const UPrimitiveComponent* OverlapComp: OverlapComps)
+	{
+		const AActor* OtherActor = OverlapComp->GetOwner();
+		if (OtherActor == GetOwner())
 		{
 			continue;
 		}
 
+		// 스냅 중이면 건축물끼리 살짝 겹치는 건 정상. 판정은 액터로, 측정은 체크박스로
+		if (true == IsAutoSnap)
+		{
+			const ADC1BuildActor* OtherBuild = Cast<ADC1BuildActor>(OtherActor);
+			
+			if (false == ::IsValid(OtherBuild) || true == MyBuild->CheckAutoSnapOverlap(OtherBuild, AutoSnapOverlapAllowableRatio))
+			{
+				continue;
+			}	
+		}
 		return false;
 	}
 
@@ -288,22 +304,6 @@ FVector UDC1BuildCheckComponent::GetAttachLocalOffset() const
 	return Owner->GetActorQuat().UnrotateVector(WorldOffset - Owner->GetActorLocation());
 }
 
-const FDC1BuildSnapSocket UDC1BuildCheckComponent::MakeSnapSocketSideFromAxis(bool InIsAxisX, float InAxisSign) const
-{
-	const FVector CheckBoxExtent = GetScaledBoxExtent();
-
-	const FVector Axis = (InIsAxisX ? GetForwardVector() : GetRightVector()) * InAxisSign;
-
-	const float AxisExtent = InIsAxisX ? CheckBoxExtent.X : CheckBoxExtent.Y;
-
-	FDC1BuildSnapSocket SnapSocket;
-	SnapSocket.SocketTransform = FTransform(FRotationMatrix::MakeFromXZ(Axis, GetUpVector()).ToQuat(), GetComponentLocation() + (Axis * AxisExtent));
-
-	SnapSocket.SnapType = DC1BuildTags::Build_Snap_Side_Default;
-	SnapSocket.AcceptTypes.AddTag(DC1BuildTags::Build_Snap_Side_Default);
-
-	return SnapSocket;
-}
 
 const FTransform UDC1BuildCheckComponent::MakeSnapSocketLocalTransform(const FDC1BuildSnapSocketData& InData) const
 {

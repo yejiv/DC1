@@ -84,17 +84,19 @@ public:
 	virtual void					TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	void							SetSnapped(bool InIsSnap) { IsSnap = InIsSnap; }
+	void							SetCheckSurface(bool InIsCheckSurface) { IsCheckSurface = InIsCheckSurface; }
 	const EDC1BuildProbeDirection	GetProbeDirection() const { return BuildProbeData.ProbeDirection; }
 	const FVector					GetCheckBoxCenter() const  { return GetComponentLocation(); }
+	const bool						GetIsAutoSnap() const { return IsAutoSnap; }
+	const float						GetSnappedRotationStep() const { return SnappedRotationStep; }
 	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
 public:
 	bool							CheckCanBuild();
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
-	const FDC1BuildSnapSocket		MakeSnapSocketSide(const FVector& InWorldNormal) const;
-	const FDC1BuildSnapSocket		MakeNearestSnapSocketSide(const FVector& InWorldPoint) const;
 	bool							GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
+
+	float							ComputeOverlapRatio(const FTransform& InOtherTransform, const FVector& InOtherExtent) const;
 
 private:
 	bool							CheckSurface();
@@ -102,24 +104,32 @@ private:
 
 	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 	FVector							GetAttachLocalOffset() const;
-	const FDC1BuildSnapSocket		MakeSnapSocketSideFromAxis(bool InIsAxisX, float InAxisSign) const;
 	const FTransform				MakeSnapSocketLocalTransform(const FDC1BuildSnapSocketData& InData) const;
 
 	void							DrawDebugSockets();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
-	FDC1BuildProbeData			BuildProbeData;
+	FDC1BuildProbeData				BuildProbeData;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
-	bool						DrawDebugProbes = false;
+	bool							DrawDebugProbes = { false };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
 	TArray<FDC1BuildSnapSocketData>	SnapDatas;
 
+	UPROPERTY(EditAnywhere, Category = "Build|Snap")
+	float							SnappedRotationStep = { 15.f };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
+	bool							IsAutoSnap = { false };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
+	float							AutoSnapOverlapAllowableRatio = { 0.1f };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Debug")
-	bool						DrawDebugSocket;
+	bool							DrawDebugSocket;
 
 private:
-	bool						IsSnap = false;
+	bool							IsCheckSurface = { false };
 };

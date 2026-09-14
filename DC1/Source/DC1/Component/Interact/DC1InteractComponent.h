@@ -54,7 +54,7 @@ private:
 private:
 	TWeakObjectPtr<AActor>			CurrentTarget = { nullptr };
 
-	mutable	TArray<AActor*>			OverlapBuffer;
+	//mutable	TArray<AActor*>			OverlapBuffer;
 
 	bool							IsTargetLocked = { false };
 

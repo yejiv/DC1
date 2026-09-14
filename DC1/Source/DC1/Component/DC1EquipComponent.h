@@ -11,6 +11,8 @@ class ADC1Weapon;
 class ADC1Tool;
 class ADC1Player;
 
+DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1EquipComponent : public UActorComponent
 {
@@ -41,12 +43,16 @@ public:
 	UFUNCTION(Server, Reliable)
 	void		Server_ChangeWeapon(int32 Delta);
 
+public:
+	ADC1Weapon*				GetCurrentWeapon() { return CurrentWeapon; }
+
+public:
+	FOnEquipWeaponChanged		OnWeaponChanged;
+
 private:
 	// 소유자는 PlayerState다. 폰은 아직 없거나 교체됐을 수 있어 캐싱하지 않고 매번 얻는다
 	ADC1Player*	GetOwningPlayer() const;
 
-	UFUNCTION()
-	void		OnRep_CurrentWeaponIndex();
 	UFUNCTION()
 	void		OnRep_CurrentWeapon();
 
@@ -59,7 +65,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Equip")
 	TArray<TSubclassOf<ADC1Weapon>>		WeaponClass;
 
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponIndex)
+	// 슬롯 선택은 서버에서만 굴린다. 클라는 CurrentWeapon만 보면 되므로 복제하지 않는다
+	UPROPERTY()
 	int32								CurrentWeaponIndex = {};
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	TObjectPtr<ADC1Weapon>	CurrentWeapon = {};
