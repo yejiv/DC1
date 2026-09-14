@@ -4,6 +4,7 @@
 #include "DC1Structs.generated.h"
 
 class ADC1BuildActor;
+class UDC1BuildSocketComponent;
 
 namespace
 {
@@ -11,14 +12,21 @@ namespace
 	constexpr float SocketScoreTolerance = 1.f;
 }
 
+// 공간 판정용 박스
+struct FDC1BuildBox
+{
+	FTransform Transform = { FTransform::Identity };
+	FVector Extent = { FVector::ZeroVector };
+};
+
 USTRUCT()
 struct FDC1BuildSnapSocket
 {
 	GENERATED_BODY()
 
 	// Snap Socket 월드 Transform
-	// X축 = AttachAxis ( 상대가 붙어오는 방향 / Ctrl 스냅에 사용 O )
-	// Z축 = TangentAxis ( Attach 둘레 회전 결정 / Ctrl 스냅 사용 X )
+	// X축 = 상대에 붙을 방향 || 상대를 붙일 방향 / Ctrl 스냅에 사용 O
+	// Z축 = Attach 둘레 회전 결정 / Ctrl 스냅 사용 X
 	FTransform	SocketTransform = { FTransform::Identity };
 
 	// Snap Socket 타입 - 벽, 바닥, 지붕 전용
@@ -27,19 +35,23 @@ struct FDC1BuildSnapSocket
 	// Snap 가능한 상대 타입
 	FGameplayTagContainer AcceptTypes;
 
+	TWeakObjectPtr<const UDC1BuildSocketComponent> SourceSocket;
+
 	// 기준점이 이 소켓 바깥으로 얼마나 벗어났는가
-	void EvaluateFrom(const FVector& InRefPoint, float& OutScore, float& OutDistSquared) const
+	void EvaluateFrom(const FVector& InRefPoint, float& OutScore, float& OutDistSquared, float& OutFacing) const
 	{
 		const FVector SocketLocaion = SocketTransform.GetLocation();
 		const FVector AttachAxis = SocketTransform.GetUnitAxis(EAxis::X);
+		const FVector TangentAxis = SocketTransform.GetUnitAxis(EAxis::Z);
 
 		OutScore = FVector::DotProduct(InRefPoint - SocketLocaion, AttachAxis);
 		OutDistSquared = FVector::DistSquared(InRefPoint, SocketLocaion);
+		OutFacing = FVector::DotProduct(InRefPoint - SocketLocaion, FVector::CrossProduct(AttachAxis, TangentAxis));
 	}
 
-	static bool IsBetter(float InScore, float InDistSquared, float InBestScore, float InBestDistSquared)
+	static bool IsBetter(float InScore, float InDistSquared, float InFacing, float InBestScore, float InBestDistSquared, float InBestFacing)
 	{
-		// 1순위 - 벗어난 정도. 길쭉한 박스에서 끝단면이 잡히는 것을 막는다
+		// 1순위 - 조준점이 이 면 바깥으로 벗어난 정도
 		if (InScore > (InBestScore + SocketScoreTolerance))
 		{
 			return true;
@@ -50,8 +62,14 @@ struct FDC1BuildSnapSocket
 			return false;
 		}
 
-		// 2순위 - 거리. 윗면 모서리 소켓들처럼 점수가 같을 때 가른다
-		return InDistSquared < InBestDistSquared;
+		// 2순위 - 소켓 과의 거리
+		if (false == FMath::IsNearlyEqual(InDistSquared, InBestDistSquared))
+		{
+			return InDistSquared < InBestDistSquared;
+		}
+
+		// 3순위 - 겹친 소켓 중 어느 면을 바라보는가
+		return InFacing > InBestFacing;
 	}
 };
 

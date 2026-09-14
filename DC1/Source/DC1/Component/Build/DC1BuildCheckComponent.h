@@ -5,10 +5,9 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Define/DC1Enums.h"
-#include "Define/DC1Structs.h"
 #include "DC1BuildCheckComponent.generated.h"
 
-struct FDC1BuildSnapSocket;
+struct FDC1BuildBox;
 
 USTRUCT(BlueprintType)
 struct FDC1BuildProbeData
@@ -43,32 +42,6 @@ struct FDC1BuildProbeData
 	float MaxSurfaceAngle = { 30.f };
 };
 
-USTRUCT(BlueprintType)
-struct FDC1BuildSnapSocketData
-{
-	GENERATED_BODY()
-
-	// 박스 Extent와 곱 - 소켓 위치
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	FVector SnapDirection = { FVector::ZeroVector };
-
-	// Snap Point의 X축
-	// 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	FVector AttachAxis = { FVector::UpVector};
-
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	FVector TangentAxis = { FVector::ForwardVector};
-
-	// Snap Point 타입
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag SnapType;
-
-	// Snap 가능한 상대 타입
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTagContainer AcceptTypes;
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 {
@@ -76,12 +49,6 @@ class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 
 public:	
 	UDC1BuildCheckComponent();
-
-protected:
-	virtual void					BeginPlay() override;
-
-public:
-	virtual void					TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
 	void							SetCheckSurface(bool InIsCheckSurface) { IsCheckSurface = InIsCheckSurface; }
@@ -94,19 +61,15 @@ public:
 public:
 	bool							CheckCanBuild();
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
-	bool							GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
 
 	float							ComputeOverlapRatio(const FTransform& InOtherTransform, const FVector& InOtherExtent) const;
-
+	bool							IsBlockedAt(const FTransform& InBoxTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 private:
 	bool							CheckSurface();
 	bool							CheckOverlap();
 
 	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 	FVector							GetAttachLocalOffset() const;
-	const FTransform				MakeSnapSocketLocalTransform(const FDC1BuildSnapSocketData& InData) const;
-
-	void							DrawDebugSockets();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
@@ -114,9 +77,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	bool							DrawDebugProbes = { false };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
-	TArray<FDC1BuildSnapSocketData>	SnapDatas;
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float							SnappedRotationStep = { 15.f };
@@ -126,9 +86,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
 	float							AutoSnapOverlapAllowableRatio = { 0.1f };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Debug")
-	bool							DrawDebugSocket;
 
 private:
 	bool							IsCheckSurface = { false };

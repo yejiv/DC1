@@ -5,13 +5,12 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Define/DC1Enums.h"
+#include "Define/DC1Structs.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1BuildPlacementComponent.generated.h"
 
 struct FDC1BuildActorData;
 struct FInputActionValue;
-struct FDC1BuildSnapSocket;
-struct FDC1BuildSnapPair;
 
 class ADC1BuildActor;
 
@@ -70,11 +69,18 @@ private:
 	bool				GetViewRay(FVector& OutStart, FVector& OutEnd) const;
 	void				ChangeSnapConfirmTarget();
 	
+	void				GatherBlockers(const TSet<ADC1BuildActor*>& InNeighbors, TArray<FDC1BuildBox>& OutBlockers) const;
+
 	void				FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const;
 	bool				FindSnapPair(FDC1BuildSnapPair& OutPair) const;
 	bool				FindSnapCandidateByRay(TSet<ADC1BuildActor*>& OutCandidates, FVector& OutAimPoint) const;
+
+	bool				FindFreeSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint,
+											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<FDC1BuildBox>& InBlockers, FDC1BuildSnapPair& OutPair) const;
+
 	bool				FindBestSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint, 
-											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, FDC1BuildSnapPair& OutPair) const;
+											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<TWeakObjectPtr<const UDC1BuildSocketComponent>>& InExcludedSockets,
+											FDC1BuildSnapPair& OutPair) const;
 
 	const FTransform	MakeSnapTransform(const FDC1BuildSnapPair& InPair) const;
 
@@ -99,7 +105,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapSearchRadius = { 600.f };
 
-
+	UPROPERTY(EditAnywhere, Category = "Build|Snap")
+	float		SnapAimInflate = { 30.f };
 	
 private:
 	UPROPERTY()
