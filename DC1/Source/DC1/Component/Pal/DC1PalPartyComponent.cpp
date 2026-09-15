@@ -151,8 +151,8 @@ FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index)
 	if (false == Pals.IsValidIndex(Index))
 		return nullptr;
 
-	// TODO
-	// 유효하지 않은 Pals[Index]는 nullptr 반환
+	if (false == HasPalAt(Index))
+		return nullptr;
 
 	return &Pals[Index];
 }

@@ -10,6 +10,7 @@
 class ADC1PalCharacter;
 
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotTranslated);
+DECLARE_MULTICAST_DELEGATE(FOnPalSlotChanged);
 /**
  *
  * 플레이어가 데리고 다니는 팰 목록. ADC1PlayerState에 붙는다.
@@ -51,6 +52,9 @@ public:
 public:
 	// 팰 슬롯 변화 시 호출
 	FOnPalSlotTranslated		OnPalSlotTranslated;
+
+	// 팰 등록 변화 시 호출
+	FOnPalSlotChanged		OnPalSlotChanged;
 
 protected:
 	virtual void			BeginPlay() override;
