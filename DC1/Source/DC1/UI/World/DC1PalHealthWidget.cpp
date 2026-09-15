@@ -5,6 +5,9 @@
 
 #include "UI/Bar/DC1StatusBar.h"
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Data/DA/Pal/DC1PalData.h"
+
+#include "Components/TextBlock.h"
 
 void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 {
@@ -19,9 +22,25 @@ void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 
 	OwnerPal->OnPalHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
 
-	// 어트리뷰트 델리게이트는 '값이 변할 때만' 오므로 현재 값을 한 번 직접 읽는다.
-	// 이게 없으면 다치기 전까지 바가 갱신되지 않는다
+	ApplyPalInfo();
+
 	RefreshBar();
+}
+
+void UDC1PalHealthWidget::ApplyPalInfo()
+{
+	if (nullptr == Text_Name || false == OwnerPal.IsValid())
+	{
+		return;
+	}
+
+	const UDC1PalData* PalData = OwnerPal->GetPalData();
+	if (nullptr == PalData)
+	{
+		return;
+	}
+
+	Text_Name->SetText(PalData->DisplayName);
 }
 
 void UDC1PalHealthWidget::NativeDestruct()
@@ -57,5 +76,5 @@ void UDC1PalHealthWidget::RefreshBar()
 
 	HealthBar->SetPercent(Ratio);
 
-	SetVisibility((Ratio >= 1.f) ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
+	HealthBar->SetVisibility((Ratio >= 1.f) ? ESlateVisibility::Collapsed : ESlateVisibility::HitTestInvisible);
 }

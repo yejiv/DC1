@@ -6,6 +6,7 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1PalHealthWidget.generated.h"
 
+class UTextBlock;
 class UDC1StatusBar;
 class ADC1PalCharacter;
 
@@ -30,9 +31,15 @@ private:
 
 	void RefreshBar(); // 바 갱신 한 곳. 델리게이트와 초기값 읽기가 공유
 
+	void ApplyPalInfo(); // 이름 등 변하지 않는 값. InitForPal에서 1회
+
 private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1StatusBar>	HealthBar = { nullptr };
+
+	// 이름을 안 쓰는 WBP도 있을 수 있어 Optional
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock>		Text_Name = { nullptr };
 
 private:
 	TWeakObjectPtr<ADC1PalCharacter> OwnerPal = { nullptr };

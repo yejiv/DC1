@@ -5,6 +5,7 @@
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
 #include "Templates/SubclassOf.h"
+#include "Define/DC1Enums.h"
 #include "DC1PalData.generated.h"
 
 class UAnimMontage;
@@ -39,12 +40,21 @@ public:
 	// 이 종을 소환할 때 쓸 폰. 데이터에서 액터로 되돌릴 떄 필요
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
 	TSoftClassPtr<ADC1PalCharacter>	PalClass;
+
+	// 속성. 상성 계산과 UI 색/아이콘 구분에 쓴다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
+	EDC1PalElement					Element = { EDC1PalElement::Neutral };
 #pragma endregion
 
 #pragma region UI
 	// 파티 HUD 등에서 쓰는 종족 아이콘. 개체가 아니라 종 단위 값이라 여기에 둔다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSoftObjectPtr<UTexture2D>		Icon;
+
+	// 화면에 띄울 종 이름. 비면 Nickname 폴백도 없으니 종마다 채운다.
+	// 현지화를 위해 FString 이 아니라 FText 를 쓴다 (FDC1ItemRow 와 동일)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	FText							DisplayName;
 #pragma endregion
 
 #pragma region Locomotion
