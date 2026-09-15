@@ -70,7 +70,7 @@ enum class EDC1BuildSupportRule : uint8
 	Stack = 1 UMETA(DisplayName = "Stack"),			// 소켓 or 하단 Probe로 지지 확인 ( 특정 소켓 또는 지지 받아야만 건축 가능한 건축물 ) - 벽
 	RoofSpan = 2 UMETA(DisplayName = "RoofSpan"),	// 소켓으로 붙은 벽의 X,Y 투영 구간에서 N칸 이내 지지 ( 특정 소켓 또는 지지 범위 내에 건축 가능한 건축물 ) - 지붕
 	Surface = 3 UMETA(DisplayName = "Surface"),		// 맨땅 or IsBuildableSurafce 위 ( 단순 건축물 )
-}
+};
 
 #pragma endregion
 
