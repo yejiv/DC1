@@ -9,6 +9,7 @@
 
 class ADC1PalCharacter;
 
+DECLARE_MULTICAST_DELEGATE(FOnPalSlotTranslated);
 /**
  *
  * 플레이어가 데리고 다니는 팰 목록. ADC1PlayerState에 붙는다.
@@ -35,6 +36,15 @@ public:
 	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
 	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
 	void					CycleSlot(int32 InDelta);
+
+public:
+	int32					GetCapacity() const { return Capacity; }
+	int32					GetSelectedSlot() const { return SelectedSlot; }
+	FDC1PalInstance*	GetPalInfo(int32 Index);
+
+public:
+	// 팰 슬롯 변화 시 호출
+	FOnPalSlotTranslated		OnPalSlotTranslated;
 
 protected:
 	void					ToggleDeploy();

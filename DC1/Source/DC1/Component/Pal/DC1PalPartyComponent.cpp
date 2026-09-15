@@ -100,6 +100,18 @@ void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
 	LogSlot(SelectedSlot);
 
 	Server_SetSelectedSlot(SelectedSlot);
+	OnPalSlotTranslated.Broadcast();
+}
+
+FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index)
+{
+	if (false == Pals.IsValidIndex(Index))
+		return nullptr;
+
+	// TODO
+	// 유효하지 않은 Pals[Index]는 nullptr 반환
+
+	return &Pals[Index];
 }
 
 void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
