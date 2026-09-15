@@ -16,3 +16,15 @@ TSoftObjectPtr<UDC1PalData> UDC1PalRegistryData::FindPalDataByTag(const FGamepla
 
 	return *Found;
 }
+
+TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindElementIcon(EDC1PalElement InElement) const
+{
+	const TSoftObjectPtr<UTexture2D>* Found = ElementIcons.Find(InElement);
+	if (nullptr == Found)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't Find ElementIcon from Element [%d]. Check DA_PalRegistry."), static_cast<int32>(InElement));
+		return nullptr;
+	}
+
+	return *Found;
+}

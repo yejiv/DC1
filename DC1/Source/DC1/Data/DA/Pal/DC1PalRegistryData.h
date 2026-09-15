@@ -4,9 +4,11 @@
 
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "Define/DC1Enums.h"
 #include "DC1PalRegistryData.generated.h"
 
 class UDC1PalData;
+class UTexture2D;
 
 UCLASS()
 class DC1_API UDC1PalRegistryData : public UDataAsset
@@ -16,7 +18,12 @@ class DC1_API UDC1PalRegistryData : public UDataAsset
 public:
 	TSoftObjectPtr<UDC1PalData>	FindPalDataByTag(const FGameplayTag& SpeciesTag) const;
 
+	TSoftObjectPtr<UTexture2D>	FindElementIcon(EDC1PalElement InElement) const;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
 	TMap<FGameplayTag, TSoftObjectPtr<UDC1PalData>>	PalDataEntries;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|UI")
+	TMap<EDC1PalElement, TSoftObjectPtr<UTexture2D>>	ElementIcons;
 };
