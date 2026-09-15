@@ -23,6 +23,36 @@ void UDC1PalPartyComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UDC1PalPartyComponent, Pals);
 }
 
+void UDC1PalPartyComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (ROLE_Authority == GetOwnerRole() && Pals.Num() < Capacity)
+	{
+		Pals.SetNum(Capacity);
+	}
+}
+
+bool UDC1PalPartyComponent::HasPalAt(int32 InSlotIndex) const
+{
+	return Pals.IsValidIndex(InSlotIndex) && Pals[InSlotIndex].IsValidPal();
+}
+
+int32 UDC1PalPartyComponent::GetPalCount() const
+{
+	int32 Count = 0;
+
+	for (const FDC1PalInstance& Pal : Pals)
+	{
+		if (true == Pal.IsValidPal())
+		{
+			++Count;
+		}
+	}
+
+	return Count;
+}
+
 void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 {
 	if (ROLE_Authority != GetOwnerRole() || false == InPal.IsValidPal())
@@ -30,14 +60,26 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 		return;
 	}
 
+	// 앞에서부터 빈 슬롯을 찾는다
+	int32 EmptyIndex = INDEX_NONE;
+
+	for (int32 Index = 0; Index < Pals.Num(); ++Index)
+	{
+		if (false == HasPalAt(Index))
+		{
+			EmptyIndex = Index;
+			break;
+		}
+	}
+
 	// TODO : 팰박스가 생기면?
-	if (Pals.Num() >= Capacity)
+	if (INDEX_NONE == EmptyIndex)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Pal] Party is full (%d). Captured pal was dropped."), Capacity);
 		return;
 	}
 
-	Pals.Add(InPal);
+	Pals[EmptyIndex] = InPal;
 }
 
 void UDC1PalPartyComponent::Server_ToggleDeploy_Implementation()
@@ -59,7 +101,8 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	if (false == Pals.IsValidIndex(SelectedSlot))
+	// 슬롯이 고정 길이라 인덱스만 봐서는 빈 칸을 걸러낼 수 없다
+	if (false == HasPalAt(SelectedSlot))
 	{
 		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d is empty."), SelectedSlot + 1);
 		return;
@@ -109,7 +152,7 @@ void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIn
 
 void UDC1PalPartyComponent::LogSlot(int32 InSlotIndex) const
 {
-	if (false == Pals.IsValidIndex(InSlotIndex) || false == Pals[InSlotIndex].IsValidPal())
+	if (false == HasPalAt(InSlotIndex))
 	{
 		UE_LOG(LogTemp, Log, TEXT("[Pal] Slot %d/%d : empty"), InSlotIndex + 1, Capacity);
 		return;
