@@ -53,6 +53,10 @@ UTexture2D* UDC1PalViewModel::GetPalIconTexture(int32 Offset)
 
 void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 {
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == IsValid(Registry))
+		return;
+
 
 }
 
