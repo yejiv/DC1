@@ -11,6 +11,7 @@
 class UDC1PalPartyComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnPalSlotShifted, EDC1PalSlotShift);
+DECLARE_MULTICAST_DELEGATE(FOnPalInfoChanged);
 
 /**
  * 팰 HUD용 ViewModel.
@@ -32,6 +33,7 @@ public:
 
 public:
 	FOnPalSlotShifted		OnSlotShifted;
+	FOnPalInfoChanged	OnInfoChanged;
 
 private:
 	// 현재 선택된 슬롯 인덱스 변경

@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "ViewModel/Pal/DC1PalDisplayTypes.h"
+
 #include "DC1PalStatusWidget.generated.h"
 
 class UTexture2D;
@@ -18,7 +20,7 @@ class DC1_API UDC1PalStatusWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 public:
-	void SetPalInfo(UTexture2D* InIcon, const FText& InName, int32 InLevel, float InHealthPercent);
+	void SetPalInfo(const FDC1PalDisplayInfo& InDisplayInfo);
 
 	// 빈 슬롯이 선택됐을 때
 	void SetEmpty();

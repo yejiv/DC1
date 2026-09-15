@@ -43,6 +43,9 @@ void UDC1PalViewModel::ClearSource()
 
 UTexture2D* UDC1PalViewModel::GetPalIconTexture(int32 Offset)
 {
+	if (0 == Capacity)
+		return nullptr;
+
 	int32 Index = (PrevSlot + Offset + Capacity) % Capacity;
 
 	if (false == CachedPalIcons.IsValidIndex(Index))
@@ -57,7 +60,23 @@ void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 	if (false == IsValid(Registry))
 		return;
 
+	const FDC1PalInstance* PalInfo = PalPartyComponent->GetPalInfo(PrevSlot);
 
+	if (nullptr == PalInfo)
+	{
+		OutDisplayInfo.ElementIcon = nullptr;
+		return;
+	}
+
+	const UDC1PalData* PalData = Registry->FindPalDataByTag(PalInfo->SpeciesTag).LoadSynchronous();
+	if (false == IsValid(PalData))
+		return;
+
+	OutDisplayInfo.ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous();
+	OutDisplayInfo.Level = PalInfo->Level;
+	OutDisplayInfo.Name = PalInfo->Nickname.IsEmpty() ? PalData->DisplayName : FText::FromString(PalInfo->Nickname);
+	// 추후 PalInfo의 MaxHealth로 교체
+	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / PalData->MaxHealth;
 }
 
 void UDC1PalViewModel::HandleSelectedSlotChanged()
@@ -89,7 +108,7 @@ void UDC1PalViewModel::HandlePalChanged()
 
 	for (int32 i = 0; i < Capacity; ++i)
 	{
-		FDC1PalInstance* PalInfo = PalPartyComponent->GetPalInfo(i);
+		const FDC1PalInstance* PalInfo = PalPartyComponent->GetPalInfo(i);
 		if (nullptr == PalInfo || false == PalInfo->IsValidPal())
 			continue;
 
@@ -99,4 +118,6 @@ void UDC1PalViewModel::HandlePalChanged()
 
 		CachedPalIcons[i] = PalData->Icon.LoadSynchronous();
 	}
+
+	OnInfoChanged.Broadcast();
 }

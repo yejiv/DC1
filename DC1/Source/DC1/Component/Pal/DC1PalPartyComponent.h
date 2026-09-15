@@ -39,9 +39,9 @@ public:
 	void					CycleSlot(int32 InDelta);
 
 public:
-	int32					GetCapacity() const { return Capacity; }
-	int32					GetSelectedSlot() const { return SelectedSlot; }
-	FDC1PalInstance*	GetPalInfo(int32 Index);
+	int32							GetCapacity() const { return Capacity; }
+	int32							GetSelectedSlot() const { return SelectedSlot; }
+	const FDC1PalInstance*	GetPalInfo(int32 Index) const;
 
 	// 이 슬롯에 팰이 들어 있나. 범위 밖이면 false.
 	bool					HasPalAt(int32 InSlotIndex) const;

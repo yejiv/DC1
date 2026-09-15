@@ -28,6 +28,7 @@ private:
 
 private:
 	void HandleSlotShifted(EDC1PalSlotShift InShift);
+	void HandleInfoChanged();
 
 private:
 	TWeakObjectPtr<UDC1PalViewModel> PalViewModel = { nullptr };

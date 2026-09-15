@@ -146,7 +146,7 @@ void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
 	OnPalSlotTranslated.Broadcast();
 }
 
-FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index)
+const FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index) const
 {
 	if (false == Pals.IsValidIndex(Index))
 		return nullptr;
