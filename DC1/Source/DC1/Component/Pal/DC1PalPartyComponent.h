@@ -36,7 +36,15 @@ public:
 	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
 	void					CycleSlot(int32 InDelta);
 
+	// 이 슬롯에 팰이 들어 있나. 범위 밖이면 false.
+	bool					HasPalAt(int32 InSlotIndex) const;
+
+	// 실제로 들어 있는 마릿수.
+	int32					GetPalCount() const;
+
 protected:
+	virtual void			BeginPlay() override;
+
 	void					ToggleDeploy();
 
 	// 소환은 서버가 하므로 선택 슬롯도 서버가 알아야 한다
