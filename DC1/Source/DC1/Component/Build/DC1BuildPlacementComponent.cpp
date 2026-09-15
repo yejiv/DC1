@@ -5,7 +5,6 @@
 #include "Actor/BuildActor/DC1BuildActor.h"
 
 #include "Define/DC1Helper.h"
-#include "Define/DC1Structs.h"
 #include "Define/DC1Stats.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
@@ -59,26 +58,6 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		return;
 	}
-
-	//if (true == IsSnapping)
-	//{
-	//	DrawDebugSphere(GetWorld(), SnapSocketLocationWorld, 12.f, 12, FColor::Yellow);
-	//	DrawDebugDirectionalArrow(GetWorld(), SnapSocketLocationWorld,
-	//		SnapSocketLocationWorld + (SnapSocketNormalWorld * 80.f), 16.f, FColor::Yellow);		// 슬라이드 축
-	//	DrawDebugLine(GetWorld(), SnapSocketLocationWorld, PreviewActor->GetActorLocation(), FColor::Yellow);
-	//}
-	//else
-	//{
-	//	FDC1BuildSnapSocket Debug;
-	//	const ADC1BuildActor* Target = nullptr;
-	//	if (true == FindSnapFace(Debug, Target))
-	//	{
-	//		DrawDebugSphere(GetWorld(), Debug.SocketTransform.GetLocation(), 12.f, 12, FColor::Cyan);
-	//		DrawDebugDirectionalArrow(GetWorld(), Debug.SocketTransform.GetLocation(),
-	//			Debug.SocketTransform.GetLocation() + (Debug.SocketTransform.GetUnitAxis(EAxis::X) * 60.f), 16.f, FColor::Cyan);
-	//	}
-	//}
-
 
 	FDC1BuildSnapPair SnapPair;
 	IsAutoSnapped = PreviewActor->GetIsAutoSnap() && FindSnapPair(SnapPair);
@@ -551,97 +530,10 @@ bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd)
 	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
 	OutStart = ViewLocation;
-	OutEnd = ViewLocation + (ViewRotation.Vector() * MaxPlaceDistance);
+	OutEnd = ViewLocation + (ViewRotation.Vector() * PlaceDistance);
 
 	return true;
 }
-
-//bool UDC1BuildPlacementComponent::FindSnapFace(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
-//{
-//	if (true == FindSnapFaceByRay(OutSnapSocket, OutTarget))
-//	{
-//		return true;
-//	}
-//
-//	return FindSnapFaceByRange(OutSnapSocket, OutTarget);
-//}
-//
-//bool UDC1BuildPlacementComponent::FindSnapFaceByRay(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
-//{
-//	const UWorld* World = GetWorld();
-//	if (false == ::IsValid(World))
-//	{
-//		return false;
-//	}
-//
-//	FVector RayStart;
-//	FVector RayEnd;
-//	if (false == GetViewRay(RayStart, RayEnd))
-//	{
-//		return false;
-//	}
-//
-//	FCollisionObjectQueryParams ObjectParams;
-//	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Building));
-//
-//	FCollisionQueryParams Params;
-//	Params.AddIgnoredActor(GetOwnerPawn());
-//	Params.AddIgnoredActor(PreviewActor);
-//
-//	FHitResult Hit;
-//	if (false == World->LineTraceSingleByObjectType(Hit, RayStart, RayEnd, ObjectParams, Params))
-//	{
-//		return false;
-//	}
-//
-//	const ADC1BuildActor* Target = Cast<ADC1BuildActor>(Hit.GetActor());
-//	if (false == ::IsValid(Target) || EDC1BuildState::Preview == Target->GetBuildState())
-//	{
-//		return false;
-//	}
-//
-//	OutTarget = Target;
-//
-//	return Target->SelectSnapSocketByRay(RayStart, RayEnd, Params, OutSnapSocket);
-//}
-//
-//bool UDC1BuildPlacementComponent::FindSnapFaceByRange(FDC1BuildSnapSocket& OutSnapSocket, const ADC1BuildActor*& OutTarget) const
-//{
-//	const APawn* Pawn = GetOwnerPawn();
-//	if (false == ::IsValid(Pawn))
-//	{
-//		return false;
-//	}
-//
-//	const FVector AimPoint = GetAimPoint(Pawn);
-//
-//	TSet<ADC1BuildActor*> Candidates;
-//	FindSnapCandidates(AimPoint, Candidates);
-//
-//	float BestDistSquared = FLT_MAX;
-//	bool IsFind = false;
-//
-//	for (const ADC1BuildActor* Candidate : Candidates)
-//	{
-//		FDC1BuildSnapSocket SnapSocket;
-//		if (false == Candidate->SelectSnapSocketByPoint(AimPoint, SnapSocket))
-//		{
-//			continue;
-//		}
-//
-//		const float DistSquared = FVector::DistSquaredXY(SnapSocket.SocketTransform.GetLocation(), AimPoint);
-//
-//		if (DistSquared < BestDistSquared)
-//		{
-//			BestDistSquared = DistSquared;
-//			OutSnapSocket = SnapSocket;
-//			OutTarget = Candidate;
-//			IsFind = true;
-//		}
-//	}
-//
-//	return IsFind;
-//}
 
 void UDC1BuildPlacementComponent::FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const
 {
@@ -707,7 +599,7 @@ bool UDC1BuildPlacementComponent::FindSnapPair(FDC1BuildSnapPair& OutPair) const
 		TSet<ADC1BuildActor*> Neighbors;
 		FindSnapCandidates(RayPoint, Neighbors);
 
-		//GatherBlockers(Neighbors, Blockers);
+		GatherBlockers(Neighbors, Blockers);
 
 		if (true == FindFreeSnapPair(RayCandidates, RayPoint, PreviewSockets, Blockers, OutPair))
 		{
@@ -812,6 +704,14 @@ bool UDC1BuildPlacementComponent::FindFreeSnapPair(const TSet<ADC1BuildActor*>& 
 
 bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint, const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<TWeakObjectPtr<const UDC1BuildSocketComponent>>& InExcludedSockets, FDC1BuildSnapPair& OutPair) const
 {
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return false;
+	}
+
+	const FVector FacingPoint = Pawn->GetActorLocation();
+
 	float BestActorDistSquared = FLT_MAX;
 
 	bool IsFind = false;
@@ -857,7 +757,7 @@ bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& 
 			float DistSquared = 0.f;
 			float Facing = 0.f;
 
-			TargetSocket.EvaluateFrom(InAimPoint, Score, DistSquared, Facing);
+			TargetSocket.EvaluateFrom(InAimPoint, FacingPoint, Score, DistSquared, Facing);
 
 			if (false == FDC1BuildSnapSocket::IsBetter(Score, DistSquared, Facing, BestScore, BestDistSquared, BestFacing))
 			{
@@ -963,6 +863,4 @@ void UDC1BuildPlacementComponent::GatherBlockers(const TSet<ADC1BuildActor*>& In
 			}
 		}
 	}
-
-
 }
