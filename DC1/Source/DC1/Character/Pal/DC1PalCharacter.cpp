@@ -14,6 +14,9 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
+#include "UI/World/DC1PalHealthWidget.h"
+
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
@@ -29,6 +32,15 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	PalAttributeSet = CreateDefaultSubobject<UDC1PalAttributeSet>(TEXT("PalAttributeSet"));
+
+	// 머리 위 HP바. 위젯 클래스와 높이는 BP_Pal_* 에서 종마다 지정한다
+	HealthWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthWidget"));
+	HealthWidgetComponent->SetupAttachment(RootComponent);
+	HealthWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);	// 거리와 무관하게 크기 고정
+	HealthWidgetComponent->SetDrawAtDesiredSize(true);
+	HealthWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+	HealthWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HealthWidgetComponent->SetTickWhenOffscreen(false);			// 화면 밖이면 돌지 않는다
 
 	// 회전쓰지 않음
 	bUseControllerRotationPitch = false;
@@ -63,6 +75,26 @@ void ADC1PalCharacter::PostInitializeComponents()
 {
 	ApplyPalData(); //PalData 먼저로드
 	Super::PostInitializeComponents();
+}
+
+void ADC1PalCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (false == IsValid(HealthWidgetComponent))
+	{
+		return;
+	}
+
+	// 위젯은 아직 안 만들어져 있을 수 있다. 데디케이티드 서버에서는 만들어지지 않는다
+	HealthWidgetComponent->InitWidget();
+
+	// 위젯이 자기 주인을 모르므로 팰이 직접 넣어준다.
+	// GetOwningPlayerPawn 은 로컬 플레이어의 폰을 돌려주므로 쓸 수 없다
+	if (UDC1PalHealthWidget* HealthWidget = Cast<UDC1PalHealthWidget>(HealthWidgetComponent->GetUserWidgetObject()))
+	{
+		HealthWidget->InitForPal(this);
+	}
 }
 
 void ADC1PalCharacter::ApplyPalData()
@@ -102,6 +134,9 @@ void ADC1PalCharacter::ApplyPalData()
 
 		// Health는 PostGameplayEffectExecute 가 SetHealth 로 바꾸므로 Damage 를 구독
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).AddUObject(this, &ThisClass::HandleDamaged);
+
+		// HP바용. BindHealthWatcher 가 RemoveAll(this) 를 하므로 반드시 그 뒤에 온다
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChangedForUI);
 	}
 
 	if (IsValid(PalAttributeSet))
@@ -131,6 +166,16 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	{
 		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Hit);
 	}
+}
+
+void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Data)
+{
+	if (false == IsValid(PalAttributeSet))
+	{
+		return;
+	}
+
+	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
 }
 
 void ADC1PalCharacter::StopAndUnregister()
