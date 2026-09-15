@@ -13,8 +13,13 @@
 class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
+class UWidgetComponent;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
+
+// 체력이 변했다. 머리 위 HP바가 받는다.
+// 현재값과 최대값은 항상 같이 움직이므로 하나의 델리게이트로 묶는다
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
 
 /**
  *
@@ -62,8 +67,13 @@ public:
 	// 죽었다. 파티가 받아서 자동 회수한다. OnDeath의 맨 끝에서 발화한다
 	FDC1OnPalDied						OnPalDied;
 
+	// 체력이 변했다. 머리 위 HP바가 구독한다
+	FDC1OnPalHealthChanged				OnPalHealthChanged;
+
 protected:
 	virtual void						PostInitializeComponents() override;
+
+	virtual void						BeginPlay() override;
 
 	virtual void						OnTeamChanged();
 
@@ -77,12 +87,19 @@ protected:
 
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
+	// HP바 갱신용. ADC1Character::HandleHealthChanged 는 사망만 보므로 따로 구독한다
+	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
+
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void						OnDeath() override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
+	// 머리 위 HP바. 데디케이티드 서버에서는 위젯이 만들어지지 않는다
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };
 
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };

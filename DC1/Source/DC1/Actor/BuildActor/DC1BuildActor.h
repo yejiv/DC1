@@ -10,12 +10,14 @@
 #include "DC1BuildActor.generated.h"
 
 struct FDC1BuildSnapSocket;
+struct FDC1BuildBox;
 
 class UStaticMeshComponent;
 class UBoxComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UDC1BuildCheckComponent;
+class UDC1BuildSnapComponent;
 
 // 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
@@ -69,21 +71,24 @@ public:
 	const bool						GetIsAutoSnap() const;
 	const float						GetSnappedRotationStep() const;
 
-	bool							GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
+	const bool						GetBuildSocketsToWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
 	void							SetCheckSurface(bool InIsCheckSurface);
 
-	bool							CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const;
+	const bool						CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const;
+	const bool						GetCheckBoxWorld(FDC1BuildBox& OutBox) const;
+	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 
 protected:
 	virtual void					BeginPlay() override;
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void					OnConstruction(const FTransform& Transform) override;
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
 	virtual void					BuildDestroy();
 	
 	bool							UpdatePreview(bool InIsInRange);
-	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FVector& OutImpactPoint) const;
+	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const;
 
 	void							InitPreview(const FDC1BuildActorData& InBuildActorData);
 
@@ -111,9 +116,11 @@ protected:
 	TArray<TObjectPtr<UMaterialInstanceDynamic>>	BuildMIDs;
 
 private:
-
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UDC1BuildSnapComponent>		BuildSnapComp = { nullptr };
 
 	// 이 건물 위에 다른 건물을 지을 수 있는가 ex) 바닥 = true
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")

@@ -97,6 +97,24 @@ enum class EDC1ItemRarity : uint8
 
 };
 
+// 팰 속성. 종마다 하나씩 가지며 DA_Pal_* 에서 지정한다.
+// 상성표를 만들 때 인덱스로 쓰므로 순서를 바꾸지 않는다
+UENUM(BlueprintType)
+enum class EDC1PalElement : uint8
+{
+	Neutral = 0 UMETA(DisplayName = "Neutral"),
+	Grass = 1 UMETA(DisplayName = "Grass"),
+	Ground = 2 UMETA(DisplayName = "Ground"),
+	Electric = 3 UMETA(DisplayName = "Electric"),
+	Water = 4 UMETA(DisplayName = "Water"),
+	Fire = 5 UMETA(DisplayName = "Fire"),
+	Ice = 6 UMETA(DisplayName = "Ice"),
+	Dragon = 7 UMETA(DisplayName = "Dragon"),
+	Dark = 8 UMETA(DisplayName = "Dark"),
+
+	Max			UMETA(Hidden),
+};
+
 UENUM()
 enum class EDC1CollisionLayer : uint8
 {

@@ -42,11 +42,19 @@ public:
 	int32					GetSelectedSlot() const { return SelectedSlot; }
 	FDC1PalInstance*	GetPalInfo(int32 Index);
 
+	// 이 슬롯에 팰이 들어 있나. 범위 밖이면 false.
+	bool					HasPalAt(int32 InSlotIndex) const;
+
+	// 실제로 들어 있는 마릿수.
+	int32					GetPalCount() const;
+
 public:
 	// 팰 슬롯 변화 시 호출
 	FOnPalSlotTranslated		OnPalSlotTranslated;
 
 protected:
+	virtual void			BeginPlay() override;
+
 	void					ToggleDeploy();
 
 	// 소환은 서버가 하므로 선택 슬롯도 서버가 알아야 한다

@@ -7,6 +7,9 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include "Component/Build/DC1BuildCheckComponent.h"
+#include "Component/Build/DC1BuildSnapComponent.h"
+
+#include "Define/DC1Structs.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -24,6 +27,9 @@ ADC1BuildActor::ADC1BuildActor()
 
 	BuildCheckComp = CreateDefaultSubobject<UDC1BuildCheckComponent>("BuildCheckComp");
 	BuildCheckComp->SetupAttachment(BuildMesh);
+
+	BuildSnapComp = CreateDefaultSubobject<UDC1BuildSnapComponent>("BuildSnapComp");
+	BuildSnapComp->SetupAttachment(BuildCheckComp);
 
 	SetRootComponent(BuildMesh);
 }
@@ -58,9 +64,9 @@ const float ADC1BuildActor::GetSnappedRotationStep() const
 	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetSnappedRotationStep() : 0.f;
 }
 
-bool ADC1BuildActor::GetBuildSocketsWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const
+const bool ADC1BuildActor::GetBuildSocketsToWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const
 {
-	return ::IsValid(BuildCheckComp) ? BuildCheckComp->GetBuildSocketsWorld(OutSockets) : false;
+	return ::IsValid(BuildSnapComp) ? BuildSnapComp->GetBuildSocketsToWorld(OutSockets) : false;
 }
 
 void ADC1BuildActor::SetCheckSurface(bool InIsCheckSurface)
@@ -71,7 +77,7 @@ void ADC1BuildActor::SetCheckSurface(bool InIsCheckSurface)
 	}
 }
 
-bool ADC1BuildActor::CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const
+const bool ADC1BuildActor::CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const
 {
 	if (false == ::IsValid(InOther) || false == ::IsValid(BuildCheckComp) || false == ::IsValid(InOther->BuildCheckComp))
 	{
@@ -82,7 +88,32 @@ bool ADC1BuildActor::CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float I
 
 	const float Ratio = BuildCheckComp->ComputeOverlapRatio(OtherCheckComp->GetComponentTransform(), OtherCheckComp->GetScaledBoxExtent());
 
-	return Ratio < InAllowableRatio;
+	return Ratio <= InAllowableRatio;
+}
+
+const bool ADC1BuildActor::GetCheckBoxWorld(FDC1BuildBox& OutBox) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	OutBox.Transform = BuildCheckComp->GetComponentTransform();
+	OutBox.Extent = BuildCheckComp->GetScaledBoxExtent();
+
+	return true;
+}
+
+const bool ADC1BuildActor::IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	const FTransform BoxTransform = BuildCheckComp->GetRelativeTransform() * InActorTransform;
+
+	return BuildCheckComp->IsBlockedAt(BoxTransform, InBlockers);
 }
 
 // Called when the game starts or when spawned
@@ -107,7 +138,16 @@ void ADC1BuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ThisClass, BuildState);
 }
 
-// Called every frame
+void ADC1BuildActor::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (true == ::IsValid(BuildSnapComp))
+	{
+		BuildSnapComp->LayoutSockets();
+	}
+}
+
 
 void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 {
@@ -144,11 +184,32 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 	return CanBuilding;
 }
 
-bool ADC1BuildActor::TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, FVector& OutImpactPoint) const
+bool ADC1BuildActor::TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const
 {
 	if (false == ::IsValid(BuildCheckComp))
 	{
 		return false;
+	}
+
+	const FTransform BoxTransform = BuildCheckComp->GetComponentTransform();
+	const FVector BoxExtent = BuildCheckComp->GetScaledBoxExtent();
+
+	const FBox	LocalBox(BoxExtent * -1.f, BoxExtent);
+	const FVector LocalRayStart = BoxTransform.InverseTransformPositionNoScale(InRayStart);
+	const FVector LocalRayEnd = BoxTransform.InverseTransformPositionNoScale(InRayEnd);
+
+	FVector LocalHit = FVector::ZeroVector;
+	FVector LocalNormal = FVector::ZeroVector;
+
+	float HitTime = 0.f;
+
+	const bool IsEnter = FMath::LineExtentBoxIntersection(LocalBox, LocalRayStart, LocalRayEnd, FVector(InInflate), LocalHit, LocalNormal, HitTime);
+	
+	if(true == IsEnter && HitTime > 0.f)
+	{
+		OutImpactPoint = BoxTransform.TransformPositionNoScale(LocalHit);
+
+		return true;
 	}
 
 	FHitResult Hit;
