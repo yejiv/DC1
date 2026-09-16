@@ -11,6 +11,7 @@ class UCanvasPanel;
 class UCanvasPanelSlot;
 class UWidgetAnimation;
 class UDC1HUDPalIcon;
+class UDC1PalStatusWidget;
 enum class EDC1PalSlotShift : uint8;
 
 /**
@@ -49,11 +50,15 @@ private:
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	TObjectPtr<UWidgetAnimation>			Shift_Right = {};
 
-	UPROPERTY(Transient)
-	TObjectPtr<UWidgetAnimation>			CurrentAnim = {};
-
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UCanvasPanel>					Canvas_PalIcons = {};
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UDC1PalStatusWidget>		PalStatus = {};
+
+private:
+	UPROPERTY(Transient)
+	TObjectPtr<UWidgetAnimation>			CurrentAnim = {};
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UDC1HUDPalIcon>>	PalIcons;

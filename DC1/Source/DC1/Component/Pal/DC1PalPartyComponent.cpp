@@ -35,6 +35,7 @@ void UDC1PalPartyComponent::BeginPlay()
 
 void UDC1PalPartyComponent::OnRep_Pals()
 {
+	OnPalSlotChanged.Broadcast();
 }
 
 bool UDC1PalPartyComponent::HasPalAt(int32 InSlotIndex) const
@@ -84,6 +85,7 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 	}
 
 	Pals[EmptyIndex] = InPal;
+	OnPalSlotChanged.Broadcast();
 }
 
 void UDC1PalPartyComponent::Server_ToggleDeploy_Implementation()
@@ -221,6 +223,7 @@ void UDC1PalPartyComponent::UpdatePal(const FDC1PalInstance& InPal)
 	}
 
 	Pals[Index] = InPal;
+	OnPalSlotChanged.Broadcast();
 }
 
 bool UDC1PalPartyComponent::FindDeployTransform(FTransform& OutTransform) const

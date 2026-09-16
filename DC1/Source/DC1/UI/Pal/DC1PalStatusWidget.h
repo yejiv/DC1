@@ -9,6 +9,9 @@
 #include "DC1PalStatusWidget.generated.h"
 
 class UTexture2D;
+class UTextBlock;
+class UImage;
+class UDC1StatusBar;
 
 /**
  * 선택된 팰 한 마리의 상태 표시. VM을 모르고, 부모가 가공된 값을 넣어준다.
@@ -19,9 +22,26 @@ class DC1_API UDC1PalStatusWidget : public UDC1UserWidget
 {
 	GENERATED_BODY()
 
+private:
+	virtual void NativeConstruct() override;
+
 public:
 	void SetPalInfo(const FDC1PalDisplayInfo& InDisplayInfo);
 
-	// 빈 슬롯이 선택됐을 때
-	void SetEmpty();
+private:
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_Level = {};
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_Name = {};
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UDC1StatusBar>	HPBar = {};
+
+	// 속성 아이콘 두 칸. 지금 PalData는 속성이 하나뿐이라 01은 아직 채울 값이 없다
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UImage>			Image_ElementIcon00 = {};
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UImage>			Image_ElementIcon01 = {};
 };

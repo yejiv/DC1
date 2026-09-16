@@ -2,10 +2,24 @@
 
 #include "UI/Pal/DC1PalStatusWidget.h"
 
-void UDC1PalStatusWidget::SetPalInfo(const FDC1PalDisplayInfo& InDisplayInfo)
+#include "Components/Image.h"
+#include "Components/TextBlock.h"
+#include "UI/Bar/DC1StatusBar.h"
+
+void UDC1PalStatusWidget::NativeConstruct()
 {
+	Super::NativeConstruct();
+
+	Image_ElementIcon01->SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UDC1PalStatusWidget::SetEmpty()
+void UDC1PalStatusWidget::SetPalInfo(const FDC1PalDisplayInfo& InDisplayInfo)
 {
+	Image_ElementIcon00->SetBrushFromTexture(InDisplayInfo.ElementIcon);
+
+	Text_Name->SetText(InDisplayInfo.Name);
+	Text_Level->SetText(FText::AsNumber(InDisplayInfo.Level));
+
+	HPBar->SetPercent(InDisplayInfo.HealthPercent);
 }
+

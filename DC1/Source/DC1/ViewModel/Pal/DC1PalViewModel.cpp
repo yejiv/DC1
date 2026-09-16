@@ -76,7 +76,7 @@ void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 	OutDisplayInfo.Level = PalInfo->Level;
 	OutDisplayInfo.Name = PalInfo->Nickname.IsEmpty() ? PalData->DisplayName : FText::FromString(PalInfo->Nickname);
 	// 추후 PalInfo의 MaxHealth로 교체
-	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / PalData->MaxHealth;
+	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, PalData->MaxHealth);
 }
 
 void UDC1PalViewModel::HandleSelectedSlotChanged()

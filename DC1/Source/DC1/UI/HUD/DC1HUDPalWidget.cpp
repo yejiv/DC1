@@ -9,10 +9,13 @@
 #include "Subsystem/DC1ViewModelSubsystem.h"
 #include "ViewModel/Pal/DC1PalViewModel.h"
 #include "UI/HUD/DC1HUDPalIcon.h"
+#include "UI/Pal/DC1PalStatusWidget.h"
 
 void UDC1HUDPalWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	PalStatus->SetVisibility(ESlateVisibility::Collapsed);
 
 	RegisterPalIcons();
 	BindViewModel();
@@ -31,7 +34,7 @@ void UDC1HUDPalWidget::OnAnimationFinished_Implementation(const UWidgetAnimation
 
 	if (Animation == Shift_Left || Animation == Shift_Right)
 	{
-		ResetIcons();
+		HandleInfoChanged();
 	}
 }
 
@@ -121,5 +124,31 @@ void UDC1HUDPalWidget::HandleSlotShifted(EDC1PalSlotShift InShift)
 
 void UDC1HUDPalWidget::HandleInfoChanged()
 {
+	ResetIcons();
 
+	if (false == PalViewModel.IsValid())
+		return;
+
+	FDC1PalDisplayInfo Info = {};
+	PalViewModel->GetPalInfo(Info);
+
+	// Pal Icon Update
+
+	// TODO
+	// Dead, Deploy 여부 확인 후 
+	// PalIcons[2]->SetDeployed()
+
+	// Pal Status Update
+	if (IsValid(PalStatus))
+	{
+		if(nullptr == Info.ElementIcon)
+		{
+			PalStatus->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			PalStatus->SetVisibility(ESlateVisibility::HitTestInvisible);
+			PalStatus->SetPalInfo(Info);
+		}
+	}
 }
