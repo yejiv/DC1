@@ -135,81 +135,74 @@ bool UDC1BuildCheckComponent::IsBlockedAt(const FTransform& InBoxTransform, cons
 	return false;
 }
 
+void UDC1BuildCheckComponent::GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const
+{
+	OutSupporters.Reset();
+	OutIsOnGround = false;
+
+	ForEachProbe([this, &OutSupporters, &OutIsOnGround](const FHitResult& InHit, bool InIsHit)->bool
+		{
+			if (false == InIsHit)
+			{
+				return true;
+			}
+
+			ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(InHit.GetActor());
+			if (false == ::IsValid(HitBuildActor) )
+			{
+				if (ComputeSurfaceAngle(InHit) <= BuildProbeData.MaxSurfaceAngle)
+				{
+					OutIsOnGround = true;
+				}
+				return true;
+			}
+
+			if (true == HitBuildActor->IsPreview())
+			{
+				return true;
+			}
+
+			if (true == HitBuildActor->GetIsBuildableSurface())
+			{
+				OutSupporters.AddUnique(HitBuildActor);
+			}
+
+			return true;
+		});
+}
+
 bool UDC1BuildCheckComponent::CheckSurface()
 {
-	if (BuildProbeData.ProbeCountX <= 0 || BuildProbeData.ProbeCountY <= 0 || BuildProbeData.MaxTraceDistance <= 0.f)
-	{
-		return false;
-	}
-
-	const UWorld* World = GetWorld();
-	if (false == ::IsValid(World))
-	{
-		return false;
-	}
-
-	const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
-
-	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
-	const FTransform BoxTransform = GetComponentTransform();
-
-	const float LocalZ = IsDown ? (CheckBoxExtent.Z * -1.f ) : CheckBoxExtent.Z;
-
-	const FVector TraceDirection = IsDown ? (GetUpVector() * -1.f) : (GetUpVector());
-
-	const float StartOffset = -2.f;
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(GetOwner());
-
 	bool IsAllHit = true;
 
-	for (int32 x = 0; x < BuildProbeData.ProbeCountX; ++x)
-	{
-		const float LocalX = ComputeProbeAxisOffset(x, BuildProbeData.ProbeCountX, CheckBoxExtent.X);
-
-		for (int32 y = 0; y < BuildProbeData.ProbeCountY; ++y)
+	const bool IsProbed = ForEachProbe([this, &IsAllHit](const FHitResult& InHit, bool InIsHit) -> bool 
 		{
-			const float LocalY = ComputeProbeAxisOffset(y, BuildProbeData.ProbeCountY, CheckBoxExtent.Y);
-			
-			const FVector ProbeWorld = BoxTransform.TransformPosition(FVector(LocalX, LocalY, LocalZ));
-			
-			const FVector Start = (ProbeWorld + (TraceDirection * StartOffset));
-			const FVector End = (Start + (TraceDirection * ( BuildProbeData.MaxTraceDistance + FMath::Abs(StartOffset))));
-
-			FHitResult Hit;
-
-			const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), Params);
-
-			const FVector ExpectedNormal = IsDown ? FVector::UpVector : (FVector::UpVector * -1.f);
-
-			const float NormalDot = FMath::Clamp(FVector::DotProduct(Hit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
+			const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
+			const FVector ExpectedNormal = IsDown ? FVector::UpVector : FVector::DownVector;
+			const float NormalDot = FMath::Clamp(FVector::DotProduct(InHit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
 			const float SurfaceAngle = FMath::RadiansToDegrees(FMath::Acos(NormalDot));
-			
-			bool CanBuildFromProbe = (IsHit && SurfaceAngle <= BuildProbeData.MaxSurfaceAngle);
-			
-			if (const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(Hit.GetActor()))
+
+			bool CanBuildFromProbe = (InIsHit && ComputeSurfaceAngle(InHit) <= BuildProbeData.MaxSurfaceAngle);
+
+			const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(InHit.GetActor());
+			if (true == ::IsValid(HitBuildActor))
 			{
 				CanBuildFromProbe &= HitBuildActor->GetIsBuildableSurface();
 			}
 
-
-			if (true == DrawDebugProbes)
+			if (true == CanBuildFromProbe)
 			{
-				FColor DebugColor = IsHit ? FColor::Green : FColor::Red;
-				DrawDebugLine(World, Start, End, DebugColor);
+				return true;
 			}
 
-			if (false == CanBuildFromProbe)
-			{
-				if (false == DrawDebugProbes)
-				{
-					return false;
-				}
+			IsAllHit = false;
 
-				IsAllHit = false;
-			}
-		}
+			return DrawDebugProbes;
+		});
+
+	if (false == IsProbed)
+	{
+		return false;
 	}
 
 	return IsAllHit;
@@ -278,4 +271,73 @@ FVector UDC1BuildCheckComponent::GetAttachLocalOffset() const
 
 	// 회전 제거
 	return Owner->GetActorQuat().UnrotateVector(WorldOffset - Owner->GetActorLocation());
+}
+
+bool UDC1BuildCheckComponent::ForEachProbe(TFunctionRef<bool(const FHitResult& InHit, bool InIsHit)> InOnProbe) const
+{
+	if (BuildProbeData.ProbeCountX <= 0 || BuildProbeData.ProbeCountY <= 0 || BuildProbeData.MaxTraceDistance <= 0.f)
+	{
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return false;
+	}
+
+	const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
+
+	const FVector CheckBoxExtent = GetUnscaledBoxExtent();
+	const FTransform BoxTransform = GetComponentTransform();
+
+	const float LocalZ = IsDown ? (CheckBoxExtent.Z * -1.f) : CheckBoxExtent.Z;
+
+	const FVector TraceDirection = IsDown ? (GetUpVector() * -1.f) : (GetUpVector());
+
+	const float StartOffset = -2.f;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+
+	for (int32 x = 0; x < BuildProbeData.ProbeCountX; ++x)
+	{
+		const float LocalX = ComputeProbeAxisOffset(x, BuildProbeData.ProbeCountX, CheckBoxExtent.X);
+
+		for (int32 y = 0; y < BuildProbeData.ProbeCountY; ++y)
+		{
+			const float LocalY = ComputeProbeAxisOffset(y, BuildProbeData.ProbeCountY, CheckBoxExtent.Y);
+
+			const FVector ProbeWorld = BoxTransform.TransformPosition(FVector(LocalX, LocalY, LocalZ));
+
+			const FVector Start = (ProbeWorld + (TraceDirection * StartOffset));
+			const FVector End = (Start + (TraceDirection * (BuildProbeData.MaxTraceDistance + FMath::Abs(StartOffset))));
+
+			FHitResult Hit;
+
+			const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), Params);
+
+			if (true == DrawDebugProbes)
+			{
+				FColor DebugColor = IsHit ? FColor::Green : FColor::Red;
+				DrawDebugLine(World, Start, End, DebugColor);
+			}
+
+			if (false == InOnProbe(Hit, IsHit))
+			{
+				return true;
+			}
+		}
+	}
+
+	return true;
+}
+
+float UDC1BuildCheckComponent::ComputeSurfaceAngle(const FHitResult& InHit) const
+{
+	const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
+	const FVector ExpectedNormal = IsDown ? FVector::UpVector : FVector::DownVector;
+	const float NormalDot = FMath::Clamp(FVector::DotProduct(InHit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
+	
+	return FMath::RadiansToDegrees(FMath::Acos(NormalDot));
 }

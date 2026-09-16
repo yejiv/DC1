@@ -766,7 +766,7 @@ bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& 
 
 			for (const FDC1BuildSnapSocket& PreviewSocket : InPreviewSockets)
 			{
-				if (false == TargetSocket.AcceptTypes.HasTag(PreviewSocket.SnapType))
+				if (false == TargetSocket.AcceptTypes.HasTagExact(PreviewSocket.SnapType))
 				{
 					continue;
 				}

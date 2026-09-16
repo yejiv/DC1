@@ -9,6 +9,8 @@
 
 struct FDC1BuildBox;
 
+class ADC1BuildActor;
+
 USTRUCT(BlueprintType)
 struct FDC1BuildProbeData
 {
@@ -64,13 +66,21 @@ public:
 
 	float							ComputeOverlapRatio(const FTransform& InOtherTransform, const FVector& InOtherExtent) const;
 	bool							IsBlockedAt(const FTransform& InBoxTransform, const TArray<FDC1BuildBox>& InBlockers) const;
+
+	// 하단 Probe가 맞힌 지지 제공 건축물 수집 ( 해당 건축물 위에 건설 가능한지 && 프리뷰 상태가 아님 )
+	// 건축물이 아닌 지면을 맞힌 Probe가 하나라도 존재하면 OutIsOnGround = true
+	void							GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const;
+
 private:
 	bool							CheckSurface();
 	bool							CheckOverlap();
 
 	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
-	FVector							GetAttachLocalOffset() const;
+	FVector							GetAttachLocalOffset() const;				
 
+	// 프로브 격자 루프 / 1개의 결과를 InOnProbe로 넘김
+	bool							ForEachProbe(TFunctionRef<bool(const FHitResult& InHit, bool InIsHit)> InOnProbe) const;
+	float							ComputeSurfaceAngle(const FHitResult& InHit) const;
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	FDC1BuildProbeData				BuildProbeData;

@@ -10,6 +10,7 @@
 #include "Component/Build/DC1BuildSnapComponent.h"
 
 #include "Define/DC1Structs.h"
+#include "Define/DC1BuildSupportHelper.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -116,6 +117,18 @@ const bool ADC1BuildActor::IsBlockedAt(const FTransform& InActorTransform, const
 	return BuildCheckComp->IsBlockedAt(BoxTransform, InBlockers);
 }
 
+const bool ADC1BuildActor::GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	BuildCheckComp->GatherSurfaceSupporters(OutSupporters, OutIsOnGround);
+
+	return true;
+}
+
 // Called when the game starts or when spawned
 void ADC1BuildActor::BeginPlay()
 {
@@ -154,6 +167,17 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 	BuildActorData = InBuildActorData;
 
 	BuildState = EDC1BuildState::Completed;
+}
+
+void ADC1BuildActor::RequestBuildDestroy()
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	TSet<ADC1BuildActor*> Doomed;
+	DC1BuildSupportHelper::CollectCascade(this, Doomed);
 }
 
 void ADC1BuildActor::BuildDestroy()

@@ -60,6 +60,8 @@ public:
 	const FDC1BuildActorData&		GetBuildActorData() const { return BuildActorData; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
+	const EDC1BuildSupportRule		GetSupportRule() const { return SupportRule; }
+	const int32						GetRoofSupportSpan() const { return RoofSupportSpan; }
 	
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
 
@@ -77,6 +79,8 @@ public:
 	const bool						CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const;
 	const bool						GetCheckBoxWorld(FDC1BuildBox& OutBox) const;
 	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
+	
+	const bool						GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const;
 
 protected:
 	virtual void					BeginPlay() override;
@@ -85,8 +89,13 @@ protected:
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
-	virtual void					BuildDestroy();
-	
+
+	// Destory 서버 진입점
+	void							RequestBuildDestroy();
+
+	// 조준 시 해체 모드 표시 ( 로컬 )
+	void							SetDismantleHighlight(bool InIsHighlighted);
+
 	bool							UpdatePreview(bool InIsInRange);
 	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const;
 
@@ -101,6 +110,7 @@ protected:
 	void							SetMaterialTranslucentColor(const FLinearColor& InColor);
 
 	virtual void					ApplyState();
+	virtual void					BuildDestroy();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
@@ -130,11 +140,22 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };
 
+	// 해체 모드 조준 시 사용할 Material
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
+	TObjectPtr<UMaterialInterface>			DismantleOverlayMaterial = { nullptr };
+
+
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f) };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							PreviewInvalidColor = { FLinearColor::Red };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Support")
+	EDC1BuildSupportRule					SupportRule = { EDC1BuildSupportRule::Surface };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Support", meta = (ClampMin = "1", EditCondition = "SupportRule == EDC1BuildSupportRule::RoofSpan"))
+	int32									RoofSupportSpan = { 2 };
 
 
 private:
