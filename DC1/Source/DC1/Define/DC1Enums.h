@@ -43,6 +43,15 @@ enum class EDC1TechPointState : uint8
 	NoPoint = 2,
 };
 
+// PAL SLOT SHIFT
+UENUM()
+enum class EDC1PalSlotShift : uint8
+{
+	None = 0,		// 방향 없음. 애니 없이 스냅
+	Prev = 1,		// 선택이 이전 인덱스로 (1번 키). 아이콘은 오른쪽으로 밀린다
+	Next = 2,		// 선택이 다음 인덱스로 (3번 키). 아이콘은 왼쪽으로 밀린다
+};
+
 #pragma endregion
 
 #pragma region BUILD
@@ -97,8 +106,7 @@ enum class EDC1ItemRarity : uint8
 
 };
 
-// 팰 속성. 종마다 하나씩 가지며 DA_Pal_* 에서 지정한다.
-// 상성표를 만들 때 인덱스로 쓰므로 순서를 바꾸지 않는다
+// 팰 속성
 UENUM(BlueprintType)
 enum class EDC1PalElement : uint8
 {
@@ -111,6 +119,17 @@ enum class EDC1PalElement : uint8
 	Ice = 6 UMETA(DisplayName = "Ice"),
 	Dragon = 7 UMETA(DisplayName = "Dragon"),
 	Dark = 8 UMETA(DisplayName = "Dark"),
+
+	Max			UMETA(Hidden),
+};
+
+// 팰 성별.
+UENUM(BlueprintType)
+enum class EDC1PalGender : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Male = 1 UMETA(DisplayName = "Male"),
+	Female = 2 UMETA(DisplayName = "Female"),
 
 	Max			UMETA(Hidden),
 };

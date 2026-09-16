@@ -34,6 +34,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Status Bar")
 	void SnapToPercent(float InPercent);
 
+	// Material 교체
+	UFUNCTION(BlueprintCallable, Category = "Status Bar")
+	void SetBarMaterial(UMaterialInterface* InMaterial);
+
 protected:
 	// 디자이너 프리뷰와 런타임 초기값을 함께 반영한다
 	virtual void NativePreConstruct() override;

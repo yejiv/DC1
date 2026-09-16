@@ -27,6 +27,9 @@ namespace DC1AssetTags
 #pragma region UI
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_UI_WidgetData);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_UI_LoadingData);
+
+	// UDC1UIResourceData. 하드 참조 DA라 Preload 라벨에도 넣어야 한다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_UI_Resource_Common);
 #pragma endregion
 
 #pragma region DataTable

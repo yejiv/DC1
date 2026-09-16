@@ -28,3 +28,20 @@ TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindElementIcon(EDC1PalElement I
 
 	return *Found;
 }
+
+TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindGenderIcon(EDC1PalGender InGender) const
+{
+	if (EDC1PalGender::None == InGender)
+	{
+		return nullptr;
+	}
+
+	const TSoftObjectPtr<UTexture2D>* Found = GenderIcons.Find(InGender);
+	if (nullptr == Found)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't Find GenderIcon from Gender [%d]. Check DA_PalRegistry."), static_cast<int32>(InGender));
+		return nullptr;
+	}
+
+	return *Found;
+}

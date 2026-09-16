@@ -188,6 +188,11 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitLevel(FinalLevel);
 		PalInstance.Level = FinalLevel;
 	}
+
+	if (EDC1PalGender::None == PalInstance.Gender)
+	{
+		PalInstance.Gender = FMath::RandBool() ? EDC1PalGender::Male : EDC1PalGender::Female;
+	}
 }
 
 void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
@@ -217,6 +222,8 @@ void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Da
 	{
 		return;
 	}
+
+	UpdateHealthWidgetVisibility();
 
 	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
 }
@@ -493,6 +500,15 @@ void ADC1PalCharacter::OnTeamChanged()
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
 		PalController->HandleTeamChanged();
+	}
+
+	if (IsValid(HealthWidgetComponent))
+	{
+		if (UDC1PalHealthWidget* HealthWidget = Cast<UDC1PalHealthWidget>(HealthWidgetComponent->GetUserWidgetObject()))
+		{
+			// 색 정하기
+			HealthWidget->RefreshTeamColor();
+		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s team changed to %s."), *GetName(), *UEnum::GetValueAsString(Team));

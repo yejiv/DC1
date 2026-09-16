@@ -14,6 +14,7 @@
 
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Materials/MaterialInterface.h"
 
 void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 {
@@ -30,7 +31,28 @@ void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 
 	ApplyPalInfo();
 
+	RefreshTeamColor();
+
 	RefreshBar();
+}
+
+void UDC1PalHealthWidget::RefreshTeamColor()
+{
+	if (false == ::IsValid(HealthBar) || false == OwnerPal.IsValid())
+	{
+		return;
+	}
+
+	const bool IsPartner = (EDC1Team::Player == OwnerPal->GetTeam());
+
+	const TSoftObjectPtr<UMaterialInterface>& BarMaterial = IsPartner ? PartnerBarMaterial : WildBarMaterial;
+
+	if (true == BarMaterial.IsNull())
+	{
+		return;
+	}
+
+	HealthBar->SetBarMaterial(BarMaterial.LoadSynchronous());
 }
 
 void UDC1PalHealthWidget::ApplyPalInfo()
@@ -56,24 +78,33 @@ void UDC1PalHealthWidget::ApplyPalInfo()
 		Counter_Level->SetValue(OwnerPal->GetLevel());
 	}
 
-	if (nullptr == Image_Element)
-	{
-		return;
-	}
-
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 	if (false == ::IsValid(Registry))
 	{
 		return;
 	}
 
-	UTexture2D* ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous();
-	if (nullptr == ElementIcon)
+	if (nullptr != Image_Element)
 	{
-		return;
+		if (UTexture2D* ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous())
+		{
+			Image_Element->SetBrushFromTexture(ElementIcon);
+		}
 	}
 
-	Image_Element->SetBrushFromTexture(ElementIcon);
+	if (nullptr != Image_Gender)
+	{
+		UTexture2D* GenderIcon = Registry->FindGenderIcon(OwnerPal->GetGender()).LoadSynchronous();
+		if (nullptr == GenderIcon)
+		{
+			Image_Gender->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else
+		{
+			Image_Gender->SetBrushFromTexture(GenderIcon);
+			Image_Gender->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 
 void UDC1PalHealthWidget::NativeDestruct()
@@ -95,7 +126,15 @@ void UDC1PalHealthWidget::UnbindPal()
 
 void UDC1PalHealthWidget::HandleHealthChanged(float Current, float Max)
 {
+	const bool IsDamaged = ::IsValid(HealthBar) && OwnerPal.IsValid()
+		&& (OwnerPal->GetHealthRatio() < HealthBar->GetPercent());
+
 	RefreshBar();
+
+	if (true == IsDamaged && nullptr != Anim_Hit)
+	{
+		PlayAnimation(Anim_Hit);
+	}
 }
 
 void UDC1PalHealthWidget::RefreshBar()
@@ -105,7 +144,5 @@ void UDC1PalHealthWidget::RefreshBar()
 		return;
 	}
 
-	// 퍼센트 계산과 0 나눗셈 방어는 소스가 한다. 위젯은 표시만.
-	// 보이고 숨기는 건 팰이 WidgetComponent 를 껐다 켜는 것으로 처리한다
 	HealthBar->SetPercent(OwnerPal->GetHealthRatio());
 }

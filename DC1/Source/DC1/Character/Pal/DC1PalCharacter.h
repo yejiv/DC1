@@ -53,6 +53,8 @@ public:
 	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
 	int32								GetLevel() const;
 
+	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
+
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;

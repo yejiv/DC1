@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Define/DC1Enums.h"
 #include "DC1PalTypes.generated.h"
 
 /**
@@ -27,6 +28,9 @@ struct FDC1PalInstance
 	// 비어 있으면 UI가 종 이름을 대신 표시
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	FString					Nickname;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	EDC1PalGender			Gender = { EDC1PalGender::None };
 
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	int32					Level = { 1 };
