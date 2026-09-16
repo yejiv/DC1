@@ -38,15 +38,15 @@ struct FDC1BuildSnapSocket
 	TWeakObjectPtr<const UDC1BuildSocketComponent> SourceSocket;
 
 	// 기준점이 이 소켓 바깥으로 얼마나 벗어났는가
-	void EvaluateFrom(const FVector& InRefPoint, float& OutScore, float& OutDistSquared, float& OutFacing) const
+	void EvaluateFrom(const FVector& InRefPoint, const FVector& InFacingPoint, float& OutScore, float& OutDistSquared, float& OutFacing) const
 	{
 		const FVector SocketLocaion = SocketTransform.GetLocation();
 		const FVector AttachAxis = SocketTransform.GetUnitAxis(EAxis::X);
-		const FVector TangentAxis = SocketTransform.GetUnitAxis(EAxis::Z);
+		const FVector FacingAxis = SocketTransform.GetUnitAxis(EAxis::Z);
 
 		OutScore = FVector::DotProduct(InRefPoint - SocketLocaion, AttachAxis);
 		OutDistSquared = FVector::DistSquared(InRefPoint, SocketLocaion);
-		OutFacing = FVector::DotProduct(InRefPoint - SocketLocaion, FVector::CrossProduct(AttachAxis, TangentAxis));
+		OutFacing = FVector::DotProduct(InFacingPoint - SocketLocaion, FacingAxis);
 	}
 
 	static bool IsBetter(float InScore, float InDistSquared, float InFacing, float InBestScore, float InBestDistSquared, float InBestFacing)
@@ -68,7 +68,7 @@ struct FDC1BuildSnapSocket
 			return InDistSquared < InBestDistSquared;
 		}
 
-		// 3순위 - 겹친 소켓 중 어느 면을 바라보는가
+		// 3순위 - 거리가 같은 소켓 중 어느 면(소켓)을 가장 많이 바라보는가
 		return InFacing > InBestFacing;
 	}
 };

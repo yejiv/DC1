@@ -18,6 +18,8 @@
 
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
 
@@ -95,6 +97,40 @@ void ADC1PalCharacter::BeginPlay()
 	{
 		HealthWidget->InitForPal(this);
 	}
+	else
+	{
+		// 위젯이 없으면(데디케이티드 서버 등) 가시성 검사도 의미가 없다
+		return;
+	}
+
+	HealthWidgetComponent->SetVisibility(false);
+
+	GetWorldTimerManager().SetTimer(HealthWidgetVisibilityTimer, this,
+		&ThisClass::UpdateHealthWidgetVisibility, HealthWidgetCheckInterval, true);
+}
+
+void ADC1PalCharacter::UpdateHealthWidgetVisibility()
+{
+	if (false == IsValid(HealthWidgetComponent))
+	{
+		return;
+	}
+
+	bool ShouldShow = (GetHealthRatio() < 1.f);
+
+	if (false == ShouldShow)
+	{
+		if (const APawn* LocalPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+		{
+			const float DistanceSq = FVector::DistSquared(GetActorLocation(), LocalPawn->GetActorLocation());
+			ShouldShow = (DistanceSq <= (HealthWidgetVisibleDistance * HealthWidgetVisibleDistance));
+		}
+	}
+
+	if (HealthWidgetComponent->IsVisible() != ShouldShow)
+	{
+		HealthWidgetComponent->SetVisibility(ShouldShow);
+	}
 }
 
 void ADC1PalCharacter::ApplyPalData()
@@ -144,6 +180,13 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);
 		PalAttributeSet->InitHealth(PalData->MaxHealth);
 		PalAttributeSet->InitAttackPower(PalData->AttackPower);
+
+		const int32 FinalLevel = (true == bOverrideLevel)
+			? LevelOverride
+			: FMath::RandRange(PalData->MinLevel, FMath::Max(PalData->MinLevel, PalData->MaxLevel));
+
+		PalAttributeSet->InitLevel(FinalLevel);
+		PalInstance.Level = FinalLevel;
 	}
 }
 
@@ -197,6 +240,16 @@ void ADC1PalCharacter::StopAndUnregister()
 	}
 }
 
+int32 ADC1PalCharacter::GetLevel() const
+{
+	if (false == IsValid(PalAttributeSet))
+	{
+		return 1;
+	}
+
+	return FMath::Max(1, FMath::RoundToInt(PalAttributeSet->GetLevel()));
+}
+
 float ADC1PalCharacter::GetHealthRatio() const
 {
 	if (false == IsValid(PalAttributeSet))
@@ -220,7 +273,9 @@ float ADC1PalCharacter::GetCaptureRate() const
 
 FDC1PalInstance ADC1PalCharacter::Fold()
 {
-	FDC1PalInstance Instance;
+	// 새로 만들지 않고 들고 있던 것에서 시작한다.
+	// 그래야 닉네임·경험치·패시브처럼 액터가 건드리지 않는 값이 보존된다
+	FDC1PalInstance Instance = PalInstance;
 
 	Instance.SpeciesTag = SpeciesTag;
 
@@ -230,6 +285,7 @@ FDC1PalInstance ADC1PalCharacter::Fold()
 	if (IsValid(PalAttributeSet))
 	{
 		Instance.CurrentHealth = PalAttributeSet->GetHealth();
+		Instance.Level = GetLevel();
 	}
 
 	StopAndUnregister();
@@ -324,6 +380,12 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	Pal->SpeciesTag = InInstance.SpeciesTag;
 	Pal->InstanceID = InInstance.PalID;
 	Pal->Team = EDC1Team::Player;
+
+	// 원본을 통째로 보관
+	Pal->PalInstance = InInstance;
+	Pal->bOverrideLevel = true;
+	Pal->LevelOverride = FMath::Max(1, InInstance.Level);
+
 	Pal->FinishSpawning(InTransform);
 
 	if (IsValid(Pal->PalAttributeSet))

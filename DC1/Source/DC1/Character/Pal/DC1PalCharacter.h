@@ -50,6 +50,9 @@ public:
 	void								SetOrientToMovement(bool Enable);
 	virtual void						GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 
+	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
+	int32								GetLevel() const;
+
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;
@@ -87,8 +90,9 @@ protected:
 
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
-	// HP바 갱신용. ADC1Character::HandleHealthChanged 는 사망만 보므로 따로 구독한다
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
+
+	void								UpdateHealthWidgetVisibility(); // 위젯을 껐다 켠다. 
 
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void						OnDeath() override;
@@ -97,9 +101,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
 
-	// 머리 위 HP바. 데디케이티드 서버에서는 위젯이 만들어지지 않는다
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
+	float HealthWidgetVisibleDistance = { 2000.f };
+
+	// 가시성 검사 주기. 매 프레임 볼 필요가 없어 타이머로 돌린다
+	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.05"))
+	float HealthWidgetCheckInterval = { 0.2f };
+
+	FTimerHandle HealthWidgetVisibilityTimer;
 
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };
@@ -112,6 +124,16 @@ protected:
 
 	UPROPERTY(Transient)
 	FGuid InstanceID;
+
+	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
+	UPROPERTY(Transient)
+	FDC1PalInstance PalInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
+	bool bOverrideLevel = { false };
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level", meta = (EditCondition = "bOverrideLevel", ClampMin = "1"))
+	int32 LevelOverride = { 1 };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Team, Category = "Pal|Team")
 	EDC1Team Team = { EDC1Team::Wild };
