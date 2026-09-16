@@ -56,24 +56,35 @@ void UDC1PalHealthWidget::ApplyPalInfo()
 		Counter_Level->SetValue(OwnerPal->GetLevel());
 	}
 
-	if (nullptr == Image_Element)
-	{
-		return;
-	}
-
+	// 속성·성별 아이콘이 같은 Registry 를 거치므로 한 번만 찾는다
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 	if (false == ::IsValid(Registry))
 	{
 		return;
 	}
 
-	UTexture2D* ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous();
-	if (nullptr == ElementIcon)
+	if (nullptr != Image_Element)
 	{
-		return;
+		if (UTexture2D* ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous())
+		{
+			Image_Element->SetBrushFromTexture(ElementIcon);
+		}
 	}
 
-	Image_Element->SetBrushFromTexture(ElementIcon);
+	if (nullptr != Image_Gender)
+	{
+		// 성별이 None 이거나 아이콘이 등록 안 됐으면 빈 칸을 남기지 않는다
+		UTexture2D* GenderIcon = Registry->FindGenderIcon(OwnerPal->GetGender()).LoadSynchronous();
+		if (nullptr == GenderIcon)
+		{
+			Image_Gender->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else
+		{
+			Image_Gender->SetBrushFromTexture(GenderIcon);
+			Image_Gender->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 
 void UDC1PalHealthWidget::NativeDestruct()

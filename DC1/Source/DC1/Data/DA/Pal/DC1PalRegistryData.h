@@ -20,10 +20,15 @@ public:
 
 	TSoftObjectPtr<UTexture2D>	FindElementIcon(EDC1PalElement InElement) const;
 
+	TSoftObjectPtr<UTexture2D>	FindGenderIcon(EDC1PalGender InGender) const;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
 	TMap<FGameplayTag, TSoftObjectPtr<UDC1PalData>>	PalDataEntries;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|UI")
 	TMap<EDC1PalElement, TSoftObjectPtr<UTexture2D>>	ElementIcons;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|UI")
+	TMap<EDC1PalGender, TSoftObjectPtr<UTexture2D>>	GenderIcons;
 };

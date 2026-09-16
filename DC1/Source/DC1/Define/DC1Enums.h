@@ -97,8 +97,7 @@ enum class EDC1ItemRarity : uint8
 
 };
 
-// 팰 속성. 종마다 하나씩 가지며 DA_Pal_* 에서 지정한다.
-// 상성표를 만들 때 인덱스로 쓰므로 순서를 바꾸지 않는다
+// 팰 속성
 UENUM(BlueprintType)
 enum class EDC1PalElement : uint8
 {
@@ -111,6 +110,17 @@ enum class EDC1PalElement : uint8
 	Ice = 6 UMETA(DisplayName = "Ice"),
 	Dragon = 7 UMETA(DisplayName = "Dragon"),
 	Dark = 8 UMETA(DisplayName = "Dark"),
+
+	Max			UMETA(Hidden),
+};
+
+// 팰 성별.
+UENUM(BlueprintType)
+enum class EDC1PalGender : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Male = 1 UMETA(DisplayName = "Male"),
+	Female = 2 UMETA(DisplayName = "Female"),
 
 	Max			UMETA(Hidden),
 };

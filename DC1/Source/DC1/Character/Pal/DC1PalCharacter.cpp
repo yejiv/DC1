@@ -188,6 +188,11 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitLevel(FinalLevel);
 		PalInstance.Level = FinalLevel;
 	}
+
+	if (EDC1PalGender::None == PalInstance.Gender)
+	{
+		PalInstance.Gender = FMath::RandBool() ? EDC1PalGender::Male : EDC1PalGender::Female;
+	}
 }
 
 void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)

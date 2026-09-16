@@ -47,6 +47,10 @@ private:
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
 	TObjectPtr<UImage>			Image_Element = { nullptr };
 
+	// 성별 아이콘
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UImage>			Image_Gender = { nullptr };
+
 	// 레벨
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
 	TObjectPtr<UDC1DigitCounter>	Counter_Level = { nullptr };
