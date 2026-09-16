@@ -14,6 +14,11 @@ struct FInputActionValue;
 
 class ADC1BuildActor;
 
+struct FDC1BuildPendingBox
+{
+	FDC1BuildBox Box;
+	float ExpireTime = { 0.f };
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
@@ -91,7 +96,7 @@ private:
 
 	// 최대 배치 거리 ( Snap )
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
-	float		MaxPlaceDistance = { 1500.f };
+	float		MaxPlaceDistance = { 1000.f };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		RangeUpHeight = { 300.f };
@@ -103,11 +108,14 @@ private:
 	float		RotationStep = { 15.f };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
-	float		SnapSearchRadius = { 600.f };
+	float		SnapSearchRadius = { 300.f };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapAimInflate = { 30.f };
 	
+	UPROPERTY(EditAnywhere, Category = "Build|Snap")
+	float		PendingBoxLifeTime = { 1.f };
+
 private:
 	UPROPERTY()
 	TObjectPtr<ADC1BuildActor>				PreviewActor = { nullptr };
@@ -130,4 +138,11 @@ private:
 	float									SnapContactMargin = { 1.f };
 
 	TWeakObjectPtr<const ADC1BuildActor>	SnapTarget;
+
+	FDC1BuildSnapPair						CurrentSnapPair;
+	TArray<FDC1BuildPendingBox>				PendingBoxes;
+
+	bool									IsContinuing = { false };
+	FVector	ContinueAimPoint = { FVector::ZeroVector };
+	FVector ContinueViewDirection = { FVector::ForwardVector };
 };

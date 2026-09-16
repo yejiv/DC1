@@ -317,6 +317,8 @@ void ADC1BuildActor::CreateTranslucentMIDs()
 		}
 
 		MID->SetScalarParameterValue(DC1BuildMaterialParams::UseTexture, UseTexture);
+		MID->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, 0.f);
+		MID->SetScalarParameterValue(DC1BuildMaterialParams::FlashAmount, 0.f);
 
 		BuildMIDs.Add(MID);
 	}
