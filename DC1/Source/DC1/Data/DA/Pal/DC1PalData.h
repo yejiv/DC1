@@ -44,6 +44,9 @@ public:
 	// 속성. 상성 계산과 UI 색/아이콘 구분에 쓴다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
 	EDC1PalElement					Element = { EDC1PalElement::Neutral };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Species")
+	EDC1PalElement					Element2 = { EDC1PalElement::Neutral };
 #pragma endregion
 
 #pragma region UI
