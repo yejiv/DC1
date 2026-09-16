@@ -43,6 +43,15 @@ enum class EDC1TechPointState : uint8
 	NoPoint = 2,
 };
 
+// PAL SLOT SHIFT
+UENUM()
+enum class EDC1PalSlotShift : uint8
+{
+	None = 0,		// 방향 없음. 애니 없이 스냅
+	Prev = 1,		// 선택이 이전 인덱스로 (1번 키). 아이콘은 오른쪽으로 밀린다
+	Next = 2,		// 선택이 다음 인덱스로 (3번 키). 아이콘은 왼쪽으로 밀린다
+};
+
 #pragma endregion
 
 #pragma region BUILD
