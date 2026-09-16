@@ -6,8 +6,10 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1PalHealthWidget.generated.h"
 
+class UImage;
 class UTextBlock;
 class UDC1StatusBar;
+class UDC1DigitCounter;
 class ADC1PalCharacter;
 
 /**
@@ -37,9 +39,17 @@ private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1StatusBar>	HealthBar = { nullptr };
 
-	// 이름을 안 쓰는 WBP도 있을 수 있어 Optional
+	// 이름
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>		Text_Name = { nullptr };
+
+	// 속성 아이콘
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UImage>			Image_Element = { nullptr };
+
+	// 레벨
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UDC1DigitCounter>	Counter_Level = { nullptr };
 
 private:
 	TWeakObjectPtr<ADC1PalCharacter> OwnerPal = { nullptr };

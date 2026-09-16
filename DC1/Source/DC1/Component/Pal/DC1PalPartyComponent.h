@@ -45,6 +45,11 @@ public:
 protected:
 	virtual void			BeginPlay() override;
 
+	// Pals 복제 수신 시점. 클라에서만 불린다.
+	// UI 알림은 여기서 시작하면 된다
+	UFUNCTION()
+	void					OnRep_Pals();
+
 	void					ToggleDeploy();
 
 	// 소환은 서버가 하므로 선택 슬롯도 서버가 알아야 한다
@@ -68,7 +73,7 @@ protected:
 	bool					FindDeployTransform(FTransform& OutTransform) const;
 
 protected:
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_Pals)
 	TArray<FDC1PalInstance>	Pals;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "1"))

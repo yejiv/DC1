@@ -52,7 +52,6 @@ public:
 	TSoftObjectPtr<UTexture2D>		Icon;
 
 	// 화면에 띄울 종 이름. 비면 Nickname 폴백도 없으니 종마다 채운다.
-	// 현지화를 위해 FString 이 아니라 FText 를 쓴다 (FDC1ItemRow 와 동일)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	FText							DisplayName;
 #pragma endregion
@@ -77,6 +76,14 @@ public:
 #pragma region Stats
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
 	float							MaxHealth = { 100.f };
+
+	// 야생으로 나올 때의 레벨 범위. 같은 종도 개체마다 다르게 만든다.
+	// 배치한 개체가 bOverrideLevel 을 켜면 그 값이 우선한다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ClampMin = "1"))
+	int32							MinLevel = { 1 };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ClampMin = "1"))
+	int32							MaxLevel = { 1 };
 #pragma endregion
 
 #pragma region Ability

@@ -33,6 +33,10 @@ void UDC1PalPartyComponent::BeginPlay()
 	}
 }
 
+void UDC1PalPartyComponent::OnRep_Pals()
+{
+}
+
 bool UDC1PalPartyComponent::HasPalAt(int32 InSlotIndex) const
 {
 	return Pals.IsValidIndex(InSlotIndex) && Pals[InSlotIndex].IsValidPal();
