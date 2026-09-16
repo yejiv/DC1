@@ -223,6 +223,8 @@ void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Da
 		return;
 	}
 
+	UpdateHealthWidgetVisibility();
+
 	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
 }
 
@@ -498,6 +500,15 @@ void ADC1PalCharacter::OnTeamChanged()
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
 		PalController->HandleTeamChanged();
+	}
+
+	if (IsValid(HealthWidgetComponent))
+	{
+		if (UDC1PalHealthWidget* HealthWidget = Cast<UDC1PalHealthWidget>(HealthWidgetComponent->GetUserWidgetObject()))
+		{
+			// 색 정하기
+			HealthWidget->RefreshTeamColor();
+		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s team changed to %s."), *GetName(), *UEnum::GetValueAsString(Team));

@@ -5,6 +5,7 @@
 
 #include "Components/Image.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 
 void UDC1StatusBar::SetPercent(float InPercent)
 {
@@ -71,6 +72,17 @@ void UDC1StatusBar::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		DelayedPercent = Percent;
 	}
 
+	ApplyParameters();
+}
+
+void UDC1StatusBar::SetBarMaterial(UMaterialInterface* InMaterial)
+{
+	if (false == ::IsValid(BarImage) || false == ::IsValid(InMaterial))
+	{
+		return;
+	}
+
+	BarImage->SetBrushFromMaterial(InMaterial);
 	ApplyParameters();
 }
 
