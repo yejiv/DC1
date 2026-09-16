@@ -4,6 +4,11 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 
+#include "Data/DA/Pal/DC1PalData.h"
+#include "Data/DA/Pal/DC1PalRegistryData.h"
+#include "System/DC1AssetManager.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
+
 #include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
 #include "NavigationSystem.h"
@@ -21,6 +26,7 @@ void UDC1PalPartyComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UDC1PalPartyComponent, Pals);
+	DOREPLIFETIME(UDC1PalPartyComponent, DeployedPal);
 }
 
 void UDC1PalPartyComponent::BeginPlay()
@@ -38,24 +44,31 @@ void UDC1PalPartyComponent::OnRep_Pals()
 	OnPalSlotChanged.Broadcast();
 }
 
+void UDC1PalPartyComponent::OnRep_DeployedPal()
+{
+	OnPalSlotChanged.Broadcast();
+}
+
 bool UDC1PalPartyComponent::HasPalAt(int32 InSlotIndex) const
 {
 	return Pals.IsValidIndex(InSlotIndex) && Pals[InSlotIndex].IsValidPal();
 }
 
-int32 UDC1PalPartyComponent::GetPalCount() const
+bool UDC1PalPartyComponent::IsPalAlive(int32 InSlotIndex) const
 {
-	int32 Count = 0;
+	return Pals.IsValidIndex(InSlotIndex) && Pals[InSlotIndex].IsDeployable();
+}
 
-	for (const FDC1PalInstance& Pal : Pals)
+bool UDC1PalPartyComponent::IsDeployed(int32 InSlotIndex) const
+{
+	if (false == ::IsValid(DeployedPal) || false == Pals.IsValidIndex(InSlotIndex))
 	{
-		if (true == Pal.IsValidPal())
-		{
-			++Count;
-		}
+		return false;
 	}
 
-	return Count;
+	// 슬롯을 따로 들고 있지 않는다. 액터의 InstanceID 로 목록에서 찾는다.
+	// 값이 둘이면 복제 도착 순서에 따라 어긋날 수 있다
+	return (Pals[InSlotIndex].PalID == DeployedPal->GetInstanceID());
 }
 
 void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
@@ -101,7 +114,7 @@ void UDC1PalPartyComponent::ToggleDeploy()
 	}
 
 	// 꺼내둔 게 있으면 접는다
-	if (DeployedPal.IsValid())
+	if (::IsValid(DeployedPal))
 	{
 		RetrieveDeployed();
 		return;
@@ -135,6 +148,8 @@ void UDC1PalPartyComponent::ToggleDeploy()
 
 	Spawned->OnPalDied.AddUObject(this, &ThisClass::HandleDeployedPalDied);
 	DeployedPal = Spawned;
+
+	OnPalSlotChanged.Broadcast();
 }
 
 void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
@@ -163,6 +178,28 @@ const FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index) const
 	return &Pals[Index];
 }
 
+float UDC1PalPartyComponent::GetPalMaxHealth(int32 InSlotIndex) const
+{
+	if (false == HasPalAt(InSlotIndex))
+	{
+		return 0.f;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		return 0.f;
+	}
+
+	const UDC1PalData* PalData = Registry->FindPalDataByTag(Pals[InSlotIndex].SpeciesTag).LoadSynchronous();
+	if (false == ::IsValid(PalData))
+	{
+		return 0.f;
+	}
+
+	return PalData->MaxHealth;
+}
+
 void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
 {
 	SelectedSlot = FMath::Clamp(InSlotIndex, 0, Capacity - 1);
@@ -188,7 +225,7 @@ void UDC1PalPartyComponent::RetrieveDeployed()
 {
 	GetWorld()->GetTimerManager().ClearTimer(DeathRetrieveTimer);
 
-	ADC1PalCharacter* Deployed = DeployedPal.Get();
+	ADC1PalCharacter* Deployed = DeployedPal;
 	DeployedPal = nullptr;
 
 	if (false == ::IsValid(Deployed))
@@ -205,6 +242,9 @@ void UDC1PalPartyComponent::HandleDeployedPalDied()
 	{
 		return;
 	}
+
+	// UI 는 죽는 즉시 반응
+	OnPalSlotChanged.Broadcast();
 
 	GetWorld()->GetTimerManager().SetTimer(DeathRetrieveTimer, this, &ThisClass::RetrieveDeployed, DeathRetrieveDelay, false);
 }
