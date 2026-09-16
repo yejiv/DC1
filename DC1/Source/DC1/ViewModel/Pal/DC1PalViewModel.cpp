@@ -46,7 +46,7 @@ UTexture2D* UDC1PalViewModel::GetPalIconTexture(int32 Offset)
 	if (0 == Capacity)
 		return nullptr;
 
-	int32 Index = (PrevSlot + Offset + Capacity) % Capacity;
+	int32 Index = (PrevSlot + Offset + Capacity) % FMath::Max(Capacity, 1);
 
 	if (false == CachedPalIcons.IsValidIndex(Index))
 		return nullptr;
@@ -86,7 +86,7 @@ void UDC1PalViewModel::HandleSelectedSlotChanged()
 
 	int32 SelectedIndex = PalPartyComponent->GetSelectedSlot();
 
-	int32 Move = (PrevSlot - SelectedIndex + Capacity) % Capacity;
+	int32 Move = (PrevSlot - SelectedIndex + Capacity) % FMath::Max(Capacity, 1);
 
 	PrevSlot = SelectedIndex;
 

@@ -9,9 +9,7 @@ void UDC1HUDPalIcon::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if(false == IsValid(Image_Icon))
-		Image_Icon->SetVisibility(ESlateVisibility::Collapsed);
-
+	Image_Icon->SetVisibility(ESlateVisibility::Collapsed);
 	Image_Outline->SetVisibility(ESlateVisibility::Collapsed);
 }
 

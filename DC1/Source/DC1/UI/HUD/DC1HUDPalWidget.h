@@ -7,6 +7,10 @@
 #include "DC1HUDPalWidget.generated.h"
 
 class UDC1PalViewModel;
+class UCanvasPanel;
+class UCanvasPanelSlot;
+class UWidgetAnimation;
+class UDC1HUDPalIcon;
 enum class EDC1PalSlotShift : uint8;
 
 /**
@@ -22,9 +26,14 @@ private:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
+	virtual void OnAnimationFinished_Implementation(const UWidgetAnimation* Animation) override;
+
 private:
 	void BindViewModel();
 	void UnbindViewModel();
+
+	void RegisterPalIcons();
+	void ResetIcons();
 
 private:
 	void HandleSlotShifted(EDC1PalSlotShift InShift);
@@ -32,4 +41,27 @@ private:
 
 private:
 	TWeakObjectPtr<UDC1PalViewModel> PalViewModel = { nullptr };
+
+private:
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation>			Shift_Left = {};
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation>			Shift_Right = {};
+
+	UPROPERTY(Transient)
+	TObjectPtr<UWidgetAnimation>			CurrentAnim = {};
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UCanvasPanel>					Canvas_PalIcons = {};
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UDC1HUDPalIcon>>	PalIcons;
+
+private:
+	TArray<FWidgetTransform>					RestRenderTransform;
+	TArray<FVector2D>							RestSlotSize;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UCanvasPanelSlot>>	CanvasPanelSlots;
 };
