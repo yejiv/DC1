@@ -34,7 +34,9 @@ private:
 	void UnbindViewModel();
 
 	void RegisterPalIcons();
-	void ResetIcons();
+
+	void UpdateIcons();
+	void UpdatePalStatus();
 
 private:
 	void HandleSlotShifted(EDC1PalSlotShift InShift);

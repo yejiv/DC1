@@ -34,7 +34,7 @@ void UDC1HUDPalIcon::SetDead(bool bInDead)
 	if (nullptr == IconMID)
 		return;
 
-	IconMID->SetVectorParameterValue(BackgroundColorParameterName, bInDead ? Color_Dead : Color_Normal);
+	IconMID->SetScalarParameterValue(DeadParameterName, bInDead ? 1.f : 0.f);
 }
 
 void UDC1HUDPalIcon::SetDeployed(bool bInDeployed)

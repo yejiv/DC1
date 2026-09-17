@@ -29,7 +29,10 @@ public:
 
 public:
 	UTexture2D*				GetPalIconTexture(int32 Offset);
+	bool						GetPalAlive(int32 Offset);
 	void						GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo);
+
+	bool						IsDeployed();
 
 public:
 	FOnPalSlotShifted		OnSlotShifted;

@@ -49,15 +49,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Pal Icon")
 	FName							IconOpacityParameterName = { TEXT("IconOpacity") };
 
+	// 사망 연출 정도. 색은 머티리얼이 정하고 여기서는 0~1만 넘긴다
 	UPROPERTY(EditDefaultsOnly, Category = "Pal Icon")
-	FName							BackgroundColorParameterName = { TEXT("BackgroundColor") };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Pal Icon")
-	// 곱셈 틴트라서 흰색이 "원본 색 그대로"다
-	FLinearColor					Color_Normal = { FLinearColor::White };
-
-	UPROPERTY(EditDefaultsOnly, Category = "Pal Icon")
-	FLinearColor					Color_Dead = { FLinearColor(0.8f, 0.1f, 0.1f, 1.f) };
+	FName							DeadParameterName = { TEXT("DeadAmount") };
 
 private:
 	// Image_Icon의 브러시에 물린 M_PalIcon 인스턴스. 브러시가 텍스처면 null이 된다
