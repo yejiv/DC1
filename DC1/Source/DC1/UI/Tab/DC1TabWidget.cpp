@@ -7,7 +7,6 @@
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
 #include "UI/Tab/TechTree/DC1TechTreeWidget.h"
 
-#include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
 UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
@@ -86,14 +85,7 @@ void UDC1TabWidget::CloseWidget(const FKey& InKey)
 
 	if (true == KeyList->Keys.Contains(InKey))
 	{
-		UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-		if (false == ::IsValid(UIManager))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
-			return;
-		}
-
-		UIManager->PopScreen();
+		PopScreen();
 	}
 }
 

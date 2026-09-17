@@ -144,7 +144,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>			DismantleOverlayMaterial = { nullptr };
 
-
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f) };
 
@@ -156,7 +155,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Support", meta = (ClampMin = "1", EditCondition = "SupportRule == EDC1BuildSupportRule::RoofSpan"))
 	int32									RoofSupportSpan = { 2 };
-
 
 private:
 	bool									CanBuilding = { false };

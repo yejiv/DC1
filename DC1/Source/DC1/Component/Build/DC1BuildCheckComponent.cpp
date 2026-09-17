@@ -177,11 +177,6 @@ bool UDC1BuildCheckComponent::CheckSurface()
 
 	const bool IsProbed = ForEachProbe([this, &IsAllHit](const FHitResult& InHit, bool InIsHit) -> bool 
 		{
-			const bool IsDown = (BuildProbeData.ProbeDirection == EDC1BuildProbeDirection::Down);
-			const FVector ExpectedNormal = IsDown ? FVector::UpVector : FVector::DownVector;
-			const float NormalDot = FMath::Clamp(FVector::DotProduct(InHit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
-			const float SurfaceAngle = FMath::RadiansToDegrees(FMath::Acos(NormalDot));
-
 			bool CanBuildFromProbe = (InIsHit && ComputeSurfaceAngle(InHit) <= BuildProbeData.MaxSurfaceAngle);
 
 			const ADC1BuildActor* HitBuildActor = Cast<ADC1BuildActor>(InHit.GetActor());

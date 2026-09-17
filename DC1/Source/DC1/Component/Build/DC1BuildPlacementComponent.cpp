@@ -6,6 +6,7 @@
 
 #include "Define/DC1Helper.h"
 #include "Define/DC1Stats.h"
+#include "Define/DC1BuildSupportHelper.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "Character/Player/DC1PlayerController.h"
@@ -30,11 +31,6 @@ UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-const float UDC1BuildPlacementComponent::GetMaxPlaceDistance() const
-{
-	return (true == IsSnapping || true == IsAutoSnapped) ? MaxPlaceDistance : PlaceDistance;
-}
-
 void UDC1BuildPlacementComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -46,6 +42,7 @@ void UDC1BuildPlacementComponent::BeginPlay()
 void UDC1BuildPlacementComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	CancelPlacement();
+	CancelDismantle();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -53,6 +50,12 @@ void UDC1BuildPlacementComponent::EndPlay(const EEndPlayReason::Type EndPlayReas
 void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (true == IsDismantling)
+	{
+		UpdateDismantleTarget();
+		return;
+	}
 
 	if (false == ::IsValid(PreviewActor))
 	{
@@ -75,11 +78,16 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	}
 
 	PreviewActor->SetCheckSurface(IsAutoSnapped);
-	CanBuilding = PreviewActor->UpdatePreview(IsInPlaceRange(PreviewActor->GetActorLocation()));
+
+	bool IsInRange = IsInBuildRange(PreviewActor->GetActorLocation(), MaxDistance);
+
+	CanBuilding = PreviewActor->UpdatePreview(IsInRange);
 }
 
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 {
+	CancelDismantle();
+
 	if (true == ::IsValid(PreviewActor))
 	{
 		CancelPlacement();
@@ -111,17 +119,16 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 	return true;
 }
 
-bool UDC1BuildPlacementComponent::IsInPlaceRange(const FVector& InLocation) const
+bool UDC1BuildPlacementComponent::StartDismantle()
 {
-	const APawn* Pawn = GetOwnerPawn();
-	if (false == ::IsValid(Pawn))
-	{
-		return false;
-	}
+	CancelPlacement();
 
-	float Distance = FVector::Dist2D(Pawn->GetActorLocation(), InLocation);
+	IsDismantling = true;
 
-	return Distance <= GetMaxPlaceDistance();
+	SetComponentTickEnabled(true);
+	SetBuildMode(true);
+
+	return true;
 }
 
 void UDC1BuildPlacementComponent::CancelPlacement()
@@ -155,6 +162,33 @@ void UDC1BuildPlacementComponent::ConfirmPlacement()
 	ChangeSnapConfirmTarget();
 }
 
+void UDC1BuildPlacementComponent::CancelDismantle()
+{
+	SetComponentTickEnabled(false);
+
+	ADC1BuildActor* Target = DismantleTarget.Get();
+	if (true == ::IsValid(Target))
+	{
+		Target->SetDismantleHighlight(false);
+	}
+
+	DismantleTarget.Reset();
+	IsDismantling = false;
+
+	SetBuildMode(false);
+}
+
+void UDC1BuildPlacementComponent::ConfirmDismantle()
+{
+	ADC1BuildActor* CurrentTarget = DismantleTarget.Get();
+	if (false == ::IsValid(CurrentTarget))
+	{
+		return;
+	}
+
+	Server_DismantleBuild(CurrentTarget);
+}
+
 void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGameplayTag& InBuildTag, const FTransform& InTransform)
 {
 	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
@@ -163,28 +197,44 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 		return;
 	}
 
-	const APawn* Pawn = GetOwnerPawn();
-	if (false == ::IsValid(Pawn))
+	// 서버 검증 여유 수치
+	if (false == IsInBuildRange(InTransform.GetLocation(), MaxDistance, DistanceMarginFactor))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Too Far"));
 		return;
 	}
 
-	const FVector PawnLocation = Pawn->GetActorLocation();
-	const FVector ActorLocation = InTransform.GetLocation();
-
-	const float Distance = FVector::Dist2D(PawnLocation, ActorLocation);
-
-	// 서버 검증 여유 수치
-	if (Distance > ( MaxPlaceDistance * DistanceMarginFactor ))
+	ADC1BuildActor* NewBuild = SpawnBuildActor(*BuildRow, InTransform, false);
+	if (false == ::IsValid(NewBuild))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Too Far : %.1f"), Distance);
+		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Failed Spawn Build Actor"));
+		return;
+	}
+
+	if (false == DC1BuildSupportHelper::HasSupport(NewBuild))
+	{
+		NewBuild->Destroy();
 		return;
 	}
 
 	// TODO Cost 감소
 	// ..
+}
 
-	SpawnBuildActor(*BuildRow, InTransform, false);
+void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1BuildActor* InTarget)
+{
+	if (false == ::IsValid(InTarget) || true == InTarget->IsPreview())
+	{
+		return;
+	}
+
+	if (false == IsInBuildRange(InTarget->GetActorLocation(), MaxDistance, DistanceMarginFactor))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server_DismantleBuild :: Too Far"));
+		return;
+	}
+
+	InTarget->RequestBuildDestroy();
 }
 
 void UDC1BuildPlacementComponent::CacheBuildRows()
@@ -360,12 +410,12 @@ void UDC1BuildPlacementComponent::SetUpBuildInput()
 
 	if (const UInputAction* ConfirmAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Confirm))
 	{
-		EnhancedInputComponent->BindAction(ConfirmAction, ETriggerEvent::Started, this, &ThisClass::ConfirmPlacement);
+		EnhancedInputComponent->BindAction(ConfirmAction, ETriggerEvent::Started, this, &ThisClass::OnConfirmInput);
 	}
 
 	if (const UInputAction* CancelAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Cancel))
 	{
-		EnhancedInputComponent->BindAction(CancelAction, ETriggerEvent::Started, this, &ThisClass::CancelPlacement);
+		EnhancedInputComponent->BindAction(CancelAction, ETriggerEvent::Started, this, &ThisClass::OnCancelInput);
 	}
 
 	if (const UInputAction* RotateAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Rotate))
@@ -378,6 +428,28 @@ void UDC1BuildPlacementComponent::SetUpBuildInput()
 		EnhancedInputComponent->BindAction(SnapAction, ETriggerEvent::Started, this, &ThisClass::OnSnapPressed);
 		EnhancedInputComponent->BindAction(SnapAction, ETriggerEvent::Completed, this, &ThisClass::OnSnapReleased);
 	}
+}
+
+void UDC1BuildPlacementComponent::OnConfirmInput()
+{
+	if (true == IsDismantling)
+	{
+		ConfirmDismantle();
+		return;
+	}
+
+	ConfirmPlacement();
+}
+
+void UDC1BuildPlacementComponent::OnCancelInput()
+{
+	if (true == IsDismantling)
+	{
+		CancelDismantle();
+		return;
+	}
+
+	CancelPlacement();
 }
 
 void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
@@ -440,6 +512,38 @@ void UDC1BuildPlacementComponent::ClearSnap()
 	SnapTarget = nullptr;
 	SnapSocketLocationWorld = FVector::ZeroVector;
 	SnapSocketNormalWorld = FVector::ZeroVector;
+}
+
+void UDC1BuildPlacementComponent::UpdateDismantleTarget()
+{
+
+	FVector RayStart;
+	FVector RayEnd;
+	FHitResult Hit;
+	ADC1BuildActor* HitTarget = TraceBuildActorByView(RayStart, RayEnd, Hit);
+
+	if (false == ::IsValid(HitTarget) || false == IsInBuildRange(HitTarget->GetActorLocation(), MaxDistance))
+	{
+		HitTarget = nullptr;
+	}
+
+	ADC1BuildActor* PrevTarget = DismantleTarget.Get();
+	if (HitTarget == PrevTarget)
+	{
+		return;
+	}
+
+	if (true == ::IsValid(PrevTarget))
+	{
+		PrevTarget->SetDismantleHighlight(false);
+	}
+
+	if (true == ::IsValid(HitTarget))
+	{
+		HitTarget->SetDismantleHighlight(true);
+	}
+
+	DismantleTarget = HitTarget;
 }
 
 void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
@@ -520,7 +624,8 @@ FVector UDC1BuildPlacementComponent::GetPlacePoint(const APawn* InOwnerPawn) con
 bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd) const
 {
 	const APlayerController* PC = GetOwner<APlayerController>();
-	if (false == ::IsValid(PC))
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(PC) || false == ::IsValid(Pawn))
 	{
 		return false;
 	}
@@ -529,8 +634,10 @@ bool UDC1BuildPlacementComponent::GetViewRay(FVector& OutStart, FVector& OutEnd)
 	FRotator ViewRotation;
 	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
+	const float CameraToPawn = FVector::Dist(ViewLocation, Pawn->GetActorLocation());
+
 	OutStart = ViewLocation;
-	OutEnd = ViewLocation + (ViewRotation.Vector() * PlaceDistance);
+	OutEnd = ViewLocation + (ViewRotation.Vector() * (CameraToPawn + MaxDistance));
 
 	return true;
 }
@@ -561,7 +668,7 @@ void UDC1BuildPlacementComponent::FindSnapCandidates(const FVector& InAimPoint, 
 		return;
 	}
 
-	for (const FOverlapResult Result : Overlaps)
+	for (const FOverlapResult& Result : Overlaps)
 	{
 		ADC1BuildActor* OverlapActor = Cast<ADC1BuildActor>(Result.GetActor());
 		if (false == ::IsValid(OverlapActor))
@@ -621,39 +728,17 @@ bool UDC1BuildPlacementComponent::FindSnapCandidateByRay(TSet<ADC1BuildActor*>& 
 {
 	OutCandidates.Reset();
 
-	const UWorld* World = GetWorld();
-	if (false == ::IsValid(World))
-	{
-		return false;
-	}
-
 	FVector RayStart;
 	FVector RayEnd;
-	if (false == GetViewRay(RayStart, RayEnd))
-	{
-		return false;
-	}
-
-	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Building));
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(GetOwnerPawn());
-	Params.AddIgnoredActor(PreviewActor);
-
 	FHitResult Hit;
-	if (false == World->LineTraceSingleByObjectType(Hit, RayStart, RayEnd, ObjectParams, Params))
+
+	ADC1BuildActor* Target = TraceBuildActorByView(RayStart, RayEnd, Hit);
+	if (false == ::IsValid(Target))
 	{
 		return false;
 	}
 
-	ADC1BuildActor* Target = Cast<ADC1BuildActor>(Hit.GetActor());
-	if (false == ::IsValid(Target) || true == Target->IsPreview())
-	{
-		return false;
-	}
-
-	if (false == Target->TraceCheckBox(RayStart, RayEnd, Params, SnapAimInflate, OutAimPoint))
+	if (false == Target->TraceCheckBox(RayStart, RayEnd, FCollisionQueryParams::DefaultQueryParam, SnapAimInflate, OutAimPoint))
 	{
 		// 박스가 메시보다 작은 경우에 월드 Hit로 대체
 		OutAimPoint = Hit.ImpactPoint;
@@ -830,6 +915,48 @@ const FTransform UDC1BuildPlacementComponent::MakeSnapTransform(const FDC1BuildS
 	const FVector FinalLocation = PivotWorld + ExtraQuat.RotateVector(BaseLocation - PivotWorld);
 
 	return FTransform(FinalQuat, FinalLocation, PreviewActor->GetActorScale3D());
+}
+
+bool UDC1BuildPlacementComponent::IsInBuildRange(const FVector& InLocation, const float InMaxDistance, const float InMarginFactor) const
+{
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return false;
+	}
+
+	float Distance = FVector::Dist2D(Pawn->GetActorLocation(), InLocation);
+
+	return Distance <= (InMaxDistance * InMarginFactor);
+}
+
+ADC1BuildActor* UDC1BuildPlacementComponent::TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const
+{
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World) || false == GetViewRay(OutRayStart, OutRayEnd))
+	{
+		return nullptr;
+	}
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Building));
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwnerPawn());
+	Params.AddIgnoredActor(PreviewActor);
+
+	if (false == World->LineTraceSingleByObjectType(OutHit, OutRayStart, OutRayEnd, ObjectParams, Params))
+	{
+		return nullptr;
+	}
+
+	ADC1BuildActor* Target = Cast<ADC1BuildActor>(OutHit.GetActor());
+	if (false == ::IsValid(Target) || true == Target->IsPreview())
+	{
+		return nullptr;
+	}
+
+	return Target;
 }
 
 void UDC1BuildPlacementComponent::ChangeSnapConfirmTarget()

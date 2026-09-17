@@ -14,12 +14,6 @@ struct FInputActionValue;
 
 class ADC1BuildActor;
 
-struct FDC1BuildPendingBox
-{
-	FDC1BuildBox Box;
-	float ExpireTime = { 0.f };
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
 {
@@ -27,9 +21,6 @@ class DC1_API UDC1BuildPlacementComponent : public UActorComponent
 
 public:	
 	UDC1BuildPlacementComponent();
-
-public:
-	const float			GetMaxPlaceDistance() const;
 
 protected:
 	virtual void		BeginPlay() override;
@@ -40,11 +31,14 @@ public:
 
 public:
 	bool				StartPlacement(const FGameplayTag& InBuildTag);
-	bool				IsInPlaceRange(const FVector& InLocation) const;
-	
+	bool				StartDismantle();
+
 private:
 	UFUNCTION(Server, Reliable)
 	void				Server_PlaceBuild(const FGameplayTag& InBuildTag, const FTransform& InTransform);
+
+	UFUNCTION(Server, Reliable)
+	void				Server_DismantleBuild(ADC1BuildActor* InTarget);
 
 	void				CacheBuildRows();
 	
@@ -55,15 +49,23 @@ private:
 	void				CancelPlacement();
 	void				ConfirmPlacement();
 
+	void				CancelDismantle();
+	void				ConfirmDismantle();
+
 	bool				TraceSurface(FHitResult& OutHit) const;
 
 	void				SetUpBuildInput();
 	void				SetBuildMode(bool InEnabled);
 
+	void				OnConfirmInput();
+	void				OnCancelInput();
 	void				OnRotateInput(const FInputActionValue& Value);
 	void				OnSnapPressed();
 	void				OnSnapReleased();
+
+	
 	void				ClearSnap();
+	void				UpdateDismantleTarget();
 
 	const APawn*		GetOwnerPawn() const;
 	float				GetPlaceYaw() const;
@@ -89,14 +91,17 @@ private:
 
 	const FTransform	MakeSnapTransform(const FDC1BuildSnapPair& InPair) const;
 
+	bool				IsInBuildRange(const FVector& InLocation, const float InMaxDistance, const float InMarginFactor = 1.f) const;
+
+	ADC1BuildActor*		TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const;
+
 private:
 	// 배치 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		PlaceDistance = { 300.f };
 
-	// 최대 배치 거리 ( Snap )
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
-	float		MaxPlaceDistance = { 1000.f };
+	float		MaxDistance = { 500.f };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		RangeUpHeight = { 300.f };
@@ -112,9 +117,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapAimInflate = { 30.f };
-	
-	UPROPERTY(EditAnywhere, Category = "Build|Snap")
-	float		PendingBoxLifeTime = { 1.f };
 
 private:
 	UPROPERTY()
@@ -139,10 +141,6 @@ private:
 
 	TWeakObjectPtr<const ADC1BuildActor>	SnapTarget;
 
-	FDC1BuildSnapPair						CurrentSnapPair;
-	TArray<FDC1BuildPendingBox>				PendingBoxes;
-
-	bool									IsContinuing = { false };
-	FVector	ContinueAimPoint = { FVector::ZeroVector };
-	FVector ContinueViewDirection = { FVector::ForwardVector };
+	bool									IsDismantling = { false };
+	TWeakObjectPtr<ADC1BuildActor>			DismantleTarget;
 };

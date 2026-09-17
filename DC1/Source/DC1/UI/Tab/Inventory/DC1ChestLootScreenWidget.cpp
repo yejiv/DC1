@@ -1,11 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UI/Tab/Inventory/DC1ChestLootScreenWidget.h"
 #include "UI/Tab/Inventory/DC1PlayerLootInventoryWidget.h"
 #include "UI/Tab/Inventory/DC1ChestInventoryWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 
-#include "Subsystem/DC1UIManagerSubsystem.h"
 
 UDC1ChestLootScreenWidget::UDC1ChestLootScreenWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -52,11 +51,5 @@ void UDC1ChestLootScreenWidget::HandleInputKey(const FKey& InKey)
 		return;
 	}
 
-	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-	if (!IsValid(UIManager))
-	{
-		return;
-	}
-
-	UIManager->PopScreen();
+	PopScreen();
 }

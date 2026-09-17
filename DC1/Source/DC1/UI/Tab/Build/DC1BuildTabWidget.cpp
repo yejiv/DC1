@@ -6,7 +6,6 @@
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
 #include "UI/Tab/Build/DC1BuildWidget.h"
 
-#include "Subsystem/DC1UIManagerSubsystem.h"
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
 
@@ -37,14 +36,21 @@ void UDC1BuildTabWidget::CloseWidget(const FKey& InKey)
 		return;
 	}
 
-	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-	if (false == ::IsValid(UIManager))
+	PopScreen();
+}
+
+void UDC1BuildTabWidget::HandleInputKey(const FKey& InKey)
+{
+	if (false == DismantleKeys.Keys.Contains(InKey))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildTabWidget :: Failed to Find UIManager"));
+		Super::HandleInputKey(InKey);
 		return;
 	}
 
-	UIManager->PopScreen();
+	if (true == ::IsValid(CachedViewModel) && true == CachedViewModel->RequestStartDismantle())
+	{
+		PopScreen();
+	}
 }
 
 void UDC1BuildTabWidget::SetViewModel(UDC1BuildViewModel* InViewModel)

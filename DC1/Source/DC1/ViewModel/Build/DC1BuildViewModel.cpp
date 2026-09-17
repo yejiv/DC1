@@ -86,6 +86,11 @@ bool UDC1BuildViewModel::RequestStartPlacement(const FGameplayTag& InBuildTag)
 	return ::IsValid(PlacementComp) ? PlacementComp->StartPlacement(InBuildTag) : false;
 }
 
+bool UDC1BuildViewModel::RequestStartDismantle()
+{
+	return ::IsValid(PlacementComp) ? PlacementComp->StartDismantle() : false;
+}
+
 void UDC1BuildViewModel::CacheBuildRows()
 {
 	SortedBuildRows.Reset();

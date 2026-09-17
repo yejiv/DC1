@@ -36,6 +36,7 @@ public:
 	void						GetBuildTagsByTechTag(const FGameplayTag& InTechTag, TArray<FGameplayTag>& OutBuildTags) const;
 
 	bool						RequestStartPlacement(const FGameplayTag& InBuildTag);
+	bool						RequestStartDismantle();
 
 private:
 	void						SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildPlacementComponent* InPlacementComp);

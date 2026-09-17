@@ -18,15 +18,19 @@ protected:
 	virtual void			CloseWidget(const FKey& InKey) override;
 
 public:
+	virtual	void			HandleInputKey(const FKey& InKey) override;
 	void					SetViewModel(UDC1BuildViewModel* InViewModel);
-
 private:
 	void					RefreshAll();
 	void					HandleBuildUnlocked(const FGameplayTag& InUnlockedTag);
 
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Build")
 	FDC1KeyList				BuildCloseKeys;
+
+	UPROPERTY(EditAnywhere, Category = "Build")
+	FDC1KeyList				DismantleKeys;
 
 private:
 	UPROPERTY()

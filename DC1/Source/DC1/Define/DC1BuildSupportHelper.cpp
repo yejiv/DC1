@@ -149,6 +149,24 @@ namespace
 		return FMath::Max(0.f, CenterDistance - RadiusA - RadiusB);
 	}
 
+	bool HasSurfaceSupporter(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, bool& OutIsOnGround)
+	{
+		OutIsOnGround = false;
+
+		TArray<ADC1BuildActor*> SurfaceActors;
+		InBuild->GatherSurfaceSupporters(SurfaceActors, OutIsOnGround);
+
+		for (const ADC1BuildActor* SurfaceActor : SurfaceActors)
+		{
+			if (false == InExcluded.Contains(SurfaceActor))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool IsSupportedByStack(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache)
 	{
 		// 벽 - 소켓 or Probe 중 하나
@@ -164,42 +182,17 @@ namespace
 			}
 		}
 
-		// Probe 확인
-		TArray<ADC1BuildActor*> SurfaceActors;
+		// Probe 확인 - IsOnGround는 버리는 값 ( 벽은 맨땅에 설치 불가 )
 		bool IsOnGround = false;
-		InBuild->GatherSurfaceSupporters(SurfaceActors, IsOnGround);
-
-		for (const ADC1BuildActor* SurfaceActor : SurfaceActors)
-		{
-			if (false == InExcluded.Contains(SurfaceActor))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		return HasSurfaceSupporter(InBuild, InExcluded, IsOnGround);
 	}
 
 	bool IsSupportedBySurface(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded)
 	{
-		TArray<ADC1BuildActor*> SurfaceActors;
 		bool IsOnGround = false;
-		InBuild->GatherSurfaceSupporters(SurfaceActors, IsOnGround);
+		const bool HasSupporter = HasSurfaceSupporter(InBuild, InExcluded, IsOnGround);
 
-		if (true == IsOnGround)
-		{
-			return true;
-		}
-
-		for (const ADC1BuildActor* SurfaceActor : SurfaceActors)
-		{
-			if (false == InExcluded.Contains(SurfaceActor))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		return (true == IsOnGround || true == HasSupporter);
 	}
 
 	void GatherRoofGroup(ADC1BuildActor* InRoof, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache, TSet<ADC1BuildActor*>& OutGroup)
