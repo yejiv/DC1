@@ -10,8 +10,6 @@
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
-#include "UI/Counter/DC1DigitCounter.h"
-
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Materials/MaterialInterface.h"
@@ -27,9 +25,20 @@ void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 		return;
 	}
 
-	OwnerPal->OnPalHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
-
 	ApplyPalInfo();
+
+	BindToPal();
+}
+
+void UDC1PalHealthWidget::BindToPal()
+{
+	if (false == OwnerPal.IsValid())
+	{
+		return;
+	}
+
+	OwnerPal->OnPalHealthChanged.RemoveAll(this);
+	OwnerPal->OnPalHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
 
 	RefreshTeamColor();
 
@@ -73,9 +82,9 @@ void UDC1PalHealthWidget::ApplyPalInfo()
 		Text_Name->SetText(PalData->DisplayName);
 	}
 
-	if (nullptr != Counter_Level)
+	if (nullptr != Text_Level)
 	{
-		Counter_Level->SetValue(OwnerPal->GetLevel());
+		Text_Level->SetText(FText::AsNumber(OwnerPal->GetLevel()));
 	}
 
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
@@ -84,11 +93,28 @@ void UDC1PalHealthWidget::ApplyPalInfo()
 		return;
 	}
 
-	if (nullptr != Image_Element)
+	if (nullptr != Image_ElementIcon00)
 	{
 		if (UTexture2D* ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous())
 		{
-			Image_Element->SetBrushFromTexture(ElementIcon);
+			Image_ElementIcon00->SetBrushFromTexture(ElementIcon);
+		}
+	}
+
+	if (nullptr != Image_ElementIcon01)
+	{
+		UTexture2D* SecondIcon = (EDC1PalElement::Neutral == PalData->Element2)
+			? nullptr
+			: Registry->FindElementIcon(PalData->Element2).LoadSynchronous();
+
+		if (nullptr == SecondIcon)
+		{
+			Image_ElementIcon01->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else
+		{
+			Image_ElementIcon01->SetBrushFromTexture(SecondIcon);
+			Image_ElementIcon01->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 
@@ -107,6 +133,13 @@ void UDC1PalHealthWidget::ApplyPalInfo()
 	}
 }
 
+void UDC1PalHealthWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	BindToPal();
+}
+
 void UDC1PalHealthWidget::NativeDestruct()
 {
 	UnbindPal();
@@ -120,8 +153,6 @@ void UDC1PalHealthWidget::UnbindPal()
 	{
 		OwnerPal->OnPalHealthChanged.RemoveAll(this);
 	}
-
-	OwnerPal.Reset();
 }
 
 void UDC1PalHealthWidget::HandleHealthChanged(float Current, float Max)

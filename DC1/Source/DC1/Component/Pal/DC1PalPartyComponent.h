@@ -39,19 +39,24 @@ public:
 	void					CycleSlot(int32 InDelta);
 
 public:
-	int32							GetCapacity() const { return Capacity; }
-	int32							GetSelectedSlot() const { return SelectedSlot; }
+	int32					GetCapacity() const { return Capacity; }
+	int32					GetSelectedSlot() const { return SelectedSlot; }
 	const FDC1PalInstance*	GetPalInfo(int32 Index) const;
 
-	// 이 슬롯에 팰이 들어 있나. 범위 밖이면 false.
+	float					GetPalMaxHealth(int32 InSlotIndex) const;
+
+	// 칸이 찼나. 죽은 팰도 칸은 차지한다
 	bool					HasPalAt(int32 InSlotIndex) const;
 
-	// 실제로 들어 있는 마릿수.
-	int32					GetPalCount() const;
+	// 살아 있나. 체력 0 이면 false
+	bool					IsPalAlive(int32 InSlotIndex) const;
+
+	// 지금 월드에 나와 있나. 이건 데이터가 아니라 액터와 대조해야 안다
+	bool					IsDeployed(int32 InSlotIndex) const;
 
 public:
 	// 팰 슬롯 변화 시 호출
-	FOnPalSlotTranslated		OnPalSlotTranslated;
+	FOnPalSlotTranslated	OnPalSlotTranslated;
 
 	// 팰 등록 변화 시 호출
 	FOnPalSlotChanged		OnPalSlotChanged;
@@ -63,6 +68,9 @@ protected:
 	// UI 알림은 여기서 시작하면 된다
 	UFUNCTION()
 	void					OnRep_Pals();
+
+	UFUNCTION()
+	void					OnRep_DeployedPal();
 
 	void					ToggleDeploy();
 
@@ -98,13 +106,13 @@ protected:
 	float					DeployDistance = { 300.f };
 
 	// 죽고 나서 회수까지의 유예. 이 시간 동안 래그돌이 보인다.
-	// SetTimer는 0 이하를 타이머 해제로 처리하므로 0을 허용하지 않는다
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.1"))
 	float					DeathRetrieveDelay = { 2.f };
 
 private:
-	// 꺼내둔 팰. 회수하려면 액터를 붙들고 있어야 한다. 서버에서만 갱신된다
-	TWeakObjectPtr<ADC1PalCharacter>	DeployedPal;
+	// 꺼내둔 팰. 회수하려면 액터를 붙들고 있어야 한다.
+	UPROPERTY(ReplicatedUsing = OnRep_DeployedPal)
+	TObjectPtr<ADC1PalCharacter>		DeployedPal = { nullptr };
 
 	FTimerHandle						DeathRetrieveTimer;
 

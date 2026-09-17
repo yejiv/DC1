@@ -11,7 +11,6 @@ class UTextBlock;
 class UMaterialInterface;
 class UWidgetAnimation;
 class UDC1StatusBar;
-class UDC1DigitCounter;
 class ADC1PalCharacter;
 
 /**
@@ -28,9 +27,13 @@ public:
 	void RefreshTeamColor();
 
 protected:
+	virtual void NativeConstruct() override;
+
 	virtual void NativeDestruct() override;
 
 private:
+	void BindToPal();
+
 	void UnbindPal();
 
 	void HandleHealthChanged(float Current, float Max);
@@ -49,7 +52,10 @@ private:
 
 	// 속성 아이콘
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
-	TObjectPtr<UImage>			Image_Element = { nullptr };
+	TObjectPtr<UImage>			Image_ElementIcon00 = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UImage>			Image_ElementIcon01 = { nullptr };
 
 	// 성별 아이콘
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
@@ -57,7 +63,7 @@ private:
 
 	// 레벨
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
-	TObjectPtr<UDC1DigitCounter>	Counter_Level = { nullptr };
+	TObjectPtr<UTextBlock>		Text_Level = { nullptr };
 
 	// 연출.
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))

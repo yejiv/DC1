@@ -55,6 +55,9 @@ public:
 
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
 
+	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
+	const FGuid&						GetInstanceID() const { return InstanceID; }
+
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;
