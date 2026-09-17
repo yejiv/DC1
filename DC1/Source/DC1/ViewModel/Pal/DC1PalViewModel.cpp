@@ -54,6 +54,19 @@ UTexture2D* UDC1PalViewModel::GetPalIconTexture(int32 Offset)
 	return CachedPalIcons[Index];
 }
 
+bool UDC1PalViewModel::GetPalAlive(int32 Offset)
+{
+	if (0 == Capacity)
+		return true;
+
+	if (false == PalPartyComponent.IsValid())
+		return true;
+
+	int32 Index = (PrevSlot + Offset + Capacity) % FMath::Max(Capacity, 1);
+
+	return PalPartyComponent->IsPalAlive(Index);
+}
+
 void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 {
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
@@ -77,6 +90,14 @@ void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 	OutDisplayInfo.Name = PalInfo->Nickname.IsEmpty() ? PalData->DisplayName : FText::FromString(PalInfo->Nickname);
 	// 추후 PalInfo의 MaxHealth로 교체
 	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, PalData->MaxHealth);
+}
+
+bool UDC1PalViewModel::IsDeployed()
+{
+	if (false == PalPartyComponent.IsValid())
+		return false;
+
+	return PalPartyComponent->IsDeployed(PrevSlot);
 }
 
 void UDC1PalViewModel::HandleSelectedSlotChanged()
@@ -118,6 +139,6 @@ void UDC1PalViewModel::HandlePalChanged()
 
 		CachedPalIcons[i] = PalData->Icon.LoadSynchronous();
 	}
-
+	
 	OnInfoChanged.Broadcast();
 }

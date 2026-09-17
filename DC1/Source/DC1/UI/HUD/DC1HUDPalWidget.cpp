@@ -85,7 +85,7 @@ void UDC1HUDPalWidget::RegisterPalIcons()
 	}
 }
 
-void UDC1HUDPalWidget::ResetIcons()
+void UDC1HUDPalWidget::UpdateIcons()
 {
 	int32 PalIconsNum = PalIcons.Num();
 	for (int32 i = 0; i < PalIconsNum; ++i)
@@ -95,7 +95,35 @@ void UDC1HUDPalWidget::ResetIcons()
 
 		if (PalViewModel.IsValid())
 		{
-			PalIcons[i]->SetIcon(PalViewModel->GetPalIconTexture(i - PalIconsNum / 2));
+			int32 Offset = i - PalIconsNum / 2;
+			PalIcons[i]->SetIcon(PalViewModel->GetPalIconTexture(Offset));
+			PalIcons[i]->SetDead(!(PalViewModel->GetPalAlive(Offset)));
+		}
+	}
+
+	int32 SelectedSlot = PalIconsNum / 2;
+	PalIcons[SelectedSlot]->SetDeployed(PalViewModel->IsDeployed());
+}
+
+void UDC1HUDPalWidget::UpdatePalStatus()
+{
+	if (false == PalViewModel.IsValid())
+		return;
+
+	// Pal Status Update
+	FDC1PalDisplayInfo Info = {};
+	PalViewModel->GetPalInfo(Info);
+
+	if (IsValid(PalStatus))
+	{
+		if (nullptr == Info.ElementIcon)
+		{
+			PalStatus->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			PalStatus->SetVisibility(ESlateVisibility::HitTestInvisible);
+			PalStatus->SetPalInfo(Info);
 		}
 	}
 }
@@ -108,7 +136,7 @@ void UDC1HUDPalWidget::HandleSlotShifted(EDC1PalSlotShift InShift)
 	if (IsValid(CurrentAnim) && IsAnimationPlaying(CurrentAnim))
 	{
 		StopAnimation(CurrentAnim);
-		ResetIcons();
+		HandleInfoChanged();
 	}
 
 	if (InShift == EDC1PalSlotShift::Prev)
@@ -124,31 +152,6 @@ void UDC1HUDPalWidget::HandleSlotShifted(EDC1PalSlotShift InShift)
 
 void UDC1HUDPalWidget::HandleInfoChanged()
 {
-	ResetIcons();
-
-	if (false == PalViewModel.IsValid())
-		return;
-
-	FDC1PalDisplayInfo Info = {};
-	PalViewModel->GetPalInfo(Info);
-
-	// Pal Icon Update
-
-	// TODO
-	// Dead, Deploy 여부 확인 후 
-	// PalIcons[2]->SetDeployed()
-
-	// Pal Status Update
-	if (IsValid(PalStatus))
-	{
-		if(nullptr == Info.ElementIcon)
-		{
-			PalStatus->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			PalStatus->SetVisibility(ESlateVisibility::HitTestInvisible);
-			PalStatus->SetPalInfo(Info);
-		}
-	}
+	UpdateIcons();
+	UpdatePalStatus();
 }
