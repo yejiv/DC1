@@ -20,5 +20,8 @@ namespace DC1PlayerTags
 
 #pragma region Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Hit);
+
+	// 원거리 발사 순간. 조준점 반동 같은 1회성 연출의 신호로 쓴다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Fired);
 #pragma endregion
 }
