@@ -20,6 +20,12 @@
 #include "Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
 
+#include "Component/Build/DC1BuildSocketComponent.h"
+
+namespace
+{
+	const FTransform SnapSocketFlip = FTransform(FRotator(0.f, 180.f, 0.f));
+}
 
 UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 {
@@ -79,7 +85,7 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	PreviewActor->SetCheckSurface(IsAutoSnapped);
 
-	bool IsInRange = IsInBuildRange(PreviewActor->GetActorLocation(), MaxDistance);
+	bool IsInRange = IsInBuildRange(PreviewActor, MaxDistance);
 
 	CanBuilding = PreviewActor->UpdatePreview(IsInRange);
 }
@@ -197,12 +203,7 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 		return;
 	}
 
-	// 서버 검증 여유 수치
-	if (false == IsInBuildRange(InTransform.GetLocation(), MaxDistance, DistanceMarginFactor))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Too Far"));
-		return;
-	}
+	
 
 	ADC1BuildActor* NewBuild = SpawnBuildActor(*BuildRow, InTransform, false);
 	if (false == ::IsValid(NewBuild))
@@ -211,7 +212,8 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 		return;
 	}
 
-	if (false == DC1BuildSupportHelper::HasSupport(NewBuild))
+	// 서버 검증 여유 수치
+	if (false == IsInBuildRange(NewBuild, MaxDistance, DistanceMarginFactor) || false == DC1BuildSupportHelper::HasSupport(NewBuild))
 	{
 		NewBuild->Destroy();
 		return;
@@ -228,9 +230,8 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 		return;
 	}
 
-	if (false == IsInBuildRange(InTarget->GetActorLocation(), MaxDistance, DistanceMarginFactor))
+	if (false == IsInBuildRange(InTarget, MaxDistance, DistanceMarginFactor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Server_DismantleBuild :: Too Far"));
 		return;
 	}
 
@@ -522,7 +523,7 @@ void UDC1BuildPlacementComponent::UpdateDismantleTarget()
 	FHitResult Hit;
 	ADC1BuildActor* HitTarget = TraceBuildActorByView(RayStart, RayEnd, Hit);
 
-	if (false == ::IsValid(HitTarget) || false == IsInBuildRange(HitTarget->GetActorLocation(), MaxDistance))
+	if (false == ::IsValid(HitTarget) || false == IsInBuildRange(HitTarget, MaxDistance))
 	{
 		HitTarget = nullptr;
 	}
@@ -749,6 +750,7 @@ bool UDC1BuildPlacementComponent::FindSnapCandidateByRay(TSet<ADC1BuildActor*>& 
 	return true;
 }
 
+
 bool UDC1BuildPlacementComponent::FindFreeSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint, const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<FDC1BuildBox>& InBlockers, FDC1BuildSnapPair& OutPair) const
 {
 	if (false == ::IsValid(PreviewActor))
@@ -771,8 +773,9 @@ bool UDC1BuildPlacementComponent::FindFreeSnapPair(const TSet<ADC1BuildActor*>& 
 			return false;
 		}
 
+		UE_LOG(LogTemp, Warning, TEXT("[Snap] Try=%d Target=%s Preview=%s"), Try,
+			*GetNameSafe(Pair.TargetSocket.SourceSocket.Get()), *GetNameSafe(Pair.PreviewSocket.SourceSocket.Get()));
 		{
-
 			SCOPE_CYCLE_COUNTER(STAT_DC1_SnapBlockTest);
 			
 			if (false == PreviewActor->IsBlockedAt(MakeSnapTransform(Pair), InBlockers))
@@ -825,11 +828,6 @@ bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& 
 		float BestDistSquared = FLT_MAX;
 		float BestFacing = FLT_MAX * -1.f;
 
-		bool IsSocketFind = false;
-
-		FDC1BuildSnapSocket BsetTargetSocket;
-		FDC1BuildSnapSocket BestPreviewSocket;
-
 		for (const FDC1BuildSnapSocket& TargetSocket : TargetSockets)
 		{
 			// 이번 프레임에 이미 판정된 소켓
@@ -849,34 +847,22 @@ bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& 
 				continue;
 			}
 
-			for (const FDC1BuildSnapSocket& PreviewSocket : InPreviewSockets)
-			{
-				if (false == TargetSocket.AcceptTypes.HasTagExact(PreviewSocket.SnapType))
-				{
-					continue;
-				}
-
-				IsSocketFind = true;
-
-				BestScore = Score;
-				BestDistSquared = DistSquared;
-				BestFacing = Facing;
-
-				BsetTargetSocket = TargetSocket;
-				BestPreviewSocket = PreviewSocket;
-			}
-
-			if (false == IsSocketFind)
+			FDC1BuildSnapSocket PreviewSocket;
+			if (false == SelectPreviewSocket(TargetSocket, InPreviewSockets, GetControlYaw(), PreviewSocket))
 			{
 				continue;
 			}
+
+			BestScore = Score;
+			BestDistSquared = DistSquared;
+			BestFacing = Facing;
 
 			BestActorDistSquared = ActorDistSquared;
 
 			FDC1BuildSnapPair SnapPair;
 			SnapPair.TargetActor = Candidate;
-			SnapPair.TargetSocket = BsetTargetSocket;
-			SnapPair.PreviewSocket = BestPreviewSocket;
+			SnapPair.TargetSocket = TargetSocket;
+			SnapPair.PreviewSocket = PreviewSocket;
 
 			OutPair = SnapPair;
 
@@ -887,11 +873,45 @@ bool UDC1BuildPlacementComponent::FindBestSnapPair(const TSet<ADC1BuildActor*>& 
 	return IsFind;
 }
 
+bool UDC1BuildPlacementComponent::SelectPreviewSocket(const FDC1BuildSnapSocket& InTarget, const TArray<FDC1BuildSnapSocket>& InPreviewSockets, float InReferenceYaw, FDC1BuildSnapSocket& OutPreview) const
+{
+	float MinDifference = FLT_MAX;
+
+	bool IsFindPreviewSocket = false;
+	for (const FDC1BuildSnapSocket& PreviewSocket : InPreviewSockets)
+	{
+		if (false == InTarget.AcceptTypes.HasTagExact(PreviewSocket.SnapType))
+		{
+			continue;
+		}
+
+		const FTransform Desired = SnapSocketFlip * InTarget.SocketTransform;
+
+		const FQuat DeltaQuat = Desired.GetRotation() * PreviewSocket.SocketTransform.GetRotation().Inverse();
+
+		const float ResultYaw = (DeltaQuat * PreviewActor->GetActorQuat()).Rotator().Yaw;
+
+		const float Difference = FMath::Abs(FMath::FindDeltaAngleDegrees(ResultYaw, InReferenceYaw));
+
+		if (Difference >= MinDifference)
+		{
+			continue;
+		}
+
+		MinDifference = Difference;
+
+		OutPreview = PreviewSocket;
+
+		IsFindPreviewSocket = true;
+	}
+
+	return IsFindPreviewSocket;
+}
+
 const FTransform UDC1BuildPlacementComponent::MakeSnapTransform(const FDC1BuildSnapPair& InPair) const
 {
 	// 두 소켓이 마주보게
-	const FTransform Flip = FTransform(FRotator(0.f, 180.f, 0.f));
-	const FTransform Desired = Flip * InPair.TargetSocket.SocketTransform;
+	const FTransform Desired = SnapSocketFlip * InPair.TargetSocket.SocketTransform;
 
 	const FQuat DeltaQuat = Desired.GetRotation() * InPair.PreviewSocket.SocketTransform.GetRotation().Inverse();
 
@@ -917,17 +937,29 @@ const FTransform UDC1BuildPlacementComponent::MakeSnapTransform(const FDC1BuildS
 	return FTransform(FinalQuat, FinalLocation, PreviewActor->GetActorScale3D());
 }
 
-bool UDC1BuildPlacementComponent::IsInBuildRange(const FVector& InLocation, const float InMaxDistance, const float InMarginFactor) const
+bool UDC1BuildPlacementComponent::IsInBuildRange(const ADC1BuildActor* InBuild, const float InMaxDistance, const float InMarginFactor) const
 {
 	const APawn* Pawn = GetOwnerPawn();
-	if (false == ::IsValid(Pawn))
+	if (false == ::IsValid(Pawn) || false == ::IsValid(InBuild))
 	{
 		return false;
 	}
 
-	float Distance = FVector::Dist2D(Pawn->GetActorLocation(), InLocation);
+	FDC1BuildBox Box;
+	if (false == InBuild->GetCheckBoxWorld(Box))
+	{
+		return false;
+	}
 
-	return Distance <= (InMaxDistance * InMarginFactor);
+	const FVector PawnWorldLocation = Pawn->GetActorLocation();
+
+	const FVector LocalLocation = Box.Transform.InverseTransformPositionNoScale(PawnWorldLocation);
+
+	const FVector Clamp = FBox(Box.Extent * -1.f, Box.Extent).GetClosestPointTo(LocalLocation);
+
+	const FVector Closet = Box.Transform.TransformPositionNoScale(Clamp);
+
+	return FVector::Dist2D(PawnWorldLocation, Closet) <= (InMaxDistance * InMarginFactor);
 }
 
 ADC1BuildActor* UDC1BuildPlacementComponent::TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const
@@ -970,7 +1002,7 @@ void UDC1BuildPlacementComponent::ChangeSnapConfirmTarget()
 	SnapMinDistance = PreviewActor->GetExtentCenterToDirection(SnapSocketNormalWorld, SnapQuat);
 
 	const FVector NewBoxCenter = PreviewActor->GetCheckBoxCenter();
-	const float HalfExtent = SnapMinDistance - SnapContactMargin;
+	const float HalfExtent = SnapMinDistance + SnapContactMargin;
 
 	SnapSocketLocationWorld = NewBoxCenter + (SnapSocketNormalWorld * HalfExtent);
 }
