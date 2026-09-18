@@ -4,6 +4,7 @@
 #include "UI/DC1UserWidget.h"
 #include "Animation/WidgetAnimation.h"
 #include "Animation/WidgetAnimationState.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
 
 
 void UDC1UserWidget::NativeOnInitialized()
@@ -56,6 +57,18 @@ void UDC1UserWidget::NativeOnActivated()
 
 void UDC1UserWidget::NativeOnDeactivated()
 {
+}
+
+void UDC1UserWidget::PopScreen()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1UserWidget :: Failed to Find UIManager"));
+		return;
+	}
+
+	UIManager->PopScreen();
 }
 
 void UDC1UserWidget::PlayAnim(UWidgetAnimation* InAnim, const FDC1AnimPlayInfo& InPlayInfo)

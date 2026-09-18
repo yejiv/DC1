@@ -38,4 +38,3 @@ namespace DC1DataTableHelper
 }
 
 #pragma endregion
-

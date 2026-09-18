@@ -10,6 +10,7 @@
 #include "Component/Build/DC1BuildSnapComponent.h"
 
 #include "Define/DC1Structs.h"
+#include "Define/DC1BuildSupportHelper.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -116,6 +117,18 @@ const bool ADC1BuildActor::IsBlockedAt(const FTransform& InActorTransform, const
 	return BuildCheckComp->IsBlockedAt(BoxTransform, InBlockers);
 }
 
+const bool ADC1BuildActor::GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const
+{
+	if (false == ::IsValid(BuildCheckComp))
+	{
+		return false;
+	}
+
+	BuildCheckComp->GatherSurfaceSupporters(OutSupporters, OutIsOnGround);
+
+	return true;
+}
+
 // Called when the game starts or when spawned
 void ADC1BuildActor::BeginPlay()
 {
@@ -156,9 +169,30 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 	BuildState = EDC1BuildState::Completed;
 }
 
+void ADC1BuildActor::RequestBuildDestroy()
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	TSet<ADC1BuildActor*> Doomed;
+	DC1BuildSupportHelper::CollectCascade(this, Doomed);
+
+	for (ADC1BuildActor* Doom : Doomed)
+	{
+		if (true == ::IsValid(Doom))
+		{
+			Doom->BuildDestroy();
+		}
+	}
+}
+
 void ADC1BuildActor::BuildDestroy()
 {
-	// TODO Despawn, Cost Return
+	// TODO Cost Return
+
+	Destroy();
 }
 
 void ADC1BuildActor::InitPreview(const FDC1BuildActorData& InBuildActorData)
@@ -169,9 +203,20 @@ void ADC1BuildActor::InitPreview(const FDC1BuildActorData& InBuildActorData)
 }
 
 
+void ADC1BuildActor::SetDismantleHighlight(bool InIsHighlighted)
+{
+	if (false == ::IsValid(BuildMesh))
+	{
+		return;
+	}
+
+	UMaterialInterface* OverlayMaterial = InIsHighlighted ? DismantleOverlayMaterial : nullptr;
+	BuildMesh->SetOverlayMaterial(OverlayMaterial);
+}
+
 bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 {
-	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange);
+	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this);
 
 	if (CanBuilding != CurrentCanBuilding)
 	{

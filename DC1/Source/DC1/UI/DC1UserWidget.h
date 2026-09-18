@@ -46,6 +46,8 @@ protected:
 	virtual void	NativeOnActivated();
 	virtual void	NativeOnDeactivated();
 
+	void			PopScreen();
+
 	void			PlayAnim(UWidgetAnimation* InAnim, const FDC1AnimPlayInfo& InPlayInfo);
 
 	// 재생 중단 + 추적 해제

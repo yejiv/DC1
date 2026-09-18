@@ -179,11 +179,11 @@ void ADC1InteractBuildActor::ApplyState()
 
 void ADC1InteractBuildActor::BuildDestroy()
 {
-	Super::BuildDestroy();
-
 	CancelWorkersAbility();
 
 	Workers.Empty();
+
+	Super::BuildDestroy();
 }
 
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)

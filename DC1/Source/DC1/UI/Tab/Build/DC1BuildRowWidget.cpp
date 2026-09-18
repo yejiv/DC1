@@ -10,8 +10,6 @@
 #include "Components/TextBlock.h"
 #include "Components/PanelWidget.h"
 
-#include "Subsystem/DC1UIManagerSubsystem.h"
-
 #include "ViewModel/Build/DC1BuildViewModel.h"
 
 
@@ -58,11 +56,7 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 				return;
 			}
 
-			UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-			if (true == ::IsValid(UIManager))
-			{
-				UIManager->PopScreen();
-			}
+			PopScreen();
 		});
 
 	return SlotWidget;

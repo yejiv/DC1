@@ -40,13 +40,14 @@ public:
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData) override;
-	virtual void					BuildDestroy() override;
+
 
 	void							AddWorker(const ADC1Character* InWorker);
 	void							RemoveWorker(const ADC1Character* InWorker);
 
 protected:
 	virtual void					ApplyState() override;
+	virtual void					BuildDestroy() override;
 
 	UFUNCTION()
 	void							OnRep_BuildProgress();
