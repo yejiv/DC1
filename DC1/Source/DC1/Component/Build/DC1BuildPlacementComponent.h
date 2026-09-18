@@ -89,17 +89,22 @@ private:
 											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<TWeakObjectPtr<const UDC1BuildSocketComponent>>& InExcludedSockets,
 											FDC1BuildSnapPair& OutPair) const;
 
+	bool				SelectPreviewSocket(const FDC1BuildSnapSocket& InTarget, const TArray<FDC1BuildSnapSocket>& InPreviewSockets, 
+												float InReferenceYaw, FDC1BuildSnapSocket& OutPreview) const;
+
 	const FTransform	MakeSnapTransform(const FDC1BuildSnapPair& InPair) const;
 
-	bool				IsInBuildRange(const FVector& InLocation, const float InMaxDistance, const float InMarginFactor = 1.f) const;
+	bool				IsInBuildRange(const ADC1BuildActor* InBuild, const float InMaxDistance, const float InMarginFactor = 1.f) const;
 
 	ADC1BuildActor*		TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const;
+
 
 private:
 	// 배치 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		PlaceDistance = { 300.f };
 
+	// 설치 최대 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		MaxDistance = { 500.f };
 

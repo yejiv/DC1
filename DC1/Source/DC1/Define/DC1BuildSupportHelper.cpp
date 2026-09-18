@@ -21,9 +21,6 @@ namespace
 	// 맞닿은 박스를 후보로 잡는다
 	constexpr float NeighborQueryInflate = 10.f;
 
-	// 지붕 경계에서의 여유
-	constexpr float RoofGapEpsilon = 5.f;
-
 	struct FDC1SupportCache
 	{
 		TMap<const ADC1BuildActor*, TArray<ADC1BuildActor*>>		Neighbors;
@@ -289,7 +286,7 @@ namespace
 			MinGapY = FMath::Min(GapY, MinGapY);
 		}
 
-		const FVector2D ToleranceGap = RoofSize * (InRoof->GetRoofSupportSpan() - 1) + RoofGapEpsilon;
+		const FVector2D ToleranceGap = RoofSize * (InRoof->GetRoofSupportSpan() - 1) + (RoofSize * 0.5f);
 
 		return MinGapX <= ToleranceGap.X && MinGapY <= ToleranceGap.Y;
 	}
@@ -356,6 +353,7 @@ void DC1BuildSupportHelper::CollectCascade(ADC1BuildActor* InOrigin, TSet<ADC1Bu
 {
 	SCOPE_CYCLE_COUNTER(STAT_DC1_BuildCollectCascade);
 
+
 	OutDoomed.Reset();
 
 	if (false == ::IsValid(InOrigin))
@@ -374,7 +372,18 @@ void DC1BuildSupportHelper::CollectCascade(ADC1BuildActor* InOrigin, TSet<ADC1Bu
 	{
 		ADC1BuildActor* Target = Dependents.Pop();
 
-		if (true == OutDoomed.Contains(Target) || true == IsSupported(Target, OutDoomed, Cache))
+		//if (true == OutDoomed.Contains(Target) || true == IsSupported(Target, OutDoomed, Cache))
+		//{
+
+		//	continue;
+		//}
+
+		if (true == OutDoomed.Contains(Target))
+		{
+			continue;
+		}
+
+		if (true == IsSupported(Target, OutDoomed, Cache))
 		{
 			continue;
 		}
