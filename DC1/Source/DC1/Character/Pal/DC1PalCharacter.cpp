@@ -177,16 +177,37 @@ void ADC1PalCharacter::ApplyPalData()
 
 	if (IsValid(PalAttributeSet))
 	{
-		PalAttributeSet->InitMaxHealth(PalData->MaxHealth);
-		PalAttributeSet->InitHealth(PalData->MaxHealth);
-		PalAttributeSet->InitAttackPower(PalData->AttackPower);
-
 		const int32 FinalLevel = (true == bOverrideLevel)
 			? LevelOverride
 			: FMath::RandRange(PalData->MinLevel, FMath::Max(PalData->MinLevel, PalData->MaxLevel));
 
 		PalAttributeSet->InitLevel(FinalLevel);
 		PalInstance.Level = FinalLevel;
+
+		if (PalInstance.TalentHealth < 0)
+		{
+			PalInstance.TalentHealth = FMath::RandRange(0, 100);
+		}
+
+		if (PalInstance.TalentAttack < 0)
+		{
+			PalInstance.TalentAttack = FMath::RandRange(0, 100);
+		}
+
+		if (PalInstance.TalentDefense < 0)
+		{
+			PalInstance.TalentDefense = FMath::RandRange(0, 100);
+		}
+
+		const float FinalMaxHealth = Registry->GetMaxHealthFor(*PalData, FinalLevel, PalInstance.TalentHealth);
+
+		const float FinalAttack = Registry->GetAttackPowerFor(*PalData, FinalLevel, PalInstance.TalentAttack);
+		const float FinalDefense = Registry->GetDefensePowerFor(*PalData, FinalLevel, PalInstance.TalentDefense);
+
+		PalAttributeSet->InitMaxHealth(FinalMaxHealth);
+		PalAttributeSet->InitHealth(FinalMaxHealth);
+		PalAttributeSet->InitAttackPower(FinalAttack);
+		PalAttributeSet->InitDefensePower(FinalDefense);
 	}
 
 	if (EDC1PalGender::None == PalInstance.Gender)
@@ -276,6 +297,16 @@ float ADC1PalCharacter::GetHealthRatio() const
 float ADC1PalCharacter::GetCaptureRate() const
 {
 	return (nullptr != PalData) ? PalData->CaptureRate : 0.f;
+}
+
+EDC1PalElement ADC1PalCharacter::GetElement() const
+{
+	return (nullptr != PalData) ? PalData->Element : EDC1PalElement::Neutral;
+}
+
+EDC1PalElement ADC1PalCharacter::GetElement2() const
+{
+	return (nullptr != PalData) ? PalData->Element2 : EDC1PalElement::Neutral;
 }
 
 FDC1PalInstance ADC1PalCharacter::Fold()

@@ -88,8 +88,11 @@ void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 	OutDisplayInfo.ElementIcon = Registry->FindElementIcon(PalData->Element).LoadSynchronous();
 	OutDisplayInfo.Level = PalInfo->Level;
 	OutDisplayInfo.Name = PalInfo->Nickname.IsEmpty() ? PalData->DisplayName : FText::FromString(PalInfo->Nickname);
-	// 추후 PalInfo의 MaxHealth로 교체
-	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, PalData->MaxHealth);
+
+	// OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, PalData->MaxHealth);
+	// 최대 체력은 개체마다 다르다(레벨·개체값). 종 데이터를 직접 읽으면 어긋나므로 게터를 거친다.
+	const float MaxHealth = PalPartyComponent->GetPalMaxHealth(PrevSlot);
+	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, MaxHealth);
 }
 
 bool UDC1PalViewModel::IsDeployed()

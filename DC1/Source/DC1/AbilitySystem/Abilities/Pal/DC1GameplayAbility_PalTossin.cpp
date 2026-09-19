@@ -2,8 +2,7 @@
 
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalTossin.h"
 
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
-#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_PalDamage.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
@@ -137,14 +136,12 @@ void UDC1GameplayAbility_PalTossin::SweepAndApplyDamage()
 		EffectContext.AddSourceObject(Pal);
 		EffectContext.AddHitResult(Hit);
 
-		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), GetAbilityLevel(), EffectContext);
+		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_PalDamage::StaticClass(), GetAbilityLevel(), EffectContext);
 		if (false == SpecHandle.IsValid())
 		{
 			continue;
 		}
 
-		const float AttackPower = SourceASC->GetNumericAttribute(UDC1AttributeSet::GetAttackPowerAttribute());
-		SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower);
 		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 	}
 }

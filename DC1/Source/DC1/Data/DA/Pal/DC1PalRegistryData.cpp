@@ -45,3 +45,61 @@ TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindGenderIcon(EDC1PalGender InG
 
 	return *Found;
 }
+
+float UDC1PalRegistryData::GetTalentMultiplier(int32 InTalent) const
+{
+	const float Ratio = static_cast<float>(FMath::Clamp(InTalent, 0, 100)) / 100.f;
+	return 1.f + (Ratio * StatGrowth.TalentMaxBonus);
+}
+
+float UDC1PalRegistryData::GetGrowthTerm(float InStat, float InCoeff, int32 InLevel, int32 InTalent) const
+{
+	const int32 Level = FMath::Max(1, InLevel);
+
+	return InStat * InCoeff * Level * GetTalentMultiplier(InTalent);
+}
+
+float UDC1PalRegistryData::GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const
+{
+	const int32 Level = FMath::Max(1, InLevel);
+
+	return StatGrowth.HealthFlatBase
+		+ (StatGrowth.HealthPerLevel * Level)
+		+ GetGrowthTerm(InPalData.HealthStat, StatGrowth.HealthCoeff, Level, InTalent);
+}
+
+float UDC1PalRegistryData::GetAttackPowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const
+{
+	return StatGrowth.AttackFlatBase
+		+ GetGrowthTerm(InPalData.AttackStat, StatGrowth.CombatCoeff, InLevel, InTalent);
+}
+
+float UDC1PalRegistryData::GetDefensePowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const
+{
+	return StatGrowth.DefenseFlatBase
+		+ GetGrowthTerm(InPalData.DefenseStat, StatGrowth.CombatCoeff, InLevel, InTalent);
+}
+
+float UDC1PalRegistryData::GetElementMultiplier(EDC1PalElement InAttackElement, EDC1PalElement InTargetElement, EDC1PalElement InTargetElement2) const
+{
+	auto EvaluateOne = [this, InAttackElement](EDC1PalElement InDefendElement) -> float
+		{
+			const FDC1ElementMatchup* DefendRow = ElementChart.Find(InDefendElement);
+			if (nullptr == DefendRow)
+			{
+				return 1.f;
+			}
+
+			return (true == DefendRow->WeakTo.Contains(InAttackElement)) ? ElementStrongMultiplier : 1.f;
+		};
+
+	float Multiplier = EvaluateOne(InTargetElement);
+
+
+	if (EDC1PalElement::Neutral != InTargetElement2 && InTargetElement2 != InTargetElement)
+	{
+		Multiplier *= EvaluateOne(InTargetElement2);
+	}
+
+	return Multiplier;
+}

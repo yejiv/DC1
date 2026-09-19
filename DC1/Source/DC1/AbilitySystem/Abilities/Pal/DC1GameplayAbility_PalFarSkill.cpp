@@ -2,8 +2,7 @@
 
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalFarSkill.h"
 
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
-#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_PalDamage.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Projectile/Pal/DC1PalProjectile.h"
@@ -63,14 +62,12 @@ void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()
 	EffectContext.SetAbility(this);
 	EffectContext.AddSourceObject(Pal);
 
-	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), GetAbilityLevel(), EffectContext);
+	const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_PalDamage::StaticClass(), GetAbilityLevel(), EffectContext);
 	if (false == SpecHandle.IsValid())
 	{
 		return;
 	}
 
-	const float AttackPower = SourceASC->GetNumericAttribute(UDC1AttributeSet::GetAttackPowerAttribute());
-	SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Pal;

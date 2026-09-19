@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
+#include "Define/DC1Enums.h"
 #include "GameplayTagContainer.h"
 #include "DC1GameplayAbility_PalSkill.generated.h"
 
@@ -25,6 +26,8 @@ public:
 	float					GetMaxRange() const { return MaxRange; }
 	float					GetApproachRange() const { return ApproachRange; }
 	float					GetMinRange() const { return MinRange; }
+	float					GetSkillPower() const { return SkillPower; }
+	EDC1PalElement			GetSkillElement() const { return SkillElement; }
 
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -54,4 +57,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
 	float					MinRange = { 0.f };			// 물러날 거리
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
+	float					SkillPower = { 12.f };		// 스킬의 세기
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill")
+	EDC1PalElement			SkillElement = { EDC1PalElement::Neutral };
 };

@@ -66,8 +66,6 @@ namespace DC1PalTaskHelper
 
 		StopFollowMove(AIController, LastRequestedLocation);
 		Pal.SetActorLocation(Behind.Location + FVector(0.f, 0.f, Pal.GetSimpleCollisionHalfHeight()));
-
-		UE_LOG(LogTemp, Log, TEXT("[Pal] %s teleported to owner (fell behind)."), *Pal.GetName());
 	}
 
 	static UDC1AbilitySystemComponent* GetASC(const AActor* Actor)

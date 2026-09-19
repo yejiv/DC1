@@ -55,6 +55,14 @@ public:
 
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
 
+	// 개체값
+	int32								GetTalentHealth() const { return PalInstance.TalentHealth; }
+	int32								GetTalentAttack() const { return PalInstance.TalentAttack; }
+
+	// 속성
+	EDC1PalElement						GetElement() const;
+	EDC1PalElement						GetElement2() const;
+
 	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
 	const FGuid&						GetInstanceID() const { return InstanceID; }
 

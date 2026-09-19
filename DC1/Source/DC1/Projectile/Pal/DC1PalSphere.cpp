@@ -88,15 +88,30 @@ void ADC1PalSphere::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRate, float InPalLevel) const
 {
-	const float HealthFactor = 1.f - (InHealthRatio * HealthWeight); //HealthWeight 0.8이면 만피 0.2 ~ 빈사 1.0
-	const float LevelFactor = 1.f + (FMath::Max(0.f, InPalLevel - 1.f) * LevelPenalty);
+	// 원작 공식. 곡선 상수(50 / 99 / 1.3 / 9 / 256)는 밸런싱 손잡이가 아니라 곡선의 모양이라
+	// 데이터로 열지 않는다 — 에디터에서 바꾸면 확률이 0~1 범위를 벗어난다.
+	// 조정 대상은 SphereLevel(등급) 과 종별 InCaptureRate 다.
 
-	// 임시. 플레이어에 CapturePower 어트리뷰트
-	const float CapturePower = 1.f;
+	// 임시. UDC1PlayerSet 에 CapturePower 어트리뷰트가 생기면 던진 사람에게서 읽는다.
+	// 0 은 게임 시작 시점의 실제 값이다 (원작의 림벌크 석상을 아직 안 모은 상태)
+	const float CapturePower = 0.f;
 
-	const float Chance = (InCaptureRate * HealthFactor * CapturePower * CaptureMultiplier) / LevelFactor;
+	// ① 레벨 차 — 스피어 등급이 팰 레벨과 직접 겨룬다
+	const float LevelGap = SphereLevel + (CapturePower * 0.5f) - InPalLevel;
 
-	return FMath::Clamp(Chance, 0.f, 1.f);
+	// ② 0~1 로 정규화
+	const float NormalizedLevel = FMath::Clamp((LevelGap + 50.f) / 99.f, 0.f, 1.f);
+
+	// ③ 체력을 곱한다. 만피 0.769 ~ 빈사 1.0
+	const float Combined = FMath::Pow(1.3f, -InHealthRatio) * NormalizedLevel;
+
+	// ④ 9제곱 곡선. 0.35~0.55 구간에서 기울기가 급해 체력을 깎는 값어치가 커진다
+	const float BaseChance = (Combined >= 0.5f)
+		? (1.f - (FMath::Pow(2.f - (2.f * Combined), 9.f) / 2.f))
+		: (256.f * FMath::Pow(Combined, 9.f));
+
+	// ⑤ 종별 보정. 상태이상·월드설정 배율은 그 시스템이 없어 넣지 않았다
+	return FMath::Clamp(BaseChance * InCaptureRate, 0.f, 1.f);
 }
 
 void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -134,17 +149,34 @@ void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* Other
 
 	SetLifeSpan(0.f);	//사라짐 방지
 
-	// 임시. 팰 레벨 고정
-	const float PalLevel = 1.f;
+	const float PalLevel = static_cast<float>(Pal->GetLevel());
 
 	const float Chance = ComputeCaptureChance(Pal->GetHealthRatio(), Pal->GetCaptureRate(), PalLevel);
 
-	ShakeChance = FMath::Pow(Chance, 1.f / static_cast<float>(ShakeCount));
+	// 가중치를 비워두면 단계가 없어져 판정이 돌지 않는다. 최소 한 단계는 보장한다
+	if (0 == ShakeWeights.Num())
+	{
+		ShakeWeights.Add(1.f);
+	}
+
+	ShakeWeightSum = 0.f;
+	for (const float Weight : ShakeWeights)
+	{
+		ShakeWeightSum += FMath::Max(0.f, Weight);
+	}
+
+	if (ShakeWeightSum <= 0.f)
+	{
+		ShakeWeightSum = static_cast<float>(ShakeWeights.Num());
+	}
+
+	CaptureChance = Chance;
 	ShakeIndex = 0;
 
-	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: %s  HP %.0f%%  Lv %.0f  chance %.0f%%  (per-stage %.0f%%, x%d)"),
+	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: %s  HP %.0f%%  Lv %.0f  IV(H%d/A%d)  chance %.0f%%  (x%d stages)"),
 		*GetNameSafe(Pal), Pal->GetHealthRatio() * 100.f, PalLevel,
-		Chance * 100.f, ShakeChance * 100.f, ShakeCount);
+		Pal->GetTalentHealth(), Pal->GetTalentAttack(),
+		Chance * 100.f, ShakeWeights.Num());
 
 	HitCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -170,27 +202,37 @@ void ADC1PalSphere::BeginShaking()
 
 void ADC1PalSphere::OnShake()
 {
+	const int32 StageCount = ShakeWeights.Num();
+
+	// 이번 단계를 버틸 확률 = 전체확률 ^ (이 단계 비중 / 비중 합).
+	const float StageExponent = FMath::Max(0.f, ShakeWeights[ShakeIndex]) / ShakeWeightSum;
+	const float StageChance = FMath::Pow(CaptureChance, StageExponent);
+
 	++ShakeIndex;
 
-	if (FMath::FRand() >= ShakeChance)
+	if (FMath::FRand() >= StageChance)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d broke out.  FAILED"), ShakeIndex, ShakeCount);
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d broke out (stage %.0f%%).  FAILED"),
+			ShakeIndex, StageCount, StageChance * 100.f);
+
 		Resolve(false);
 		return;
 	}
 
-	if (ShakeIndex >= ShakeCount)
+	if (ShakeIndex >= StageCount)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d held.  CAPTURED"), ShakeIndex, ShakeCount);
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d held (stage %.0f%%).  CAPTURED"),
+			ShakeIndex, StageCount, StageChance * 100.f);
+
 		Resolve(true);
 		return;
 	}
 
-	// UI 넘길 값
-	const float Remaining = FMath::Pow(ShakeChance, static_cast<float>(ShakeCount - ShakeIndex));
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d held.  remaining %.0f%%"),
-		ShakeIndex, ShakeCount, Remaining * 100.f);
+	// 중간 단계를 버텄다. 성공·실패가 갈릴 때만 로그를 남기므로 여기서는 찍지 않는다.
+	//
+	// UI 가 "여기서부터 잡힐 확률" 을 보여주려면 남은 단계들의 비중을 합쳐
+	//   FMath::Pow(CaptureChance, 남은비중합 / ShakeWeightSum)
+	// 으로 구한다. 지금은 보여줄 곳이 없어 계산하지 않는다
 }
 
 void ADC1PalSphere::Resolve(bool bInSuccess)

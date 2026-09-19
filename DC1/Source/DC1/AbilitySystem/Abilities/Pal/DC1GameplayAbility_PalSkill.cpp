@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 
+#include "AbilitySystemComponent.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 

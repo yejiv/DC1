@@ -43,21 +43,12 @@ protected:
 	void					Resolve(bool bInSuccess);	//판정 후 정리
 
 protected:
-	// 스피어 등급. 등급마다 BP를 하나씩 만들고 이 값만 바꿈
-	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.1"))
-	float					CaptureMultiplier = { 1.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1.0"))
+	float					SphereLevel = { 7.f };
 
-	// 체력이 확률에 얼마나 기여하는지
-	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float					HealthWeight = { 0.8f };
-
-	// 팰 레벨이 확률을 깎는 정도. 0.02면 Lv50에서 약 2배 어려움
-	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.0"))
-	float					LevelPenalty = { 0.02f };
-
-	// 판정 단계
-	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1"))
-	int32					ShakeCount = { 3 };
+	// 단계별 난이도 비중. 합으로 정규화해서 각 단계의 지수로 씀
+	UPROPERTY(EditDefaultsOnly, Category = "Capture")
+	TArray<float>			ShakeWeights = { 4.f, 3.f, 2.f };
 
 	// 단계 간격. SetTimer가 0 이하를 해제로 처리해 0 불가
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.1"))
@@ -95,8 +86,9 @@ private:
 
 	TWeakObjectPtr<class ADC1PalCharacter>	TargetPal;
 
-	float					ShakeChance = { 0.f };
-	int32					ShakeIndex = { 0 };				// 단계별 버틸 확률
+	float					CaptureChance = { 0.f };		// 전체 성공 확률. 단계 지수의 밑
+	float					ShakeWeightSum = { 0.f };		// ShakeWeights 합. 지수 정규화용
+	int32					ShakeIndex = { 0 };				// 지금까지 버틴 단계 수
 
 	FTimerHandle			CaptureTimer;
 };

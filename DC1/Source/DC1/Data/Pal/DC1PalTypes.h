@@ -38,6 +38,16 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	float					Experience = { 0.f };
 
+	// 개체값
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	int32					TalentHealth = { -1 };
+
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	int32					TalentAttack = { -1 };
+
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	int32					TalentDefense = { -1 };
+
 	// 다쳐서 잡힌 팰은 그 상태가 유지된다. 최대 체력은 저장하지 않는다
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	float					CurrentHealth = { 0.f };

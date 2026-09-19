@@ -161,8 +161,6 @@ void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
 
 	SelectedSlot = (SelectedSlot + InDelta + Capacity) % Capacity;
 
-	LogSlot(SelectedSlot);
-
 	Server_SetSelectedSlot(SelectedSlot);
 	OnPalSlotTranslated.Broadcast();
 }
@@ -197,28 +195,12 @@ float UDC1PalPartyComponent::GetPalMaxHealth(int32 InSlotIndex) const
 		return 0.f;
 	}
 
-	return PalData->MaxHealth;
+	return Registry->GetMaxHealthFor(*PalData, Pals[InSlotIndex].Level, Pals[InSlotIndex].TalentHealth);
 }
 
 void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
 {
 	SelectedSlot = FMath::Clamp(InSlotIndex, 0, Capacity - 1);
-}
-
-void UDC1PalPartyComponent::LogSlot(int32 InSlotIndex) const
-{
-	if (false == HasPalAt(InSlotIndex))
-	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Slot %d/%d : empty"), InSlotIndex + 1, Capacity);
-		return;
-	}
-
-	const FDC1PalInstance& Pal = Pals[InSlotIndex];
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] Slot %d/%d : %s  HP %.0f%s"),
-		InSlotIndex + 1, Capacity,
-		*Pal.SpeciesTag.ToString(), Pal.CurrentHealth,
-		Pal.IsDeployable() ? TEXT("") : TEXT("  (down)"));
 }
 
 void UDC1PalPartyComponent::RetrieveDeployed()

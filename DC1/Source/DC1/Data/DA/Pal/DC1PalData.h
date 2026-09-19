@@ -77,11 +77,11 @@ public:
 #pragma endregion
 
 #pragma region Stats
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
-	float							MaxHealth = { 100.f };
+	// 레벨당 성장 계수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ClampMin = "0.0"))
+	float							HealthStat = { 100.f };
 
-	// 야생으로 나올 때의 레벨 범위. 같은 종도 개체마다 다르게 만든다.
-	// 배치한 개체가 bOverrideLevel 을 켜면 그 값이 우선한다
+	// 야생으로 나올 때의 레벨 범위
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ClampMin = "1"))
 	int32							MinLevel = { 1 };
 
@@ -108,8 +108,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
 	TArray<FGameplayTag>			SkillTags;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
-	float							AttackPower = { 10.f };
+	// 성장 계수. 최종값은 GetAttackPowerAtLevel() 이 계산
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (ClampMin = "0.0"))
+	float							AttackStat = { 100.f };
+
+	// 성장 계수. 최종값은 GetDefensePowerAtLevel() 이 계산
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (ClampMin = "0.0"))
+	float							DefenseStat = { 100.f };
 
 	// 이 종이 어떤 탄을 쏘는가. 키는 스킬 태그. 메시/속도/속성은 투사체 BP가 갖는다. 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))

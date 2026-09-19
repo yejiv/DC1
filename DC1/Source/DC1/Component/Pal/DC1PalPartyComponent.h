@@ -78,9 +78,6 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void					Server_SetSelectedSlot(int32 InSlotIndex);
 
-	// 슬롯 하나를 한 줄로 찍는다. UI가 붙기 전까지의 확인 수단
-	void					LogSlot(int32 InSlotIndex) const;
-
 	// 회수 한 번. 목록 반영 + 액터 파괴 + 예약된 타이머 정리.
 	// E 회수와 사망 회수가 같은 일을 하므로 공유한다
 	void					RetrieveDeployed();
