@@ -9,6 +9,39 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Anubis, "Pal.Species.Anubis");
 #pragma endregion
 
+#pragma region Passive
+	// 공격력만
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Ferocity, "Pal.Passive.Ferocity");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Courageous, "Pal.Passive.Courageous");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Coward, "Pal.Passive.Coward");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Pacifist, "Pal.Passive.Pacifist");
+
+	// 방어력만
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_ThickHide, "Pal.Passive.ThickHide");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Frail, "Pal.Passive.Frail");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_BrittleBones, "Pal.Passive.BrittleBones");
+
+	// 작업 속도만
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Artisan, "Pal.Passive.Artisan");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Diligence, "Pal.Passive.Diligence");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Clumsiness, "Pal.Passive.Clumsiness");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_SlackerHabit, "Pal.Passive.SlackerHabit");
+
+	// 공격력 <-> 방어력
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_DemonGod, "Pal.Passive.DemonGod");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Sadist, "Pal.Passive.Sadist");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Masochist, "Pal.Passive.Masochist");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Delinquent, "Pal.Passive.Delinquent");
+
+	// 공격력 <-> 작업 속도
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Musclehead, "Pal.Passive.Musclehead");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Ferocious, "Pal.Passive.Ferocious");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_WorkSlave, "Pal.Passive.WorkSlave");
+
+	// 방어력 <-> 작업 속도
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Conceited, "Pal.Passive.Conceited");
+#pragma endregion
+
 #pragma region Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Idle, "Ability.Pal.Idle");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Hit, "Ability.Pal.Hit");

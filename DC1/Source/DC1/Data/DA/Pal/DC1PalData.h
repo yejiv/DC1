@@ -89,6 +89,12 @@ public:
 	int32							MaxLevel = { 1 };
 #pragma endregion
 
+#pragma region Work
+	// 거점 작업 속도
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (ClampMin = "0.0"))
+	float							WorkSpeedStat = { 10.f };
+#pragma endregion
+
 #pragma region Ability
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability", meta = (Categories = "Asset"))
 	FGameplayTag					AbilityDataTag;

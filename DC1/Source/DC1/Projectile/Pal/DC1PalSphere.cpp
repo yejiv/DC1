@@ -4,6 +4,12 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "Data/DA/Pal/DC1PalRegistryData.h"
+#include "System/DC1AssetManager.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
+
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -88,12 +94,8 @@ void ADC1PalSphere::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRate, float InPalLevel) const
 {
-	// 원작 공식. 곡선 상수(50 / 99 / 1.3 / 9 / 256)는 밸런싱 손잡이가 아니라 곡선의 모양이라
-	// 데이터로 열지 않는다 — 에디터에서 바꾸면 확률이 0~1 범위를 벗어난다.
-	// 조정 대상은 SphereLevel(등급) 과 종별 InCaptureRate 다.
-
+	
 	// 임시. UDC1PlayerSet 에 CapturePower 어트리뷰트가 생기면 던진 사람에게서 읽는다.
-	// 0 은 게임 시작 시점의 실제 값이다 (원작의 림벌크 석상을 아직 안 모은 상태)
 	const float CapturePower = 0.f;
 
 	// ① 레벨 차 — 스피어 등급이 팰 레벨과 직접 겨룬다
@@ -112,6 +114,63 @@ float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRa
 
 	// ⑤ 종별 보정. 상태이상·월드설정 배율은 그 시스템이 없어 넣지 않았다
 	return FMath::Clamp(BaseChance * InCaptureRate, 0.f, 1.f);
+}
+
+void ADC1PalSphere::LogPassives(const ADC1PalCharacter& InPal) const
+{
+	const UAbilitySystemComponent* PalASC = InPal.GetAbilitySystemComponent();
+	if (nullptr == PalASC)
+	{
+		return;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+
+	FString PassiveNames;
+	for (const FGameplayTag& PassiveTag : InPal.GetPassiveTags())
+	{
+		if (false == PassiveNames.IsEmpty())
+		{
+			PassiveNames += TEXT(", ");
+		}
+
+		// 에디터에 넣은 표시 이름을 쓴다. 비어 있으면 태그로 대신해서 입력 누락도 같이 드러난다
+		const FDC1PalPassiveDef* PassiveDef = (nullptr != Registry) ? Registry->FindPassiveDef(PassiveTag) : nullptr;
+
+		PassiveNames += (nullptr != PassiveDef && false == PassiveDef->DisplayName.IsEmpty())
+			? PassiveDef->DisplayName.ToString()
+			: PassiveTag.GetTagName().ToString();
+	}
+
+	if (true == PassiveNames.IsEmpty())
+	{
+		PassiveNames = TEXT("none");
+	}
+
+	// BaseValue 는 성장 공식이 낸 값, CurrentValue 는 패시브 배율까지 얹힌 값.
+	// 둘을 나란히 찍어야 배율이 실제로 걸렸는지 보인다
+	auto ReadPair = [PalASC](const FGameplayAttribute& InAttribute, float& OutBase, float& OutCurrent)
+		{
+			OutBase = PalASC->GetNumericAttributeBase(InAttribute);
+			OutCurrent = PalASC->GetNumericAttribute(InAttribute);
+		};
+
+	float BaseAttack = 0.f;
+	float CurrentAttack = 0.f;
+	float BaseDefense = 0.f;
+	float CurrentDefense = 0.f;
+	float BaseWork = 0.f;
+	float CurrentWork = 0.f;
+
+	ReadPair(UDC1AttributeSet::GetAttackPowerAttribute(), BaseAttack, CurrentAttack);
+	ReadPair(UDC1AttributeSet::GetDefensePowerAttribute(), BaseDefense, CurrentDefense);
+	ReadPair(UDC1AttributeSet::GetWorkSpeedAttribute(), BaseWork, CurrentWork);
+
+	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: passives [%s]  Atk %.1f -> %.1f   Def %.1f -> %.1f   Work %.1f -> %.1f"),
+		*PassiveNames,
+		BaseAttack, CurrentAttack,
+		BaseDefense, CurrentDefense,
+		BaseWork, CurrentWork);
 }
 
 void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -177,6 +236,8 @@ void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* Other
 		*GetNameSafe(Pal), Pal->GetHealthRatio() * 100.f, PalLevel,
 		Pal->GetTalentHealth(), Pal->GetTalentAttack(),
 		Chance * 100.f, ShakeWeights.Num());
+
+	LogPassives(*Pal);
 
 	HitCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 

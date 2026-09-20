@@ -4,9 +4,11 @@
 #include "Controller/DC1PalAIController.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_PalPassive.h"
 #include "Components/CapsuleComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
+#include "Tags/Effect/DC1GameplayTag_Effect.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -208,11 +210,50 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitHealth(FinalMaxHealth);
 		PalAttributeSet->InitAttackPower(FinalAttack);
 		PalAttributeSet->InitDefensePower(FinalDefense);
+		PalAttributeSet->InitWorkSpeed(PalData->WorkSpeedStat);
 	}
 
 	if (EDC1PalGender::None == PalInstance.Gender)
 	{
 		PalInstance.Gender = FMath::RandBool() ? EDC1PalGender::Male : EDC1PalGender::Female;
+	}
+
+	if (false == PalInstance.bPassivesRolled)
+	{
+		Registry->RollPassives(PalInstance.PassiveTags);
+		PalInstance.bPassivesRolled = true;
+	}
+
+	ApplyPassives(*Registry);
+}
+
+void ADC1PalCharacter::ApplyPassives(const UDC1PalRegistryData& InRegistry)
+{
+	if (false == IsValid(AbilitySystemComponent))
+	{
+		return;
+	}
+
+	for (const FGameplayTag& PassiveTag : PalInstance.PassiveTags)
+	{
+		const FDC1PalPassiveDef* PassiveDef = InRegistry.FindPassiveDef(PassiveTag);
+		if (nullptr == PassiveDef)
+		{
+			continue;
+		}
+
+		FGameplayEffectSpecHandle Spec = AbilitySystemComponent->MakeOutgoingSpec(
+			UDC1GameplayEffect_PalPassive::StaticClass(), 1.f, AbilitySystemComponent->MakeEffectContext());
+		if (false == Spec.IsValid())
+		{
+			continue;
+		}
+
+		Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_PalPassive_Attack, PassiveDef->AttackMultiplier);
+		Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_PalPassive_Defense, PassiveDef->DefenseMultiplier);
+		Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_PalPassive_WorkSpeed, PassiveDef->WorkSpeedMultiplier);
+
+		AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 	}
 }
 

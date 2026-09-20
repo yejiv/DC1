@@ -52,9 +52,13 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	float					CurrentHealth = { 0.f };
 
-	// 포획할 때 굴려서 붙는다. 같은 종도 개체마다 다르게 만드는 값
+	// 개체가 태어날 때 굴려서 붙는다. 같은 종도 개체마다 다르게 만드는 값
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	TArray<FGameplayTag>	PassiveTags;
+
+	// 추첨을 이미 했는가
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	bool					bPassivesRolled = { false };
 
 	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }
 

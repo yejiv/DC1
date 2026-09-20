@@ -50,6 +50,59 @@ struct FDC1ElementMatchup
 	TArray<EDC1PalElement>	WeakTo;
 };
 
+// 패시브
+USTRUCT(BlueprintType)
+struct FDC1PalPassiveDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FText	DisplayName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FText	Description;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "-3", ClampMax = "4"))
+	int32	Rank = { 1 };
+
+	// 어트리뷰트에 곱할 배율
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	AttackMultiplier = { 1.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	DefenseMultiplier = { 1.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	WorkSpeedMultiplier = { 1.f };
+};
+
+// 랭크별 추첨 가중치
+USTRUCT(BlueprintType)
+struct FDC1PalPassiveRankWeights
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	RankMinus3 = { 2.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	RankMinus1 = { 5.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	Rank1 = { 8.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	Rank2 = { 2.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	Rank3 = { 3.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = "0.0"))
+	float	Rank4 = { 1.f };
+
+	float	GetWeight(int32 InRank) const;
+};
+
 UCLASS()
 class DC1_API UDC1PalRegistryData : public UDataAsset
 {
@@ -76,6 +129,11 @@ public:
 	// 속성 상성 배율
 	float	GetElementMultiplier(EDC1PalElement InAttackElement, EDC1PalElement InTargetElement, EDC1PalElement InTargetElement2) const;
 
+	// 패시브
+	const FDC1PalPassiveDef*	FindPassiveDef(const FGameplayTag& InPassiveTag) const;
+
+	void						RollPassives(TArray<FGameplayTag>& OutPassiveTags) const;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
 	TMap<FGameplayTag, TSoftObjectPtr<UDC1PalData>>	PalDataEntries;
@@ -100,4 +158,17 @@ public:
 	// 스킬 속성이 같을 때. "불 팰에게 불 스킬을 주는" 이유를 만든다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat", meta = (ClampMin = "1.0"))
 	float											ElementMatchBonus = { 1.2f };
+
+	// 패시브 목록
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive")
+	TMap<FGameplayTag, FDC1PalPassiveDef>			PassiveChart;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive")
+	FDC1PalPassiveRankWeights						PassiveRankWeights;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive")
+	TArray<float>									PassiveCountWeights = { 40.f, 40.f, 20.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive", meta = (ClampMin = "1"))
+	int32											MaxPassiveSlots = { 4 };
 };

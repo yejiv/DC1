@@ -42,6 +42,9 @@ protected:
 	void					OnShake(); //단계 판정
 	void					Resolve(bool bInSuccess);	//판정 후 정리
 
+	// 붙은 패시브와 그 결과를 한 줄로 찍는다. 잡는 순간에만 돌아서 팰 스폰마다 줄이 늘지 않는다
+	void					LogPassives(const class ADC1PalCharacter& InPal) const;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1.0"))
 	float					SphereLevel = { 7.f };

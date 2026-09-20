@@ -13,6 +13,7 @@
 class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
+class UDC1PalRegistryData;
 class UWidgetComponent;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
@@ -59,6 +60,9 @@ public:
 	int32								GetTalentHealth() const { return PalInstance.TalentHealth; }
 	int32								GetTalentAttack() const { return PalInstance.TalentAttack; }
 
+	// 패시브
+	const TArray<FGameplayTag>&			GetPassiveTags() const { return PalInstance.PassiveTags; }
+
 	// 속성
 	EDC1PalElement						GetElement() const;
 	EDC1PalElement						GetElement2() const;
@@ -97,6 +101,9 @@ protected:
 	void								OnRep_Team();
 
 	void								ApplyPalData();
+
+	// PassiveTags 를 GE 로 바꿔 붙인다
+	void								ApplyPassives(const UDC1PalRegistryData& InRegistry);
 
 	// 어빌리티 취소 + AI 정지 + 지각 소스 해제. 사망과 포획이 공유한다
 	void								StopAndUnregister();
