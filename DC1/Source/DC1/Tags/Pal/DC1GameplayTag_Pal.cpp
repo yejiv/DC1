@@ -7,6 +7,26 @@ namespace DC1PalTags
 #pragma region Species
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Alpaca, "Pal.Species.Alpaca");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Anubis, "Pal.Species.Anubis");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Boar, "Pal.Species.Boar");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_CaptainPenguin, "Pal.Species.CaptainPenguin");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_ChickenPal, "Pal.Species.ChickenPal");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_CowPal, "Pal.Species.CowPal");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_CuteFox, "Pal.Species.CuteFox");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Deer, "Pal.Species.Deer");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_DreamDemon, "Pal.Species.DreamDemon");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_ElecPanda, "Pal.Species.ElecPanda");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_ElecPomeranian, "Pal.Species.ElecPomeranian");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Garm, "Pal.Species.Garm");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_GhostBlackCat, "Pal.Species.GhostBlackCat");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_GrassMammoth, "Pal.Species.GrassMammoth");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_HadesBird, "Pal.Species.HadesBird");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_HawkBird, "Pal.Species.HawkBird");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Kitsunebi, "Pal.Species.Kitsunebi");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_LeafMomonga, "Pal.Species.LeafMomonga");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Monkey, "Pal.Species.Monkey");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_Penguin, "Pal.Species.Penguin");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_PinkCat, "Pal.Species.PinkCat");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_SheepBall, "Pal.Species.SheepBall");
 #pragma endregion
 
 #pragma region Passive
