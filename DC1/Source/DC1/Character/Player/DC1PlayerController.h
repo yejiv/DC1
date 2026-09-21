@@ -52,6 +52,10 @@ public:
 
 	virtual void OnRep_PlayerState() override;
 
+public:
+	UFUNCTION(Server, Reliable)
+	void Server_SavePlayerData();
+
 private:
 	void OnMove(const FInputActionValue& Value);
 	void OnTurn(const FInputActionValue& Value);
@@ -95,17 +99,26 @@ private:
 
 	void OnDebugDamageSelf();
 
+	// NumPad2 : 세이브 테스트용
+	void OnDebugSavePlayer();
+
 	// 어트리뷰트 변경은 서버 권한이므로 RPC로 넘긴다
 	UFUNCTION(Server, Reliable)
 	void ServerDebugDamageSelf(float InDamageAmount);
 #pragma endregion
 
+
+private:
 	void SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
 private:
 	// InputMappingContext Set MappingContext Priority 0
 	void SetBaseIMC(const FGameplayTag& IMCTag);
+
+// Subsystem Log
+private:
+	void ShowSubsystemLog();
 
 private:
 	UPROPERTY()

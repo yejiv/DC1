@@ -4,6 +4,10 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 
+#include "OnlineSubsystem.h"
+#include "Define/DC1Macro.h"
+#include "Save/DC1SaveSubsystem.h"
+
 #include "System/DC1AssetManager.h"
 #include "Data/DA/Input/DC1InputData.h"
 
@@ -115,6 +119,9 @@ void ADC1PlayerController::BeginPlay()
 		return;
 	}
 
+	// Subsystem Log Check
+	ShowSubsystemLog();
+
 	SetBaseIMC(DC1IMCTags::IMC_Default);
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
@@ -202,6 +209,12 @@ void ADC1PlayerController::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 
 	InitPlayerStateBindings();
+}
+
+void ADC1PlayerController::Server_SavePlayerData_Implementation()
+{
+	const bool bSaved = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>()->SavePlayerData(GetPlayerState<ADC1PlayerState>());
+	LOG(TEXT("[Save] SavePlayerData Result=%d"), bSaved);
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -566,6 +579,13 @@ void ADC1PlayerController::SetUp_DebugInput()
 	}
 
 	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugDamageSelf);
+	InputComponent->BindKey(EKeys::NumPadTwo, IE_Pressed, this, &ThisClass::OnDebugSavePlayer);
+}
+
+void ADC1PlayerController::OnDebugSavePlayer()
+{
+	LOG(TEXT("[Debug] Save requested"));
+	Server_SavePlayerData();
 }
 
 void ADC1PlayerController::OnDebugDamageSelf()
@@ -647,6 +667,13 @@ void ADC1PlayerController::SetBaseIMC(const FGameplayTag& IMCTag)
 			CurrentIMCTag = IMCTag;
 		}
 	}
+}
+
+void ADC1PlayerController::ShowSubsystemLog()
+{
+	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+	LOG(TEXT("[OSS] Subsystem = %s"),
+		OSS ? *OSS->GetSubsystemName().ToString() : TEXT("None"));
 }
 
 #pragma region UI_TEST

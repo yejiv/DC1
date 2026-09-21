@@ -55,8 +55,12 @@ public:
 	bool					IsDeployed(int32 InSlotIndex) const;
 
 public:
+	void ExportSaveData(TArray<FDC1PalInstance>& Out) const;
+	void ImportSaveData(const TArray<FDC1PalInstance>& In);
+
+public:
 	// 팰 슬롯 변화 시 호출
-	FOnPalSlotTranslated	OnPalSlotTranslated;
+	FOnPalSlotTranslated		OnPalSlotTranslated;
 
 	// 팰 등록 변화 시 호출
 	FOnPalSlotChanged		OnPalSlotChanged;

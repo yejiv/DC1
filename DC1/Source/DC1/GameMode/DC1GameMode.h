@@ -16,4 +16,7 @@ class DC1_API ADC1GameMode : public AGameModeBase
 
 public:
 	ADC1GameMode();
+
+public:
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 };

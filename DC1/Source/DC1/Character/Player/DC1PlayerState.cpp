@@ -10,6 +10,8 @@
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 
+#include "Save/DC1PlayerSaveGame.h"
+
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -37,4 +39,17 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+void ADC1PlayerState::WriteSaveData(UDC1PlayerSaveGame* Out) const
+{
+	if (false == IsValid(Out))
+		return;
+
+	if(true == IsValid(PalPartyComponent))
+		PalPartyComponent->ExportSaveData(Out->PartyPals);
+}
+
+void ADC1PlayerState::ReadSaveData(const UDC1PlayerSaveGame* In)
+{
 }

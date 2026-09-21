@@ -14,6 +14,7 @@ class UDC1PlayerInventoryComponent;
 class UDC1PalPartyComponent;
 class UDC1EquipComponent;
 
+class UDC1PlayerSaveGame;
 /**
  * 
  */
@@ -31,6 +32,10 @@ public:
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
+
+public:
+	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
+	void ReadSaveData(const UDC1PlayerSaveGame* In);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")

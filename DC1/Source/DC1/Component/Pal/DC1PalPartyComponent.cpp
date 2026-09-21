@@ -71,6 +71,21 @@ bool UDC1PalPartyComponent::IsDeployed(int32 InSlotIndex) const
 	return (Pals[InSlotIndex].PalID == DeployedPal->GetInstanceID());
 }
 
+void UDC1PalPartyComponent::ExportSaveData(TArray<FDC1PalInstance>& Out) const
+{
+	Out = Pals;
+}
+
+void UDC1PalPartyComponent::ImportSaveData(const TArray<FDC1PalInstance>& In)
+{
+	// Server만 동작
+	if (true == GetOwner()->HasAuthority())
+	{
+		Pals = In;
+		OnPalSlotChanged.Broadcast();
+	}
+}
+
 void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 {
 	if (ROLE_Authority != GetOwnerRole() || false == InPal.IsValidPal())
