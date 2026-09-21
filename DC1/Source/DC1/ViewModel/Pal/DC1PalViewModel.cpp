@@ -64,7 +64,7 @@ bool UDC1PalViewModel::GetPalAlive(int32 Offset)
 
 	int32 Index = (PrevSlot + Offset + Capacity) % FMath::Max(Capacity, 1);
 
-	return PalPartyComponent->IsPalAlive(Index);
+	return PalPartyComponent->IsPalAlive(Index) || (false == PalPartyComponent->HasPalAt(Index));
 }
 
 void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
