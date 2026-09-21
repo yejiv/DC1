@@ -97,7 +97,8 @@ void UDC1HUDPalWidget::UpdateIcons()
 		{
 			int32 Offset = i - PalIconsNum / 2;
 			PalIcons[i]->SetIcon(PalViewModel->GetPalIconTexture(Offset));
-			PalIcons[i]->SetDead(!(PalViewModel->GetPalAlive(Offset)));
+			bool IsDead = !(PalViewModel->GetPalAlive(Offset));
+			PalIcons[i]->SetDead(IsDead);
 		}
 	}
 
