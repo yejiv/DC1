@@ -19,7 +19,10 @@ UDC1GameplayAbility_PalHit::UDC1GameplayAbility_PalHit(const FObjectInitializer&
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 
 	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_HitReacting);
-	ActivationBlockedTags.AddTag(DC1PalTags::State_Pal_HitReacting);
+
+	// 연타로 다시 맞으면 진행 중인 리액션을 끊고 처음부터 다시 재생한다.
+	// 자기 태그를 ActivationBlockedTags 에 두면 몽타주가 도는 동안 들어온 피격이 통째로 무시된다
+	bRetriggerInstancedAbility = true;
 }
 
 void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
