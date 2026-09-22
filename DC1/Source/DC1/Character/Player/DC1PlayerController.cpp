@@ -37,6 +37,10 @@
 
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 
+// Debug : 외형 테스트용. Debug region 제거 시 같이 제거
+#include "Component/Appearance/DC1AppearanceComponent.h"
+#include "Data/DA/Appearance/DC1AppearanceRegistryData.h"
+
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -569,6 +573,22 @@ void ADC1PlayerController::InitPlayerStateBindings()
 namespace
 {
 	constexpr float DebugDamageAmount = 10.f;
+
+	// 태그 이름순으로 다음 항목. 현재 태그가 없으면(빈 태그 포함) 첫 항목
+	FGameplayTag GetNextDebugAppearanceTag(const TMap<FGameplayTag, FDC1AppearancePartDef>& InEntries, const FGameplayTag& InCurrent)
+	{
+		TArray<FGameplayTag> Keys;
+		InEntries.GenerateKeyArray(Keys);
+		if (0 == Keys.Num())
+		{
+			return InCurrent;
+		}
+
+		Keys.Sort([](const FGameplayTag& A, const FGameplayTag& B) { return A.GetTagName().LexicalLess(B.GetTagName()); });
+
+		const int32 CurrentIndex = Keys.IndexOfByKey(InCurrent);
+		return Keys[(CurrentIndex + 1) % Keys.Num()];
+	}
 }
 
 void ADC1PlayerController::SetUp_DebugInput()
@@ -580,6 +600,67 @@ void ADC1PlayerController::SetUp_DebugInput()
 
 	InputComponent->BindKey(EKeys::NumPadOne, IE_Pressed, this, &ThisClass::OnDebugDamageSelf);
 	InputComponent->BindKey(EKeys::NumPadTwo, IE_Pressed, this, &ThisClass::OnDebugSavePlayer);
+
+	InputComponent->BindKey(EKeys::NumPadThree, IE_Pressed, this, &ThisClass::OnDebugNextHair);
+	InputComponent->BindKey(EKeys::NumPadFour, IE_Pressed, this, &ThisClass::OnDebugNextHead);
+	InputComponent->BindKey(EKeys::NumPadFive, IE_Pressed, this, &ThisClass::OnDebugRandomHairColor);
+	InputComponent->BindKey(EKeys::NumPadSix, IE_Pressed, this, &ThisClass::OnDebugRandomSkinColor);
+}
+
+void ADC1PlayerController::OnDebugNextHair()
+{
+	const UDC1AppearanceRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1AppearanceRegistryData>(DC1AssetTags::Asset_Appearance_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		LOG_WARNING(TEXT("[Debug] Appearance Registry not found"));
+		return;
+	}
+
+	DebugAppearance.HairTag = GetNextDebugAppearanceTag(Registry->GetHairs(), DebugAppearance.HairTag);
+	ApplyDebugAppearance();
+}
+
+void ADC1PlayerController::OnDebugNextHead()
+{
+	const UDC1AppearanceRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1AppearanceRegistryData>(DC1AssetTags::Asset_Appearance_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		LOG_WARNING(TEXT("[Debug] Appearance Registry not found"));
+		return;
+	}
+
+	DebugAppearance.HeadTag = GetNextDebugAppearanceTag(Registry->GetHeads(), DebugAppearance.HeadTag);
+	ApplyDebugAppearance();
+}
+
+void ADC1PlayerController::OnDebugRandomHairColor()
+{
+	DebugAppearance.HairColor = FLinearColor::MakeRandomColor();
+	ApplyDebugAppearance();
+}
+
+void ADC1PlayerController::OnDebugRandomSkinColor()
+{
+	DebugAppearance.SkinColor = FLinearColor::MakeRandomColor();
+	ApplyDebugAppearance();
+}
+
+void ADC1PlayerController::ApplyDebugAppearance()
+{
+	ADC1Player* DebugPlayer = Cast<ADC1Player>(GetPawn());
+	if (false == ::IsValid(DebugPlayer) || false == ::IsValid(DebugPlayer->AppearanceComponent))
+	{
+		LOG_WARNING(TEXT("[Debug] No pawn or AppearanceComponent"));
+		return;
+	}
+
+	DebugPlayer->AppearanceComponent->ApplyAppearance(DebugAppearance);
+
+	LOG(TEXT("[Debug] Appearance Hair=%s Head=%s HairColor=%s SkinColor=%s"),
+		*DebugAppearance.HairTag.ToString(),
+		*DebugAppearance.HeadTag.ToString(),
+		*DebugAppearance.HairColor.ToString(),
+		*DebugAppearance.SkinColor.ToString());
 }
 
 void ADC1PlayerController::OnDebugSavePlayer()

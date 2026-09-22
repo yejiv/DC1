@@ -15,6 +15,7 @@ class USphereComponent;
 class UWidgetComponent;
 
 class UDC1AbilitySystemComponent;
+class UDC1AppearanceComponent;
 /**
  * 
  */
@@ -78,6 +79,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UDC1AppearanceComponent> AppearanceComponent = { nullptr };
 
 private:
 	void	InitializeAbilitySystem();

@@ -16,6 +16,7 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
+#include "Component/Appearance/DC1AppearanceComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 
@@ -78,6 +79,9 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	StaminaWidgetComponent->SetupAttachment(RootComponent);
 	StaminaWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	StaminaWidgetComponent->SetVisibility(false);
+
+	// Appearance Component
+	AppearanceComponent = CreateDefaultSubobject<UDC1AppearanceComponent>("AppearanceComponent");
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -166,6 +170,8 @@ void ADC1Player::PostInitializeComponents()
 
 	HairMesh->SetLeaderPoseComponent(GetMesh());
 	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
+
+	AppearanceComponent->SetParts(GetMesh(), HairMesh, HeadMesh);
 }
 
 void ADC1Player::BeginPlay()

@@ -10,9 +10,20 @@
  *
  *
  */
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FDC1AppearanceData
 {
 	GENERATED_BODY()
 
+	UPROPERTY()
+	FGameplayTag HairTag = { };
+
+	UPROPERTY()
+	FGameplayTag HeadTag = { };
+
+	UPROPERTY()
+	FLinearColor HairColor = { FLinearColor::White };
+	
+	UPROPERTY()
+	FLinearColor SkinColor = { FLinearColor::White };
 };
