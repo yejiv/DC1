@@ -12,6 +12,26 @@ namespace DC1PalTags
 #pragma region Species
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Alpaca);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Anubis);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Boar);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_CaptainPenguin);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_ChickenPal);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_CowPal);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_CuteFox);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Deer);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_DreamDemon);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_ElecPanda);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_ElecPomeranian);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Garm);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_GhostBlackCat);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_GrassMammoth);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_HadesBird);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_HawkBird);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Kitsunebi);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_LeafMomonga);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Monkey);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_Penguin);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_PinkCat);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_SheepBall);
 #pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.
