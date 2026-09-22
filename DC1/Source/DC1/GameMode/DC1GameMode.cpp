@@ -8,6 +8,7 @@
 #include "Character/Player/DC1Player.h"
 
 #include "Define/DC1Macro.h"
+#include "Save/DC1SaveSubsystem.h"
 
 ADC1GameMode::ADC1GameMode()
 {
@@ -27,10 +28,10 @@ void ADC1GameMode::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	const FUniqueNetIdRepl& NetId = PS->GetUniqueId();
-	LOG(TEXT("[PostLogin] Name=%s Type=%s Id=%s Valid=%d"),
-		*PS->GetPlayerName(),
-		*NetId.GetType().ToString(),
-		NetId.IsValid() ? *NetId.ToString() : TEXT("Invalid"),
-		NetId.IsValid());
+	const bool bLoaded = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>()->LoadPlayerData(PS);
+
+	if (false == bLoaded)
+	{
+		LOG_WARNING(TEXT("[Load] Load Failed"));
+	}
 }

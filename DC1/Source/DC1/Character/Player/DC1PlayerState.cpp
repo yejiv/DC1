@@ -52,4 +52,11 @@ void ADC1PlayerState::WriteSaveData(UDC1PlayerSaveGame* Out) const
 
 void ADC1PlayerState::ReadSaveData(const UDC1PlayerSaveGame* In)
 {
+	if (false == IsValid(In))
+		return;
+
+	if (false == IsValid(PalPartyComponent))
+		return;
+
+	PalPartyComponent->ImportSaveData(In->PartyPals);
 }

@@ -20,7 +20,7 @@ public:
 
 public:
 	bool SavePlayerData(ADC1PlayerState* PS);
-	bool LoadPlayerData();
+	bool LoadPlayerData(ADC1PlayerState* PS);
 
 public:
 	static constexpr int32 CurrentSaveVersion = { 1 };

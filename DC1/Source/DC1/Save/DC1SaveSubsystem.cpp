@@ -46,19 +46,41 @@ bool UDC1SaveSubsystem::SavePlayerData(ADC1PlayerState* PS)
 	return UGameplayStatics::SaveGameToSlot(SaveGame, SlotName, 0);
 }
 
-bool UDC1SaveSubsystem::LoadPlayerData()
+bool UDC1SaveSubsystem::LoadPlayerData(ADC1PlayerState* PS)
 {
-	return false;
+	if (false == IsValid(PS) || false == PS->HasAuthority())
+		return false;
+
+	FString SlotName = MakeSlotName(PS);
+	if (SlotName.IsEmpty())
+	{
+		return false;
+	}
+
+	if (false == UGameplayStatics::DoesSaveGameExist(SlotName, 0))
+	{
+		LOG(TEXT("[Load] Load File is not exist"));
+		return false;
+	}
+
+	UDC1PlayerSaveGame* SaveGame = Cast<UDC1PlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (true == IsValid(SaveGame))
+	{
+		PS->ReadSaveData(SaveGame);
+	}
+	else
+	{
+		// 신규 플레이어
+	}
+
+	// SaveVersion에 따른 분기 처리 (추후)
+
+	return true;
 }
 
 FString UDC1SaveSubsystem::MakeSlotName(ADC1PlayerState* PS)
 {
-	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
-	if (nullptr == OSS)
-		return FString();
-
 	// Null Subsystem 예외 처리
-	FString SubsystemName = OSS->GetSubsystemName().ToString();
 	const FUniqueNetIdRepl& NetId = PS->GetUniqueId();
 	if (false == NetId.IsValid() || NetId.GetType() == NULL_SUBSYSTEM)
 	{
@@ -67,7 +89,7 @@ FString UDC1SaveSubsystem::MakeSlotName(ADC1PlayerState* PS)
 	}
 
 	FString ID = TEXT("Player_");
-	ID.Append(PS->GetUniqueId().ToString());
+	ID.Append(NetId.ToString());
 
 	return ID;
 }

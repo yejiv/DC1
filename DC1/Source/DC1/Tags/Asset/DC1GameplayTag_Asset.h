@@ -43,6 +43,11 @@ namespace DC1AssetTags
 	// PalData.AbilityDataTag가 가리킬 DC1AbilityData의 에셋 태그.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Ability_Pal);
 #pragma endregion
+
+#pragma region Appearance
+	// 외형 선택지 레지스트리. 메시/아이콘은 소프트 레퍼런스로 따라간다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Appearance_Registry);
+#pragma endregion
 }
 
 
