@@ -93,6 +93,9 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 		return;
 	}
 
+	// 포획 경험치 (잡힌 팰 제외)
+	GrantExperienceFor(InPal.Level);
+
 	// 앞에서부터 빈 슬롯을 찾는다
 	int32 EmptyIndex = INDEX_NONE;
 
@@ -113,6 +116,63 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 	}
 
 	Pals[EmptyIndex] = InPal;
+	OnPalSlotChanged.Broadcast();
+}
+
+void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
+{
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		return;
+	}
+
+	const int32 Amount = Registry->GetDropExp(InDefeatedLevel);
+	if (Amount <= 0)
+	{
+		return;
+	}
+
+	FString Summary;
+
+	for (int32 Index = 0; Index < Pals.Num(); ++Index)
+	{
+		if (false == HasPalAt(Index))
+		{
+			continue;
+		}
+
+		const int32 OldLevel = Pals[Index].Level;
+
+		// 소환 중이면 액터 기준
+		if (true == IsDeployed(Index))
+		{
+			DeployedPal->GainExperience(Amount);
+			Pals[Index].Level = DeployedPal->GetLevel();
+			Pals[Index].Experience = DeployedPal->GetExperience();
+		}
+		else
+		{
+			Registry->ApplyExperience(Pals[Index], Amount);
+		}
+
+		Summary += (OldLevel == Pals[Index].Level)
+			? FString::Printf(TEXT("  [%d] Lv%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Experience, Registry->GetExpToNextLevel(OldLevel))
+			: FString::Printf(TEXT("  [%d] Lv%d->%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Level, Pals[Index].Experience, Registry->GetExpToNextLevel(Pals[Index].Level));
+	}
+
+	if (true == Summary.IsEmpty())
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Pal] EXP +%d (Lv%d):%s"), Amount, InDefeatedLevel, *Summary);
+
 	OnPalSlotChanged.Broadcast();
 }
 

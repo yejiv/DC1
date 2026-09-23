@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
 #include "Templates/SubclassOf.h"
 #include "Define/DC1Enums.h"
@@ -11,6 +12,22 @@
 class UDC1PalData;
 class UTexture2D;
 class ADC1PalProjectile;
+struct FDC1PalInstance;
+
+// 경험치 표 행. 행 이름 = 레벨
+USTRUCT(BlueprintType)
+struct FDC1PalExpRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// 처치·포획 경험치
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32	DropExp = { 0 };
+
+	// 이전 레벨 → 이 레벨 필요량
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32	PalNextExp = { 0 };
+};
 
 // 전 종이 공유하는 스탯 성장 수치. 종별 값은 PalData 의 HealthStat / AttackStat / DefenseStat
 //
@@ -179,6 +196,15 @@ public:
 
 	void						RollPassives(TArray<FGameplayTag>& OutPassiveTags) const;
 
+	// 경험치
+	int32						GetDropExp(int32 InLevel) const;
+
+	// 다음 레벨 필요량. 최대 레벨이면 0
+	int32						GetExpToNextLevel(int32 InLevel) const;
+
+	// 경험치 적용 + 레벨업. 오른 레벨 수 반환
+	int32						ApplyExperience(FDC1PalInstance& InOutPal, int32 InAmount) const;
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal")
 	TMap<FGameplayTag, TSoftObjectPtr<UDC1PalData>>	PalDataEntries;
@@ -220,4 +246,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive", meta = (ClampMin = "1"))
 	int32											MaxPassiveSlots = { 4 };
+
+	// 레벨별 경험치 표
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Exp", meta = (RequiredAssetDataTags = "RowStructure=/Script/DC1.DC1PalExpRow"))
+	TObjectPtr<UDataTable>							ExpTable = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Exp", meta = (ClampMin = "1"))
+	int32											MaxLevel = { 80 };
 };

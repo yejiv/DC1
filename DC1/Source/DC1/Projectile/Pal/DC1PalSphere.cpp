@@ -41,10 +41,6 @@ ADC1PalSphere::ADC1PalSphere()
 	BottomHalfMesh = CreateDefaultSubobject<UStaticMeshComponent>("BottomHalfMesh");
 	BottomHalfMesh->SetupAttachment(HitCollider);
 	BottomHalfMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	//ProjectileMovement->InitialSpeed = 1500.f;
-	//ProjectileMovement->MaxSpeed = 1500.f;
-	//ProjectileMovement->ProjectileGravityScale = 1.f;
 }
 
 void ADC1PalSphere::Tick(float DeltaSeconds)

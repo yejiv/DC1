@@ -38,10 +38,6 @@ public:
 
 	EDC1Team							GetTeam() const { return Team; }
 
-	// 진영 변경. 포획으로 길들일 때 쓴다. 서버 전용
-	UFUNCTION(BlueprintCallable, Category = "Pal|Team")
-	void								SetTeam(EDC1Team NewTeam);
-
 	const UDC1PalData*					GetPalData() const { return PalData; }
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
@@ -51,6 +47,12 @@ public:
 	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
 	int32								GetLevel() const;
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
+
+	// 현재 레벨 누적 경험치
+	float								GetExperience() const { return PalInstance.Experience; }
+
+	// 경험치 획득. 서버 전용
+	void								GainExperience(int32 InAmount);
 
 	// 개체값
 	int32								GetTalentHealth() const { return PalInstance.TalentHealth; }
@@ -107,6 +109,9 @@ protected:
 
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
 
+	// 레벨 변경 → HP바 갱신
+	void								HandleLevelChangedForUI(const struct FOnAttributeChangeData& Data);
+
 	void								UpdateHealthWidgetVisibility(); // 위젯을 껐다 켠다. 
 
 	// 래그돌, AI 정지, 퍼셉션 해제
@@ -143,6 +148,9 @@ protected:
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)
 	FDC1PalInstance PalInstance;
+
+	// 마지막 가해자
+	TWeakObjectPtr<AActor> LastDamageCauser;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
 	bool bOverrideLevel = { false };

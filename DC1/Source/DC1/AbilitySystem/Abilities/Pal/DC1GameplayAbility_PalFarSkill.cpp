@@ -6,7 +6,6 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Projectile/Pal/DC1PalProjectile.h"
-#include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"

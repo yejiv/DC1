@@ -4,6 +4,21 @@
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Data/Pal/DC1PalTypes.h"
+
+namespace DC1PalExp
+{
+	static const FDC1PalExpRow* FindRow(const UDataTable* InTable, int32 InLevel)
+	{
+		if (nullptr == InTable)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Pal] ExpTable is not set. Check DA_PalRegistry."));
+			return nullptr;
+		}
+
+		return InTable->FindRow<FDC1PalExpRow>(FName(*FString::FromInt(InLevel)), TEXT("PalExp"), false);
+	}
+}
 
 float FDC1PalPassiveRankWeights::GetWeight(int32 InRank) const
 {
@@ -210,4 +225,63 @@ void UDC1PalRegistryData::RollPassives(TArray<FGameplayTag>& OutPassiveTags) con
 			}
 		}
 	}
+}
+
+int32 UDC1PalRegistryData::GetDropExp(int32 InLevel) const
+{
+	const FDC1PalExpRow* Row = DC1PalExp::FindRow(ExpTable, InLevel);
+	return (nullptr != Row) ? Row->DropExp : 0;
+}
+
+int32 UDC1PalRegistryData::GetExpToNextLevel(int32 InLevel) const
+{
+	if (InLevel >= MaxLevel)
+	{
+		return 0;
+	}
+
+	// PalNextExp 는 다음 행 기준
+	const FDC1PalExpRow* Row = DC1PalExp::FindRow(ExpTable, InLevel + 1);
+	return (nullptr != Row) ? Row->PalNextExp : 0;
+}
+
+int32 UDC1PalRegistryData::ApplyExperience(FDC1PalInstance& InOutPal, int32 InAmount) const
+{
+	if (InAmount <= 0 || InOutPal.Level >= MaxLevel)
+	{
+		return 0;
+	}
+
+	InOutPal.Experience += static_cast<float>(InAmount);
+
+	int32 LevelsGained = 0;
+	while (InOutPal.Level < MaxLevel)
+	{
+		const int32 Need = GetExpToNextLevel(InOutPal.Level);
+		if (Need <= 0 || InOutPal.Experience < static_cast<float>(Need))
+		{
+			break;
+		}
+
+		InOutPal.Experience -= static_cast<float>(Need);
+		++InOutPal.Level;
+		++LevelsGained;
+	}
+
+	// 최대 레벨
+	if (InOutPal.Level >= MaxLevel)
+	{
+		InOutPal.Experience = 0.f;
+	}
+
+	// 레벨업 회복 (기절 제외)
+	if (0 < LevelsGained && InOutPal.CurrentHealth > 0.f)
+	{
+		if (const UDC1PalData* PalData = FindPalDataByTag(InOutPal.SpeciesTag).LoadSynchronous())
+		{
+			InOutPal.CurrentHealth = GetMaxHealthFor(*PalData, InOutPal.Level, InOutPal.TalentHealth);
+		}
+	}
+
+	return LevelsGained;
 }

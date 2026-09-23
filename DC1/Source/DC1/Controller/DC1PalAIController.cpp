@@ -16,7 +16,6 @@
 #include "AbilitySystemGlobals.h"
 #include "Components/StateTreeAIComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "StateTree.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -115,8 +114,6 @@ void ADC1PalAIController::OnPossess(APawn* InPawn)
 	ApplyPerceptionSettings();
 
 	TryStartBehavior();
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] %s possessed by %s (Team=%s)"), *GetNameSafe(InPawn), *GetName(), *UEnum::GetValueAsString(DC1Team::FromGenericTeamId(GetGenericTeamId())));
 }
 
 void ADC1PalAIController::ApplyPerceptionSettings()

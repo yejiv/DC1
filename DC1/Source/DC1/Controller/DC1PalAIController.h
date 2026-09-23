@@ -75,7 +75,6 @@ public:
 
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
-	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
 
 protected:
 	virtual void			BeginPlay() override;
