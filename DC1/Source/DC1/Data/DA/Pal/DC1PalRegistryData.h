@@ -4,11 +4,13 @@
 
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "Templates/SubclassOf.h"
 #include "Define/DC1Enums.h"
 #include "DC1PalRegistryData.generated.h"
 
 class UDC1PalData;
 class UTexture2D;
+class ADC1PalProjectile;
 
 // 전 종이 공유하는 스탯 성장 수치. 종별 값은 PalData 의 HealthStat / AttackStat / DefenseStat
 //
@@ -48,6 +50,46 @@ struct FDC1ElementMatchup
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<EDC1PalElement>	WeakTo;
+};
+
+USTRUCT(BlueprintType)
+struct FDC1PalSkillDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
+	FText			DisplayName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
+	FText			Description;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill", meta = (Categories = "Ability.Pal"))
+	FGameplayTag	ActivationTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill", meta = (Categories = "Anim.Pal"))
+	FGameplayTag	MontageTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
+	EDC1PalElement	Element = { EDC1PalElement::Neutral };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill", meta = (ClampMin = "0.0"))
+	float			Power = { 4.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill", meta = (ClampMin = "0.0"))
+	float			Cooldown = { 2.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Range", meta = (ClampMin = "0.0"))
+	float			MaxRange = { 1200.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Range", meta = (ClampMin = "0.0"))
+	float			ApproachRange = { 700.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Range", meta = (ClampMin = "0.0"))
+	float			MinRange = { 400.f };
+
+	// 비면 PalData.Projectiles 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
+	TSubclassOf<ADC1PalProjectile>	ProjectileClass;
 };
 
 // 패시브
@@ -129,6 +171,9 @@ public:
 	// 속성 상성 배율
 	float	GetElementMultiplier(EDC1PalElement InAttackElement, EDC1PalElement InTargetElement, EDC1PalElement InTargetElement2) const;
 
+	// 액티브 스킬. 표에 없으면 nullptr - 호출부가 기존 어빌리티 값으로 폴백한다
+	const FDC1PalSkillDef*		FindSkillDef(const FGameplayTag& InSkillTag) const;
+
 	// 패시브
 	const FDC1PalPassiveDef*	FindPassiveDef(const FGameplayTag& InPassiveTag) const;
 
@@ -158,6 +203,10 @@ public:
 	// 스킬 속성이 같을 때. "불 팰에게 불 스킬을 주는" 이유를 만든다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat", meta = (ClampMin = "1.0"))
 	float											ElementMatchBonus = { 1.2f };
+
+	// 액티브 스킬 목록. 전 종 공용이다 - 한 줄을 고치면 그 스킬을 쓰는 모든 종이 같이 바뀐다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Skill", meta = (Categories = "Pal.Skill"))
+	TMap<FGameplayTag, FDC1PalSkillDef>				SkillChart;
 
 	// 패시브 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Passive")

@@ -33,6 +33,29 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_PinkCat);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Species_SheepBall);
 #pragma endregion
+#pragma region Skill
+	// 돈질
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_RecklessCharge);	// 저돌맹진       
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FluffyTackle);		// 폭신 태클      
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_RolyPoly);			// 구르기         
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BullRush);			// 불 러시
+
+	// 투사체
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_AirCannon);		// 에어 캐넌      
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_PowerShot);		// 파워 샷        
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SeedMachineGun);	// 시드 머신건    
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_WindCutter);		// 윈드 커터      
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BogBlast);			// 진흙탄         
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_StoneBlast);		// 스톤 블래스트  
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SparkBlast);		// 스파크 블래스트 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_ElectricBall);		// 일렉트릭 볼    
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_AquaGun);			// 아쿠아 건      
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IgnisBlast);		// 이그니스 블래스트 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IceMissile);		// 아이스 미사일  
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DragonCannon);		// 드래곤 캐넌    
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkBall);			// 다크 볼        
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkShot);			// 다크 샷        
+#pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.
 	// 여기엔 이름만 있고 수치는 없다 - 수치를 바꿀 때 코드를 다시 빌드하지 않도록

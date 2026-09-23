@@ -119,6 +119,11 @@ float UDC1PalRegistryData::GetElementMultiplier(EDC1PalElement InAttackElement, 
 	return Multiplier;
 }
 
+const FDC1PalSkillDef* UDC1PalRegistryData::FindSkillDef(const FGameplayTag& InSkillTag) const
+{
+	return SkillChart.Find(InSkillTag);
+}
+
 const FDC1PalPassiveDef* UDC1PalRegistryData::FindPassiveDef(const FGameplayTag& InPassiveTag) const
 {
 	const FDC1PalPassiveDef* Found = PassiveChart.Find(InPassiveTag);
