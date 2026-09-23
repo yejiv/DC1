@@ -101,7 +101,6 @@ void ADC1PalCharacter::BeginPlay()
 	}
 	else
 	{
-		// 위젯이 없으면(데디케이티드 서버 등) 가시성 검사도 의미가 없다
 		return;
 	}
 
@@ -202,7 +201,6 @@ void ADC1PalCharacter::ApplyPalData()
 		}
 
 		const float FinalMaxHealth = Registry->GetMaxHealthFor(*PalData, FinalLevel, PalInstance.TalentHealth);
-
 		const float FinalAttack = Registry->GetAttackPowerFor(*PalData, FinalLevel, PalInstance.TalentAttack);
 		const float FinalDefense = Registry->GetDefensePowerFor(*PalData, FinalLevel, PalInstance.TalentDefense);
 
@@ -352,13 +350,9 @@ EDC1PalElement ADC1PalCharacter::GetElement2() const
 
 FDC1PalInstance ADC1PalCharacter::Fold()
 {
-	// 새로 만들지 않고 들고 있던 것에서 시작한다.
-	// 그래야 닉네임·경험치·패시브처럼 액터가 건드리지 않는 값이 보존된다
 	FDC1PalInstance Instance = PalInstance;
 
 	Instance.SpeciesTag = SpeciesTag;
-
-	// 소환됐던 개체면 원래 ID를 유지
 	Instance.PalID = InstanceID.IsValid() ? InstanceID : FGuid::NewGuid();
 
 	if (IsValid(PalAttributeSet))
@@ -448,9 +442,9 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 		return nullptr;
 	}
 
-
 	ADC1PalCharacter* Pal = InWorld->SpawnActorDeferred<ADC1PalCharacter>(PalClass, InTransform, nullptr, nullptr,
 		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+	
 	if (false == IsValid(Pal))
 	{
 		return nullptr;
@@ -494,7 +488,6 @@ void ADC1PalCharacter::OnDeath()
 	{
 		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
 
-		// 발에 치이게
 		MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
 		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

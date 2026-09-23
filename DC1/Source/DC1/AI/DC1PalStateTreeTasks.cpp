@@ -129,7 +129,6 @@ namespace DC1PalTaskHelper
 			AwayDirection = Pal.GetActorForwardVector().GetSafeNormal2D();
 		}
 
-		// 기준 각도를 먼저 먹인다. 아래 부채꼴은 벽에 막혔을 때의 폴백이라 그대로 둔다
 		if (false == FMath::IsNearlyZero(BaseAngle))
 		{
 			AwayDirection = AwayDirection.RotateAngleAxis(BaseAngle, FVector::UpVector);
@@ -148,7 +147,6 @@ namespace DC1PalTaskHelper
 				continue;
 			}
 
-			// 가까워지는 쪽은 도망이 아님
 			if (FVector::DistSquared2D(Destination.Location, TargetLocation) <= CurrentDistanceSq)
 			{
 				continue;
@@ -207,7 +205,7 @@ EStateTreeRunStatus FDC1PalActivateSkillTask::EnterState(FStateTreeExecutionCont
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	InstanceData.ActivatedSkillTag = FGameplayTag::EmptyTag;
 
-	const ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalAIController* AIController = InstanceData.AIController;
 	if (false == IsValid(AIController))
 	{
 		return EStateTreeRunStatus::Failed;
@@ -228,12 +226,24 @@ EStateTreeRunStatus FDC1PalActivateSkillTask::EnterState(FStateTreeExecutionCont
 		return EStateTreeRunStatus::Failed;
 	}
 
-	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, SkillTag, DC1PalTags::State_Pal_Attacking, Pal);
+	// 고른 스킬과 발동할 어빌리티는 다르다. 표를 안 타면 둘이 같다
+	const FGameplayTag ActivationTag = AIController->GetSelectedActivationTag();
+	if (false == ActivationTag.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateSkillTask: [%s] skill [%s] has no ActivationTag. Check DA_PalRegistry.SkillChart."),
+			*GetNameSafe(Pal), *SkillTag.ToString());
+		return EStateTreeRunStatus::Failed;
+	}
 
-	// 성공했으면 ExitState가 취소할 수 있게 기억
+	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, ActivationTag, DC1PalTags::State_Pal_Attacking, Pal);
+
+	// 성공했으면 ExitState가 취소할 수 있게 기억 (어빌리티 태그다)
 	if (EStateTreeRunStatus::Failed != Result)
 	{
-		InstanceData.ActivatedSkillTag = SkillTag;
+		InstanceData.ActivatedSkillTag = ActivationTag;
+
+		// 쿨타임은 어빌리티가 아니라 스킬 단위로 돈다
+		AIController->NotifySkillUsed(SkillTag);
 	}
 
 	return Result;

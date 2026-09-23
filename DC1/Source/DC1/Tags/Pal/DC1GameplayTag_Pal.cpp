@@ -29,6 +29,28 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_SheepBall, "Pal.Species.SheepBall");
 #pragma endregion
 
+#pragma region Skill
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_RecklessCharge, "Pal.Skill.RecklessCharge");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_FluffyTackle, "Pal.Skill.FluffyTackle");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_RolyPoly, "Pal.Skill.RolyPoly");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BullRush, "Pal.Skill.BullRush");
+
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_AirCannon, "Pal.Skill.AirCannon");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_PowerShot, "Pal.Skill.PowerShot");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SeedMachineGun, "Pal.Skill.SeedMachineGun");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_WindCutter, "Pal.Skill.WindCutter");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BogBlast, "Pal.Skill.BogBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_StoneBlast, "Pal.Skill.StoneBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SparkBlast, "Pal.Skill.SparkBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_ElectricBall, "Pal.Skill.ElectricBall");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_AquaGun, "Pal.Skill.AquaGun");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IgnisBlast, "Pal.Skill.IgnisBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IceMissile, "Pal.Skill.IceMissile");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DragonCannon, "Pal.Skill.DragonCannon");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkBall, "Pal.Skill.DarkBall");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkShot, "Pal.Skill.DarkShot");
+#pragma endregion
+
 #pragma region Passive
 	// 공격력만
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Ferocity, "Pal.Passive.Ferocity");

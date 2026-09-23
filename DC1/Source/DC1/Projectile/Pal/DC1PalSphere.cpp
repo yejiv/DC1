@@ -134,7 +134,6 @@ void ADC1PalSphere::LogPassives(const ADC1PalCharacter& InPal) const
 			PassiveNames += TEXT(", ");
 		}
 
-		// 에디터에 넣은 표시 이름을 쓴다. 비어 있으면 태그로 대신해서 입력 누락도 같이 드러난다
 		const FDC1PalPassiveDef* PassiveDef = (nullptr != Registry) ? Registry->FindPassiveDef(PassiveTag) : nullptr;
 
 		PassiveNames += (nullptr != PassiveDef && false == PassiveDef->DisplayName.IsEmpty())
@@ -148,7 +147,6 @@ void ADC1PalSphere::LogPassives(const ADC1PalCharacter& InPal) const
 	}
 
 	// BaseValue 는 성장 공식이 낸 값, CurrentValue 는 패시브 배율까지 얹힌 값.
-	// 둘을 나란히 찍어야 배율이 실제로 걸렸는지 보인다
 	auto ReadPair = [PalASC](const FGameplayAttribute& InAttribute, float& OutBase, float& OutCurrent)
 		{
 			OutBase = PalASC->GetNumericAttributeBase(InAttribute);
@@ -255,7 +253,6 @@ void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* Other
 
 void ADC1PalSphere::BeginShaking()
 {
-	// 흡수 종료
 	bSphereOpen = false;
 
 	GetWorldTimerManager().SetTimer(CaptureTimer, this, &ThisClass::OnShake, ShakeInterval, true);
@@ -288,12 +285,6 @@ void ADC1PalSphere::OnShake()
 		Resolve(true);
 		return;
 	}
-
-	// 중간 단계를 버텄다. 성공·실패가 갈릴 때만 로그를 남기므로 여기서는 찍지 않는다.
-	//
-	// UI 가 "여기서부터 잡힐 확률" 을 보여주려면 남은 단계들의 비중을 합쳐
-	//   FMath::Pow(CaptureChance, 남은비중합 / ShakeWeightSum)
-	// 으로 구한다. 지금은 보여줄 곳이 없어 계산하지 않는다
 }
 
 void ADC1PalSphere::Resolve(bool bInSuccess)
