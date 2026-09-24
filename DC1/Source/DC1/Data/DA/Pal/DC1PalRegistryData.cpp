@@ -76,6 +76,17 @@ TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindGenderIcon(EDC1PalGender InG
 	return *Found;
 }
 
+TSoftObjectPtr<UTexture2D> UDC1PalRegistryData::FindPassiveRankIcon(int32 InRank) const
+{
+	const TSoftObjectPtr<UTexture2D>* Found = PassiveRankIcons.Find(InRank);
+	if (nullptr == Found)
+	{
+		return nullptr;
+	}
+
+	return *Found;
+}
+
 float UDC1PalRegistryData::GetTalentMultiplier(int32 InTalent) const
 {
 	const float Ratio = static_cast<float>(FMath::Clamp(InTalent, 0, 100)) / 100.f;
@@ -224,6 +235,26 @@ void UDC1PalRegistryData::RollPassives(TArray<FGameplayTag>& OutPassiveTags) con
 				break;
 			}
 		}
+	}
+}
+
+void UDC1PalRegistryData::GetPassiveMultipliers(const TArray<FGameplayTag>& InPassiveTags, float& OutAttack, float& OutDefense, float& OutWorkSpeed) const
+{
+	OutAttack = 1.f;
+	OutDefense = 1.f;
+	OutWorkSpeed = 1.f;
+
+	for (const FGameplayTag& PassiveTag : InPassiveTags)
+	{
+		const FDC1PalPassiveDef* PassiveDef = FindPassiveDef(PassiveTag);
+		if (nullptr == PassiveDef)
+		{
+			continue;
+		}
+
+		OutAttack *= PassiveDef->AttackMultiplier;
+		OutDefense *= PassiveDef->DefenseMultiplier;
+		OutWorkSpeed *= PassiveDef->WorkSpeedMultiplier;
 	}
 }
 

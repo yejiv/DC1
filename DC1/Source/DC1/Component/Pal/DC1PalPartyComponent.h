@@ -48,6 +48,9 @@ public:
 
 	float					GetPalMaxHealth(int32 InSlotIndex) const;
 
+	// 현재 체력. 소환 중이면 액터 값
+	float					GetPalHealth(int32 InSlotIndex) const;
+
 	// 칸이 찼나. 죽은 팰도 칸은 차지한다
 	bool					HasPalAt(int32 InSlotIndex) const;
 

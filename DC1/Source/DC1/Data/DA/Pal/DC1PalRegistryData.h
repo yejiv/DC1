@@ -135,6 +135,22 @@ struct FDC1PalPassiveDef
 	float	WorkSpeedMultiplier = { 1.f };
 };
 
+// 작업 종류. 배열 순서 = UI 표시 순서
+USTRUCT(BlueprintType)
+struct FDC1PalWorkDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Categories = "Pal.Work"))
+	FGameplayTag				WorkTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FText						DisplayName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSoftObjectPtr<UTexture2D>	Icon;
+};
+
 // 랭크별 추첨 가중치
 USTRUCT(BlueprintType)
 struct FDC1PalPassiveRankWeights
@@ -174,6 +190,9 @@ public:
 
 	TSoftObjectPtr<UTexture2D>	FindGenderIcon(EDC1PalGender InGender) const;
 
+	// 표에 없으면 nullptr - 아이콘을 숨긴다
+	TSoftObjectPtr<UTexture2D>	FindPassiveRankIcon(int32 InRank) const;
+
 	// 최종 스탯
 	float	GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const;
 	float	GetAttackPowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const;
@@ -196,6 +215,9 @@ public:
 
 	void						RollPassives(TArray<FGameplayTag>& OutPassiveTags) const;
 
+	// 패시브 배율 곱 (GE 의 MultiplyCompound 와 같은 값)
+	void						GetPassiveMultipliers(const TArray<FGameplayTag>& InPassiveTags, float& OutAttack, float& OutDefense, float& OutWorkSpeed) const;
+
 	// 경험치
 	int32						GetDropExp(int32 InLevel) const;
 
@@ -214,6 +236,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|UI")
 	TMap<EDC1PalGender, TSoftObjectPtr<UTexture2D>>	GenderIcons;
+
+	// 패시브 Rank(-3 ~ 4) → 화살표 아이콘
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|UI")
+	TMap<int32, TSoftObjectPtr<UTexture2D>>			PassiveRankIcons;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat")
 	FDC1PalStatGrowth								StatGrowth;
@@ -253,4 +279,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Exp", meta = (ClampMin = "1"))
 	int32											MaxLevel = { 80 };
+
+	// 작업 종류 12개. 순서대로 UI 에 나온다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Work")
+	TArray<FDC1PalWorkDef>							WorkChart;
+
+	// UI 위력 표기 배율. SkillChart.Power 가 원작 ÷ 5
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
+	float											SkillPowerDisplayScale = { 5.f };
 };

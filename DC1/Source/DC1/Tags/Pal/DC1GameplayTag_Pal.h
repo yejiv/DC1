@@ -92,6 +92,21 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Passive_Conceited);		// 자만심
 #pragma endregion
 
+#pragma region Work
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Kindling);			// 불 피우기
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Watering);			// 관개
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Planting);			// 파종
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Electricity);		// 발전
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Handiwork);			// 수작업
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Gathering);			// 채집
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Lumbering);			// 벌목
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Mining);			// 채굴
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Medicine);			// 제약
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Cooling);			// 냉각
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Transporting);		// 운반
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Farming);			// 목장
+#pragma endregion
+
 #pragma region Ability
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Idle);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Hit);

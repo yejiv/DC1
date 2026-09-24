@@ -84,6 +84,21 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Conceited, "Pal.Passive.Conceited");
 #pragma endregion
 
+#pragma region Work
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Kindling, "Pal.Work.Kindling");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Watering, "Pal.Work.Watering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Planting, "Pal.Work.Planting");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Electricity, "Pal.Work.Electricity");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Handiwork, "Pal.Work.Handiwork");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Gathering, "Pal.Work.Gathering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Lumbering, "Pal.Work.Lumbering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Mining, "Pal.Work.Mining");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Medicine, "Pal.Work.Medicine");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Cooling, "Pal.Work.Cooling");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Transporting, "Pal.Work.Transporting");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Farming, "Pal.Work.Farming");
+#pragma endregion
+
 #pragma region Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Idle, "Ability.Pal.Idle");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Hit, "Ability.Pal.Hit");

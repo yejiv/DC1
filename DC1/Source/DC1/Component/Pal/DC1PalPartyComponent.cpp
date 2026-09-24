@@ -273,6 +273,21 @@ float UDC1PalPartyComponent::GetPalMaxHealth(int32 InSlotIndex) const
 	return Registry->GetMaxHealthFor(*PalData, Pals[InSlotIndex].Level, Pals[InSlotIndex].TalentHealth);
 }
 
+float UDC1PalPartyComponent::GetPalHealth(int32 InSlotIndex) const
+{
+	if (false == HasPalAt(InSlotIndex))
+	{
+		return 0.f;
+	}
+
+	if (true == IsDeployed(InSlotIndex))
+	{
+		return DeployedPal->GetHealthRatio() * GetPalMaxHealth(InSlotIndex);
+	}
+
+	return Pals[InSlotIndex].CurrentHealth;
+}
+
 void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
 {
 	SelectedSlot = FMath::Clamp(InSlotIndex, 0, Capacity - 1);

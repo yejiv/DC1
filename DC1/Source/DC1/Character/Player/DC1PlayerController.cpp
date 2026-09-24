@@ -814,4 +814,10 @@ void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputCo
 	{
 		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
 	}
+
+	// Open PalBox Widget
+	if (const UInputAction* OpenPalBox = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_PalBox))
+	{
+		EnhancedInputComponent->BindAction(OpenPalBox, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_PalBox.GetTag(), FGameplayTag::EmptyTag);
+	}
 }
