@@ -11,6 +11,7 @@ class ADC1PalCharacter;
 
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotTranslated);
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotChanged);
+DECLARE_MULTICAST_DELEGATE(FOnPalBoxChanged);
 /**
  *
  * 플레이어가 데리고 다니는 팰 목록. ADC1PlayerState에 붙는다.
@@ -40,6 +41,20 @@ public:
 	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
 	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
 	void					CycleSlot(int32 InDelta);
+
+	// 두 칸 교환. 소환 중인 팰이 상자로 가면 먼저 회수
+	UFUNCTION(Server, Reliable)
+	void					Server_MovePal(EDC1PalContainer InFrom, int32 InFromIndex, EDC1PalContainer InTo, int32 InToIndex);
+
+	// 파티·상자에 빈칸이 있나
+	bool					CanAcceptPal() const;
+
+public:
+	// 위치 지정 조회
+	const FDC1PalInstance*	GetPalInfo(EDC1PalContainer InContainer, int32 InSlotIndex) const;
+	float					GetPalHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const;
+	float					GetPalMaxHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const;
+	int32					GetBoxCapacity() const { return BoxCapacity; }
 
 public:
 	int32					GetCapacity() const { return Capacity; }
@@ -71,6 +86,9 @@ public:
 	// 팰 등록 변화 시 호출
 	FOnPalSlotChanged		OnPalSlotChanged;
 
+	// 상자 변화
+	FOnPalBoxChanged		OnPalBoxChanged;
+
 protected:
 	virtual void			BeginPlay() override;
 
@@ -81,6 +99,19 @@ protected:
 
 	UFUNCTION()
 	void					OnRep_DeployedPal();
+
+	UFUNCTION()
+	void					OnRep_BoxPals();
+
+	// 상자 회복 타이머
+	void					HealBoxPals();
+
+	TArray<FDC1PalInstance>&	GetContainer(EDC1PalContainer InContainer);
+	const TArray<FDC1PalInstance>&	GetContainer(EDC1PalContainer InContainer) const;
+
+	float					GetMaxHealthOf(const FDC1PalInstance& InPal) const;
+
+	void					BroadcastChanged(EDC1PalContainer InContainer);
 
 	void					ToggleDeploy();
 
@@ -115,6 +146,19 @@ protected:
 	// 죽고 나서 회수까지의 유예. 이 시간 동안 래그돌이 보인다.
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.1"))
 	float					DeathRetrieveDelay = { 2.f };
+
+	// 상자
+	UPROPERTY(ReplicatedUsing = OnRep_BoxPals)
+	TArray<FDC1PalInstance>	BoxPals;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Box", meta = (ClampMin = "1"))
+	int32					BoxCapacity = { 30 };
+
+	// 회복 주기(초)
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Box", meta = (ClampMin = "0.1"))
+	float					BoxHealInterval = { 1.f };
+
+	FTimerHandle			BoxHealTimer;
 
 private:
 	// 꺼내둔 팰. 회수하려면 액터를 붙들고 있어야 한다.

@@ -21,14 +21,14 @@ namespace DC1PalBoxViewModel
 	};
 
 	// 슬롯 → 개체 + 종 데이터 + 레지스트리
-	static bool Resolve(const UDC1PalPartyComponent* InParty, int32 InSlotIndex, FResolvedPal& OutResolved)
+	static bool Resolve(const UDC1PalPartyComponent* InParty, EDC1PalContainer InContainer, int32 InSlotIndex, FResolvedPal& OutResolved)
 	{
 		if (nullptr == InParty)
 		{
 			return false;
 		}
 
-		OutResolved.Pal = InParty->GetPalInfo(InSlotIndex);
+		OutResolved.Pal = InParty->GetPalInfo(InContainer, InSlotIndex);
 		if (nullptr == OutResolved.Pal)
 		{
 			return false;
@@ -44,13 +44,13 @@ namespace DC1PalBoxViewModel
 		return IsValid(OutResolved.PalData);
 	}
 
-	static void FillSummary(const UDC1PalPartyComponent& InParty, int32 InSlotIndex, const FResolvedPal& InResolved, FDC1PalBoxSlotInfo& OutSlotInfo)
+	static void FillSummary(const UDC1PalPartyComponent& InParty, EDC1PalContainer InContainer, int32 InSlotIndex, const FResolvedPal& InResolved, FDC1PalBoxSlotInfo& OutSlotInfo)
 	{
 		// 닉네임 없으면 종 이름
 		OutSlotInfo.Name = InResolved.Pal->Nickname.IsEmpty() ? InResolved.PalData->DisplayName : FText::FromString(InResolved.Pal->Nickname);
 		OutSlotInfo.Level = InResolved.Pal->Level;
-		OutSlotInfo.Health = InParty.GetPalHealth(InSlotIndex);
-		OutSlotInfo.MaxHealth = InParty.GetPalMaxHealth(InSlotIndex);
+		OutSlotInfo.Health = InParty.GetPalHealth(InContainer, InSlotIndex);
+		OutSlotInfo.MaxHealth = InParty.GetPalMaxHealth(InContainer, InSlotIndex);
 		OutSlotInfo.Icon = InResolved.PalData->Icon.LoadSynchronous();
 	}
 }
@@ -69,6 +69,7 @@ void UDC1PalBoxViewModel::BindSource(ADC1PlayerState* InPlayerState)
 	}
 
 	PalPartyComponent->OnPalSlotChanged.AddUObject(this, &ThisClass::HandlePalChanged);
+	PalPartyComponent->OnPalBoxChanged.AddUObject(this, &ThisClass::HandlePalChanged);
 
 	HandlePalChanged();
 }
@@ -81,7 +82,10 @@ void UDC1PalBoxViewModel::ClearSource()
 	}
 
 	PalPartyComponent->OnPalSlotChanged.RemoveAll(this);
+	PalPartyComponent->OnPalBoxChanged.RemoveAll(this);
 	PalPartyComponent.Reset();
+
+	CancelPick();
 }
 
 int32 UDC1PalBoxViewModel::GetCapacity() const
@@ -89,22 +93,27 @@ int32 UDC1PalBoxViewModel::GetCapacity() const
 	return PalPartyComponent.IsValid() ? PalPartyComponent->GetCapacity() : 0;
 }
 
-bool UDC1PalBoxViewModel::GetSlotInfo(int32 InSlotIndex, FDC1PalBoxSlotInfo& OutSlotInfo) const
+int32 UDC1PalBoxViewModel::GetBoxCapacity() const
+{
+	return PalPartyComponent.IsValid() ? PalPartyComponent->GetBoxCapacity() : 0;
+}
+
+bool UDC1PalBoxViewModel::GetSlotInfo(EDC1PalContainer InContainer, int32 InSlotIndex, FDC1PalBoxSlotInfo& OutSlotInfo) const
 {
 	DC1PalBoxViewModel::FResolvedPal Resolved;
-	if (false == DC1PalBoxViewModel::Resolve(PalPartyComponent.Get(), InSlotIndex, Resolved))
+	if (false == DC1PalBoxViewModel::Resolve(PalPartyComponent.Get(), InContainer, InSlotIndex, Resolved))
 	{
 		return false;
 	}
 
-	DC1PalBoxViewModel::FillSummary(*PalPartyComponent, InSlotIndex, Resolved, OutSlotInfo);
+	DC1PalBoxViewModel::FillSummary(*PalPartyComponent, InContainer, InSlotIndex, Resolved, OutSlotInfo);
 	return true;
 }
 
-bool UDC1PalBoxViewModel::GetDetailInfo(int32 InSlotIndex, FDC1PalBoxDetailInfo& OutDetailInfo) const
+bool UDC1PalBoxViewModel::GetDetailInfo(EDC1PalContainer InContainer, int32 InSlotIndex, FDC1PalBoxDetailInfo& OutDetailInfo) const
 {
 	DC1PalBoxViewModel::FResolvedPal Resolved;
-	if (false == DC1PalBoxViewModel::Resolve(PalPartyComponent.Get(), InSlotIndex, Resolved))
+	if (false == DC1PalBoxViewModel::Resolve(PalPartyComponent.Get(), InContainer, InSlotIndex, Resolved))
 	{
 		return false;
 	}
@@ -113,7 +122,7 @@ bool UDC1PalBoxViewModel::GetDetailInfo(int32 InSlotIndex, FDC1PalBoxDetailInfo&
 	const UDC1PalData& PalData = *Resolved.PalData;
 	const UDC1PalRegistryData& Registry = *Resolved.Registry;
 
-	DC1PalBoxViewModel::FillSummary(*PalPartyComponent, InSlotIndex, Resolved, OutDetailInfo.Summary);
+	DC1PalBoxViewModel::FillSummary(*PalPartyComponent, InContainer, InSlotIndex, Resolved, OutDetailInfo.Summary);
 
 	OutDetailInfo.GenderIcon = Registry.FindGenderIcon(Pal.Gender).LoadSynchronous();
 	OutDetailInfo.ElementIcon = Registry.FindElementIcon(PalData.Element).LoadSynchronous();
@@ -174,7 +183,49 @@ bool UDC1PalBoxViewModel::GetDetailInfo(int32 InSlotIndex, FDC1PalBoxDetailInfo&
 	return true;
 }
 
+void UDC1PalBoxViewModel::BeginPick(EDC1PalContainer InContainer, int32 InSlotIndex)
+{
+	if (false == PalPartyComponent.IsValid() || nullptr == PalPartyComponent->GetPalInfo(InContainer, InSlotIndex))
+	{
+		return;
+	}
+
+	bPicking = true;
+	PickContainer = InContainer;
+	PickIndex = InSlotIndex;
+
+	OnPickChanged.Broadcast();
+}
+
+void UDC1PalBoxViewModel::RequestDrop(EDC1PalContainer InContainer, int32 InSlotIndex)
+{
+	if (false == bPicking)
+	{
+		return;
+	}
+
+	if (true == PalPartyComponent.IsValid())
+	{
+		PalPartyComponent->Server_MovePal(PickContainer, PickIndex, InContainer, InSlotIndex);
+	}
+
+	CancelPick();
+}
+
+void UDC1PalBoxViewModel::CancelPick()
+{
+	if (false == bPicking)
+	{
+		return;
+	}
+
+	bPicking = false;
+	PickIndex = INDEX_NONE;
+
+	OnPickChanged.Broadcast();
+}
+
 void UDC1PalBoxViewModel::HandlePalChanged()
 {
-	OnPartyChanged.Broadcast();
+	OnPalsChanged.Broadcast();
 }

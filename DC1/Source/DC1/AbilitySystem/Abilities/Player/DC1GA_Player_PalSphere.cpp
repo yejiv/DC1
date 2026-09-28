@@ -29,6 +29,16 @@ void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle H
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+	// 상자가 꽉 차면 던지지 않는다
+	if (const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo()))
+	{
+		const UDC1PalPartyComponent* Party = PS->GetPalPartyComponent();
+		if (nullptr != Party && false == Party->CanAcceptPal())
+		{
+			return;
+		}
+	}
+
 	if (false == CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
