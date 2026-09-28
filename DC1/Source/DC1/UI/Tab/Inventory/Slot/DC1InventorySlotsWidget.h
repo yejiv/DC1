@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "Define/DC1Enums.h"
 #include "DC1InventorySlotsWidget.generated.h"
 
 
@@ -39,6 +40,16 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	float GetSlotSize() const { return SlotSize; }
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	EDC1InventorySource GetSlotSource() const { return SlotSource; }
+
+	/**
+	 * 표시할 인벤토리 출처 변경 (인벤토리/귀중품 탭 전환용)
+	 * VM 이벤트 구독을 새 출처로 교체하고, 칸 수를 다시 맞춘 뒤 전체 갱신
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void SetSlotSource(EDC1InventorySource InSource);
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetInventoryViewModel(UDC1InventoryViewModel* InViewModel);
@@ -58,6 +69,13 @@ protected:
 	void HandleInventoryUpdated();
 	void HandleSlotUpdated(int32 SlotIndex);
 
+	/** 현재 SlotSource에 맞는 VM 이벤트 구독 / 전체 해제 */
+	void BindViewModelEvents();
+	void UnbindViewModelEvents();
+
+	/** 귀중품처럼 슬롯 수가 가변인 출처면 VM의 슬롯 수에 맞춰 칸을 다시 만듦 */
+	void SyncSlotCountWithSource();
+
 private:
 	static constexpr int32 InventoryColumns = 6;
 	static constexpr int32 DefaultSlotCapacity = 45;
@@ -72,9 +90,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
 	FMargin SlotMargin = FMargin(2.0f);
 
-	/** true면 ViewModel의 상자 전용 데이터(GetChestSlot 등)를 조회, false면 플레이어 인벤토리 데이터를 조회 */
+	/** 표시할 인벤토리 출처 (Player / Valuable / Chest) - 배치된 인스턴스별로 설정 */
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
-	bool bIsChestSlots = false;
+	EDC1InventorySource SlotSource = EDC1InventorySource::Player;
 
 
 private:

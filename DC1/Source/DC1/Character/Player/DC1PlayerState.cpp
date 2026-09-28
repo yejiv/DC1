@@ -8,6 +8,7 @@
 #include "Component/DC1EquipComponent.h"
 #include "Component/DC1TechTreeComponent.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/DC1ValuableInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 
 #include "Save/DC1PlayerSaveGame.h"
@@ -28,6 +29,9 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 
 	InventoryComponent = CreateDefaultSubobject<UDC1PlayerInventoryComponent>(TEXT("InventoryComponent"));
 	InventoryComponent->SetIsReplicated(true);
+
+	ValuableInventoryComponent = CreateDefaultSubobject<UDC1ValuableInventoryComponent>(TEXT("ValuableInventoryComponent"));
+	ValuableInventoryComponent->SetIsReplicated(true);
 
 	PalPartyComponent = CreateDefaultSubobject<UDC1PalPartyComponent>(TEXT("PalPartyComponent"));
 	PalPartyComponent->SetIsReplicated(true);

@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UI/Tab/Inventory/DC1InventorySlotsWidget.h"
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotsWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Components/ScrollBox.h"
 #include "Components/UniformGridPanel.h"
@@ -28,31 +28,16 @@ void UDC1InventorySlotsWidget::NativeConstruct()
 
 	if (CachedViewModel)
 	{
-		if (bIsChestSlots)
-		{
-			CachedViewModel->OnChestSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-			CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
-		}
-		else
-		{
-			// 부분 갱신 이벤트 구독 (성능 최적화)
-			CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-			// 레거시 전체 갱신 이벤트도 유지 (필요시)
-			CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
-		}
+		UnbindViewModelEvents();
+		BindViewModelEvents();
+		SyncSlotCountWithSource();
 		RefreshAllSlots();
 	}
 }
 
 void UDC1InventorySlotsWidget::NativeDestruct()
 {
-	if (CachedViewModel)
-	{
-		CachedViewModel->OnSlotUIUpdated.RemoveAll(this);
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
-		CachedViewModel->OnChestSlotUIUpdated.RemoveAll(this);
-		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
-	}
+	UnbindViewModelEvents();
 
 	Super::NativeDestruct();
 }
@@ -60,37 +45,102 @@ void UDC1InventorySlotsWidget::NativeDestruct()
 void UDC1InventorySlotsWidget::SetInventoryViewModel(UDC1InventoryViewModel* InViewModel)
 {
 	// 기존 ViewModel 이벤트 구독 해제
-	if (CachedViewModel)
-	{
-		CachedViewModel->OnSlotUIUpdated.RemoveAll(this);
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
-		CachedViewModel->OnChestSlotUIUpdated.RemoveAll(this);
-		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
-	}
+	UnbindViewModelEvents();
 
 	CachedViewModel = InViewModel;
 
 	if (CachedViewModel)
 	{
-		if (bIsChestSlots)
-		{
-			CachedViewModel->OnChestSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-			CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
-		}
-		else
-		{
-			// 부분 갱신 이벤트 구독 (성능 최적화)
-			CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
-			// 레거시 전체 갱신 이벤트도 유지 (필요시)
-			CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
-		}
+		BindViewModelEvents();
+		SyncSlotCountWithSource();
 		RefreshAllSlots();
+	}
+}
+
+void UDC1InventorySlotsWidget::SetSlotSource(EDC1InventorySource InSource)
+{
+	if (InSource == SlotSource)
+	{
+		return;
+	}
+
+	UnbindViewModelEvents();
+
+	SlotSource = InSource;
+
+	// 슬롯 위젯이 출처를 기억하므로 칸을 다시 만들어 출처를 전달
+	const int32 NewSlotCount = (CachedViewModel) ? CachedViewModel->GetSlotCountBySource(SlotSource) : DefaultSlotCapacity;
+	CreateSlotWidgets(NewSlotCount);
+
+	if (CachedViewModel)
+	{
+		BindViewModelEvents();
+		RefreshAllSlots();
+	}
+}
+
+void UDC1InventorySlotsWidget::BindViewModelEvents()
+{
+	if (!CachedViewModel)
+	{
+		return;
+	}
+
+	switch (SlotSource)
+	{
+	case EDC1InventorySource::Chest:
+		CachedViewModel->OnChestSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+		CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		break;
+	case EDC1InventorySource::Valuable:
+		CachedViewModel->OnValuableSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+		CachedViewModel->OnValuableInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		break;
+	default:
+		// 부분 갱신 이벤트 구독 (성능 최적화)
+		CachedViewModel->OnSlotUIUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleSlotUpdated);
+		// 레거시 전체 갱신 이벤트도 유지 (필요시)
+		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventorySlotsWidget::HandleInventoryUpdated);
+		break;
+	}
+}
+
+void UDC1InventorySlotsWidget::UnbindViewModelEvents()
+{
+	if (!CachedViewModel)
+	{
+		return;
+	}
+
+	CachedViewModel->OnSlotUIUpdated.RemoveAll(this);
+	CachedViewModel->OnInventoryUpdated.RemoveAll(this);
+	CachedViewModel->OnChestSlotUIUpdated.RemoveAll(this);
+	CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
+	CachedViewModel->OnValuableSlotUIUpdated.RemoveAll(this);
+	CachedViewModel->OnValuableInventoryUpdated.RemoveAll(this);
+}
+
+void UDC1InventorySlotsWidget::SyncSlotCountWithSource()
+{
+	// 고정 칸 출처(플레이어/상자)는 기존대로 유지 - 상자는 OpenChest에서 RefreshSlotCapacity로 맞춤
+	if (EDC1InventorySource::Valuable != SlotSource || !CachedViewModel)
+	{
+		return;
+	}
+
+	const int32 ValuableSlotCount = CachedViewModel->GetValuableSlotCount();
+	if (ValuableSlotCount != SlotWidgets.Num())
+	{
+		CreateSlotWidgets(ValuableSlotCount);
 	}
 }
 
 void UDC1InventorySlotsWidget::RefreshSlotCapacity(int32 NewTotalSlots)
 {
 	CreateSlotWidgets(NewTotalSlots);
+
+	// 슬롯 위젯을 새로 만들었으므로 현재 데이터로 다시 채움 (안 하면 빈 칸으로 표시됨)
+	RefreshAllSlots();
 }
 
 void UDC1InventorySlotsWidget::RefreshAllSlots()
@@ -172,7 +222,7 @@ void UDC1InventorySlotsWidget::CreateSlotWidgets(int32 TotalSlots)
 			const int32 Row = Index / InventoryColumns;
 			const int32 Column = Index % InventoryColumns;
 
-			NewSlotWidget->InitSlot(Index, SlotSize, bIsChestSlots);
+			NewSlotWidget->InitSlot(Index, SlotSize, SlotSource);
 
 			UUniformGridSlot* GridSlot = SlotGrid->AddChildToUniformGrid(NewSlotWidget, Row, Column);
 			if (GridSlot)
@@ -204,6 +254,9 @@ void UDC1InventorySlotsWidget::UpdateSlotDisplay(int32 SlotIndex)
 
 void UDC1InventorySlotsWidget::HandleInventoryUpdated()
 {
+	// 귀중품은 획득/소모에 따라 슬롯 수가 바뀌므로 칸 수부터 맞춤
+	SyncSlotCountWithSource();
+
 	// 레거시: 전체 슬롯 갱신 (필요시 호출)
 	RefreshAllSlots();
 }
