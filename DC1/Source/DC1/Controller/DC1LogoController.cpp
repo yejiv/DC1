@@ -30,6 +30,34 @@ void ADC1LogoController::BeginPlay()
 		}), 2.f, false);
 }
 
+void ADC1LogoController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (nullptr != InputComponent)
+	{
+		InputComponent->BindKey(EKeys::NumPadNine, IE_Pressed, this, &ThisClass::OnDebugToggleUI);
+	}
+}
+
+void ADC1LogoController::OnDebugToggleUI()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		return;
+	}
+
+	if (true == UIManager->HasActiveScreen())
+	{
+		UIManager->PopScreen();
+	}
+	else
+	{
+		UIManager->PushScreen(DC1UITags::UI_Logo_Title);
+	}
+}
+
 void ADC1LogoController::TravelToServer(const FString& IP)
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();

@@ -11,6 +11,10 @@
 
 #include "Controller/DC1LogoController.h"
 
+#include "Save/DC1SaveSubsystem.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
+
 void UDC1TitleWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -44,7 +48,18 @@ void UDC1TitleWidget::NativeConstruct()
 
 void UDC1TitleWidget::OnStartClicked()
 {
-	if (false == ::IsValid(MenuSwitcher)) 
+	UDC1SaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>();
+	if (true == ::IsValid(SaveSubsystem) && false == SaveSubsystem->HasCustomizeLocalData())
+	{
+		UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+		if (true == ::IsValid(UIManager))
+		{
+			UIManager->PushScreen(DC1UITags::UI_Customize, true);
+			return;
+		}
+	}
+
+	if (false == ::IsValid(MenuSwitcher))
 	{
 		return;
 	}

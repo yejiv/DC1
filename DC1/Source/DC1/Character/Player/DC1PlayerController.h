@@ -36,9 +36,9 @@ public:
 	// State Build 관리, InteractComp Tick 관리
 	void SetBuildMode(bool Enabled);
 
-	UDC1InventoryViewModel* GetInventoryViewModel() const { return InventoryViewModel; }
-	UDC1BuildPlacementComponent* GetBuildPlacementComponent() const { return BuildPlacementComponent; }
-	UDC1InteractComponent* GetInteractComponent() const { return InteractComponent; }
+	UDC1InventoryViewModel*			GetInventoryViewModel() const { return InventoryViewModel; }
+	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
+	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

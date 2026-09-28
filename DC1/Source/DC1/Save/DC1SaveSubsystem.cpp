@@ -8,6 +8,7 @@
 #include "Define/DC1Macro.h"
 
 #include "Save/DC1PlayerSaveGame.h"
+#include "Save/DC1CustomizationSaveGame.h"
 #include "Character/Player/DC1PlayerState.h"
 
 void UDC1SaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -59,8 +60,9 @@ bool UDC1SaveSubsystem::LoadPlayerData(ADC1PlayerState* PS)
 
 	if (false == UGameplayStatics::DoesSaveGameExist(SlotName, 0))
 	{
-		LOG(TEXT("[Load] Load File is not exist"));
-		return false;
+		// 신규 플레이어
+		LOG(TEXT("[Load] New Player"));
+		return true;
 	}
 
 	UDC1PlayerSaveGame* SaveGame = Cast<UDC1PlayerSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
@@ -70,10 +72,52 @@ bool UDC1SaveSubsystem::LoadPlayerData(ADC1PlayerState* PS)
 	}
 	else
 	{
-		// 신규 플레이어
+		return false;
 	}
 
 	// SaveVersion에 따른 분기 처리 (추후)
+
+	return true;
+}
+
+bool UDC1SaveSubsystem::SaveCustomizeData(const FDC1AppearanceData& InData)
+{
+	UDC1CustomizationSaveGame* SaveGame = Cast<UDC1CustomizationSaveGame>(UGameplayStatics::CreateSaveGameObject(UDC1CustomizationSaveGame::StaticClass()));
+	if (false == IsValid(SaveGame))
+	{
+		LOG_ERROR(TEXT("Create SaveGame is Failed"))
+			return false;
+	}
+
+	SaveGame->Appearance = InData;
+
+	return UGameplayStatics::SaveGameToSlot(SaveGame, CustomizeFileName, 0);
+}
+
+bool UDC1SaveSubsystem::LoadCustomizeData(FDC1AppearanceData* OutData)
+{
+	if (nullptr == OutData)
+		return false;
+
+	if (false == HasCustomizeLocalData())
+	{
+		return false;
+	}
+
+	UDC1CustomizationSaveGame* SaveGame = Cast<UDC1CustomizationSaveGame>(UGameplayStatics::LoadGameFromSlot(CustomizeFileName, 0));
+
+	if (true == IsValid(SaveGame))
+	{
+		*OutData = SaveGame->Appearance;
+	}
+
+	return true;
+}
+
+bool UDC1SaveSubsystem::HasCustomizeLocalData()
+{
+	if (false == UGameplayStatics::DoesSaveGameExist(CustomizeFileName, 0))
+		return false;
 
 	return true;
 }

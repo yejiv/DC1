@@ -13,6 +13,7 @@ class UDC1TechTreeComponent;
 class UDC1PlayerInventoryComponent;
 class UDC1PalPartyComponent;
 class UDC1EquipComponent;
+class UDC1AppearanceComponent;
 
 class UDC1PlayerSaveGame;
 /**
@@ -32,6 +33,7 @@ public:
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
+	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
@@ -57,4 +59,8 @@ private:
 	// 장착 정보는 폰보다 오래 살아야 한다. 죽어서 드랍할 때 무엇을 들고 있었는지 읽어야 하기 때문
 	UPROPERTY(VisibleAnywhere, Category = "Equip")
 	TObjectPtr<UDC1EquipComponent> EquipComponent = { nullptr };
+
+	// 폰보다 오래 살아야 함 + 추후 미리보기 액터도 같은 인스턴스를 공유해서 써야 함
+	UPROPERTY(VisibleAnywhere, Category = "Appearance")
+	TObjectPtr<UDC1AppearanceComponent> AppearanceComponent = { nullptr };
 };

@@ -79,9 +79,6 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	StaminaWidgetComponent->SetupAttachment(RootComponent);
 	StaminaWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	StaminaWidgetComponent->SetVisibility(false);
-
-	// Appearance Component
-	AppearanceComponent = CreateDefaultSubobject<UDC1AppearanceComponent>("AppearanceComponent");
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -170,8 +167,6 @@ void ADC1Player::PostInitializeComponents()
 
 	HairMesh->SetLeaderPoseComponent(GetMesh());
 	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
-
-	AppearanceComponent->SetParts(GetMesh(), HairMesh, HeadMesh);
 }
 
 void ADC1Player::BeginPlay()
@@ -197,6 +192,7 @@ void ADC1Player::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
 	InitializeEquip();
+	InitializeAppearance();
 }
 
 void ADC1Player::UnPossessed()
@@ -210,6 +206,7 @@ void ADC1Player::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 	InitializeAbilitySystem();
 	InitializeEquip();
+	InitializeAppearance();
 }
 
 void ADC1Player::NotifyControllerChanged()
@@ -227,6 +224,17 @@ void ADC1Player::InitializeEquip()
 	if (UDC1EquipComponent* Equip = PS->GetEquipComponent())
 	{
 		Equip->HandlePawnReady();
+	}
+}
+
+void ADC1Player::InitializeAppearance()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS)) return;
+
+	if (UDC1AppearanceComponent* Appearance = PS->GetAppearanceComponent())
+	{
+		Appearance->SetParts(GetMesh(), HairMesh, HeadMesh);
 	}
 }
 

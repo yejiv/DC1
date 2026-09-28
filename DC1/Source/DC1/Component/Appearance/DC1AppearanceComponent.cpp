@@ -2,7 +2,8 @@
 
 #include "Component/Appearance/DC1AppearanceComponent.h"
 
-#include "Data/Appearance/DC1AppearanceTypes.h"
+#include "Net/UnrealNetwork.h"
+
 #include "Components/SkeletalMeshComponent.h"
 
 #include "Data/DA/Appearance/DC1AppearanceRegistryData.h"
@@ -12,6 +13,8 @@
 UDC1AppearanceComponent::UDC1AppearanceComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	SetIsReplicatedByDefault(true);
 }
 
 void UDC1AppearanceComponent::SetParts(USkeletalMeshComponent* InBodyMesh, USkeletalMeshComponent* InHairMesh, USkeletalMeshComponent* InHeadMesh)
@@ -58,6 +61,19 @@ void UDC1AppearanceComponent::ApplyAppearance(const FDC1AppearanceData& Data)
 	}
 }
 
+void UDC1AppearanceComponent::Server_ChangeAppearance_Implementation(const FDC1AppearanceData& InData)
+{
+	CurrentAppearance = InData;
+	OnRep_CurrentAppearance();
+}
+
+void UDC1AppearanceComponent::ImportSaveData(const FDC1AppearanceData& In)
+{
+	// 외형은 서버가 파일로 들고 있지 않는다. 로컬(클라)에서 읽은 값을 그대로 서버에 올린다
+	// (권한 체크 없이 RPC를 태움: 서버에서 부르면 즉시 로컬 실행, 클라에서 부르면 네트워크로 나간다)
+	Server_ChangeAppearance(In);
+}
+
 void UDC1AppearanceComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -72,9 +88,16 @@ void UDC1AppearanceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	CachedHeadMesh.Reset();
 }
 
+void UDC1AppearanceComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UDC1AppearanceComponent, CurrentAppearance);
+}
+
 void UDC1AppearanceComponent::UpdateMesh(USkeletalMesh* NewMesh, USkeletalMeshComponent* CachedMesh)
 {
-	if (false == IsValid(NewMesh))
+	if (false == IsValid(NewMesh) || false == IsValid(CachedMesh))
 	{
 		return;
 	}
@@ -84,4 +107,9 @@ void UDC1AppearanceComponent::UpdateMesh(USkeletalMesh* NewMesh, USkeletalMeshCo
 		CachedMesh->EmptyOverrideMaterials();
 		CachedMesh->SetSkeletalMesh(NewMesh);
 	}
+}
+
+void UDC1AppearanceComponent::OnRep_CurrentAppearance()
+{
+	ApplyAppearance(CurrentAppearance);
 }

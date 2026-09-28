@@ -533,6 +533,19 @@ void ADC1PlayerController::InitPlayerStateBindings()
 		ViewModelSubsystem->BindAll(OwnerPlayerState);
 	}
 
+	// Customize 적용
+	UDC1SaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>();
+	if (false == ::IsValid(SaveSubsystem))
+	{
+		return;
+	}
+
+	FDC1AppearanceData LocalAppearance;
+	if (true == SaveSubsystem->LoadCustomizeData(&LocalAppearance))
+	{
+		OwnerPlayerState->GetAppearanceComponent()->ImportSaveData(LocalAppearance);
+	}
+
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
@@ -647,14 +660,14 @@ void ADC1PlayerController::OnDebugRandomSkinColor()
 
 void ADC1PlayerController::ApplyDebugAppearance()
 {
-	ADC1Player* DebugPlayer = Cast<ADC1Player>(GetPawn());
-	if (false == ::IsValid(DebugPlayer) || false == ::IsValid(DebugPlayer->AppearanceComponent))
+	ADC1PlayerState* DebugPlayerState = GetPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(DebugPlayerState) || false == ::IsValid(DebugPlayerState->GetAppearanceComponent()))
 	{
-		LOG_WARNING(TEXT("[Debug] No pawn or AppearanceComponent"));
+		LOG_WARNING(TEXT("[Debug] No PlayerState or AppearanceComponent"));
 		return;
 	}
 
-	DebugPlayer->AppearanceComponent->ApplyAppearance(DebugAppearance);
+	DebugPlayerState->GetAppearanceComponent()->ApplyAppearance(DebugAppearance);
 
 	LOG(TEXT("[Debug] Appearance Hair=%s Head=%s HairColor=%s SkinColor=%s"),
 		*DebugAppearance.HairTag.ToString(),

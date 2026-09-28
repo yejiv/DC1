@@ -30,4 +30,8 @@ namespace DC1UITags
 #pragma region CHEST_LOOT
 	UE_DEFINE_GAMEPLAY_TAG(UI_Chest_Loot, "UI.Chest.Loot");
 #pragma endregion
+
+#pragma region CUSTOMIZE
+	UE_DEFINE_GAMEPLAY_TAG(UI_Customize, "UI.Customize");
+#pragma endregion
 }

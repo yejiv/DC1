@@ -18,10 +18,18 @@ enum class EDC1FadeType : uint8
 UENUM()
 enum class EDC1TabButtonState : uint8
 {
-	Default = 0, 
+	Default = 0,
 	Inactive = 1,		// Tab 비활성화
 	Active = 2,			// Tab 활성화
 	Disable = 3,		// Tab 활성화 불가
+};
+
+// CUSTOMIZE MENU (좌측 메뉴 버튼 구분용. 부모 위젯이 버튼 배열/게임시작 버튼을 이 값으로 관리)
+UENUM(BlueprintType)
+enum class EDC1CustomizeMenu : uint8
+{
+	Head = 0,
+	Hair = 1,
 };
 
 // TECH SLOT STATE

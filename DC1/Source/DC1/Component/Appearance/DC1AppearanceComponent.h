@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Data/Appearance/DC1AppearanceTypes.h"
 #include "DC1AppearanceComponent.generated.h"
 
 class USkeletalMeshComponent;
-
-struct FDC1AppearanceData;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DC1_API UDC1AppearanceComponent : public UActorComponent
@@ -24,12 +23,28 @@ public:
 public:
 	void ApplyAppearance(const FDC1AppearanceData& Data);
 
+	UFUNCTION(Server, Reliable)
+	void Server_ChangeAppearance(const FDC1AppearanceData& InData);
+
+public:
+	void ImportSaveData(const FDC1AppearanceData& In);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
 	void UpdateMesh(USkeletalMesh* NewMesh, USkeletalMeshComponent* CachedMesh);
+
+private:
+	UFUNCTION()
+	void OnRep_CurrentAppearance();
+
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentAppearance)
+	FDC1AppearanceData									CurrentAppearance = {};
 
 private:
 	UPROPERTY()
@@ -40,4 +55,5 @@ private:
 
 	UPROPERTY()
 	TWeakObjectPtr<USkeletalMeshComponent>	CachedHeadMesh = { nullptr };
+
 };

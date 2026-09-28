@@ -34,4 +34,9 @@ namespace DC1UITags
 	// 상자 개방 시 플레이어 인벤토리 + 상자 인벤토리를 함께 보여주는 화면
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Chest_Loot);
 #pragma endregion
+
+#pragma region CUSTOMIZE
+	// 타이틀(최초) / 게임 중 재커스터마이징 양쪽에서 공용으로 Push하는 화면
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Customize);
+#pragma endregion
 }
