@@ -1,9 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UI/Tab/Inventory/DC1InventoryWidget.h"
-#include "UI/Tab/Inventory/DC1InventorySlotsWidget.h"
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotsWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
+#include "Subsystem/DC1ViewModelSubsystem.h"
 
 
 #include "Data/DataTable/DC1DataTableTypes.h"
@@ -11,7 +12,7 @@
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
-#include "Components/TextBlock.h"
+#include "Components/Button.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 UDC1InventoryWidget::UDC1InventoryWidget(const FObjectInitializer& ObjectInitializer)
@@ -23,9 +24,16 @@ void UDC1InventoryWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (CachedViewModel)
+	ULocalPlayer* OwnerLocalPlayer = GetOwningLocalPlayer();
+	if (false == ::IsValid(OwnerLocalPlayer))
 	{
-		HandleInventoryUpdated();
+		return;
+	}
+
+	// VM은 LocalPlayer당 1개 - 상자 화면과 같은 인스턴스를 공유
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = OwnerLocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		SetViewModel(ViewModelSubsystem->GetViewModel<UDC1InventoryViewModel>());
 	}
 }
 
@@ -33,11 +41,30 @@ void UDC1InventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (IsValid(Button_InventoryTab))
+	{
+		Button_InventoryTab->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleInventoryTabClicked);
+	}
+
+	if (IsValid(Button_ValuableTab))
+	{
+		Button_ValuableTab->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleValuableTabClicked);
+	}
+
+	if (IsValid(Button_Sort))
+	{
+		Button_Sort->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleSortButtonClicked);
+	}
+
 	if (CachedViewModel)
 	{
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::HandleInventoryUpdated);
+		// SetViewModel에서 이미 구독했을 수 있으므로 중복 구독 방지
+		CachedViewModel->OnDragEnded.RemoveAll(this);
 		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
 	}
+
+	// 선택된 탭 버튼 표시 갱신
+	UpdateTabButtonVisual();
 }
 
 void UDC1InventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -49,6 +76,7 @@ void UDC1InventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 	if (IsValid(DraggedSlotCopy))
 	{
 		FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
+		const float DragSlotSize = InventorySlotsWidget->GetSlotSize() * DragSlotScale;
 		FVector2D TargetPos = MousePosition - FVector2D(DragSlotSize / 2.0f, DragSlotSize / 2.0f);
 
 		DraggedSlotCurrentPosition = FMath::Vector2DInterpTo(DraggedSlotCurrentPosition, TargetPos, InDeltaTime, DragFollowSpeed);
@@ -60,9 +88,23 @@ void UDC1InventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 void UDC1InventoryWidget::NativeDestruct()
 {
+	if (IsValid(Button_InventoryTab))
+	{
+		Button_InventoryTab->OnClicked.RemoveAll(this);
+	}
+
+	if (IsValid(Button_ValuableTab))
+	{
+		Button_ValuableTab->OnClicked.RemoveAll(this);
+	}
+
+	if (IsValid(Button_Sort))
+	{
+		Button_Sort->OnClicked.RemoveAll(this);
+	}
+
 	if (CachedViewModel)
 	{
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 		CachedViewModel->OnDragEnded.RemoveAll(this);
 	}
 
@@ -73,7 +115,6 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 {
 	if (CachedViewModel)
 	{
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 		CachedViewModel->OnDragEnded.RemoveAll(this);
 	}
 
@@ -87,22 +128,70 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 		}
 
 		// 이벤트 구독
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::HandleInventoryUpdated);
 		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
-		HandleInventoryUpdated();
 	}
 }
 
-void UDC1InventoryWidget::HandleInventoryUpdated()
+void UDC1InventoryWidget::ChangeTab(EDC1InventorySource InTab)
 {
-	if (!CachedViewModel)
+	if (InTab == CurrentTab)
 	{
 		return;
 	}
 
-	if (InventoryTitle)
+	// 다른 탭으로 넘어가면 이전 탭 기준의 드래그는 의미가 없으므로 취소
+	if (IsValid(CachedViewModel) && CachedViewModel->IsDragging())
 	{
-		InventoryTitle->SetText(FText::FromString(TEXT("Inventory")));
+		CachedViewModel->EndDrag();
+	}
+
+	CurrentTab = InTab;
+
+	if (IsValid(InventorySlotsWidget))
+	{
+		InventorySlotsWidget->SetSlotSource(CurrentTab);
+	}
+
+	UpdateTabButtonVisual();
+}
+
+void UDC1InventoryWidget::UpdateTabButtonVisual()
+{
+	if (IsValid(Button_InventoryTab))
+	{
+		Button_InventoryTab->SetBackgroundColor(EDC1InventorySource::Player == CurrentTab ? SelectedTabColor : UnselectedTabColor);
+	}
+
+	if (IsValid(Button_ValuableTab))
+	{
+		Button_ValuableTab->SetBackgroundColor(EDC1InventorySource::Valuable == CurrentTab ? SelectedTabColor : UnselectedTabColor);
+	}
+}
+
+void UDC1InventoryWidget::HandleInventoryTabClicked()
+{
+	ChangeTab(EDC1InventorySource::Player);
+}
+
+void UDC1InventoryWidget::HandleValuableTabClicked()
+{
+	ChangeTab(EDC1InventorySource::Valuable);
+}
+
+void UDC1InventoryWidget::HandleSortButtonClicked()
+{
+	if (false == IsValid(CachedViewModel))
+	{
+		return;
+	}
+
+	if (EDC1InventorySource::Valuable == CurrentTab)
+	{
+		CachedViewModel->RequestSortValuables();
+	}
+	else
+	{
+		CachedViewModel->RequestSortInventory();
 	}
 }
 
@@ -126,6 +215,12 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 	}
 
 	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
+	{
+		return FReply::Unhandled();
+	}
+
+	// 귀중품은 옮길 곳이 없으므로(상자 보관 / 버리기 불가) 드래그를 시작하지 않음
+	if (EDC1InventorySource::Valuable == CurrentTab)
 	{
 		return FReply::Unhandled();
 	}
@@ -169,8 +264,9 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 			DraggedSlotCopy = CreateWidget<UDC1InventorySlotWidget>(GetOwningPlayer(), DragSlotWidgetClass);
 			if (IsValid(DraggedSlotCopy))
 			{
-				// 복제본 초기화: 크기는 80x80 (기존 100x100의 80%)
-				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, false);
+				// 복제본 초기화: 크기는 원본 슬롯 크기 x DragSlotScale
+				const float DragSlotSize = InventorySlotsWidget->GetSlotSize() * DragSlotScale;
+				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, EDC1InventorySource::Player);
 				DraggedSlotCopy->SetSlotData(CachedViewModel);
 
 				// Ctrl/Shift로 선택한 부분 개수를 표시 (원본 슬롯의 전체 개수가 아님)

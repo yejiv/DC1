@@ -6,6 +6,7 @@
 #include "UI/DC1UserWidget.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1Enums.h"
 #include "DC1InventorySlotWidget.generated.h"
 
 class UBorder;
@@ -28,7 +29,7 @@ protected:
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 public:
-	void InitSlot(int32 SlotIndex, float SlotSize, bool bInIsChestSlot = false);
+	void InitSlot(int32 SlotIndex, float SlotSize, EDC1InventorySource InSlotSource = EDC1InventorySource::Player);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetSlotData(const UDC1InventoryViewModel* ViewModel);
@@ -82,5 +83,5 @@ private:
 private:
 	int32 CurrentSlotIndex = -1;
 	bool bIsBeingDragged = false;
-	bool bIsChestSlot = false;
+	EDC1InventorySource SlotSource = EDC1InventorySource::Player;
 };

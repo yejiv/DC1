@@ -1,6 +1,6 @@
-﻿#include "UI/Tab/Inventory/DC1InventoryEntryWidget.h"
+﻿#include "UI/Tab/Inventory/Slot/DC1InventoryEntryWidget.h"
 
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
@@ -15,7 +15,7 @@ UDC1InventoryEntryWidget::UDC1InventoryEntryWidget(const FObjectInitializer& Obj
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, bool bIsChestSlot /* = false */)
+void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, EDC1InventorySource InSlotSource /* = EDC1InventorySource::Player */)
 {
 	if (!IsValid(ViewModel))
 	{
@@ -24,7 +24,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 	}
 
 	CurrentSlotIndex = SlotIndex;
-	const FDC1InventorySlotInfo& InventorySlotInfo = bIsChestSlot ? ViewModel->GetChestSlot(SlotIndex) : ViewModel->GetSlot(SlotIndex);
+	const FDC1InventorySlotInfo& InventorySlotInfo = ViewModel->GetSlotBySource(InSlotSource, SlotIndex);
 
 	if (InventorySlotInfo.IsEmpty())
 	{
@@ -45,13 +45,16 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 
 	if (IsValid(Image_Icon))
 	{
-		if (ItemData->ItemIcon.IsPending())
+		// 소프트 레퍼런스 아이콘: 미로드 상태면 비동기 로드 후 자동으로 브러시 설정
+		// (IsPending일 때 nullptr을 넣으면 흰색 사각형으로 표시됨)
+		if (true == ItemData->ItemIcon.IsNull())
 		{
+			// 아이콘이 지정되지 않은 아이템
 			Image_Icon->SetBrushFromTexture(nullptr);
 		}
 		else
 		{
-			Image_Icon->SetBrushFromTexture(ItemData->ItemIcon.Get());
+			Image_Icon->SetBrushFromSoftTexture(ItemData->ItemIcon);
 		}
 		Image_Icon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		Image_Icon->SetVisibility(ESlateVisibility::Visible);

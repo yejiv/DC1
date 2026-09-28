@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UI/Tab/Inventory/DC1EquipmentWidget.h"
+#include "UI/Tab/Inventory/Equipment/DC1EquipmentWidget.h"
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Components/Border.h"

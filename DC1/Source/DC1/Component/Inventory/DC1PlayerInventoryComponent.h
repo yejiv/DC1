@@ -7,6 +7,7 @@
 #include "DC1PlayerInventoryComponent.generated.h"
 
 class UDC1ChestInventoryComponent;
+class UDC1ValuableInventoryComponent;
 
 /**
  * 플레이어 인벤토리 컴포넌트
@@ -50,15 +51,19 @@ public:
 	const FDC1InventorySlotInfo& GetEquipmentSlot(int32 InSlotIndex) const;
 
 public:
+	/** 귀중품(bIsValuable)은 같은 PlayerState의 귀중품 인벤토리로 넘기고, 일반 아이템만 여기에 보관 */
+	virtual bool AddItem(FName InItemID, int32 InCount = 1) override;
+
+	/** 귀중품은 일반 인벤토리에 보관 불가 */
+	virtual bool CanAcceptItem(FName InItemID) const override;
+
+public:
 	// 장비 착용 및 해제 함수
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
 	bool EquipItem(int32 InSlotIndex, int32 InEquipSlotIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
 	bool UnequipItem(int32 InEquipSlotIndex);
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SortInventory();
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
@@ -75,9 +80,25 @@ public:
 	 * @param InChestComp 대상 상자 컴포넌트
 	 * @param bToChest true면 플레이어->상자, false면 상자->플레이어
 	 * @param FromSlotIndex 출발 슬롯 (bToChest 기준으로 플레이어 또는 상자 쪽 인덱스)
+	 * @param ToSlotIndex 드롭한 목표 슬롯 (bToChest 기준으로 상자 또는 플레이어 쪽 인덱스)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount = -1);
+	void RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
+
+	/** 플레이어 인벤토리 일회성 정렬 요청 (분류 버튼용) */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortInventory();
+
+	/** 귀중품 인벤토리 일회성 정렬 요청 (귀중품 탭 분류 버튼용) */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortValuables();
+
+	/**
+	 * 상자 인벤토리 일회성 정렬 요청 (분류 버튼용)
+	 * @param InChestComp 대상 상자 컴포넌트
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortChestItems(UDC1ChestInventoryComponent* InChestComp);
 
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
@@ -97,11 +118,32 @@ protected:
 	void Server_MoveChestItem_Implementation(UDC1ChestInventoryComponent* InChestComp, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
-	void Server_TransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
+	void Server_TransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
-	bool Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
+	bool Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
 
-	void Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount);
+	void Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_SortInventory();
+
+	bool Server_SortInventory_Validate();
+
+	void Server_SortInventory_Implementation();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_SortValuables();
+
+	bool Server_SortValuables_Validate();
+
+	void Server_SortValuables_Implementation();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_SortChestItems(UDC1ChestInventoryComponent* InChestComp);
+
+	bool Server_SortChestItems_Validate(UDC1ChestInventoryComponent* InChestComp);
+
+	void Server_SortChestItems_Implementation(UDC1ChestInventoryComponent* InChestComp);
 
 protected:
 	virtual void CalculateWeight();
@@ -109,6 +151,9 @@ protected:
 	virtual void InitializeDefaultItems();
 	virtual void InitializeSlots() override;
 	virtual void OnInventoryUpdated_Internal() override;
+
+	/** 같은 PlayerState에 붙은 귀중품 인벤토리 */
+	UDC1ValuableInventoryComponent* FindValuableInventory() const;
 
 	/** 클라이언트에서 EquipmentSlots 복제 수신 시 호출되어 UI 갱신 이벤트를 발생시킴 */
 	UFUNCTION()
@@ -123,9 +168,6 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentSlots, BlueprintReadOnly, Category = "Inventory|Equipment")
 	TArray<FDC1InventorySlotInfo> EquipmentSlots;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings")
-	bool bAutoSort = false;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Inventory|Weight")

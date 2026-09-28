@@ -124,6 +124,10 @@ struct FDC1ItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxStack = 9999;
 
+	// 귀중품 여부 ( true면 귀중품 탭 전용 - 상자 보관/버리기 불가, 무게 제외, 스택 제한 없음 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bIsValuable = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description = FText::FromString(TEXT("설명 텍스트"));
 

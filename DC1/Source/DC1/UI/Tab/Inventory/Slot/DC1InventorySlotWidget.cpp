@@ -1,8 +1,8 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 
-#include "UI/Tab/Inventory/DC1InventoryEntryWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventoryEntryWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
@@ -34,10 +34,10 @@ void UDC1InventorySlotWidget::NativeConstruct()
 	HideHoverImage();
 }
 
-void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex, float SlotSize, bool bInIsChestSlot /* = false */)
+void UDC1InventorySlotWidget::InitSlot(int32 SlotIndex, float SlotSize, EDC1InventorySource InSlotSource /* = EDC1InventorySource::Player */)
 {
 	CurrentSlotIndex = SlotIndex;
-	bIsChestSlot = bInIsChestSlot;
+	SlotSource = InSlotSource;
 
 	if (IsValid(SizeBox_Root))
 	{
@@ -55,7 +55,7 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 		return;
 	}
 
-	const FDC1InventorySlotInfo& InventorySlot = bIsChestSlot ? ViewModel->GetChestSlot(CurrentSlotIndex) : ViewModel->GetSlot(CurrentSlotIndex);
+	const FDC1InventorySlotInfo& InventorySlot = ViewModel->GetSlotBySource(SlotSource, CurrentSlotIndex);
 
 	if (InventorySlot.IsEmpty())
 	{
@@ -77,7 +77,7 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 	// EntryWidget에 데이터 전달
 	if (IsValid(EntryWidget))
 	{
-		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex, bIsChestSlot);
+		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex, SlotSource);
 	}
 }
 
