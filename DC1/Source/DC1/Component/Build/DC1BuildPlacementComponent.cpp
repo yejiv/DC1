@@ -355,7 +355,6 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	FVector PawnLocation = Pawn->GetActorLocation();
 	const float PawnFootZ = PawnLocation.Z - Pawn->GetSimpleCollisionHalfHeight();
 
-
 	// Build Actor Trace 지점들
 	FVector TopPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ + RangeUpHeight);
 	FVector BottomPoint = FVector(TargetLocation.X, TargetLocation.Y, PawnFootZ - RangeDownHeight);
@@ -373,7 +372,6 @@ bool UDC1BuildPlacementComponent::TraceSurface(FHitResult& OutHit) const
 	HitParams.AddIgnoredActor(Pawn);
 	HitParams.AddIgnoredActor(PreviewActor);
 
-	// 충돌 채널 추가 필요
 	const bool IsHit = World->LineTraceSingleByChannel(Hit, Start, End, static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_BuildSurface), HitParams);
 
 	if (false == IsHit)
