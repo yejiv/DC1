@@ -57,6 +57,7 @@ void UDC1AppearanceComponent::ApplyAppearance(const FDC1AppearanceData& Data)
 			USkeletalMesh* NewHeadMesh = HeadAsset->SkeletalMesh.LoadSynchronous();
 			UpdateMesh(NewHeadMesh, CachedHeadMesh.Get());
 			CachedHeadMesh->SetColorParameterValueOnMaterials(Registry->SkinColorPropertyName, Data.SkinColor);
+			CachedHeadMesh->SetColorParameterValueOnMaterials(Registry->HairColorPropertyName, Data.HairColor);
 		}
 	}
 }

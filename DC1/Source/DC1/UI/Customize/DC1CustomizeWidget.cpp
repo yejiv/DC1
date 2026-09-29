@@ -81,6 +81,8 @@ void UDC1CustomizeWidget::SetupMenuButtons()
 	{
 		StartGameButton->OnClickedDelegate.AddUObject(this, &ThisClass::HandleStartGameClicked);
 	}
+
+	HandleMenuButtonClicked(HeadMenuButton);
 }
 
 void UDC1CustomizeWidget::HandleMenuButtonClicked(UDC1CustomizeMenuButton* ClickedButton)
