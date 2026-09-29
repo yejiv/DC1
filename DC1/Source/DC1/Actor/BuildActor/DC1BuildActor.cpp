@@ -8,8 +8,8 @@
 
 #include "Component/Build/DC1BuildCheckComponent.h"
 #include "Component/Build/DC1BuildSnapComponent.h"
+#include "Component/Build/DC1BuildLinkComponent.h"
 
-#include "Define/DC1Structs.h"
 #include "Define/DC1BuildSupportHelper.h"
 
 #include "Net/UnrealNetwork.h"
@@ -31,6 +31,8 @@ ADC1BuildActor::ADC1BuildActor()
 
 	BuildSnapComp = CreateDefaultSubobject<UDC1BuildSnapComponent>("BuildSnapComp");
 	BuildSnapComp->SetupAttachment(BuildCheckComp);
+
+	BuildLinkComp = CreateDefaultSubobject<UDC1BuildLinkComponent>("BuildLinkComp");
 
 	SetRootComponent(BuildMesh);
 }
@@ -142,6 +144,18 @@ void ADC1BuildActor::BeginPlay()
 	ApplyState();
 }
 
+void ADC1BuildActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearTimer(DestroySequenceTimer);
+
+	if (true == IsDestroying)
+	{
+		FinishDestroySequence();
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void ADC1BuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -169,25 +183,6 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 	BuildState = EDC1BuildState::Completed;
 }
 
-void ADC1BuildActor::RequestBuildDestroy()
-{
-	if (false == HasAuthority())
-	{
-		return;
-	}
-
-	TSet<ADC1BuildActor*> Doomed;
-	DC1BuildSupportHelper::CollectCascade(this, Doomed);
-
-	for (ADC1BuildActor* Doom : Doomed)
-	{
-		if (true == ::IsValid(Doom))
-		{
-			Doom->BuildDestroy();
-		}
-	}
-}
-
 void ADC1BuildActor::BuildDestroy()
 {
 	// TODO Cost Return
@@ -195,11 +190,39 @@ void ADC1BuildActor::BuildDestroy()
 	Destroy();
 }
 
+void ADC1BuildActor::FinishDestroySequence()
+{
+	IsDestroying = false;
+
+	OnDestroyFinished.Broadcast(this);
+}
+
 void ADC1BuildActor::InitPreview(const FDC1BuildActorData& InBuildActorData)
 {
 	BuildActorData = InBuildActorData;
 
 	BuildState = EDC1BuildState::Preview;
+}
+
+void ADC1BuildActor::BeginDestroySequence()
+{
+	if (true == IsDestroying)
+	{
+		return;
+	}
+
+	IsDestroying = true;
+
+	// 연출 시작 ( Chaos ? )
+
+	if (DestroySequenceDuration > 0.f)
+	{
+		GetWorldTimerManager().SetTimer(DestroySequenceTimer, this, &ThisClass::FinishDestroySequence, DestroySequenceDuration);
+	}
+	else
+	{
+		DestroySequenceTimer = GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::FinishDestroySequence);
+	}
 }
 
 

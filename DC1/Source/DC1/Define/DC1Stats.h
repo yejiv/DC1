@@ -9,7 +9,7 @@ DECLARE_CYCLE_STAT(TEXT("FindSnapPair"), STAT_DC1_FindsnapPair, STATGROUP_DC1);
 
 DECLARE_CYCLE_STAT(TEXT("SnapBlockTest"), STAT_DC1_SnapBlockTest, STATGROUP_DC1);
 
-DECLARE_CYCLE_STAT(TEXT("BuildCollectCascade"), STAT_DC1_BuildCollectCascade, STATGROUP_DC1);
+DECLARE_CYCLE_STAT(TEXT("BuildHasSupport"), STAT_DC1_BuildHasSupport, STATGROUP_DC1);
 /*
 선언 후
 ex)

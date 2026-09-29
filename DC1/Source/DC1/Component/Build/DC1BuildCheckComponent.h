@@ -44,7 +44,7 @@ struct FDC1BuildProbeData
 	float MaxSurfaceAngle = { 30.f };
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 {
 	GENERATED_BODY()

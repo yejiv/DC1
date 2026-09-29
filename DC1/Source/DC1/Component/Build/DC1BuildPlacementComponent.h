@@ -11,10 +11,12 @@
 
 struct FDC1BuildActorData;
 struct FInputActionValue;
+struct FDC1BuildSnapInput;
 
 class ADC1BuildActor;
+class UDC1BuildSnapSolver;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -63,8 +65,6 @@ private:
 	void				OnSnapPressed();
 	void				OnSnapReleased();
 
-	
-	void				ClearSnap();
 	void				UpdateDismantleTarget();
 
 	const APawn*		GetOwnerPawn() const;
@@ -74,25 +74,9 @@ private:
 	FVector				GetPlacePoint(const APawn* InOwnerPawn) const;
 
 	bool				GetViewRay(FVector& OutStart, FVector& OutEnd) const;
-	void				ChangeSnapConfirmTarget();
-	
-	void				GatherBlockers(const TSet<ADC1BuildActor*>& InNeighbors, TArray<FDC1BuildBox>& OutBlockers) const;
 
-	void				FindSnapCandidates(const FVector& InAimPoint, TSet<ADC1BuildActor*>& OutCandidates) const;
-	bool				FindSnapPair(FDC1BuildSnapPair& OutPair) const;
-	bool				FindSnapCandidateByRay(TSet<ADC1BuildActor*>& OutCandidates, FVector& OutAimPoint) const;
-
-	bool				FindFreeSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint,
-											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<FDC1BuildBox>& InBlockers, FDC1BuildSnapPair& OutPair) const;
-
-	bool				FindBestSnapPair(const TSet<ADC1BuildActor*>& InCandidates, const FVector& InAimPoint, 
-											const TArray<FDC1BuildSnapSocket>& InPreviewSockets, const TArray<TWeakObjectPtr<const UDC1BuildSocketComponent>>& InExcludedSockets,
-											FDC1BuildSnapPair& OutPair) const;
-
-	bool				SelectPreviewSocket(const FDC1BuildSnapSocket& InTarget, const TArray<FDC1BuildSnapSocket>& InPreviewSockets, 
-												float InReferenceYaw, FDC1BuildSnapSocket& OutPreview) const;
-
-	const FTransform	MakeSnapTransform(const FDC1BuildSnapPair& InPair) const;
+	// 솔버 호출 한 번에 필요한 값을 모은다 ( 시야 광선 트레이스를 포함하므로 필요할 때만 부를 것 )
+	FDC1BuildSnapInput	MakeSnapInput() const;
 
 	bool				IsInBuildRange(const ADC1BuildActor* InBuild, const float InMaxDistance, const float InMarginFactor = 1.f) const;
 
@@ -127,6 +111,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADC1BuildActor>				PreviewActor = { nullptr };
 
+	// 스냅 계산 전담 ( BeginPlay에서 생성 )
+	UPROPERTY()
+	TObjectPtr<UDC1BuildSnapSolver>			SnapSolver = { nullptr };
+
 	TMap<FGameplayTag, const FDC1BuildRow>	BuildRowsByTag;
 
 	FGameplayTag							CurrentBuildTag = { FGameplayTag::EmptyTag };
@@ -135,16 +123,8 @@ private:
 	bool									CanBuilding = { false };
 	float									DistanceMarginFactor = { 1.1f };
 
-	bool									IsSnapping = { false };
+	// 이번 틱에 자동 스냅이 걸렸나 ( 회전 스텝·표면 검사 분기에 쓴다 )
 	bool									IsAutoSnapped = { false };
-	float									SnapBaseYaw = { 0.f };
-
-	FVector									SnapSocketLocationWorld = { FVector::ZeroVector };
-	FVector									SnapSocketNormalWorld = { FVector::ZeroVector };
-	float									SnapMinDistance = { 0.f };
-	float									SnapContactMargin = { 1.f };
-
-	TWeakObjectPtr<const ADC1BuildActor>	SnapTarget;
 
 	bool									IsDismantling = { false };
 	TWeakObjectPtr<ADC1BuildActor>			DismantleTarget;

@@ -6,11 +6,11 @@
 #include "GameFramework/Actor.h"
 #include "GameplayTagContainer.h"
 #include "Define/DC1Enums.h"
+#include "Define/DC1Structs.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1BuildActor.generated.h"
 
-struct FDC1BuildSnapSocket;
-struct FDC1BuildBox;
+DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnBuildDestroyFinished, ADC1BuildActor*);
 
 class UStaticMeshComponent;
 class UBoxComponent;
@@ -18,6 +18,7 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UDC1BuildCheckComponent;
 class UDC1BuildSnapComponent;
+class UDC1BuildLinkComponent;
 
 // 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
@@ -57,6 +58,9 @@ public:
 	ADC1BuildActor();
 
 public:
+	FDC1OnBuildDestroyFinished		OnDestroyFinished;
+
+public:
 	const FDC1BuildActorData&		GetBuildActorData() const { return BuildActorData; }
 	const bool						GetCanBuilding() const { return CanBuilding; }
 	const bool						GetIsBuildableSurface() const { return IsBuildableSurface; }
@@ -64,6 +68,8 @@ public:
 	const int32						GetRoofSupportSpan() const { return RoofSupportSpan; }
 	
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
+
+	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
 
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
@@ -81,17 +87,16 @@ public:
 	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 	
 	const bool						GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const;
+	
 
 protected:
 	virtual void					BeginPlay() override;
+	virtual void					EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void					OnConstruction(const FTransform& Transform) override;
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
-
-	// Destory 서버 진입점
-	void							RequestBuildDestroy();
 
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
@@ -100,6 +105,10 @@ public:
 	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const;
 
 	void							InitPreview(const FDC1BuildActorData& InBuildActorData);
+
+	void							BeginDestroySequence();
+
+	virtual void					BuildDestroy();
 
 protected:
 	UFUNCTION()
@@ -110,7 +119,9 @@ protected:
 	void							SetMaterialTranslucentColor(const FLinearColor& InColor);
 
 	virtual void					ApplyState();
-	virtual void					BuildDestroy();
+
+private:
+	void							FinishDestroySequence();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
@@ -131,6 +142,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDC1BuildSnapComponent>		BuildSnapComp = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UDC1BuildLinkComponent>		BuildLinkComp = { nullptr };
 
 	// 이 건물 위에 다른 건물을 지을 수 있는가 ex) 바닥 = true
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
@@ -156,6 +170,13 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Support", meta = (ClampMin = "1", EditCondition = "SupportRule == EDC1BuildSupportRule::RoofSpan"))
 	int32									RoofSupportSpan = { 2 };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
+	float									DestroySequenceDuration = { 0.f };
+
 private:
 	bool									CanBuilding = { false };
+
+	FTimerHandle							DestroySequenceTimer;
+
+	bool									IsDestroying = { false };
 };

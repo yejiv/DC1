@@ -4,15 +4,12 @@
 
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "Define/DC1BuildSupportHelper.h"
+#include "Tags/Build/DC1GameplayTag_Build.h"
 
 // Sets default values for this component's properties
 UDC1BuildLinkComponent::UDC1BuildLinkComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
-	// ...
 }
 
 
@@ -37,24 +34,22 @@ void UDC1BuildLinkComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void UDC1BuildLinkComponent::RefreshPreviewLinks()
 {
-	Links.Reset();
-
-	//DC1BuildSupportHelper::BuildStructureLinks(GetOwner<ADC1BuildActor>(), Links);
+	DC1BuildSupportHelper::BuildLinks(GetOwner<ADC1BuildActor>(), Links);
 }
 
 void UDC1BuildLinkComponent::LinkStructure()
 {
-	//DC1BuildSupportHelper::BuildStructureLinks(GetOwner<ADC1BuildActor>(), Links);
+	DC1BuildSupportHelper::BuildLinks(GetOwner<ADC1BuildActor>(), Links);
 
 	for (FDC1BuildStructureLink& Link : Links)
 	{
-		UDC1BuildLinkComponent* Other = Link.Other.Get();
-		if (false == ::IsValid(Other))
+		UDC1BuildLinkComponent* OtherLink = Link.Other.Get();
+		if (false == ::IsValid(OtherLink))
 		{
 			continue;
 		}
 
-		Other->Links.Emplace(this, Link.OtherSnapType, Link.MySnapType);
+		OtherLink->Links.Emplace(this, Link.OtherSnapType, Link.MySnapType);
 	}
 }
 

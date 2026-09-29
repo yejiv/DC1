@@ -8,7 +8,7 @@
 #include "DC1BuildLinkComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class DC1_API UDC1BuildLinkComponent : public UActorComponent
 {
 	GENERATED_BODY()

@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "GameplayTagContainer.h"
-#include "DC1Structs.generated.h"
 
 class ADC1BuildActor;
 class UDC1BuildSocketComponent;
+class UDC1BuildLinkComponent;
 
 namespace
 {
@@ -19,11 +19,18 @@ struct FDC1BuildBox
 	FVector Extent = { FVector::ZeroVector };
 };
 
-USTRUCT()
+// 소켓으로 이어진 링크 컴포넌트
+struct FDC1BuildStructureLink
+{
+	TWeakObjectPtr<UDC1BuildLinkComponent> Other;
+
+	FGameplayTag MySnapType = { FGameplayTag::EmptyTag };
+
+	FGameplayTag OtherSnapType = { FGameplayTag::EmptyTag };
+};
+
 struct FDC1BuildSnapSocket
 {
-	GENERATED_BODY()
-
 	// Snap Socket 월드 Transform
 	// X축 = 상대에 붙을 방향 || 상대를 붙일 방향 / Ctrl 스냅에 사용 O
 	// Z축 = Attach 둘레 회전 결정 / Ctrl 스냅 사용 X
@@ -35,7 +42,7 @@ struct FDC1BuildSnapSocket
 	// Snap 가능한 상대 타입
 	FGameplayTagContainer AcceptTypes;
 
-	TWeakObjectPtr<const UDC1BuildSocketComponent> SourceSocket;
+	TWeakObjectPtr<const UDC1BuildSocketComponent> SourceSocket = { nullptr };
 
 	// 기준점이 이 소켓 바깥으로 얼마나 벗어났는가
 	void EvaluateFrom(const FVector& InRefPoint, const FVector& InFacingPoint, float& OutScore, float& OutDistSquared, float& OutFacing) const
@@ -73,12 +80,8 @@ struct FDC1BuildSnapSocket
 	}
 };
 
-USTRUCT()
 struct FDC1BuildSnapPair
 {
-	GENERATED_BODY()
-
-	UPROPERTY()
 	TWeakObjectPtr<const ADC1BuildActor> TargetActor = { nullptr };
 
 	FDC1BuildSnapSocket	TargetSocket;
