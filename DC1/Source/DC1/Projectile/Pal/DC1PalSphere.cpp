@@ -4,12 +4,6 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 
-#include "AbilitySystemComponent.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
-#include "Data/DA/Pal/DC1PalRegistryData.h"
-#include "System/DC1AssetManager.h"
-#include "Tags/Asset/DC1GameplayTag_Asset.h"
-
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -112,61 +106,6 @@ float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRa
 	return FMath::Clamp(BaseChance * InCaptureRate, 0.f, 1.f);
 }
 
-void ADC1PalSphere::LogPassives(const ADC1PalCharacter& InPal) const
-{
-	const UAbilitySystemComponent* PalASC = InPal.GetAbilitySystemComponent();
-	if (nullptr == PalASC)
-	{
-		return;
-	}
-
-	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-
-	FString PassiveNames;
-	for (const FGameplayTag& PassiveTag : InPal.GetPassiveTags())
-	{
-		if (false == PassiveNames.IsEmpty())
-		{
-			PassiveNames += TEXT(", ");
-		}
-
-		const FDC1PalPassiveDef* PassiveDef = (nullptr != Registry) ? Registry->FindPassiveDef(PassiveTag) : nullptr;
-
-		PassiveNames += (nullptr != PassiveDef && false == PassiveDef->DisplayName.IsEmpty())
-			? PassiveDef->DisplayName.ToString()
-			: PassiveTag.GetTagName().ToString();
-	}
-
-	if (true == PassiveNames.IsEmpty())
-	{
-		PassiveNames = TEXT("none");
-	}
-
-	// BaseValue 는 성장 공식이 낸 값, CurrentValue 는 패시브 배율까지 얹힌 값.
-	auto ReadPair = [PalASC](const FGameplayAttribute& InAttribute, float& OutBase, float& OutCurrent)
-		{
-			OutBase = PalASC->GetNumericAttributeBase(InAttribute);
-			OutCurrent = PalASC->GetNumericAttribute(InAttribute);
-		};
-
-	float BaseAttack = 0.f;
-	float CurrentAttack = 0.f;
-	float BaseDefense = 0.f;
-	float CurrentDefense = 0.f;
-	float BaseWork = 0.f;
-	float CurrentWork = 0.f;
-
-	ReadPair(UDC1AttributeSet::GetAttackPowerAttribute(), BaseAttack, CurrentAttack);
-	ReadPair(UDC1AttributeSet::GetDefensePowerAttribute(), BaseDefense, CurrentDefense);
-	ReadPair(UDC1AttributeSet::GetWorkSpeedAttribute(), BaseWork, CurrentWork);
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: passives [%s]  Atk %.1f -> %.1f   Def %.1f -> %.1f   Work %.1f -> %.1f"),
-		*PassiveNames,
-		BaseAttack, CurrentAttack,
-		BaseDefense, CurrentDefense,
-		BaseWork, CurrentWork);
-}
-
 void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (false == HasAuthority())
@@ -190,9 +129,6 @@ void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* Other
 	// 회수
 	if (EDC1Team::Wild != Pal->GetTeam())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Sphere hit %s but it is not wild (Team=%s). Ignored."),
-			*GetNameSafe(Pal), *UEnum::GetValueAsString(Pal->GetTeam()));
-
 		Destroy();
 		return;
 	}
@@ -225,13 +161,6 @@ void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* Other
 
 	CaptureChance = Chance;
 	ShakeIndex = 0;
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: %s  HP %.0f%%  Lv %.0f  IV(H%d/A%d)  chance %.0f%%  (x%d stages)"),
-		*GetNameSafe(Pal), Pal->GetHealthRatio() * 100.f, PalLevel,
-		Pal->GetTalentHealth(), Pal->GetTalentAttack(),
-		Chance * 100.f, ShakeWeights.Num());
-
-	LogPassives(*Pal);
 
 	HitCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -266,18 +195,12 @@ void ADC1PalSphere::OnShake()
 
 	if (FMath::FRand() >= StageChance)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d broke out (stage %.0f%%).  FAILED"),
-			ShakeIndex, StageCount, StageChance * 100.f);
-
 		Resolve(false);
 		return;
 	}
 
 	if (ShakeIndex >= StageCount)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Capture: stage %d/%d held (stage %.0f%%).  CAPTURED"),
-			ShakeIndex, StageCount, StageChance * 100.f);
-
 		Resolve(true);
 		return;
 	}

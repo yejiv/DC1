@@ -131,11 +131,6 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 
 		Target[EmptyIndex] = InPal;
 
-		if (EDC1PalContainer::Box == Container)
-		{
-			UE_LOG(LogTemp, Log, TEXT("[Pal] Party full. Captured pal stored in box [%d]."), EmptyIndex + 1);
-		}
-
 		BroadcastChanged(Container);
 		return;
 	}
@@ -164,7 +159,6 @@ void UDC1PalPartyComponent::Server_MovePal_Implementation(EDC1PalContainer InFro
 
 	if (true == bDeployedToBox)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Move: deployed pal retrieved first."));
 		RetrieveDeployed();
 	}
 
@@ -305,16 +299,12 @@ void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
 		return;
 	}
 
-	FString Summary;
-
 	for (int32 Index = 0; Index < Pals.Num(); ++Index)
 	{
 		if (false == HasPalAt(Index))
 		{
 			continue;
 		}
-
-		const int32 OldLevel = Pals[Index].Level;
 
 		// 소환 중이면 액터 기준
 		if (true == IsDeployed(Index))
@@ -327,18 +317,7 @@ void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
 		{
 			Registry->ApplyExperience(Pals[Index], Amount);
 		}
-
-		Summary += (OldLevel == Pals[Index].Level)
-			? FString::Printf(TEXT("  [%d] Lv%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Experience, Registry->GetExpToNextLevel(OldLevel))
-			: FString::Printf(TEXT("  [%d] Lv%d->%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Level, Pals[Index].Experience, Registry->GetExpToNextLevel(Pals[Index].Level));
 	}
-
-	if (true == Summary.IsEmpty())
-	{
-		return;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] EXP +%d (Lv%d):%s"), Amount, InDefeatedLevel, *Summary);
 
 	OnPalSlotChanged.Broadcast();
 }
@@ -364,13 +343,11 @@ void UDC1PalPartyComponent::ToggleDeploy()
 
 	if (false == HasPalAt(SelectedSlot))
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d is empty."), SelectedSlot + 1);
 		return;
 	}
 
 	if (false == Pals[SelectedSlot].IsDeployable())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d pal is down."), SelectedSlot + 1);
 		return;
 	}
 

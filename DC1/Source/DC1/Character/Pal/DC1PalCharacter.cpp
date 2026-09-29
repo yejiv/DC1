@@ -481,8 +481,6 @@ void ADC1PalCharacter::CancelCapture()
 	{
 		PalController->TryStartBehavior();
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] %s escaped the sphere."), *GetName());
 }
 
 ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform)
@@ -567,8 +565,6 @@ void ADC1PalCharacter::OnDeath()
 		MeshComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
-
 	// 처치 경험치
 	if (true == HasAuthority() && EDC1Team::Wild == Team)
 	{
@@ -639,6 +635,4 @@ void ADC1PalCharacter::OnTeamChanged()
 			HealthWidget->RefreshTeamColor();
 		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("[Pal] %s team changed to %s."), *GetName(), *UEnum::GetValueAsString(Team));
 }

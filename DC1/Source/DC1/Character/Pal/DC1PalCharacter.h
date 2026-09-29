@@ -54,13 +54,6 @@ public:
 	// 경험치 획득. 서버 전용
 	void								GainExperience(int32 InAmount);
 
-	// 개체값
-	int32								GetTalentHealth() const { return PalInstance.TalentHealth; }
-	int32								GetTalentAttack() const { return PalInstance.TalentAttack; }
-
-	// 패시브
-	const TArray<FGameplayTag>&			GetPassiveTags() const { return PalInstance.PassiveTags; }
-
 	// 속성
 	EDC1PalElement						GetElement() const;
 	EDC1PalElement						GetElement2() const;

@@ -8,8 +8,7 @@
 class UTexture2D;
 
 /**
- * PalStatus 위젯에 넘기는 표시용 값. VM이 PalInstance + PalData로 가공해서 채운다.
- * VM 헤더와 분리한 건 PalStatus가 VM을 몰라도 되게 하기 위함
+ * 
  */
 USTRUCT()
 struct FDC1PalDisplayInfo
