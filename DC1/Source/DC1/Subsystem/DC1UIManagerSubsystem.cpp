@@ -19,6 +19,7 @@ void UDC1UIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
+    FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &ThisClass::OnPreLoadMap);
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ThisClass::OnPostLoadMap);
 }
 
@@ -26,6 +27,7 @@ void UDC1UIManagerSubsystem::Deinitialize()
 {
     Super::Deinitialize();
 
+    FCoreUObjectDelegates::PreLoadMap.RemoveAll(this);
     FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
 }
 
@@ -403,14 +405,17 @@ void UDC1UIManagerSubsystem::RollLoadingType(EDC1FadeType InType)
 
 }
 
-void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
+void UDC1UIManagerSubsystem::OnPreLoadMap(const FString& InMapName)
 {
     ScreenStack.Empty();
     FadeWidget = nullptr;
-	HUDWidget = nullptr;
+    HUDWidget = nullptr;
 
     CreatedWidget.Empty();
+}
 
+void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
+{
     if (false == IsTraveling)
     {
         return;

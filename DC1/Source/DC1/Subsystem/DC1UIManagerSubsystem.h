@@ -55,6 +55,7 @@ private:
 	void						UpdateInputMode(APlayerController* InLocalPC);
 	
 	void						RollLoadingType(EDC1FadeType InType);
+	void						OnPreLoadMap(const FString& InMapName);
 	void						OnPostLoadMap(UWorld* InLoadedWorld);
 	
 private:

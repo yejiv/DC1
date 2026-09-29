@@ -10,6 +10,8 @@
 #include "UI/Button/DC1UserButton.h"
 #include "Components/WidgetSwitcher.h"
 
+#include "Controller/DC1LogoController.h"
+
 void UDC1CustomizeWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -111,4 +113,12 @@ void UDC1CustomizeWidget::HandleStartGameClicked()
 	}
 
 	CustomizeViewModel->ConfirmAppearance();
+
+	ADC1LogoController* LogoController = Cast<ADC1LogoController>(GetOwningPlayer());
+	if (false == ::IsValid(LogoController))
+	{
+		return;
+	}
+
+	LogoController->TravelToServerFromCachedIP();
 }
