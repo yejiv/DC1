@@ -1,7 +1,8 @@
 ﻿
+#include "Subsystem/DC1BuildDestroySubsystem.h"
+
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "Define/DC1BuildSupportHelper.h"
-#include "Subsystem/DC1BuildDestroySubsystem.h"
 
 void UDC1BuildDestroySubsystem::RequestDestroy(ADC1BuildActor* InTarget)
 {
@@ -37,12 +38,19 @@ void UDC1BuildDestroySubsystem::StartDestroyWave(const TArray<ADC1BuildActor*>& 
 		ClaimedActors.Add(Actor);
 		Cascade->Claimed.Add(Actor);
 
-//		DC1BuildSupportHelper::GatherNeighbors(Actor, )
+		TArray<ADC1BuildActor*> Neighbors;
+		DC1BuildSupportHelper::GatherNeighbors(Actor, Neighbors);
+
+		for (ADC1BuildActor* Neighbor : Neighbors)
+		{
+			Cascade->NextCandidates.AddUnique(Neighbor);
+		}
+
 		Actor->OnDestroyFinished.AddUObject(this, &ThisClass::HandleDestroyFinished, InCascadeID);
 
 		++(Cascade->RemainingCount);
-		Actor->BeginDestroySequence();
 
+		Actor->BeginDestroySequence();
 	}
 
 	if (Cascade->RemainingCount <= 0)

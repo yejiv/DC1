@@ -27,6 +27,7 @@ private:
 	};
 
 public:
+	// 파괴 진입점 ( 서버 Only )
 	void		RequestDestroy(ADC1BuildActor* InTarget);
 
 private:
@@ -36,7 +37,9 @@ private:
 
 private:
 	TMap<int32, FDC1DestroyCascade>			Cascades;
+	
 	int32									NextCascadeID = { 0 };
-	// 웨이브에 이미 들어간 건축물
+	
+	// 중복 파괴 방지
 	TSet<TWeakObjectPtr<ADC1BuildActor>>	ClaimedActors;
 };
