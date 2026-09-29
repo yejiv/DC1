@@ -80,7 +80,7 @@ void ADC1BuildActor::SetCheckSurface(bool InIsCheckSurface)
 	}
 }
 
-const bool ADC1BuildActor::CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const
+const bool ADC1BuildActor::CheckOverlapFromRatio(const ADC1BuildActor* InOther, float InAllowableRatio) const
 {
 	if (false == ::IsValid(InOther) || false == ::IsValid(BuildCheckComp) || false == ::IsValid(InOther->BuildCheckComp))
 	{

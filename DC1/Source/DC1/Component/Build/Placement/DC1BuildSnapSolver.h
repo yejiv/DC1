@@ -93,6 +93,4 @@ private:
 
 	float									SnapMinDistance = { 0.f };
 	float									SnapContactMargin = { 1.f };
-
-	TWeakObjectPtr<const ADC1BuildActor>	SnapTarget;
 };

@@ -81,14 +81,39 @@ void UDC1BuildDestroySubsystem::HandleDestroyFinished(ADC1BuildActor* InActor, i
 	}
 
 	TArray<ADC1BuildActor*> NextWave;
+	TSet<ADC1BuildActor*>	Visited;
+	TArray<ADC1BuildActor*>	Pending;
 
 	for (TWeakObjectPtr<ADC1BuildActor>& Next : Cascade->NextCandidates)
 	{
 		ADC1BuildActor* NextActor = Next.Get();
-		if (true == ::IsValid(NextActor) && false == ClaimedActors.Contains(NextActor) && false == DC1BuildSupportHelper::HasSupport(NextActor))
+		if (true == ::IsValid(NextActor))
 		{
-			NextWave.Add(NextActor);
+			Pending.Add(NextActor);
 		}
+	}
+
+	while (false == Pending.IsEmpty())
+	{
+		ADC1BuildActor* Current = Pending.Pop();
+
+		if (false == ::IsValid(Current) || true == ClaimedActors.Contains(Current) || true == Visited.Contains(Current))
+		{
+			continue;
+		}
+
+		Visited.Add(Current);
+
+		if (false == DC1BuildSupportHelper::HasSupport(Current))
+		{
+			NextWave.Add(Current);
+			continue;
+		}
+
+		TArray<ADC1BuildActor*> Neighbors;
+		DC1BuildSupportHelper::GatherNeighbors(Current, Neighbors);
+
+		Pending.Append(Neighbors);
 	}
 
 	if (true == NextWave.IsEmpty())

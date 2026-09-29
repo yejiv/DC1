@@ -57,8 +57,6 @@ bool UDC1BuildSnapSolver::BeginManualSnap(const FDC1BuildSnapInput& InInput)
 	const FQuat SnapQuat = FRotator(0.f, SnapBaseYaw, 0.f).Quaternion();
 	SnapMinDistance = InInput.Preview->GetExtentCenterToDirection(SnapSocketNormalWorld, SnapQuat) + SnapContactMargin;
 
-	SnapTarget = SnapPair.TargetActor;
-
 	IsSnapping = true;
 
 	return true;
@@ -67,7 +65,6 @@ bool UDC1BuildSnapSolver::BeginManualSnap(const FDC1BuildSnapInput& InInput)
 void UDC1BuildSnapSolver::ClearSnap()
 {
 	IsSnapping = false;
-	SnapTarget = nullptr;
 	SnapSocketLocationWorld = FVector::ZeroVector;
 	SnapSocketNormalWorld = FVector::ZeroVector;
 }

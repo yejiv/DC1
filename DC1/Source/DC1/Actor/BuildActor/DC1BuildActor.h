@@ -82,7 +82,7 @@ public:
 	const bool						GetBuildSocketsToWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
 	void							SetCheckSurface(bool InIsCheckSurface);
 
-	const bool						CheckAutoSnapOverlap(const ADC1BuildActor* InOther, float InAllowableRatio) const;
+	const bool						CheckOverlapFromRatio(const ADC1BuildActor* InOther, float InAllowableRatio) const;
 	const bool						GetCheckBoxWorld(FDC1BuildBox& OutBox) const;
 	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 	
