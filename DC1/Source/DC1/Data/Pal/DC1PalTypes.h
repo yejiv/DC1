@@ -7,6 +7,14 @@
 #include "Define/DC1Enums.h"
 #include "DC1PalTypes.generated.h"
 
+// 팰이 있는 곳
+UENUM()
+enum class EDC1PalContainer : uint8
+{
+	Party,
+	Box,
+};
+
 /**
  *
  *
@@ -48,7 +56,7 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	int32					TalentDefense = { -1 };
 
-	// 다쳐서 잡힌 팰은 그 상태가 유지된다. 최대 체력은 저장하지 않는다
+	// 다쳐서 잡힌 팰은 그 상태가 유지
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	float					CurrentHealth = { 0.f };
 

@@ -6,7 +6,6 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Projectile/Pal/DC1PalProjectile.h"
-#include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"
@@ -42,10 +41,15 @@ void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()
 		return;
 	}
 
-	const TSubclassOf<ADC1PalProjectile> ProjectileClass = PalData->FindProjectileByTag(ProjectileTag);
+	// 탄은 스킬이 소유한다 - 아이스 미사일은 어느 팰이 쏘든 얼음 탄이다.
+	// 표에 없으면 종별 PalData.Projectiles 로 폴백한다
+	const TSubclassOf<ADC1PalProjectile> ProjectileClass = (true == bHasSkillDef && nullptr != SkillDef.ProjectileClass)
+		? SkillDef.ProjectileClass
+		: PalData->FindProjectileByTag(ProjectileTag);
+
 	if (nullptr == ProjectileClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No projectile for tag [%s]. Check PalData.Projectiles."),
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No projectile for skill. Check SkillChart.ProjectileClass or PalData.Projectiles [%s]."),
 			*GetNameSafe(Pal), *ProjectileTag.ToString());
 		return;
 	}

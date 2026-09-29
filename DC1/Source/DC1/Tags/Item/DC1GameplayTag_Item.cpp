@@ -12,5 +12,9 @@ namespace DC1ItemTags
 #pragma region Consumption
 	UE_DEFINE_GAMEPLAY_TAG(Item_PalSphere, "Item.PalSphere");
 #pragma endregion
+
+#pragma region Consumption
+	UE_DEFINE_GAMEPLAY_TAG(Item_Valuable, "Item.Valuable");
+#pragma endregion
 }
 

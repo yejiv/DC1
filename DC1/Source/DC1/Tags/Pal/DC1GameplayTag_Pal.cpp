@@ -29,6 +29,28 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Species_SheepBall, "Pal.Species.SheepBall");
 #pragma endregion
 
+#pragma region Skill
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_RecklessCharge, "Pal.Skill.RecklessCharge");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_FluffyTackle, "Pal.Skill.FluffyTackle");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_RolyPoly, "Pal.Skill.RolyPoly");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BullRush, "Pal.Skill.BullRush");
+
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_AirCannon, "Pal.Skill.AirCannon");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_PowerShot, "Pal.Skill.PowerShot");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SeedMachineGun, "Pal.Skill.SeedMachineGun");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_WindCutter, "Pal.Skill.WindCutter");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BogBlast, "Pal.Skill.BogBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_StoneBlast, "Pal.Skill.StoneBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SparkBlast, "Pal.Skill.SparkBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_ElectricBall, "Pal.Skill.ElectricBall");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_AquaGun, "Pal.Skill.AquaGun");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IgnisBlast, "Pal.Skill.IgnisBlast");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IceMissile, "Pal.Skill.IceMissile");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DragonCannon, "Pal.Skill.DragonCannon");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkBall, "Pal.Skill.DarkBall");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkShot, "Pal.Skill.DarkShot");
+#pragma endregion
+
 #pragma region Passive
 	// 공격력만
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Ferocity, "Pal.Passive.Ferocity");
@@ -60,6 +82,21 @@ namespace DC1PalTags
 
 	// 방어력 <-> 작업 속도
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Conceited, "Pal.Passive.Conceited");
+#pragma endregion
+
+#pragma region Work
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Kindling, "Pal.Work.Kindling");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Watering, "Pal.Work.Watering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Planting, "Pal.Work.Planting");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Electricity, "Pal.Work.Electricity");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Handiwork, "Pal.Work.Handiwork");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Gathering, "Pal.Work.Gathering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Lumbering, "Pal.Work.Lumbering");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Mining, "Pal.Work.Mining");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Medicine, "Pal.Work.Medicine");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Cooling, "Pal.Work.Cooling");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Transporting, "Pal.Work.Transporting");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Farming, "Pal.Work.Farming");
 #pragma endregion
 
 #pragma region Ability

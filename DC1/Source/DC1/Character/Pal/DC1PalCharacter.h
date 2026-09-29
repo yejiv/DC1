@@ -17,9 +17,6 @@ class UDC1PalRegistryData;
 class UWidgetComponent;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
-
-// 체력이 변했다. 머리 위 HP바가 받는다.
-// 현재값과 최대값은 항상 같이 움직이므로 하나의 델리게이트로 묶는다
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
 
 /**
@@ -41,10 +38,6 @@ public:
 
 	EDC1Team							GetTeam() const { return Team; }
 
-	// 진영 변경. 포획으로 길들일 때 쓴다. 서버 전용
-	UFUNCTION(BlueprintCallable, Category = "Pal|Team")
-	void								SetTeam(EDC1Team NewTeam);
-
 	const UDC1PalData*					GetPalData() const { return PalData; }
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
@@ -53,8 +46,13 @@ public:
 
 	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
 	int32								GetLevel() const;
-
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
+
+	// 현재 레벨 누적 경험치
+	float								GetExperience() const { return PalInstance.Experience; }
+
+	// 경험치 획득. 서버 전용
+	void								GainExperience(int32 InAmount);
 
 	// 개체값
 	int32								GetTalentHealth() const { return PalInstance.TalentHealth; }
@@ -73,12 +71,11 @@ public:
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;
+
 	FDC1PalInstance						Fold(); // 데이터화
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패
-
 	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지
-
 	void								CancelCapture();// BeginCapture 되돌리기
 
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform);
@@ -112,6 +109,9 @@ protected:
 
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
 
+	// 레벨 변경 → HP바 갱신
+	void								HandleLevelChangedForUI(const struct FOnAttributeChangeData& Data);
+
 	void								UpdateHealthWidgetVisibility(); // 위젯을 껐다 켠다. 
 
 	// 래그돌, AI 정지, 퍼셉션 해제
@@ -127,7 +127,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
 	float HealthWidgetVisibleDistance = { 2000.f };
 
-	// 가시성 검사 주기. 매 프레임 볼 필요가 없어 타이머로 돌린다
+	// 가시성 검사 주기
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.05"))
 	float HealthWidgetCheckInterval = { 0.2f };
 
@@ -148,6 +148,9 @@ protected:
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)
 	FDC1PalInstance PalInstance;
+
+	// 마지막 가해자
+	TWeakObjectPtr<AActor> LastDamageCauser;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
 	bool bOverrideLevel = { false };

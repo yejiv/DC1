@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
+#include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "Define/DC1Enums.h"
 #include "GameplayTagContainer.h"
 #include "DC1GameplayAbility_PalSkill.generated.h"
@@ -23,11 +24,13 @@ class DC1_API UDC1GameplayAbility_PalSkill : public UDC1GameplayAbility
 public:
 	UDC1GameplayAbility_PalSkill(const FObjectInitializer& ObjectInitializer);
 
-	float					GetMaxRange() const { return MaxRange; }
-	float					GetApproachRange() const { return ApproachRange; }
-	float					GetMinRange() const { return MinRange; }
-	float					GetSkillPower() const { return SkillPower; }
-	EDC1PalElement			GetSkillElement() const { return SkillElement; }
+	// 아래 값은 전부 SkillChart 의 줄이 있으면 그것을, 없으면 이 BP 의 값을 돌려준다.
+	// 표가 비어 있어도 예전과 똑같이 동작하게 하는 폴백이다
+	float					GetMaxRange() const { return bHasSkillDef ? SkillDef.MaxRange : MaxRange; }
+	float					GetApproachRange() const { return bHasSkillDef ? SkillDef.ApproachRange : ApproachRange; }
+	float					GetMinRange() const { return bHasSkillDef ? SkillDef.MinRange : MinRange; }
+	float					GetSkillPower() const { return bHasSkillDef ? SkillDef.Power : SkillPower; }
+	EDC1PalElement			GetSkillElement() const { return bHasSkillDef ? SkillDef.Element : SkillElement; }
 
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -42,7 +45,17 @@ protected:
 	UFUNCTION()
 	void					OnTriggerEventReceived(FGameplayEventData Payload);
 
+	// 컨트롤러가 고른 스킬 줄을 가져온다. ActivateAbility 초입에서 한 번만 부른다.
+	// 표에 없거나 컨트롤러가 없으면 bHasSkillDef 가 false 로 남고 이 BP 값을 쓴다
+	void					CacheSkillDef();
+
 protected:
+	// 이번 발동에 쓸 스킬 줄. 발동할 때마다 다시 채운다.
+	// ProjectileClass 를 들고 있어서 UPROPERTY 로 잡아둔다
+	UPROPERTY()
+	FDC1PalSkillDef			SkillDef;
+	bool					bHasSkillDef = { false };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Skill", meta = (Categories = "Anim.Pal"))
 	FGameplayTag			MontageTag;
 

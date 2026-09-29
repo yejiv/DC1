@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "GameplayTagContainer.h"
+#include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "DC1PalAIController.generated.h"
 
 class UStateTreeAIComponent;
@@ -43,7 +44,18 @@ public:
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
 
+	// 고른 스킬. SkillChart 의 키다
 	const FGameplayTag&		GetSelectedSkillTag() const { return SelectedSkillTag; }
+
+	// 그 스킬을 발동할 어빌리티. 표를 안 타면 SelectedSkillTag 와 같다
+	const FGameplayTag&		GetSelectedActivationTag() const { return SelectedActivationTag; }
+
+	// 고른 스킬의 표 줄. 표에 없으면 널이고, 그때 어빌리티는 자기 BP 값을 쓴다
+	const FDC1PalSkillDef*	GetSelectedSkillDef() const { return bHasSelectedSkillDef ? &SelectedSkillDef : nullptr; }
+
+	// 스킬을 실제로 발동했다. 여기서 그 스킬의 쿨타임이 시작된다
+	void					NotifySkillUsed(const FGameplayTag& InSkillTag);
+
 	float					GetSelectedMaxRange() const { return SelectedMaxRange; }
 	float					GetSelectedApproachRange() const { return SelectedApproachRange; }
 	float					GetSelectedMinRange() const { return SelectedMinRange; }
@@ -63,7 +75,6 @@ public:
 
 	// 배회 기준점. 빙의 시점의 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
-	void					SetHomeLocation(const FVector& InLocation) { HomeLocation = InLocation; }
 
 protected:
 	virtual void			BeginPlay() override;
@@ -127,6 +138,18 @@ protected:
 	TObjectPtr<AActor>				LastProvokedBy = { nullptr };
 
 	FGameplayTag					SelectedSkillTag;
+	FGameplayTag					SelectedActivationTag;
+
+	// 고른 줄의 복사본. 어빌리티가 발동 시점에 읽어간다.
+	// ProjectileClass 를 들고 있어서 UPROPERTY 로 잡아둔다
+	UPROPERTY()
+	FDC1PalSkillDef					SelectedSkillDef;
+	bool							bHasSelectedSkillDef = { false };
+
+	// 스킬별 마지막 사용 시각. 쿨타임 판정에 쓴다.
+	// 개체마다 따로여야 하므로 표가 아니라 컨트롤러가 들고 있다
+	TMap<FGameplayTag, float>		LastSkillUseTime;
+
 	float							SelectedMaxRange = { 0.f };
 	float							SelectedApproachRange = { 0.f };
 	float							SelectedMinRange = { 0.f };

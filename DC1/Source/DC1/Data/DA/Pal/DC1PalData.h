@@ -93,6 +93,10 @@ public:
 	// 거점 작업 속도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (ClampMin = "0.0"))
 	float							WorkSpeedStat = { 10.f };
+
+	// 작업 적성. 없는 작업은 넣지 않는다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (Categories = "Pal.Work"))
+	TMap<FGameplayTag, int32>		WorkSuitability;
 #pragma endregion
 
 #pragma region Ability
@@ -110,8 +114,8 @@ public:
 #pragma endregion
 
 #pragma region Combat
-	// AI가 쓸 스킬 후보. 이 중에서 균등 랜덤으로 고른다. 사거리는 어빌리티 BP가 갖는다
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Ability.Pal"))
+	// AI가 쓸 스킬 후보.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (Categories = "Pal.Skill"))
 	TArray<FGameplayTag>			SkillTags;
 
 	// 성장 계수. 최종값은 GetAttackPowerAtLevel() 이 계산

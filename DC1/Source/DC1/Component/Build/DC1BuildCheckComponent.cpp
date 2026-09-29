@@ -126,7 +126,7 @@ bool UDC1BuildCheckComponent::IsBlockedAt(const FTransform& InBoxTransform, cons
 	for (const FDC1BuildBox& Blocker : InBlockers)
 	{
 		const float OverlapRatio = ComputeBoxOverlapRatio(InBoxTransform, MyExtent, Blocker.Transform, Blocker.Extent);
-		if (OverlapRatio > AutoSnapOverlapAllowableRatio)
+		if (OverlapRatio > SnapOverlapAllowableRatio)
 		{
 			return true;
 		}
@@ -222,16 +222,21 @@ bool UDC1BuildCheckComponent::CheckOverlap()
 			continue;
 		}
 
-		// 스냅 중이면 건축물끼리 살짝 겹치는 건 정상. 판정은 액터로, 측정은 체크박스로
-		if (true == IsAutoSnap)
+		// 살짝 겹치는 건 정상. 판정은 액터로, 측정은 체크박스로
+		const ADC1BuildActor* OtherBuild = Cast<ADC1BuildActor>(OtherActor);
+		
+		if (false == ::IsValid(OtherBuild))
 		{
-			const ADC1BuildActor* OtherBuild = Cast<ADC1BuildActor>(OtherActor);
-			
-			if (false == ::IsValid(OtherBuild) || true == MyBuild->CheckAutoSnapOverlap(OtherBuild, AutoSnapOverlapAllowableRatio))
-			{
-				continue;
-			}	
+			continue;
 		}
+
+		const float AllowableRatio = IsAutoSnap ? SnapOverlapAllowableRatio : FreeOverlapAllowableRatio;
+
+		if (true == MyBuild->CheckOverlapFromRatio(OtherBuild, AllowableRatio))
+		{
+			continue;
+		}
+		
 		return false;
 	}
 

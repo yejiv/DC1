@@ -1,6 +1,7 @@
 ﻿#include "Define/DC1BuildSupportHelper.h"
 
 #include "Actor/BuildActor/DC1BuildActor.h"
+#include "Component/Build/DC1BuildLinkComponent.h"
 #include "Define/DC1Enums.h"
 #include "Define/DC1Structs.h"
 #include "Define/DC1Stats.h"
@@ -21,30 +22,41 @@ namespace
 	// 맞닿은 박스를 후보로 잡는다
 	constexpr float NeighborQueryInflate = 10.f;
 
-	struct FDC1SupportCache
+	bool IsSocketLinked(const FDC1BuildSnapSocket& InSrc, const FDC1BuildSnapSocket& InDst)
 	{
-		TMap<const ADC1BuildActor*, TArray<ADC1BuildActor*>>		Neighbors;
-		TMap<const ADC1BuildActor*, TArray<FDC1BuildSnapSocket>>	Sockets;
-	};
-
-	TArray<ADC1BuildActor*> GetNeighbors(const ADC1BuildActor* InBuild, FDC1SupportCache& InOutCache)
-	{
-		const TArray<ADC1BuildActor*>* Find = InOutCache.Neighbors.Find(InBuild);
-		if (nullptr != Find)
+		const double DistSquared = FVector::DistSquared(InSrc.SocketTransform.GetLocation(), InDst.SocketTransform.GetLocation());
+		if (DistSquared > FMath::Square(SocketLinkTolerance))
 		{
-			return *Find;
+			return false;
 		}
 
-		TArray<ADC1BuildActor*> Neighbors;
-		
-		FDC1BuildBox Box;
-		UWorld* World = InBuild->GetWorld();
-
-		if (false == InBuild->GetCheckBoxWorld(Box) || false == ::IsValid(World))
+		const double Dot = FVector::DotProduct(InSrc.SocketTransform.GetUnitAxis(EAxis::X), InDst.SocketTransform.GetUnitAxis(EAxis::X));
+		if (Dot > SocketLinkOppositeDot)
 		{
-			InOutCache.Neighbors.Add(InBuild, Neighbors);
+			return false;
+		}
 
-			return Neighbors;
+		if (false == InSrc.AcceptTypes.HasTagExact(InDst.SnapType) ||
+			false == InDst.AcceptTypes.HasTagExact(InSrc.SnapType))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void QueryOverlapNeighbors(const ADC1BuildActor* InBuild, TArray<ADC1BuildActor*>& OutNeighbors)
+	{
+		if (false == ::IsValid(InBuild))
+		{
+			return;
+		}
+
+		FDC1BuildBox BuildBox;
+		const UWorld* World = InBuild->GetWorld();
+		if (false == ::IsValid(World) || false == InBuild->GetCheckBoxWorld(BuildBox))
+		{
+			return;
 		}
 
 		FCollisionObjectQueryParams ObjectParams;
@@ -55,107 +67,102 @@ namespace
 
 		TArray<FOverlapResult> Overlaps;
 
-		if (true == World->OverlapMultiByObjectType(Overlaps, Box.Transform.GetLocation(), Box.Transform.GetRotation(), ObjectParams,
-			FCollisionShape::MakeBox(Box.Extent + FVector(NeighborQueryInflate)), Params))
-		{
-			for (const FOverlapResult& Result : Overlaps)
-			{
-				ADC1BuildActor* OverlapActor = Cast<ADC1BuildActor>(Result.GetActor());
-				if (false == ::IsValid(OverlapActor) || true == OverlapActor->IsPreview())
-				{
-					continue;
-				}
-
-				Neighbors.AddUnique(OverlapActor);
-			}
-		}
-
-		InOutCache.Neighbors.Add(InBuild, Neighbors);
-
-		return Neighbors;
-	}
-
-	void EnsureSockets(const ADC1BuildActor* InBuild, FDC1SupportCache& InOutCache)
-	{
-		if (nullptr != InOutCache.Sockets.Find(InBuild))
+		if (false == World->OverlapMultiByObjectType(Overlaps, BuildBox.Transform.GetLocation(), BuildBox.Transform.GetRotation(), ObjectParams, 
+			FCollisionShape::MakeBox(BuildBox.Extent + FVector(NeighborQueryInflate)), Params))
 		{
 			return;
 		}
 
-		TArray<FDC1BuildSnapSocket> Sockets;
-		InBuild->GetBuildSocketsToWorld(Sockets);
-		InOutCache.Sockets.Add(InBuild, Sockets);
-	}
-
-	bool IsSocketLinked(const FDC1BuildSnapSocket& InMySocket, const FDC1BuildSnapSocket& InOtherSocket)
-	{
-		float DistSquared = FVector::DistSquared(InMySocket.SocketTransform.GetLocation(), InOtherSocket.SocketTransform.GetLocation());
-		float AttachDot = FVector::DotProduct(InMySocket.SocketTransform.GetUnitAxis(EAxis::X), InOtherSocket.SocketTransform.GetUnitAxis(EAxis::X));
-
-		bool IsNear = DistSquared <= FMath::Square(SocketLinkTolerance);
-	
-		bool IsAttach = AttachDot <= SocketLinkOppositeDot;
-
-		bool IsMatching = InMySocket.AcceptTypes.HasTagExact(InOtherSocket.SnapType) || InOtherSocket.AcceptTypes.HasTagExact(InMySocket.SnapType);
-
-		return (IsNear && IsAttach && IsMatching);
-	}
-
-	bool HasSocketLink(const ADC1BuildActor* InMyActor, const FGameplayTag& InMySnapType, const ADC1BuildActor* InOtherActor, FDC1SupportCache& InOutCache)
-	{
-		EnsureSockets(InMyActor, InOutCache);
-		EnsureSockets(InOtherActor, InOutCache);
-
-		const TArray<FDC1BuildSnapSocket>& MySockets = InOutCache.Sockets.FindChecked(InMyActor);
-		const TArray<FDC1BuildSnapSocket>& OtherSockets = InOutCache.Sockets.FindChecked(InOtherActor);
-
-		for (const FDC1BuildSnapSocket& MySocket : MySockets)
+		for (const FOverlapResult& Result : Overlaps)
 		{
-			if (InMySnapType != MySocket.SnapType)
+			ADC1BuildActor* OverlapActor = Cast<ADC1BuildActor>(Result.GetActor());
+			if (false == ::IsValid(OverlapActor) || true == OverlapActor->IsPreview())
 			{
 				continue;
 			}
+
+			OutNeighbors.AddUnique(OverlapActor);
+		}
+	}
+
+	// 범위 내에 지지하는 바닥이 있는지
+	bool CanReachSupportingFloor(const ADC1BuildActor* InRoof)
+	{
+		FDC1BuildBox RoofBox;
+		if (false == ::IsValid(InRoof) || false == InRoof->GetCheckBoxWorld(RoofBox))
+		{
+			return false;
+		}
+
+		int32 RoofSpan = InRoof->GetRoofSupportSpan();
+
+		TSet<const UDC1BuildLinkComponent*> Visited;
+		TArray<const UDC1BuildLinkComponent*> BFS;
+
+		const UDC1BuildLinkComponent* Start = InRoof->GetLinkComponent();
+		if (true == ::IsValid(Start))
+		{
+			Visited.Add(Start);
+			BFS.Add(Start);
+		}
+
+		while (false == BFS.IsEmpty())
+		{
+			const UDC1BuildLinkComponent* Front = BFS.Pop();
 			
-			for (const FDC1BuildSnapSocket& OtherSocket : OtherSockets)
+			for (const FDC1BuildStructureLink& Link : Front->GetLinks())
 			{
-				if (true == IsSocketLinked(MySocket, OtherSocket))
+				if (true == Link.MySnapType.MatchesTagExact(DC1BuildTags::Build_Link_Surface))
+				{
+					continue;
+				}
+
+				const UDC1BuildLinkComponent* Other = Link.Other.Get();
+				if (false == ::IsValid(Other) || Visited.Contains(Other))
+				{
+					continue;
+				}
+				
+				const ADC1BuildActor* OtherActor = Other->GetOwner<ADC1BuildActor>();
+				if (false == ::IsValid(OtherActor))
+				{
+					continue;
+				}
+
+				Visited.Add(Other);
+				BFS.Push(Other);
+
+				FDC1BuildBox FloorBox;
+				if (EDC1BuildSupportRule::Ground != OtherActor->GetSupportRule() || false == OtherActor->GetCheckBoxWorld(FloorBox))
+				{
+					continue;
+				}
+
+				const FVector Delta = RoofBox.Transform.GetLocation() - FloorBox.Transform.GetLocation();
+				int32 Dx = FMath::RoundToInt(FVector::DotProduct(Delta, FloorBox.Transform.GetUnitAxis(EAxis::X) / (FloorBox.Extent.X * 2.f)));
+				int32 Dy = FMath::RoundToInt(FVector::DotProduct(Delta, FloorBox.Transform.GetUnitAxis(EAxis::Y) / (FloorBox.Extent.Y * 2.f)));
+
+				if (FMath::Abs(Dx) <= RoofSpan && FMath::Abs(Dy) <= RoofSpan && false == (FMath::Abs(Dx) == RoofSpan && FMath::Abs(Dy) == RoofSpan))
 				{
 					return true;
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
-	float ComputeAxisGap(const FDC1BuildBox& InA, const FDC1BuildBox& InB, const FVector& InAxis)
+	// 내 타입을 가지는 Link가 존재하는지
+	bool HasLinkOfType(const UDC1BuildLinkComponent* InLinkComp, const FGameplayTag& InType)
 	{
-		const float CenterDistance = FMath::Abs(FVector::DotProduct(InA.Transform.GetLocation() - InB.Transform.GetLocation(), InAxis));
-		
-		const FVector LocalAxisA = InA.Transform.GetRotation().UnrotateVector(InAxis);
-		const FVector LocalAxisB = InB.Transform.GetRotation().UnrotateVector(InAxis);
-
-		const float RadiusA = (FMath::Abs(LocalAxisA.X) * InA.Extent.X) +
-			(FMath::Abs(LocalAxisA.Y) * InA.Extent.Y) +
-			(FMath::Abs(LocalAxisA.Z) * InA.Extent.Z);
-
-		const float RadiusB = (FMath::Abs(LocalAxisB.X) * InB.Extent.X) +
-			(FMath::Abs(LocalAxisB.Y) * InB.Extent.Y) +
-			(FMath::Abs(LocalAxisB.Z) * InB.Extent.Z);
-
-		return FMath::Max(0.f, CenterDistance - RadiusA - RadiusB);
-	}
-
-	bool HasSurfaceSupporter(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, bool& OutIsOnGround)
-	{
-		OutIsOnGround = false;
-
-		TArray<ADC1BuildActor*> SurfaceActors;
-		InBuild->GatherSurfaceSupporters(SurfaceActors, OutIsOnGround);
-
-		for (const ADC1BuildActor* SurfaceActor : SurfaceActors)
+		if (false == ::IsValid(InLinkComp))
 		{
-			if (false == InExcluded.Contains(SurfaceActor))
+			return false;
+		}
+
+		for (const FDC1BuildStructureLink& Link : InLinkComp->GetLinks())
+		{
+			if (true == Link.MySnapType.MatchesTagExact(InType) && nullptr != Link.Other.Get())
 			{
 				return true;
 			}
@@ -164,231 +171,179 @@ namespace
 		return false;
 	}
 
-	bool IsSupportedByStack(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache)
+	bool HasSurfaceSupporter(const ADC1BuildActor* InBuild, bool& OutIsGround)
 	{
-		// 벽 - 소켓 or Probe 중 하나
+		OutIsGround = false;
+
+		if (false == ::IsValid(InBuild))
+		{
+			return false;
+		}
+
+		TArray<ADC1BuildActor*> Supporters;
+
+		if (false == InBuild->GatherSurfaceSupporters(Supporters, OutIsGround))
+		{
+			return false;
+		}
+
+		return false == Supporters.IsEmpty();
+	}
+
+	void BuildSocketLinks(const ADC1BuildActor* InBuild, TArray<FDC1BuildStructureLink>& OutLinks)
+	{
+		if (false == ::IsValid(InBuild))
+		{
+			return;
+		}
 		
-		// 소켓 확인
-		const TArray<ADC1BuildActor*> Neighbors = GetNeighbors(InBuild, InOutCache);
-		
+		TArray<FDC1BuildSnapSocket> Sockets;
+		if (false == InBuild->GetBuildSocketsToWorld(Sockets))
+		{
+			return;
+		}
+
+		TArray<ADC1BuildActor*> Neighbors;
+		QueryOverlapNeighbors(InBuild, Neighbors);
+
 		for (const ADC1BuildActor* Neighbor : Neighbors)
 		{
-			if (false == InExcluded.Contains(Neighbor) && true == HasSocketLink(InBuild, DC1BuildTags::Build_Snap_Attach_Wall, Neighbor, InOutCache))
-			{
-				return true;
-			}
-		}
-
-		// Probe 확인 - IsOnGround는 버리는 값 ( 벽은 맨땅에 설치 불가 )
-		bool IsOnGround = false;
-		return HasSurfaceSupporter(InBuild, InExcluded, IsOnGround);
-	}
-
-	bool IsSupportedBySurface(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded)
-	{
-		bool IsOnGround = false;
-		const bool HasSupporter = HasSurfaceSupporter(InBuild, InExcluded, IsOnGround);
-
-		return (true == IsOnGround || true == HasSupporter);
-	}
-
-	void GatherRoofGroup(ADC1BuildActor* InRoof, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache, TSet<ADC1BuildActor*>& OutGroup)
-	{
-		// Side.Roof 소켓으로 이어진 지붕들 ( InRoof 포함 )
-		OutGroup.Add(InRoof);
-		
-		TArray<ADC1BuildActor*> Pending;
-		Pending.Add(InRoof);
-
-		while (false == Pending.IsEmpty())
-		{
-			ADC1BuildActor* Front = Pending.Pop();
-
-			TArray<ADC1BuildActor*> Neighbors = GetNeighbors(Front, InOutCache);
-			
-			for (ADC1BuildActor* Neighbor : Neighbors)
-			{
-				if (true == InExcluded.Contains(Neighbor) || EDC1BuildSupportRule::RoofSpan != Neighbor->GetSupportRule() || true == OutGroup.Contains(Neighbor))
-				{
-					continue;
-				}
-
-				if (true == HasSocketLink(Front, DC1BuildTags::Build_Snap_Side_Roof, Neighbor, InOutCache))
-				{
-					OutGroup.Add(Neighbor);
-					Pending.Add(Neighbor);
-				}
-			}
-		}
-	}
-
-	void GatherWallGroup(const TSet<ADC1BuildActor*>& InRoofGroup, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache, TArray<const ADC1BuildActor*>& OutWalls)
-	{
-		for (const ADC1BuildActor* Roof : InRoofGroup)
-		{
-			TArray<ADC1BuildActor*> Neighbors = GetNeighbors(Roof, InOutCache);
-
-			for (ADC1BuildActor* Neighbor : Neighbors)
-			{
-				if (true == InExcluded.Contains(Neighbor))
-				{
-					continue;
-				}
-
-				if (true == HasSocketLink(Roof, DC1BuildTags::Build_Snap_Attach_Roof, Neighbor, InOutCache))
-				{
-					OutWalls.AddUnique(Neighbor);
-				}
-			}
-		}
-	}
-
-	bool IsSupportedByRoofSpan(ADC1BuildActor* InRoof, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache)
-	{
-		// 지붕 축별 범위
-		TSet<ADC1BuildActor*> RoofGroup;
-		GatherRoofGroup(InRoof, InExcluded, InOutCache, RoofGroup);
-
-		TArray<const ADC1BuildActor*> WallGroup;
-		GatherWallGroup(RoofGroup, InExcluded, InOutCache, WallGroup);
-
-		if (true == RoofGroup.IsEmpty() || true == WallGroup.IsEmpty())
-		{
-			return false;
-		}
-
-		FDC1BuildBox RoofBox;
-		if (false == InRoof->GetCheckBoxWorld(RoofBox))
-		{
-			return false;
-		}
-
-		const FVector AxisX = RoofBox.Transform.GetUnitAxis(EAxis::X);
-		const FVector AxisY = RoofBox.Transform.GetUnitAxis(EAxis::Y);
-
-		const FVector2D RoofSize = FVector2D(RoofBox.Extent.X * 2.f, RoofBox.Extent.Y * 2.f);
-
-		float MinGapX = FLT_MAX;
-		float MinGapY = FLT_MAX;
-
-		for (const ADC1BuildActor* Wall : WallGroup)
-		{
-			FDC1BuildBox WallBox;
-			if (false == Wall->GetCheckBoxWorld(WallBox))
+			TArray<FDC1BuildSnapSocket> NeighborSockets;
+			if (false == Neighbor->GetBuildSocketsToWorld(NeighborSockets))
 			{
 				continue;
 			}
 
-			const float GapX = ComputeAxisGap(RoofBox, WallBox, AxisX);
-			const float GapY = ComputeAxisGap(RoofBox, WallBox, AxisY);
-
-			MinGapX = FMath::Min(GapX, MinGapX);
-			MinGapY = FMath::Min(GapY, MinGapY);
-		}
-
-		const FVector2D ToleranceGap = RoofSize * (InRoof->GetRoofSupportSpan() - 1) + (RoofSize * 0.5f);
-
-		return MinGapX <= ToleranceGap.X && MinGapY <= ToleranceGap.Y;
-	}
-
-	bool IsSupported(ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache)
-	{
-		switch (InBuild->GetSupportRule())
-		{
-		case EDC1BuildSupportRule::Ground :
-			return true;
-		case EDC1BuildSupportRule::Surface :
-			return IsSupportedBySurface(InBuild, InExcluded);
-		case EDC1BuildSupportRule::Stack :
-			return IsSupportedByStack(InBuild, InExcluded, InOutCache);
-		case EDC1BuildSupportRule::RoofSpan :
-			return IsSupportedByRoofSpan(InBuild, InExcluded, InOutCache);
-		}
-
-		return false;
-	}
-
-	void GatherDependents(const ADC1BuildActor* InBuild, const TSet<ADC1BuildActor*>& InExcluded, FDC1SupportCache& InOutCache, TArray<ADC1BuildActor*>& OutDependents)
-	{
-		TArray<ADC1BuildActor*> Neighbors = GetNeighbors(InBuild, InOutCache);
-
-		for (ADC1BuildActor* Neighbor : Neighbors)
-		{
-			EDC1BuildSupportRule SupportRule = Neighbor->GetSupportRule();
-			if (true == InExcluded.Contains(Neighbor) || EDC1BuildSupportRule::Ground == SupportRule)
+			for (const FDC1BuildSnapSocket& InSocket : Sockets)
 			{
-				continue;
-			}
-			
-			if (EDC1BuildSupportRule::RoofSpan == SupportRule)
-			{
-				TSet<ADC1BuildActor*> RoofGroup;
-				GatherRoofGroup(Neighbor, InExcluded, InOutCache, RoofGroup);
-
-				for (ADC1BuildActor* Roof : RoofGroup)
+				for (const FDC1BuildSnapSocket& NeighborSocket : NeighborSockets)
 				{
-					OutDependents.AddUnique(Roof);
+					if (true == IsSocketLinked(InSocket, NeighborSocket))
+					{
+						UDC1BuildLinkComponent* LinkComp = Neighbor->GetLinkComponent();
+						if (true == ::IsValid(LinkComp))
+						{
+							OutLinks.Emplace(LinkComp, InSocket.SnapType, NeighborSocket.SnapType);
+						}
+					}
 				}
 			}
-			OutDependents.AddUnique(Neighbor);
+		}
+	}
+
+	void BuildSurfaceLinks(const ADC1BuildActor* InBuild, TArray<FDC1BuildStructureLink>& OutLinks)
+	{
+		if (false == ::IsValid(InBuild))
+		{
+			return;
+		}
+
+		bool IsOnGround = false;
+
+		TArray<ADC1BuildActor*> Supporters;
+
+		if (false == InBuild->GatherSurfaceSupporters(Supporters, IsOnGround))
+		{
+			return;
+		}
+
+		for (const ADC1BuildActor* Supporter : Supporters)
+		{
+			UDC1BuildLinkComponent* LinkComp = Supporter->GetLinkComponent();
+			if (true == ::IsValid(LinkComp))
+			{
+				OutLinks.Emplace(LinkComp, DC1BuildTags::Build_Link_Surface, DC1BuildTags::Build_Link_Surface);
+			}
 		}
 	}
 }
 
+void DC1BuildSupportHelper::BuildLinks(const ADC1BuildActor* InBuild, TArray<FDC1BuildStructureLink>& OutLinks)
+{
+	OutLinks.Reset();
+
+	if (false == ::IsValid(InBuild))
+	{
+		return;
+	}
+
+	if (EDC1BuildSupportRule::Surface == InBuild->GetSupportRule())
+	{
+		BuildSurfaceLinks(InBuild, OutLinks);
+	}
+	else
+	{
+		BuildSocketLinks(InBuild, OutLinks);
+	}
+}
 
 bool DC1BuildSupportHelper::HasSupport(ADC1BuildActor* InBuild)
 {
+	SCOPE_CYCLE_COUNTER(STAT_DC1_BuildHasSupport);
+
 	if (false == ::IsValid(InBuild))
 	{
 		return false;
 	}
 
-	TSet<ADC1BuildActor*> Excluded;
-	FDC1SupportCache Cache;
+	UDC1BuildLinkComponent* LinkComp = InBuild->GetLinkComponent();
+	if (true == ::IsValid(LinkComp) && true == InBuild->IsPreview())
+	{
+		LinkComp->RefreshPreviewLinks();
+	}
 
-	return IsSupported(InBuild, Excluded, Cache);
+	switch (InBuild->GetSupportRule())
+	{
+	case EDC1BuildSupportRule::Ground:
+	{
+		return true;
+	}
+	case EDC1BuildSupportRule::Stack:
+	{
+		return HasLinkOfType(LinkComp, DC1BuildTags::Build_Snap_Attach_Wall);	
+	}
+	case EDC1BuildSupportRule::Surface :
+	{
+		bool IsOnGround = false;
+		return HasSurfaceSupporter(InBuild, IsOnGround) || IsOnGround;
+	}
+
+	case EDC1BuildSupportRule::RoofSpan :
+	{
+		return CanReachSupportingFloor(InBuild);
+	}
+	}
+
+	return false;
 }
 
-void DC1BuildSupportHelper::CollectCascade(ADC1BuildActor* InOrigin, TSet<ADC1BuildActor*>& OutDoomed)
+void DC1BuildSupportHelper::GatherNeighbors(const ADC1BuildActor* InBuild, TArray<ADC1BuildActor*>& OutNeighbors)
 {
-	SCOPE_CYCLE_COUNTER(STAT_DC1_BuildCollectCascade);
+	OutNeighbors.Reset();
 
-
-	OutDoomed.Reset();
-
-	if (false == ::IsValid(InOrigin))
+	if (false == ::IsValid(InBuild))
 	{
 		return;
 	}
 
-	OutDoomed.Add(InOrigin);
-
-	FDC1SupportCache Cache;
-	TArray<ADC1BuildActor*> Dependents;
-
-	GatherDependents(InOrigin, OutDoomed, Cache, Dependents);
-
-	while (false == Dependents.IsEmpty())
+	const UDC1BuildLinkComponent* LinkComp = InBuild->GetLinkComponent();
+	if (false == ::IsValid(LinkComp))
 	{
-		ADC1BuildActor* Target = Dependents.Pop();
+		return;
+	}
 
-		//if (true == OutDoomed.Contains(Target) || true == IsSupported(Target, OutDoomed, Cache))
-		//{
-
-		//	continue;
-		//}
-
-		if (true == OutDoomed.Contains(Target))
+	for (const FDC1BuildStructureLink& Link : LinkComp->GetLinks())
+	{
+		UDC1BuildLinkComponent* OtherLink = Link.Other.Get();
+		if (false == ::IsValid(OtherLink))
 		{
 			continue;
 		}
-
-		if (true == IsSupported(Target, OutDoomed, Cache))
+		
+		ADC1BuildActor* Neighbor = OtherLink->GetOwner<ADC1BuildActor>();
+		if (true == ::IsValid(Neighbor))
 		{
-			continue;
+			OutNeighbors.AddUnique(Neighbor);
 		}
-
-		OutDoomed.Add(Target);
-		GatherDependents(Target, OutDoomed, Cache, Dependents);
 	}
 }

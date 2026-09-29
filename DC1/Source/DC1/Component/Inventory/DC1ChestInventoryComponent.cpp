@@ -38,3 +38,8 @@ bool UDC1ChestInventoryComponent::TryStoreItem(FName InItemID, int32 InCount)
 
 	return AddItem(InItemID, InCount);
 }
+
+bool UDC1ChestInventoryComponent::CanAcceptItem(FName InItemID) const
+{
+	return false == IsValuableItem(InItemID);
+}

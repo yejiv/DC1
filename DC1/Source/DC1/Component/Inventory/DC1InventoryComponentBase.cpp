@@ -2,6 +2,9 @@
 
 #include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1ItemHelper.h"
+#include "Define/DC1Macro.h"
 
 UDC1InventoryComponentBase::UDC1InventoryComponentBase()
 {
@@ -103,6 +106,12 @@ bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 
 	// 유효성 검사
 	if (InItemID.IsNone() || InCount <= 0)
+	{
+		return false;
+	}
+
+	// 이 인벤토리에 보관할 수 없는 아이템 (예: 상자에 귀중품)
+	if (false == CanAcceptItem(InItemID))
 	{
 		return false;
 	}
@@ -266,6 +275,86 @@ void UDC1InventoryComponentBase::MoveOrMergeSlot(int32 FromIndex, int32 ToIndex,
 	OnInventoryUpdated_Internal();
 }
 
+bool UDC1InventoryComponentBase::TransferSlotTo(UDC1InventoryComponentBase* InTargetComp, int32 FromIndex, int32 ToIndex, int32 MoveCount /* = -1 */, bool bAllowSwap /* = true */)
+{
+	// 서버에서만 실행
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return false;
+	}
+
+	// 같은 인벤토리 내부 이동은 MoveOrMergeSlot 사용
+	if (false == ::IsValid(InTargetComp) || this == InTargetComp)
+	{
+		return false;
+	}
+
+	if (!Slots.IsValidIndex(FromIndex) || !InTargetComp->Slots.IsValidIndex(ToIndex))
+	{
+		return false;
+	}
+
+	FDC1InventorySlotInfo& SourceSlot = Slots[FromIndex];
+	if (SourceSlot.IsEmpty())
+	{
+		return false;
+	}
+
+	// 목표 인벤토리가 받을 수 없는 아이템 (예: 귀중품 -> 상자)
+	if (false == InTargetComp->CanAcceptItem(SourceSlot.ItemID))
+	{
+		return false;
+	}
+
+	// MoveCount가 -1이면 전체 이동, 아니면 지정된 개수만 이동
+	const int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
+
+	FDC1InventorySlotInfo& TargetSlot = InTargetComp->Slots[ToIndex];
+
+	// 교환 시에는 목표 슬롯의 아이템이 이쪽으로 넘어오므로 이쪽도 받을 수 있어야 함
+	const bool bIsSwap = (false == TargetSlot.IsEmpty() && TargetSlot.ItemID != SourceSlot.ItemID);
+	if (true == bIsSwap && false == CanAcceptItem(TargetSlot.ItemID))
+	{
+		return false;
+	}
+
+	if (TargetSlot.IsEmpty() || TargetSlot.ItemID == SourceSlot.ItemID)
+	{
+		// 빈 슬롯이면 이동, 같은 아이템이면 병합
+		if (TargetSlot.IsEmpty())
+		{
+			TargetSlot.ItemID = SourceSlot.ItemID;
+			TargetSlot.StackCount = 0;
+		}
+
+		TargetSlot.StackCount += ActualMoveCount;
+		SourceSlot.StackCount -= ActualMoveCount;
+
+		if (SourceSlot.StackCount <= 0)
+		{
+			SourceSlot.Clear();
+		}
+	}
+	else
+	{
+		if (false == bAllowSwap)
+		{
+			return false;
+		}
+
+		// 다른 아이템이 있으면 교환 (이동 개수 무시, 전체 교환)
+		Swap(SourceSlot, TargetSlot);
+	}
+
+	OnSlotChanged.Broadcast(FromIndex);
+	OnInventoryUpdated_Internal();
+
+	InTargetComp->OnSlotChanged.Broadcast(ToIndex);
+	InTargetComp->OnInventoryUpdated_Internal();
+
+	return true;
+}
+
 void UDC1InventoryComponentBase::ClearSlot(int32 InSlotIndex)
 {
 	// 서버에서만 실행
@@ -348,6 +437,103 @@ void UDC1InventoryComponentBase::InitializeSlots()
 
 	// UE_LOG(LogTemp, Warning, TEXT("[%s] Inventory initialized: %d slots (%d x %d)"),
 	//	*GetOwner()->GetName(), TotalCapacity, Rows, Columns);
+}
+
+void UDC1InventoryComponentBase::SortSlots()
+{
+	// 서버에서만 실행
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return;
+	}
+
+	// 1. 같은 아이템끼리 수량 합산 (DataTable에 없는 아이템은 병합하지 않고 따로 보관)
+	TMap<FName, int32> TotalCountByItem;
+	TArray<FDC1InventorySlotInfo> UnknownSlots;
+
+	for (const FDC1InventorySlotInfo& Slot : Slots)
+	{
+		if (Slot.IsEmpty())
+		{
+			continue;
+		}
+
+		if (nullptr == DC1ItemHelper::FindItemRow(Slot.ItemID))
+		{
+			UnknownSlots.Add(Slot);
+			continue;
+		}
+
+		TotalCountByItem.FindOrAdd(Slot.ItemID) += Slot.StackCount;
+	}
+
+	// 2. ItemID -> 레어도 순 정렬
+	TArray<FName> SortedItemIDs;
+	TotalCountByItem.GetKeys(SortedItemIDs);
+
+	SortedItemIDs.Sort([](const FName& A, const FName& B)
+	{
+		const int32 CompareResult = A.Compare(B);
+		if (0 != CompareResult)
+		{
+			return CompareResult < 0;
+		}
+
+		const FDC1ItemRow* RowA = DC1ItemHelper::FindItemRow(A);
+		const FDC1ItemRow* RowB = DC1ItemHelper::FindItemRow(B);
+		return RowA->ItemRarity < RowB->ItemRarity;
+	});
+
+	// 3. MaxStack 단위로 나눠 앞쪽 슬롯부터 채움
+	TArray<FDC1InventorySlotInfo> SortedSlots;
+	SortedSlots.Reserve(Slots.Num());
+
+	for (const FName& ItemID : SortedItemIDs)
+	{
+		const FDC1ItemRow* ItemRow = DC1ItemHelper::FindItemRow(ItemID);
+		const int32 MaxStack = FMath::Max(1, GetStackLimit(*ItemRow));
+
+		int32 RemainCount = TotalCountByItem[ItemID];
+		while (RemainCount > 0)
+		{
+			FDC1InventorySlotInfo NewSlot;
+			NewSlot.ItemID = ItemID;
+			NewSlot.StackCount = FMath::Min(RemainCount, MaxStack);
+			SortedSlots.Add(NewSlot);
+
+			RemainCount -= NewSlot.StackCount;
+		}
+	}
+
+	SortedSlots.Append(UnknownSlots);
+
+	if (true == IsFixedCapacity())
+	{
+		// 기존에 MaxStack을 넘긴 스택이 있었다면 분할 후 칸이 부족할 수 있음 - 아이템 유실 방지를 위해 정렬 취소
+		if (SortedSlots.Num() > Slots.Num())
+		{
+			LOG_WARNING(TEXT("[SortSlots] 정렬 후 필요한 칸(%d)이 용량(%d)을 넘어 정렬을 취소함"), SortedSlots.Num(), Slots.Num());
+			return;
+		}
+
+		// 빈 슬롯을 뒤에 채움
+		SortedSlots.SetNum(Slots.Num());
+	}
+
+	Slots = MoveTemp(SortedSlots);
+
+	OnInventoryUpdated_Internal();
+}
+
+bool UDC1InventoryComponentBase::IsValuableItem(FName InItemID)
+{
+	const FDC1ItemRow* ItemRow = DC1ItemHelper::FindItemRow(InItemID);
+	return nullptr != ItemRow && true == ItemRow->bIsValuable;
+}
+
+int32 UDC1InventoryComponentBase::GetStackLimit(const FDC1ItemRow& InItemRow) const
+{
+	return InItemRow.MaxStack;
 }
 
 void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()

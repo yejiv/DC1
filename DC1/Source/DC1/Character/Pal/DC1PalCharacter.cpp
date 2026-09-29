@@ -9,6 +9,8 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -25,12 +27,32 @@
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
 
+namespace DC1PalCharacter
+{
+	// 가해자 파티 (파트너면 주인)
+	static UDC1PalPartyComponent* FindPartyOf(const AActor* InCauser)
+	{
+		const APawn* Pawn = Cast<APawn>(InCauser);
+
+		if (const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Pawn))
+		{
+			const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController());
+			if (EDC1Team::Player != Pal->GetTeam() || nullptr == PalController)
+			{
+				return nullptr;
+			}
+
+			Pawn = Cast<APawn>(PalController->GetFollowTarget());
+		}
+
+		const ADC1PlayerState* PlayerState = (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
+		return (nullptr != PlayerState) ? PlayerState->GetPalPartyComponent() : nullptr;
+	}
+}
+
 ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	//AIControllerClass = ADC1PalAIController::StaticClass();
-	//AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
 	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
@@ -101,7 +123,6 @@ void ADC1PalCharacter::BeginPlay()
 	}
 	else
 	{
-		// 위젯이 없으면(데디케이티드 서버 등) 가시성 검사도 의미가 없다
 		return;
 	}
 
@@ -175,6 +196,7 @@ void ADC1PalCharacter::ApplyPalData()
 
 		// HP바용. BindHealthWatcher 가 RemoveAll(this) 를 하므로 반드시 그 뒤에 온다
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChangedForUI);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetLevelAttribute()).AddUObject(this, &ThisClass::HandleLevelChangedForUI);
 	}
 
 	if (IsValid(PalAttributeSet))
@@ -202,7 +224,6 @@ void ADC1PalCharacter::ApplyPalData()
 		}
 
 		const float FinalMaxHealth = Registry->GetMaxHealthFor(*PalData, FinalLevel, PalInstance.TalentHealth);
-
 		const float FinalAttack = Registry->GetAttackPowerFor(*PalData, FinalLevel, PalInstance.TalentAttack);
 		const float FinalDefense = Registry->GetDefensePowerFor(*PalData, FinalLevel, PalInstance.TalentDefense);
 
@@ -266,6 +287,7 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	}
 
 	AActor* Causer = Data.GEModData->EffectSpec.GetContext().GetEffectCauser();
+	LastDamageCauser = Causer;
 
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
@@ -288,6 +310,53 @@ void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Da
 	UpdateHealthWidgetVisibility();
 
 	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
+}
+
+void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Data)
+{
+	if (false == IsValid(HealthWidgetComponent))
+	{
+		return;
+	}
+
+	if (UDC1PalHealthWidget* HealthWidget = Cast<UDC1PalHealthWidget>(HealthWidgetComponent->GetUserWidgetObject()))
+	{
+		HealthWidget->InitForPal(this);
+	}
+}
+
+void ADC1PalCharacter::GainExperience(int32 InAmount)
+{
+	if (false == HasAuthority() || false == IsValid(PalAttributeSet) || false == IsValid(AbilitySystemComponent) || nullptr == PalData)
+	{
+		return;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == IsValid(Registry))
+	{
+		return;
+	}
+
+	if (0 == Registry->ApplyExperience(PalInstance, InAmount))
+	{
+		return;
+	}
+
+	const int32 NewLevel = PalInstance.Level;
+	const float NewMaxHealth = Registry->GetMaxHealthFor(*PalData, NewLevel, PalInstance.TalentHealth);
+
+	// Base만 갱신 (패시브 배율 유지)
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetLevelAttribute(), static_cast<float>(NewLevel));
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetMaxHealthAttribute(), NewMaxHealth);
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetAttackPowerAttribute(), Registry->GetAttackPowerFor(*PalData, NewLevel, PalInstance.TalentAttack));
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetDefensePowerAttribute(), Registry->GetDefensePowerFor(*PalData, NewLevel, PalInstance.TalentDefense));
+
+	// 사망 제외
+	if (PalAttributeSet->GetHealth() > 0.f)
+	{
+		AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), NewMaxHealth);
+	}
 }
 
 void ADC1PalCharacter::StopAndUnregister()
@@ -352,13 +421,9 @@ EDC1PalElement ADC1PalCharacter::GetElement2() const
 
 FDC1PalInstance ADC1PalCharacter::Fold()
 {
-	// 새로 만들지 않고 들고 있던 것에서 시작한다.
-	// 그래야 닉네임·경험치·패시브처럼 액터가 건드리지 않는 값이 보존된다
 	FDC1PalInstance Instance = PalInstance;
 
 	Instance.SpeciesTag = SpeciesTag;
-
-	// 소환됐던 개체면 원래 ID를 유지
 	Instance.PalID = InstanceID.IsValid() ? InstanceID : FGuid::NewGuid();
 
 	if (IsValid(PalAttributeSet))
@@ -448,9 +513,9 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 		return nullptr;
 	}
 
-
 	ADC1PalCharacter* Pal = InWorld->SpawnActorDeferred<ADC1PalCharacter>(PalClass, InTransform, nullptr, nullptr,
 		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+	
 	if (false == IsValid(Pal))
 	{
 		return nullptr;
@@ -494,7 +559,6 @@ void ADC1PalCharacter::OnDeath()
 	{
 		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
 
-		// 발에 치이게
 		MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
 		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -504,6 +568,15 @@ void ADC1PalCharacter::OnDeath()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[Pal] %s died."), *GetName());
+
+	// 처치 경험치
+	if (true == HasAuthority() && EDC1Team::Wild == Team)
+	{
+		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(LastDamageCauser.Get()))
+		{
+			Party->GrantExperienceFor(GetLevel());
+		}
+	}
 
 	OnPalDied.Broadcast();
 }
@@ -528,22 +601,6 @@ ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other
 FGenericTeamId ADC1PalCharacter::GetGenericTeamId() const
 {
 	return DC1Team::ToGenericTeamId(Team);
-}
-
-void ADC1PalCharacter::SetTeam(EDC1Team NewTeam)
-{
-	if (false == HasAuthority())
-	{
-		return;
-	}
-
-	if (Team == NewTeam)
-	{
-		return;
-	}
-
-	Team = NewTeam;
-	OnTeamChanged();
 }
 
 void ADC1PalCharacter::OnRep_Team()

@@ -15,7 +15,6 @@ class ADC1Player;
 class UDC1InputData;
 
 class UDC1TabWidget;
-class UDC1InventoryViewModel;
 
 class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
@@ -36,9 +35,9 @@ public:
 	// State Build 관리, InteractComp Tick 관리
 	void SetBuildMode(bool Enabled);
 
-	UDC1InventoryViewModel*			GetInventoryViewModel() const { return InventoryViewModel; }
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
+
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -134,12 +133,9 @@ private:
 	UPROPERTY()
 	TObjectPtr<ADC1Player>	ControlObject = { nullptr };
 
-	// 인벤토리는 기존 방식 유지 — PC가 VM을 만들어 위젯에 주입한다
+	// 메인 탭 위젯 미리 생성 (인벤토리 VM은 위젯이 VMSubsystem에서 직접 가져온다)
 	UPROPERTY()
 	TObjectPtr<UDC1TabWidget>			CachedMainTabWidget = { nullptr };
-
-	UPROPERTY()
-	TObjectPtr<UDC1InventoryViewModel>	InventoryViewModel = { nullptr };
 
 	FGameplayTag			CurrentIMCTag = FGameplayTag();
 

@@ -27,6 +27,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Build, "UI.Main.Build");
 #pragma endregion
 
+#pragma region MAIN_PALBOX
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_PalBox, "UI.Main.PalBox");
+#pragma endregion
+
 #pragma region CHEST_LOOT
 	UE_DEFINE_GAMEPLAY_TAG(UI_Chest_Loot, "UI.Chest.Loot");
 #pragma endregion

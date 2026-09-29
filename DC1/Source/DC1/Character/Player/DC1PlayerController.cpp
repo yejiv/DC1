@@ -24,9 +24,6 @@
 #include "Component/DC1EquipComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-#include "ViewModel/Inventory/DC1InventoryViewModel.h"
-#include "UI/Tab/Inventory/DC1InventoryWidget.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
 
 #include "Component/Build/DC1BuildPlacementComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
@@ -558,26 +555,6 @@ void ADC1PlayerController::InitPlayerStateBindings()
 	{
 		CachedMainTabWidget = Cast<UDC1TabWidget>(UIManager->CreateWidgetWithTag(DC1UITags::UI_Main_Tab.GetTag()));
 	}
-
-	if (false == ::IsValid(CachedMainTabWidget))
-	{
-		return;
-	}
-
-	if (false == ::IsValid(InventoryViewModel))
-	{
-		InventoryViewModel = NewObject<UDC1InventoryViewModel>(this);
-	}
-
-	if (UDC1PlayerInventoryComponent* PlayerInventory = OwnerPlayerState->GetInventoryComponent())
-	{
-		InventoryViewModel->SetPlayerInventoryComponent(PlayerInventory);
-	}
-
-	if (UDC1InventoryWidget* PlayerInventoryWidget = CachedMainTabWidget->GetInventoryWidget())
-	{
-		PlayerInventoryWidget->SetViewModel(InventoryViewModel);
-	}
 }
 
 #pragma region Debug
@@ -907,5 +884,11 @@ void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputCo
 	if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
 	{
 		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
+	}
+
+	// Open PalBox Widget
+	if (const UInputAction* OpenPalBox = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_PalBox))
+	{
+		EnhancedInputComponent->BindAction(OpenPalBox, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_PalBox.GetTag(), FGameplayTag::EmptyTag);
 	}
 }

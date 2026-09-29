@@ -39,6 +39,8 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_TechTree, "Input.UI.TechTree");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Build, "Input.UI.Build");
+
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_PalBox, "Input.UI.PalBox");
 #pragma endregion
 }
 

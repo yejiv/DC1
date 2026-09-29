@@ -5,7 +5,6 @@
 #include "AbilitySystem/Effects/DC1GameplayEffect_PalDamage.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
-#include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"

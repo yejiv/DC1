@@ -27,16 +27,29 @@ void UDC1PalPartyComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 	DOREPLIFETIME(UDC1PalPartyComponent, Pals);
 	DOREPLIFETIME(UDC1PalPartyComponent, DeployedPal);
+	DOREPLIFETIME(UDC1PalPartyComponent, BoxPals);
 }
 
 void UDC1PalPartyComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (ROLE_Authority == GetOwnerRole() && Pals.Num() < Capacity)
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	if (Pals.Num() < Capacity)
 	{
 		Pals.SetNum(Capacity);
 	}
+
+	if (BoxPals.Num() < BoxCapacity)
+	{
+		BoxPals.SetNum(BoxCapacity);
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(BoxHealTimer, this, &ThisClass::HealBoxPals, BoxHealInterval, true);
 }
 
 void UDC1PalPartyComponent::OnRep_Pals()
@@ -47,6 +60,11 @@ void UDC1PalPartyComponent::OnRep_Pals()
 void UDC1PalPartyComponent::OnRep_DeployedPal()
 {
 	OnPalSlotChanged.Broadcast();
+}
+
+void UDC1PalPartyComponent::OnRep_BoxPals()
+{
+	OnPalBoxChanged.Broadcast();
 }
 
 bool UDC1PalPartyComponent::HasPalAt(int32 InSlotIndex) const
@@ -93,26 +111,235 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 		return;
 	}
 
-	// 앞에서부터 빈 슬롯을 찾는다
-	int32 EmptyIndex = INDEX_NONE;
+	// 포획 경험치 (잡힌 팰 제외)
+	GrantExperienceFor(InPal.Level);
+
+	// 파티 → 상자 순서로 빈칸
+	for (const EDC1PalContainer Container : { EDC1PalContainer::Party, EDC1PalContainer::Box })
+	{
+		TArray<FDC1PalInstance>& Target = GetContainer(Container);
+
+		const int32 EmptyIndex = Target.IndexOfByPredicate([](const FDC1PalInstance& Pal)
+			{
+				return (false == Pal.IsValidPal());
+			});
+
+		if (INDEX_NONE == EmptyIndex)
+		{
+			continue;
+		}
+
+		Target[EmptyIndex] = InPal;
+
+		if (EDC1PalContainer::Box == Container)
+		{
+			UE_LOG(LogTemp, Log, TEXT("[Pal] Party full. Captured pal stored in box [%d]."), EmptyIndex + 1);
+		}
+
+		BroadcastChanged(Container);
+		return;
+	}
+}
+
+void UDC1PalPartyComponent::Server_MovePal_Implementation(EDC1PalContainer InFrom, int32 InFromIndex, EDC1PalContainer InTo, int32 InToIndex)
+{
+	if (false == GetContainer(InFrom).IsValidIndex(InFromIndex) || false == GetContainer(InTo).IsValidIndex(InToIndex))
+	{
+		return;
+	}
+
+	if (InFrom == InTo && InFromIndex == InToIndex)
+	{
+		return;
+	}
+
+	if (false == GetContainer(InFrom)[InFromIndex].IsValidPal())
+	{
+		return;
+	}
+
+	// 소환 중인 팰이 상자로 가면 회수
+	const bool bDeployedToBox = (EDC1PalContainer::Party == InFrom && EDC1PalContainer::Box == InTo && true == IsDeployed(InFromIndex))
+		|| (EDC1PalContainer::Box == InFrom && EDC1PalContainer::Party == InTo && true == IsDeployed(InToIndex));
+
+	if (true == bDeployedToBox)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Pal] Move: deployed pal retrieved first."));
+		RetrieveDeployed();
+	}
+
+	Swap(GetContainer(InFrom)[InFromIndex], GetContainer(InTo)[InToIndex]);
+
+	BroadcastChanged(InFrom);
+	if (InFrom != InTo)
+	{
+		BroadcastChanged(InTo);
+	}
+}
+
+bool UDC1PalPartyComponent::CanAcceptPal() const
+{
+	auto HasEmpty = [](const TArray<FDC1PalInstance>& InPals)
+		{
+			return InPals.ContainsByPredicate([](const FDC1PalInstance& Pal) { return (false == Pal.IsValidPal()); });
+		};
+
+	return HasEmpty(Pals) || HasEmpty(BoxPals);
+}
+
+void UDC1PalPartyComponent::HealBoxPals()
+{
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == ::IsValid(Registry) || Registry->BoxHealRatePerSecond <= 0.f)
+	{
+		return;
+	}
+
+	bool bChanged = false;
+
+	for (FDC1PalInstance& Pal : BoxPals)
+	{
+		if (false == Pal.IsValidPal())
+		{
+			continue;
+		}
+
+		const float MaxHealth = GetMaxHealthOf(Pal);
+		if (Pal.CurrentHealth >= MaxHealth)
+		{
+			continue;
+		}
+
+		Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
+		bChanged = true;
+	}
+
+	if (true == bChanged)
+	{
+		BroadcastChanged(EDC1PalContainer::Box);
+	}
+}
+
+TArray<FDC1PalInstance>& UDC1PalPartyComponent::GetContainer(EDC1PalContainer InContainer)
+{
+	return (EDC1PalContainer::Box == InContainer) ? BoxPals : Pals;
+}
+
+const TArray<FDC1PalInstance>& UDC1PalPartyComponent::GetContainer(EDC1PalContainer InContainer) const
+{
+	return (EDC1PalContainer::Box == InContainer) ? BoxPals : Pals;
+}
+
+void UDC1PalPartyComponent::BroadcastChanged(EDC1PalContainer InContainer)
+{
+	if (EDC1PalContainer::Box == InContainer)
+	{
+		OnPalBoxChanged.Broadcast();
+	}
+	else
+	{
+		OnPalSlotChanged.Broadcast();
+	}
+}
+
+const FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(EDC1PalContainer InContainer, int32 InSlotIndex) const
+{
+	if (EDC1PalContainer::Party == InContainer)
+	{
+		return GetPalInfo(InSlotIndex);
+	}
+
+	return (BoxPals.IsValidIndex(InSlotIndex) && BoxPals[InSlotIndex].IsValidPal()) ? &BoxPals[InSlotIndex] : nullptr;
+}
+
+float UDC1PalPartyComponent::GetPalHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const
+{
+	if (EDC1PalContainer::Party == InContainer)
+	{
+		return GetPalHealth(InSlotIndex);
+	}
+
+	const FDC1PalInstance* Pal = GetPalInfo(InContainer, InSlotIndex);
+	return (nullptr != Pal) ? Pal->CurrentHealth : 0.f;
+}
+
+float UDC1PalPartyComponent::GetPalMaxHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const
+{
+	const FDC1PalInstance* Pal = GetPalInfo(InContainer, InSlotIndex);
+	return (nullptr != Pal) ? GetMaxHealthOf(*Pal) : 0.f;
+}
+
+float UDC1PalPartyComponent::GetMaxHealthOf(const FDC1PalInstance& InPal) const
+{
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		return 0.f;
+	}
+
+	const UDC1PalData* PalData = Registry->FindPalDataByTag(InPal.SpeciesTag).LoadSynchronous();
+	if (false == ::IsValid(PalData))
+	{
+		return 0.f;
+	}
+
+	return Registry->GetMaxHealthFor(*PalData, InPal.Level, InPal.TalentHealth);
+}
+
+void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
+{
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (false == ::IsValid(Registry))
+	{
+		return;
+	}
+
+	const int32 Amount = Registry->GetDropExp(InDefeatedLevel);
+	if (Amount <= 0)
+	{
+		return;
+	}
+
+	FString Summary;
 
 	for (int32 Index = 0; Index < Pals.Num(); ++Index)
 	{
 		if (false == HasPalAt(Index))
 		{
-			EmptyIndex = Index;
-			break;
+			continue;
 		}
+
+		const int32 OldLevel = Pals[Index].Level;
+
+		// 소환 중이면 액터 기준
+		if (true == IsDeployed(Index))
+		{
+			DeployedPal->GainExperience(Amount);
+			Pals[Index].Level = DeployedPal->GetLevel();
+			Pals[Index].Experience = DeployedPal->GetExperience();
+		}
+		else
+		{
+			Registry->ApplyExperience(Pals[Index], Amount);
+		}
+
+		Summary += (OldLevel == Pals[Index].Level)
+			? FString::Printf(TEXT("  [%d] Lv%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Experience, Registry->GetExpToNextLevel(OldLevel))
+			: FString::Printf(TEXT("  [%d] Lv%d->%d %.0f/%d"), Index + 1, OldLevel, Pals[Index].Level, Pals[Index].Experience, Registry->GetExpToNextLevel(Pals[Index].Level));
 	}
 
-	// TODO : 팰박스가 생기면?
-	if (INDEX_NONE == EmptyIndex)
+	if (true == Summary.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] Party is full (%d). Captured pal was dropped."), Capacity);
 		return;
 	}
 
-	Pals[EmptyIndex] = InPal;
+	UE_LOG(LogTemp, Log, TEXT("[Pal] EXP +%d (Lv%d):%s"), Amount, InDefeatedLevel, *Summary);
+
 	OnPalSlotChanged.Broadcast();
 }
 
@@ -135,7 +362,6 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	// 슬롯이 고정 길이라 인덱스만 봐서는 빈 칸을 걸러낼 수 없다
 	if (false == HasPalAt(SelectedSlot))
 	{
 		UE_LOG(LogTemp, Log, TEXT("[Pal] Deploy: slot %d is empty."), SelectedSlot + 1);
@@ -193,24 +419,22 @@ const FDC1PalInstance* UDC1PalPartyComponent::GetPalInfo(int32 Index) const
 
 float UDC1PalPartyComponent::GetPalMaxHealth(int32 InSlotIndex) const
 {
+	return HasPalAt(InSlotIndex) ? GetMaxHealthOf(Pals[InSlotIndex]) : 0.f;
+}
+
+float UDC1PalPartyComponent::GetPalHealth(int32 InSlotIndex) const
+{
 	if (false == HasPalAt(InSlotIndex))
 	{
 		return 0.f;
 	}
 
-	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-	if (false == ::IsValid(Registry))
+	if (true == IsDeployed(InSlotIndex))
 	{
-		return 0.f;
+		return DeployedPal->GetHealthRatio() * GetPalMaxHealth(InSlotIndex);
 	}
 
-	const UDC1PalData* PalData = Registry->FindPalDataByTag(Pals[InSlotIndex].SpeciesTag).LoadSynchronous();
-	if (false == ::IsValid(PalData))
-	{
-		return 0.f;
-	}
-
-	return Registry->GetMaxHealthFor(*PalData, Pals[InSlotIndex].Level, Pals[InSlotIndex].TalentHealth);
+	return Pals[InSlotIndex].CurrentHealth;
 }
 
 void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
