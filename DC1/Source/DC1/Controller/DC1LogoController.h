@@ -20,8 +20,12 @@ protected:
 
 public:
 	void TravelToServer(const FString& IP);
+	void TravelToServerFromCachedIP();
 
 private:
 	// NumPad9 : 타이틀 UI를 껐다 켜서 뒤 3D 씬(커마 부스 등)을 확인하기 위한 디버그용. 확인 끝나면 통째로 제거
 	void OnDebugToggleUI();
+
+private:
+	FString CachedIP = {};
 };
