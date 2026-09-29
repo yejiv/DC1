@@ -35,8 +35,10 @@ public:
 
 	void SetHair(const FGameplayTag& InTag);
 	void SetHead(const FGameplayTag& InTag);
+	void SetEye(const FGameplayTag& InTag);
 	void SetHairColor(const FLinearColor& InColor);
 	void SetSkinColor(const FLinearColor& InColor);
+	void SetEyeColor(const FLinearColor& InColor);
 
 	// 확정: 로컬 저장 + (연결돼 있다면) 서버로 반영
 	bool ConfirmAppearance();

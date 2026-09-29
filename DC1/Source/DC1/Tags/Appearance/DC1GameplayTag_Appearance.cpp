@@ -72,4 +72,18 @@ namespace DC1AppearanceTags
 	UE_DEFINE_GAMEPLAY_TAG(Appearance_Hair_36, "Appearance.Hair.36");
 	UE_DEFINE_GAMEPLAY_TAG(Appearance_Hair_37, "Appearance.Hair.37");
 #pragma endregion
+
+#pragma region Eye
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_01, "Appearance.Eye.01");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_02, "Appearance.Eye.02");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_03, "Appearance.Eye.03");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_04, "Appearance.Eye.04");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_05, "Appearance.Eye.05");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_06, "Appearance.Eye.06");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_07, "Appearance.Eye.07");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_08, "Appearance.Eye.08");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_09, "Appearance.Eye.09");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_10, "Appearance.Eye.10");
+	UE_DEFINE_GAMEPLAY_TAG(Appearance_Eye_11, "Appearance.Eye.11");
+#pragma endregion
 }

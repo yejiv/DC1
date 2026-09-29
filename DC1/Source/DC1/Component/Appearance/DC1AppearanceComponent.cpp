@@ -59,6 +59,18 @@ void UDC1AppearanceComponent::ApplyAppearance(const FDC1AppearanceData& Data)
 			CachedHeadMesh->SetColorParameterValueOnMaterials(Registry->SkinColorPropertyName, Data.SkinColor);
 			CachedHeadMesh->SetColorParameterValueOnMaterials(Registry->HairColorPropertyName, Data.HairColor);
 		}
+
+		// Apply Eye - Head 메쉬 자체는 안 바꾸고, 눈 전용 머티리얼 슬롯만 교체한다.
+		// UpdateMesh가 위에서 메쉬를 바꿨다면 EmptyOverrideMaterials로 슬롯 오버라이드가 초기화되지만,
+		// ApplyAppearance는 항상 전체 Data를 한 번에 적용하므로 여기서 바로 다시 씌워 꼬이지 않는다.
+		if (const FDC1AppearanceMaterialDef* EyeAsset = Registry->GetEyeData(Data.EyeTag))
+		{
+			if (UMaterialInterface* NewEyeMaterial = EyeAsset->Material.LoadSynchronous())
+			{
+				CachedHeadMesh->SetMaterialByName(Registry->EyeMaterialSlotName, NewEyeMaterial);
+			}
+		}
+		CachedHeadMesh->SetColorParameterValueOnMaterials(Registry->EyeColorPropertyName, Data.EyeColor);
 	}
 }
 

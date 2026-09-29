@@ -22,3 +22,13 @@ const FDC1AppearancePartDef* UDC1AppearanceRegistryData::GetHeadData(const FGame
 
 	return Heads.Find(Tag);
 }
+
+const FDC1AppearanceMaterialDef* UDC1AppearanceRegistryData::GetEyeData(const FGameplayTag& Tag) const
+{
+	if (false == Tag.IsValid())
+	{
+		return Eyes.Find(DefaultEyeTag);
+	}
+
+	return Eyes.Find(Tag);
+}

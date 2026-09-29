@@ -25,11 +25,8 @@ void UDC1CustomizePanel::NativeConstruct()
 	BindViewModel();
 	PopulateIcons();
 
-	const FDC1AppearanceData* PendingAppearance = (true == CustomizeViewModel.IsValid())
-		? &CustomizeViewModel->GetPendingAppearance()
-		: nullptr;
-	const FLinearColor CurrentColor = (nullptr != PendingAppearance)
-		? ((MenuType == EDC1CustomizeMenu::Head) ? PendingAppearance->SkinColor : PendingAppearance->HairColor)
+	const FLinearColor CurrentColor = (true == CustomizeViewModel.IsValid())
+		? GetColorFromData(CustomizeViewModel->GetPendingAppearance())
 		: FLinearColor::White;
 
 	if (true == IsValid(ColorWheel))
@@ -96,15 +93,39 @@ void UDC1CustomizePanel::PopulateIcons()
 	{
 		const FGameplayTag PartTag = MakePartTag(i);
 
-		const FDC1AppearancePartDef* PartDef = (MenuType == EDC1CustomizeMenu::Head)
-			? Registry->GetHeadData(PartTag)
-			: Registry->GetHairData(PartTag);
-		if (nullptr == PartDef)
+		bool bFound = false;
+		TSoftObjectPtr<UTexture2D> IconSoftPtr;
+		switch (MenuType)
+		{
+		case EDC1CustomizeMenu::Head:
+			if (const FDC1AppearancePartDef* PartDef = Registry->GetHeadData(PartTag))
+			{
+				IconSoftPtr = PartDef->Icon;
+				bFound = true;
+			}
+			break;
+		case EDC1CustomizeMenu::Hair:
+			if (const FDC1AppearancePartDef* PartDef = Registry->GetHairData(PartTag))
+			{
+				IconSoftPtr = PartDef->Icon;
+				bFound = true;
+			}
+			break;
+		case EDC1CustomizeMenu::Eye:
+			if (const FDC1AppearanceMaterialDef* PartDef = Registry->GetEyeData(PartTag))
+			{
+				IconSoftPtr = PartDef->Icon;
+				bFound = true;
+			}
+			break;
+		}
+
+		if (false == bFound)
 		{
 			continue;
 		}
 
-		UTexture2D* IconTexture = PartDef->Icon.LoadSynchronous();
+		UTexture2D* IconTexture = IconSoftPtr.LoadSynchronous();
 
 		UDC1CustomizeIcon* Icon = CreateWidget<UDC1CustomizeIcon>(this, IconClass);
 		Icon->Init(PartTag, IconTexture);
@@ -136,13 +157,17 @@ void UDC1CustomizePanel::HandleIconClicked(UDC1CustomizeIcon* ClickedIcon)
 		return;
 	}
 
-	if (MenuType == EDC1CustomizeMenu::Head)
+	switch (MenuType)
 	{
+	case EDC1CustomizeMenu::Head:
 		CustomizeViewModel->SetHead(ClickedIcon->GetPartTag());
-	}
-	else
-	{
+		break;
+	case EDC1CustomizeMenu::Hair:
 		CustomizeViewModel->SetHair(ClickedIcon->GetPartTag());
+		break;
+	case EDC1CustomizeMenu::Eye:
+		CustomizeViewModel->SetEye(ClickedIcon->GetPartTag());
+		break;
 	}
 }
 
@@ -153,19 +178,7 @@ void UDC1CustomizePanel::HandleColorChanged(FLinearColor InColor)
 		ColorButton->SetPreviewColor(InColor);
 	}
 
-	if (false == CustomizeViewModel.IsValid())
-	{
-		return;
-	}
-
-	if (MenuType == EDC1CustomizeMenu::Head)
-	{
-		CustomizeViewModel->SetSkinColor(InColor);
-	}
-	else
-	{
-		CustomizeViewModel->SetHairColor(InColor);
-	}
+	ApplyColorToViewModel(InColor);
 }
 
 void UDC1CustomizePanel::HandleColorPickClosed(bool bConfirmed)
@@ -195,8 +208,7 @@ void UDC1CustomizePanel::HandleColorButtonClicked()
 
 	if (true == CustomizeViewModel.IsValid())
 	{
-		const FDC1AppearanceData& PendingAppearance = CustomizeViewModel->GetPendingAppearance();
-		ColorBeforeOpen = (MenuType == EDC1CustomizeMenu::Head) ? PendingAppearance.SkinColor : PendingAppearance.HairColor;
+		ColorBeforeOpen = GetColorFromData(CustomizeViewModel->GetPendingAppearance());
 	}
 
 	ColorWheel->SetSeedColor(ColorBeforeOpen);
@@ -205,8 +217,56 @@ void UDC1CustomizePanel::HandleColorButtonClicked()
 
 FGameplayTag UDC1CustomizePanel::MakePartTag(int32 Index)
 {
-	const TCHAR* PartCategoryName = (MenuType == EDC1CustomizeMenu::Head) ? TEXT("Head") : TEXT("Hair");
+	const TCHAR* PartCategoryName = TEXT("Head");
+	switch (MenuType)
+	{
+	case EDC1CustomizeMenu::Hair:
+		PartCategoryName = TEXT("Hair");
+		break;
+	case EDC1CustomizeMenu::Eye:
+		PartCategoryName = TEXT("Eye");
+		break;
+	default:
+		break;
+	}
+
 	const FString TagString = FString::Printf(TEXT("Appearance.%s.%02d"), PartCategoryName, Index + 1);
 
 	return FGameplayTag::RequestGameplayTag(FName(*TagString), false);
+}
+
+FLinearColor UDC1CustomizePanel::GetColorFromData(const FDC1AppearanceData& Data) const
+{
+	switch (MenuType)
+	{
+	case EDC1CustomizeMenu::Head:
+		return Data.SkinColor;
+	case EDC1CustomizeMenu::Hair:
+		return Data.HairColor;
+	case EDC1CustomizeMenu::Eye:
+		return Data.EyeColor;
+	default:
+		return FLinearColor::White;
+	}
+}
+
+void UDC1CustomizePanel::ApplyColorToViewModel(const FLinearColor& InColor)
+{
+	if (false == CustomizeViewModel.IsValid())
+	{
+		return;
+	}
+
+	switch (MenuType)
+	{
+	case EDC1CustomizeMenu::Head:
+		CustomizeViewModel->SetSkinColor(InColor);
+		break;
+	case EDC1CustomizeMenu::Hair:
+		CustomizeViewModel->SetHairColor(InColor);
+		break;
+	case EDC1CustomizeMenu::Eye:
+		CustomizeViewModel->SetEyeColor(InColor);
+		break;
+	}
 }

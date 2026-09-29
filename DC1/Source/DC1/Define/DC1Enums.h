@@ -30,6 +30,7 @@ enum class EDC1CustomizeMenu : uint8
 {
 	Head = 0,
 	Hair = 1,
+	Eye = 2,
 };
 
 // TECH SLOT STATE

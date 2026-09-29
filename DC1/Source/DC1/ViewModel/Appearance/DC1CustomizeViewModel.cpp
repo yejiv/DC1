@@ -58,6 +58,12 @@ void UDC1CustomizeViewModel::SetHead(const FGameplayTag& InTag)
 	ApplyPreview();
 }
 
+void UDC1CustomizeViewModel::SetEye(const FGameplayTag& InTag)
+{
+	PendingAppearance.EyeTag = InTag;
+	ApplyPreview();
+}
+
 void UDC1CustomizeViewModel::SetHairColor(const FLinearColor& InColor)
 {
 	PendingAppearance.HairColor = InColor;
@@ -67,6 +73,12 @@ void UDC1CustomizeViewModel::SetHairColor(const FLinearColor& InColor)
 void UDC1CustomizeViewModel::SetSkinColor(const FLinearColor& InColor)
 {
 	PendingAppearance.SkinColor = InColor;
+	ApplyPreview();
+}
+
+void UDC1CustomizeViewModel::SetEyeColor(const FLinearColor& InColor)
+{
+	PendingAppearance.EyeColor = InColor;
 	ApplyPreview();
 }
 

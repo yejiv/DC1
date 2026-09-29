@@ -69,6 +69,11 @@ void UDC1CustomizeWidget::SetupMenuButtons()
 		MenuButtons.Add(HairMenuButton);
 	}
 
+	if (true == ::IsValid(EyeMenuButton))
+	{
+		MenuButtons.Add(EyeMenuButton);
+	}
+
 	for (const TObjectPtr<UDC1CustomizeMenuButton>& Button : MenuButtons)
 	{
 		Button->OnClickedDelegate.AddWeakLambda(this, [this, Button]()

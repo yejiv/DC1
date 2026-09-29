@@ -13,6 +13,7 @@ class UDC1CustomizeIcon;
 class UDC1CustomizeViewModel;
 class UDC1ColorWheel;
 class UDC1CustomizeColorButton;
+struct FDC1AppearanceData;
 
 /**
  * ContentSwitcher의 한 페이지(Head 또는 Hair). 레지스트리를 순회해서 IconContainer에
@@ -45,6 +46,10 @@ protected:
 
 private:
 	FGameplayTag		MakePartTag(int32 Index);
+
+	// MenuType(Head/Hair/Eye)에 맞는 값을 Data에서 읽거나 VM에 반영 - 색상 관련 함수들이 공유하는 3-way 분기
+	FLinearColor		GetColorFromData(const FDC1AppearanceData& Data) const;
+	void					ApplyColorToViewModel(const FLinearColor& InColor);
 
 private:
 	// 이 패널이 Head 페이지인지 Hair 페이지인지
