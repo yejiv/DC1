@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -40,6 +40,10 @@ public:
 protected:
 	void HandleDragEnded();
 
+	/** 분류 버튼 클릭 - 플레이어 인벤토리 일회성 정렬 요청 */
+	UFUNCTION()
+	void HandleSortButtonClicked();
+
 protected:
 	// 상단 바 제목 텍스트 (상자 패널과 톤을 맞추기 위한 레이블, 상시 "Inventory" 고정 표시)
 	UPROPERTY(meta = (BindWidget))
@@ -58,13 +62,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Inventory|Drag")
 	TSubclassOf<UDC1InventorySlotWidget> DragSlotWidgetClass;
 
-	/** 드래그 복제본이 마우스를 따라가는 보간 속도 (클수록 빠르게 따라붙음) */
+	// 드래그 복제본이 마우스를 따라가는 속도 (클수록 빠르게 따라붙음)
 	UPROPERTY(EditAnywhere, Category = "Inventory|Drag")
 	float DragFollowSpeed = 15.0f;
 
 private:
-	// 드래그 복제 Slot 크기 (기존 100x100의 80%)
-	static constexpr float DragSlotSize = 80.0f;
+	// 드래그 복제 Slot 배율 (원본 슬롯 크기 대비, 0.8 = 80%)
+	static constexpr float DragSlotScale = 0.8f;
 
 	// 드래그 복제 Slot 위젯 (드래그 세션 자체는 ViewModel이 공유 상태로 관리)
 	UPROPERTY()

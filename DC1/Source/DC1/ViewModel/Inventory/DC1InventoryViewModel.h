@@ -3,15 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "ViewModel/DC1ViewModelBase.h"
 #include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1Enums.h"
 #include "DC1InventoryViewModel.generated.h"
 
 // Forward Declarations
 class UDC1PlayerInventoryComponent;
 class UDC1ChestInventoryComponent;
+class UDC1ValuableInventoryComponent;
 
 // 특정 슬롯 갱신 이벤트
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotUIUpdated, int32);
@@ -19,13 +21,19 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotUIUpdated, int32);
 // 드래그 세션 종료 이벤트 (드래그를 시작한 위젯이 시각 복제본을 정리할 수 있도록 알림)
 DECLARE_MULTICAST_DELEGATE(FOnDragEnded);
 
+/**
+ * 인벤토리 ViewModel (UDC1ViewModelSubsystem에서 생성/관리)
+ * 플레이어 / 귀중품 인벤토리는 BindSource(PlayerState)에서 연결, 상자는 상자 화면이 열릴 때 SetTargetChest로 연결
+ * LocalPlayer당 인스턴스 1개 - ESC 인벤토리와 상자 화면이 공유하여 드래그 세션이 상호 연동됨
+ */
 UCLASS()
-class DC1_API UDC1InventoryViewModel : public UObject
+class DC1_API UDC1InventoryViewModel : public UDC1ViewModelBase
 {
 	GENERATED_BODY()
 
 public:
-	UDC1InventoryViewModel();
+	virtual void BindSource(ADC1PlayerState* InPlayerState) override;
+	virtual void ClearSource() override;
 
 public:
 	/** 전체 인벤토리 갱신 이벤트 (레거시, 사용 권장 안함) */
@@ -40,13 +48,16 @@ public:
 	/** 상자 전용: 특정 슬롯만 갱신하는 이벤트 */
 	FOnSlotUIUpdated OnChestSlotUIUpdated;
 
+	/** 귀중품 전용: 전체 갱신 이벤트 (슬롯 수가 바뀔 수 있으므로 위젯은 칸 수를 다시 맞춰야 함) */
+	FOnInventoryUpdated OnValuableInventoryUpdated;
+
+	/** 귀중품 전용: 특정 슬롯만 갱신하는 이벤트 */
+	FOnSlotUIUpdated OnValuableSlotUIUpdated;
+
 	/** 드래그 세션 종료 이벤트 */
 	FOnDragEnded OnDragEnded;
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetPlayerInventoryComponent(UDC1PlayerInventoryComponent* InPlayerComp);
-
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetTargetChest(UDC1ChestInventoryComponent* InChestComp);
 
@@ -77,6 +88,20 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
 	const FDC1InventorySlotInfo& GetChestSlot(int32 Index) const;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetValuableSlotCount() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	const FDC1InventorySlotInfo& GetValuableSlot(int32 Index) const;
+
+	/** 출처(플레이어/귀중품/상자)에 맞는 슬롯 조회 - 슬롯 위젯 공용 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	const FDC1InventorySlotInfo& GetSlotBySource(EDC1InventorySource InSource, int32 Index) const;
+
+	/** 출처(플레이어/귀중품/상자)에 맞는 슬롯 개수 조회 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
+	int32 GetSlotCountBySource(EDC1InventorySource InSource) const;
+
 	const FDC1ItemRow* GetItemData(FName ItemID) const;
 
 	/**
@@ -99,7 +124,19 @@ public:
 	void RequestMoveChestItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void RequestTransferItem(bool bToChest, int32 FromSlotIndex, int32 MoveCount = -1);
+	void RequestTransferItem(bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount = -1);
+
+	/** 플레이어 인벤토리 일회성 정렬 요청 (분류 버튼) */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortInventory();
+
+	/** 현재 열린 상자 일회성 정렬 요청 (분류 버튼) */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortChest();
+
+	/** 귀중품 일회성 정렬 요청 (귀중품 탭 분류 버튼) */
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestSortValuables();
 
 public:
 	// ========================
@@ -143,10 +180,18 @@ public:
 	void RequestDrop(bool bTargetIsChest, int32 TargetSlotIndex);
 
 protected:
+	/** 플레이어 인벤토리 구독 교체 (BindSource/ClearSource 전용) */
+	void SetPlayerInventoryComponent(UDC1PlayerInventoryComponent* InPlayerComp);
+
+	/** 귀중품 인벤토리 구독 교체 (BindSource/ClearSource 전용) */
+	void SetValuableInventoryComponent(UDC1ValuableInventoryComponent* InValuableComp);
+
 	void HandleInventoryUpdated();
 	void HandleSlotUpdated(int32 SlotIndex);
 	void HandleChestInventoryUpdated();
 	void HandleChestSlotUpdated(int32 SlotIndex);
+	void HandleValuableInventoryUpdated();
+	void HandleValuableSlotUpdated(int32 SlotIndex);
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
@@ -155,6 +200,10 @@ protected:
 	/** 현재 열린 상자 컴포넌트 (nullptr이면 없음) */
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<UDC1ChestInventoryComponent> TargetChestComp;
+
+	/** 귀중품 인벤토리 (드래그 불가, 정렬만 가능) */
+	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
+	TObjectPtr<UDC1ValuableInventoryComponent> ValuableInventoryComp;
 
 private:
 	bool bIsDragging = false;

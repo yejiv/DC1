@@ -7,6 +7,14 @@
 #include "Define/DC1Enums.h"
 #include "DC1PalTypes.generated.h"
 
+// 팰이 있는 곳
+UENUM()
+enum class EDC1PalContainer : uint8
+{
+	Party,
+	Box,
+};
+
 /**
  *
  *

@@ -287,4 +287,8 @@ public:
 	// UI 위력 표기 배율. SkillChart.Power 가 원작 ÷ 5
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Skill", meta = (ClampMin = "0.0"))
 	float											SkillPowerDisplayScale = { 5.f };
+
+	// 상자 회복. 초당 최대 체력 비율 (기절 포함)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Box", meta = (ClampMin = "0.0"))
+	float											BoxHealRatePerSecond = { 0.01f };
 };

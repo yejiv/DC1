@@ -4,12 +4,36 @@
 #include "Component/Inventory/DC1InventoryComponentBase.h"
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/DC1ChestInventoryComponent.h"
-#include "System/DC1AssetManager.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
-#include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Component/Inventory/DC1ValuableInventoryComponent.h"
+#include "Define/DC1ItemHelper.h"
+#include "Character/Player/DC1PlayerState.h"
 
-UDC1InventoryViewModel::UDC1InventoryViewModel()
+void UDC1InventoryViewModel::BindSource(ADC1PlayerState* InPlayerState)
 {
+	if (false == ::IsValid(InPlayerState))
+	{
+		return;
+	}
+
+	SetPlayerInventoryComponent(InPlayerState->GetInventoryComponent());
+	SetValuableInventoryComponent(InPlayerState->GetValuableInventoryComponent());
+
+	// 위젯 생성 순서와 무관하도록 구독 직후 현재 값을 한 번 알림
+	OnInventoryUpdated.Broadcast();
+	OnValuableInventoryUpdated.Broadcast();
+}
+
+void UDC1InventoryViewModel::ClearSource()
+{
+	// 드래그 중이었다면 세션을 닫아 드래그 복제본이 남지 않게 함
+	if (bIsDragging)
+	{
+		EndDrag();
+	}
+
+	SetTargetChest(nullptr);
+	SetPlayerInventoryComponent(nullptr);
+	SetValuableInventoryComponent(nullptr);
 }
 
 const TArray<FDC1InventorySlotInfo>& UDC1InventoryViewModel::GetInventorySlots() const
@@ -108,6 +132,71 @@ void UDC1InventoryViewModel::SetPlayerInventoryComponent(UDC1PlayerInventoryComp
 	}
 }
 
+int32 UDC1InventoryViewModel::GetValuableSlotCount() const
+{
+	if (ValuableInventoryComp)
+	{
+		return ValuableInventoryComp->GetSlots().Num();
+	}
+	return 0;
+}
+
+const FDC1InventorySlotInfo& UDC1InventoryViewModel::GetValuableSlot(int32 Index) const
+{
+	static const FDC1InventorySlotInfo EmptySlot;
+
+	if (!ValuableInventoryComp)
+	{
+		return EmptySlot;
+	}
+
+	return ValuableInventoryComp->GetSlot(Index);
+}
+
+const FDC1InventorySlotInfo& UDC1InventoryViewModel::GetSlotBySource(EDC1InventorySource InSource, int32 Index) const
+{
+	switch (InSource)
+	{
+	case EDC1InventorySource::Valuable:
+		return GetValuableSlot(Index);
+	case EDC1InventorySource::Chest:
+		return GetChestSlot(Index);
+	default:
+		return GetSlot(Index);
+	}
+}
+
+int32 UDC1InventoryViewModel::GetSlotCountBySource(EDC1InventorySource InSource) const
+{
+	switch (InSource)
+	{
+	case EDC1InventorySource::Valuable:
+		return GetValuableSlotCount();
+	case EDC1InventorySource::Chest:
+		return GetChestSlotCount();
+	default:
+		return GetSlotCount();
+	}
+}
+
+void UDC1InventoryViewModel::SetValuableInventoryComponent(UDC1ValuableInventoryComponent* InValuableComp)
+{
+	// 기존 Component 이벤트 구독 해제
+	if (ValuableInventoryComp)
+	{
+		ValuableInventoryComp->OnInventoryUpdated.RemoveAll(this);
+		ValuableInventoryComp->OnSlotChanged.RemoveAll(this);
+	}
+
+	ValuableInventoryComp = InValuableComp;
+
+	if (ValuableInventoryComp)
+	{
+		ValuableInventoryComp->OnSlotChanged.AddUObject(this, &UDC1InventoryViewModel::HandleValuableSlotUpdated);
+		ValuableInventoryComp->OnInventoryUpdated.AddUObject(this, &UDC1InventoryViewModel::HandleValuableInventoryUpdated);
+	}
+}
+
 void UDC1InventoryViewModel::SetTargetChest(UDC1ChestInventoryComponent* InChestComp)
 {
 	// 기존 Component 이벤트 구독 해제
@@ -155,26 +244,20 @@ void UDC1InventoryViewModel::HandleChestSlotUpdated(int32 SlotIndex)
 	OnChestSlotUIUpdated.Broadcast(SlotIndex);
 }
 
+void UDC1InventoryViewModel::HandleValuableInventoryUpdated()
+{
+	OnValuableInventoryUpdated.Broadcast();
+}
+
+void UDC1InventoryViewModel::HandleValuableSlotUpdated(int32 SlotIndex)
+{
+	OnValuableSlotUIUpdated.Broadcast(SlotIndex);
+}
+
 const FDC1ItemRow* UDC1InventoryViewModel::GetItemData(FName ItemID) const
 {
-	if (ItemID.IsNone())
-	{
-		return nullptr;
-	}
-
-	const UDC1DataTableData* DataTableAsset = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-	if (!IsValid(DataTableAsset))
-	{
-		return nullptr;
-	}
-
-	const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(DC1DataTableTags::DataTable_Item);
-	if (!IsValid(ItemDataTable))
-	{
-		return nullptr;
-	}
-
-	return ItemDataTable->FindRow<FDC1ItemRow>(ItemID, TEXT("GetItemData"));
+	// 행 이름이 아니라 ItemID 필드로 조회
+	return DC1ItemHelper::FindItemRow(ItemID);
 }
 
 void UDC1InventoryViewModel::RequestMoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
@@ -205,7 +288,7 @@ void UDC1InventoryViewModel::RequestMoveChestItem(int32 FromSlotIndex, int32 ToS
 	}
 }
 
-void UDC1InventoryViewModel::RequestTransferItem(bool bToChest, int32 FromSlotIndex, int32 MoveCount /* = -1 */)
+void UDC1InventoryViewModel::RequestTransferItem(bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
 {
 	if (!MyInventoryComp || !TargetChestComp)
 	{
@@ -215,8 +298,40 @@ void UDC1InventoryViewModel::RequestTransferItem(bool bToChest, int32 FromSlotIn
 	UDC1PlayerInventoryComponent* PlayerInvComp = Cast<UDC1PlayerInventoryComponent>(MyInventoryComp);
 	if (PlayerInvComp)
 	{
-		PlayerInvComp->RequestTransferItem(TargetChestComp, bToChest, FromSlotIndex, MoveCount);
+		PlayerInvComp->RequestTransferItem(TargetChestComp, bToChest, FromSlotIndex, ToSlotIndex, MoveCount);
 	}
+}
+
+void UDC1InventoryViewModel::RequestSortInventory()
+{
+	if (!MyInventoryComp)
+	{
+		return;
+	}
+
+	MyInventoryComp->RequestSortInventory();
+}
+
+void UDC1InventoryViewModel::RequestSortChest()
+{
+	if (!MyInventoryComp || !TargetChestComp)
+	{
+		return;
+	}
+
+	// 상자는 소유자가 없어 직접 Server RPC를 보낼 수 없으므로 플레이어 인벤토리를 경유
+	MyInventoryComp->RequestSortChestItems(TargetChestComp);
+}
+
+void UDC1InventoryViewModel::RequestSortValuables()
+{
+	if (!MyInventoryComp)
+	{
+		return;
+	}
+
+	// 기존 패턴과 동일하게 플레이어 인벤토리의 Server RPC를 경유
+	MyInventoryComp->RequestSortValuables();
 }
 
 // ========================
@@ -266,8 +381,8 @@ void UDC1InventoryViewModel::RequestDrop(bool bTargetIsChest, int32 TargetSlotIn
 	}
 	else
 	{
-		// 플레이어 <-> 상자 이전 (bTargetIsChest가 곧 이동 방향)
-		RequestTransferItem(bTargetIsChest, DragSourceSlotIndex, DragStackCount);
+		// 플레이어 <-> 상자 이전 (bTargetIsChest가 곧 이동 방향, 드롭한 슬롯 기준으로 이동/병합/교환)
+		RequestTransferItem(bTargetIsChest, DragSourceSlotIndex, TargetSlotIndex, DragStackCount);
 	}
 
 	EndDrag();

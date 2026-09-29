@@ -11,6 +11,7 @@ class UDC1AbilitySystemComponent;
 class UDC1PlayerSet;
 class UDC1TechTreeComponent;
 class UDC1PlayerInventoryComponent;
+class UDC1ValuableInventoryComponent;
 class UDC1PalPartyComponent;
 class UDC1EquipComponent;
 
@@ -30,6 +31,7 @@ public:
 	virtual UAbilitySystemComponent*		GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
+	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 
@@ -49,6 +51,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 	TObjectPtr<UDC1PlayerInventoryComponent> InventoryComponent = { nullptr };
+
+	// 귀중품 전용 인벤토리. 가진 종류 수만큼만 칸이 생기고 무게에 포함되지 않는다
+	UPROPERTY(VisibleAnywhere, Category = "Inventory")
+	TObjectPtr<UDC1ValuableInventoryComponent> ValuableInventoryComponent = { nullptr };
 
 	// 잡은 팰 목록. 아이템 슬롯과 구조가 달라 따로 둔다
 	UPROPERTY(VisibleAnywhere, Category = "Pal")

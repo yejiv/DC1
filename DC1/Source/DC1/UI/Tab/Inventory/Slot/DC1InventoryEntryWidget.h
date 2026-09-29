@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "Define/DC1Enums.h"
 #include "DC1InventoryEntryWidget.generated.h"
 
 class USizeBox;
@@ -22,7 +23,7 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, bool bIsChestSlot = false);
+	void SetEntryData(const UDC1InventoryViewModel* ViewModel, int32 SlotIndex, EDC1InventorySource InSlotSource = EDC1InventorySource::Player);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void ClearEntry();

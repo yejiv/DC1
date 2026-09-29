@@ -72,6 +72,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	bool TryStoreItem(FName InItemID, int32 InCount = 1);
 
+	/** 귀중품은 상자에 보관 불가 */
+	virtual bool CanAcceptItem(FName InItemID) const override;
+
 	// ========================
 	// 멤버 변수
 	// ========================

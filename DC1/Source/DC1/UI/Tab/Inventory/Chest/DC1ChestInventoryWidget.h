@@ -46,6 +46,10 @@ protected:
 	void HandleChestInventoryUpdated();
 	void HandleDragEnded();
 
+	/** 분류 버튼 클릭 - 상자 일회성 정렬 요청 */
+	UFUNCTION()
+	void HandleSortButtonClicked();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> ChestNameText;
@@ -75,8 +79,8 @@ protected:
 	float DragFollowSpeed = 15.0f;
 
 private:
-	// 드래그 복제 Slot 크기 (기존 100x100의 80%)
-	static constexpr float DragSlotSize = 80.0f;
+	// 드래그 복제 Slot 배율 (원본 슬롯 크기 대비, 0.8 = 80%)
+	static constexpr float DragSlotScale = 0.8f;
 
 	// 드래그 복제 Slot 위젯 (드래그 세션 자체는 ViewModel이 공유 상태로 관리)
 	UPROPERTY()

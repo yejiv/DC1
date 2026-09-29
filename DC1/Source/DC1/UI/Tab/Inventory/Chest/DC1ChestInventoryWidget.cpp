@@ -1,47 +1,56 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UI/Tab/Inventory/DC1PlayerLootInventoryWidget.h"
-#include "UI/Tab/Inventory/DC1InventorySlotsWidget.h"
-#include "UI/Tab/Inventory/DC1InventorySlotWidget.h"
+#include "UI/Tab/Inventory/Chest/DC1ChestInventoryWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotsWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 
+#include "Component/Inventory/DC1ChestInventoryComponent.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 
 #include "Components/TextBlock.h"
+#include "Components/Button.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
-UDC1PlayerLootInventoryWidget::UDC1PlayerLootInventoryWidget(const FObjectInitializer& ObjectInitializer)
+UDC1ChestInventoryWidget::UDC1ChestInventoryWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
-void UDC1PlayerLootInventoryWidget::NativeConstruct()
+void UDC1ChestInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// 상단 바 레이블은 상자 패널과 달리 데이터에 따라 바뀌지 않는 고정 텍스트
-	if (ChestNameText)
+	if (IsValid(SortButton))
 	{
-		ChestNameText->SetText(FText::FromString(TEXT("Inventory")));
+		SortButton->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleSortButtonClicked);
 	}
 
 	if (CachedViewModel)
 	{
-		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1PlayerLootInventoryWidget::HandleDragEnded);
+		CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1ChestInventoryWidget::HandleChestInventoryUpdated);
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1ChestInventoryWidget::HandleDragEnded);
 	}
 }
 
-void UDC1PlayerLootInventoryWidget::NativeDestruct()
+void UDC1ChestInventoryWidget::NativeDestruct()
 {
 	if (CachedViewModel)
 	{
+		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
 		CachedViewModel->OnDragEnded.RemoveAll(this);
+	}
+
+	if (IsValid(SortButton))
+	{
+		SortButton->OnClicked.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
 }
 
-void UDC1PlayerLootInventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UDC1ChestInventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
@@ -50,6 +59,7 @@ void UDC1PlayerLootInventoryWidget::NativeTick(const FGeometry& MyGeometry, floa
 	if (IsValid(DraggedSlotCopy))
 	{
 		FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
+		const float DragSlotSize = ChestSlotsWidget->GetSlotSize() * DragSlotScale;
 		FVector2D TargetPos = MousePosition - FVector2D(DragSlotSize / 2.0f, DragSlotSize / 2.0f);
 
 		DraggedSlotCurrentPosition = FMath::Vector2DInterpTo(DraggedSlotCurrentPosition, TargetPos, InDeltaTime, DragFollowSpeed);
@@ -59,10 +69,11 @@ void UDC1PlayerLootInventoryWidget::NativeTick(const FGeometry& MyGeometry, floa
 	}
 }
 
-void UDC1PlayerLootInventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
+void UDC1ChestInventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 {
 	if (CachedViewModel)
 	{
+		CachedViewModel->OnChestInventoryUpdated.RemoveAll(this);
 		CachedViewModel->OnDragEnded.RemoveAll(this);
 	}
 
@@ -70,16 +81,45 @@ void UDC1PlayerLootInventoryWidget::SetViewModel(UDC1InventoryViewModel* NewView
 
 	if (CachedViewModel)
 	{
-		if (PlayerSlotsWidget)
+		if (ChestSlotsWidget)
 		{
-			PlayerSlotsWidget->SetInventoryViewModel(CachedViewModel);
+			ChestSlotsWidget->SetInventoryViewModel(CachedViewModel);
 		}
 
-		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1PlayerLootInventoryWidget::HandleDragEnded);
+		CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1ChestInventoryWidget::HandleChestInventoryUpdated);
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1ChestInventoryWidget::HandleDragEnded);
 	}
 }
 
-void UDC1PlayerLootInventoryWidget::HandleDragEnded()
+void UDC1ChestInventoryWidget::OpenChest(UDC1ChestInventoryComponent* InChestComp)
+{
+	CachedChestComp = InChestComp;
+
+	if (CachedViewModel)
+	{
+		CachedViewModel->SetTargetChest(InChestComp);
+	}
+
+	// 상자 종류별 칸 수에 맞춰 슬롯 그리드 크기 조정
+	// TotalCapacity는 복제되지 않아 클라이언트에서 기본값이 나오므로, 복제되는 Slots의 개수를 기준으로 한다
+	if (ChestSlotsWidget && IsValid(InChestComp))
+	{
+		ChestSlotsWidget->RefreshSlotCapacity(InChestComp->GetSlots().Num());
+	}
+
+	HandleChestInventoryUpdated();
+}
+
+void UDC1ChestInventoryWidget::HandleChestInventoryUpdated()
+{
+	if (ChestNameText)
+	{
+		const FName ChestName = IsValid(CachedChestComp) ? CachedChestComp->GetChestName() : NAME_None;
+		ChestNameText->SetText(FText::FromName(ChestName));
+	}
+}
+
+void UDC1ChestInventoryWidget::HandleDragEnded()
 {
 	// 이 위젯에서 시작한 드래그였다면 시각 복제본을 정리 (다른 위젯에서 시작한 드래그라면 DraggedSlotCopy가 nullptr이라 무시됨)
 	if (IsValid(DraggedSlotCopy))
@@ -89,11 +129,11 @@ void UDC1PlayerLootInventoryWidget::HandleDragEnded()
 	}
 }
 
-FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+FReply UDC1ChestInventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 
-	if (!IsValid(PlayerSlotsWidget) || !IsValid(CachedViewModel))
+	if (!IsValid(ChestSlotsWidget) || !IsValid(CachedViewModel))
 	{
 		return FReply::Unhandled();
 	}
@@ -103,8 +143,8 @@ FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& I
 		return FReply::Unhandled();
 	}
 
-	int32 ClickedSlotIndex = PlayerSlotsWidget->CalculateSlotIndex(InMouseEvent.GetScreenSpacePosition());
-	int32 TotalSlots = CachedViewModel->GetSlotCount();
+	int32 ClickedSlotIndex = ChestSlotsWidget->CalculateSlotIndex(InMouseEvent.GetScreenSpacePosition());
+	int32 TotalSlots = CachedViewModel->GetChestSlotCount();
 	if (ClickedSlotIndex < 0 || ClickedSlotIndex >= TotalSlots)
 	{
 		return FReply::Unhandled();
@@ -112,7 +152,7 @@ FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& I
 
 	if (!CachedViewModel->IsDragging())
 	{
-		const FDC1InventorySlotInfo& InventorySlotInfo = CachedViewModel->GetSlot(ClickedSlotIndex);
+		const FDC1InventorySlotInfo& InventorySlotInfo = CachedViewModel->GetChestSlot(ClickedSlotIndex);
 		if (InventorySlotInfo.IsEmpty())
 		{
 			return FReply::Unhandled();
@@ -134,7 +174,7 @@ FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& I
 			return FReply::Unhandled();
 		}
 
-		CachedViewModel->BeginDrag(false, ClickedSlotIndex, DragStackCount);
+		CachedViewModel->BeginDrag(true, ClickedSlotIndex, DragStackCount);
 
 		// Slot 위젯 복제
 		if (!DraggedSlotCopy)
@@ -142,8 +182,9 @@ FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& I
 			DraggedSlotCopy = CreateWidget<UDC1InventorySlotWidget>(GetOwningPlayer(), DragSlotWidgetClass);
 			if (IsValid(DraggedSlotCopy))
 			{
-				// 복제본 초기화: 크기는 80x80 (기존 100x100의 80%)
-				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, false);
+				// 복제본 초기화: 크기는 원본 슬롯 크기 x DragSlotScale, 상자 슬롯 모드
+				const float DragSlotSize = ChestSlotsWidget->GetSlotSize() * DragSlotScale;
+				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, EDC1InventorySource::Chest);
 				DraggedSlotCopy->SetSlotData(CachedViewModel);
 
 				// Ctrl/Shift로 선택한 부분 개수를 표시 (원본 슬롯의 전체 개수가 아님)
@@ -170,9 +211,19 @@ FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& I
 	else
 	{
 		// 드래그 중 슬롯 클릭: 드롭 처리
-		// 드래그 시작이 상자였다면 ViewModel이 플레이어<->상자 이전으로 자동 라우팅함
-		CachedViewModel->RequestDrop(false, ClickedSlotIndex);
+		// 드래그 시작이 플레이어 인벤토리였다면 ViewModel이 플레이어<->상자 이전으로 자동 라우팅함
+		CachedViewModel->RequestDrop(true, ClickedSlotIndex);
 
 		return FReply::Handled();
 	}
+}
+
+void UDC1ChestInventoryWidget::HandleSortButtonClicked()
+{
+	if (false == IsValid(CachedViewModel))
+	{
+		return;
+	}
+
+	CachedViewModel->RequestSortChest();
 }

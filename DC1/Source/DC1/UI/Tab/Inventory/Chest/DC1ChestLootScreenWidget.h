@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "UI/Tab/DC1TabWidget.h"
 #include "DC1ChestLootScreenWidget.generated.h"
 
 class UDC1InventoryViewModel;
@@ -28,11 +29,11 @@ protected:
 	virtual void NativeOnDeactivated() override;
 
 public:
-	/** 이 화면을 열며 대상 상자를 지정한다. InViewModel은 플레이어 슬롯이 이미 구성되어 있어야 함 (PlayerController가 들고 있는 인스턴스 재사용) */
+	/** 이 화면을 열며 대상 상자를 지정한다. 인벤토리 VM은 VMSubsystem에서 가져와 두 패널에 공유한다 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void OpenChest(UDC1InventoryViewModel* InViewModel, UDC1ChestInventoryComponent* InChestComp);
+	void OpenChest(UDC1ChestInventoryComponent* InChestComp);
 
-	/** Esc 키로 화면을 닫는다 (DC1TabWidget과 동일한 관례) */
+	/** CloseKeys(기본 Esc, F)로 화면을 닫는다 (DC1TabWidget과 동일한 관례) */
 	virtual void HandleInputKey(const FKey& InKey) override;
 
 protected:
@@ -42,8 +43,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1ChestInventoryWidget> ChestPanel;
 
+	// 화면을 닫는 키 목록 (상호작용 키 F를 다시 눌러도 닫히도록 기본 포함)
 	UPROPERTY(EditAnywhere, Category = "Inventory")
-	FKey CloseKey = EKeys::Escape;
+	FDC1KeyList CloseKeys;
 
 private:
 	UPROPERTY()

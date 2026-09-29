@@ -2,6 +2,8 @@
 
 #include "Component/Inventory/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/DC1ChestInventoryComponent.h"
+#include "Component/Inventory/DC1ValuableInventoryComponent.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 #include "System/DC1AssetManager.h"
@@ -70,10 +72,10 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 		FText ItemName = Row->ItemName;
 	}
 
-	if (ItemDataTable->GetRowNames().Num() > 1)
+	// 행 이름이 아니라 ItemID 필드 기준 (행 이름은 ItemID와 다를 수 있음)
+	if (AllRows.Num() > 1 && nullptr != AllRows[1])
 	{
-		FName SecondItemID = ItemDataTable->GetRowNames()[1];
-		AddItem(SecondItemID, 1);	
+		AddItem(AllRows[1]->ItemID, 1);
 	}
 }
 
@@ -227,42 +229,6 @@ bool UDC1PlayerInventoryComponent::UnequipItem(int32 InEquipSlotIndex)
 }
 
 // ========================
-// 정렬 관련 함수 구현
-// ========================
-
-void UDC1PlayerInventoryComponent::SortInventory()
-{
-	// 서버에서만 실행
-	if (GetOwnerRole() != ROLE_Authority)
-	{
-		return;
-	}
-
-	// 간단한 정렬: 아이템을 앞쪽에 모음
-	TArray<FDC1InventorySlotInfo> SortedSlots;
-	SortedSlots.Reserve(Slots.Num());
-
-	// 아이템이 있는 슬롯 먼저
-	for (const FDC1InventorySlotInfo& Slot : Slots)
-	{
-		if (!Slot.IsEmpty())
-		{
-			SortedSlots.Add(Slot);
-		}
-	}
-
-	// 빈 슬롯을 뒤에 추가
-	while (SortedSlots.Num() < Slots.Num())
-	{
-		SortedSlots.Add(FDC1InventorySlotInfo());
-	}
-
-	Slots = SortedSlots;
-
-	OnInventoryUpdated_Internal();
-}
-
-// ========================
 // 보호 함수 구현
 // ========================
 
@@ -324,12 +290,6 @@ void UDC1PlayerInventoryComponent::OnInventoryUpdated_Internal()
 {
 	// 무게 재계산
 	CalculateWeight();
-
-	// 자동 정렬 활성화 시 정렬
-	if (bAutoSort && GetOwnerRole() == ROLE_Authority)
-	{
-		SortInventory();
-	}
 
 	// 부모 이벤트 브로드캐스트
 	Super::OnInventoryUpdated_Internal();
@@ -398,14 +358,19 @@ void UDC1PlayerInventoryComponent::Server_MoveChestItem_Implementation(UDC1Chest
 	InChestComp->MoveOrMergeSlot(FromSlotIndex, ToSlotIndex, MoveCount);
 }
 
-void UDC1PlayerInventoryComponent::RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount /* = -1 */)
+void UDC1PlayerInventoryComponent::RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
 {
-	Server_TransferItem(InChestComp, bToChest, FromSlotIndex, MoveCount);
+	Server_TransferItem(InChestComp, bToChest, FromSlotIndex, ToSlotIndex, MoveCount);
 }
 
-bool UDC1PlayerInventoryComponent::Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount)
+bool UDC1PlayerInventoryComponent::Server_TransferItem_Validate(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
 {
 	if (!IsValid(InChestComp))
+	{
+		return false;
+	}
+
+	if (FromSlotIndex < 0 || ToSlotIndex < 0)
 	{
 		return false;
 	}
@@ -418,7 +383,7 @@ bool UDC1PlayerInventoryComponent::Server_TransferItem_Validate(UDC1ChestInvento
 	return true;
 }
 
-void UDC1PlayerInventoryComponent::Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 MoveCount)
+void UDC1PlayerInventoryComponent::Server_TransferItem_Implementation(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount)
 {
 	if (!IsValid(InChestComp))
 	{
@@ -427,41 +392,109 @@ void UDC1PlayerInventoryComponent::Server_TransferItem_Implementation(UDC1ChestI
 
 	if (bToChest)
 	{
-		const FDC1InventorySlotInfo SourceSlot = GetSlot(FromSlotIndex);
-		if (SourceSlot.IsEmpty())
-		{
-			return;
-		}
-
+		// 꺼내기 전용 상자에는 넣을 수 없음
 		if (false == InChestComp->CanStoreItems())
 		{
 			return;
 		}
 
-		const int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
-
-		if (false == InChestComp->AddItem(SourceSlot.ItemID, ActualMoveCount))
-		{
-			return;
-		}
-
-		RemoveItem(FromSlotIndex, ActualMoveCount);
+		TransferSlotTo(InChestComp, FromSlotIndex, ToSlotIndex, MoveCount);
 	}
 	else
 	{
-		const FDC1InventorySlotInfo SourceSlot = InChestComp->GetSlot(FromSlotIndex);
-		if (SourceSlot.IsEmpty())
-		{
-			return;
-		}
-
-		const int32 ActualMoveCount = (MoveCount <= 0) ? SourceSlot.StackCount : FMath::Min(MoveCount, SourceSlot.StackCount);
-
-		if (false == AddItem(SourceSlot.ItemID, ActualMoveCount))
-		{
-			return;
-		}
-
-		InChestComp->RemoveItem(FromSlotIndex, ActualMoveCount);
+		// 꺼내기 전용 상자라면 교환으로 플레이어 아이템이 상자에 들어가는 것도 막음
+		InChestComp->TransferSlotTo(this, FromSlotIndex, ToSlotIndex, MoveCount, InChestComp->CanStoreItems());
 	}
+}
+
+// ========================
+// 분류 버튼 (일회성 정렬)
+// ========================
+
+void UDC1PlayerInventoryComponent::RequestSortInventory()
+{
+	Server_SortInventory();
+}
+
+bool UDC1PlayerInventoryComponent::Server_SortInventory_Validate()
+{
+	return true;
+}
+
+void UDC1PlayerInventoryComponent::Server_SortInventory_Implementation()
+{
+	SortSlots();
+}
+
+void UDC1PlayerInventoryComponent::RequestSortChestItems(UDC1ChestInventoryComponent* InChestComp)
+{
+	Server_SortChestItems(InChestComp);
+}
+
+bool UDC1PlayerInventoryComponent::Server_SortChestItems_Validate(UDC1ChestInventoryComponent* InChestComp)
+{
+	return IsValid(InChestComp);
+}
+
+void UDC1PlayerInventoryComponent::Server_SortChestItems_Implementation(UDC1ChestInventoryComponent* InChestComp)
+{
+	if (false == ::IsValid(InChestComp))
+	{
+		return;
+	}
+
+	InChestComp->SortSlots();
+}
+
+void UDC1PlayerInventoryComponent::RequestSortValuables()
+{
+	Server_SortValuables();
+}
+
+bool UDC1PlayerInventoryComponent::Server_SortValuables_Validate()
+{
+	return true;
+}
+
+void UDC1PlayerInventoryComponent::Server_SortValuables_Implementation()
+{
+	UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory();
+	if (false == ::IsValid(ValuableInventory))
+	{
+		return;
+	}
+
+	ValuableInventory->SortSlots();
+}
+
+// ========================
+// 귀중품 분기
+// ========================
+
+bool UDC1PlayerInventoryComponent::AddItem(FName InItemID, int32 InCount /* = 1 */)
+{
+	// 귀중품은 귀중품 인벤토리로 넘김 (서버 권한 검사는 넘겨받은 쪽에서 수행)
+	if (true == IsValuableItem(InItemID))
+	{
+		UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory();
+		return ::IsValid(ValuableInventory) && ValuableInventory->AddItem(InItemID, InCount);
+	}
+
+	return Super::AddItem(InItemID, InCount);
+}
+
+bool UDC1PlayerInventoryComponent::CanAcceptItem(FName InItemID) const
+{
+	return false == IsValuableItem(InItemID);
+}
+
+UDC1ValuableInventoryComponent* UDC1PlayerInventoryComponent::FindValuableInventory() const
+{
+	const ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetOwner());
+	if (false == ::IsValid(OwnerPlayerState))
+	{
+		return nullptr;
+	}
+
+	return OwnerPlayerState->GetValuableInventoryComponent();
 }

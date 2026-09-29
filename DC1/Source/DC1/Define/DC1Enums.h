@@ -106,6 +106,15 @@ enum class EDC1ItemRarity : uint8
 
 };
 
+// 인벤토리 슬롯 데이터 출처 (슬롯 위젯이 어느 인벤토리를 표시하는지)
+UENUM(BlueprintType)
+enum class EDC1InventorySource : uint8
+{
+	Player = 0 UMETA(DisplayName = "Player"),
+	Valuable = 1 UMETA(DisplayName = "Valuable"),
+	Chest = 2 UMETA(DisplayName = "Chest"),
+};
+
 // 팰 속성
 UENUM(BlueprintType)
 enum class EDC1PalElement : uint8
