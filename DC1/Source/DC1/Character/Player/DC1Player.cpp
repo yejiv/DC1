@@ -16,6 +16,7 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
+#include "Component/Appearance/DC1AppearanceComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 
@@ -191,6 +192,7 @@ void ADC1Player::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	InitializeAbilitySystem();
 	InitializeEquip();
+	InitializeAppearance();
 }
 
 void ADC1Player::UnPossessed()
@@ -204,6 +206,7 @@ void ADC1Player::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 	InitializeAbilitySystem();
 	InitializeEquip();
+	InitializeAppearance();
 }
 
 void ADC1Player::NotifyControllerChanged()
@@ -221,6 +224,17 @@ void ADC1Player::InitializeEquip()
 	if (UDC1EquipComponent* Equip = PS->GetEquipComponent())
 	{
 		Equip->HandlePawnReady();
+	}
+}
+
+void ADC1Player::InitializeAppearance()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS)) return;
+
+	if (UDC1AppearanceComponent* Appearance = PS->GetAppearanceComponent())
+	{
+		Appearance->SetParts(GetMesh(), HairMesh, HeadMesh);
 	}
 }
 

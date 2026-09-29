@@ -2,3 +2,33 @@
 
 
 #include "Data/DA/Appearance/DC1AppearanceRegistryData.h"
+
+const FDC1AppearancePartDef* UDC1AppearanceRegistryData::GetHairData(const FGameplayTag& Tag) const
+{
+	if (false == Tag.IsValid())
+	{
+		return Hairs.Find(DefaultHairTag);
+	}
+
+	return Hairs.Find(Tag);
+}
+
+const FDC1AppearancePartDef* UDC1AppearanceRegistryData::GetHeadData(const FGameplayTag& Tag) const
+{
+	if (false == Tag.IsValid())
+	{
+		return Heads.Find(DefaultHeadTag);
+	}
+
+	return Heads.Find(Tag);
+}
+
+const FDC1AppearanceMaterialDef* UDC1AppearanceRegistryData::GetEyeData(const FGameplayTag& Tag) const
+{
+	if (false == Tag.IsValid())
+	{
+		return Eyes.Find(DefaultEyeTag);
+	}
+
+	return Eyes.Find(Tag);
+}

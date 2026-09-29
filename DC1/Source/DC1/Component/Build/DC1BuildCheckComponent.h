@@ -29,7 +29,7 @@ struct FDC1BuildProbeData
 
 	// 건설이 가능한 Probe와 표면사이의 거리
 	UPROPERTY(EditDefaultsOnly)
-	float MaxTraceDistance = { 10.f };
+	float MaxTraceDistance = { 5.f };
 
 	// 모서리에서의 Probe 거리 비율. 1.f = 모서리에서 시작, 0.5f = 모서리에서 ( 반지름 * 0.5f ) 만큼 떨어짐
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0.1", ClampMax = "1.0"))
@@ -44,7 +44,7 @@ struct FDC1BuildProbeData
 	float MaxSurfaceAngle = { 30.f };
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 {
 	GENERATED_BODY()
@@ -94,8 +94,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
 	bool							IsAutoSnap = { false };
 
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Snap")
-	float							AutoSnapOverlapAllowableRatio = { 0.1f };
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Overlap")
+	float							SnapOverlapAllowableRatio = { 0.1f };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Overlap")
+	float							FreeOverlapAllowableRatio = { 0.005f };
 
 private:
 	bool							IsCheckSurface = { false };

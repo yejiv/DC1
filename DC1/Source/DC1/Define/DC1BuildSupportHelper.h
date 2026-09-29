@@ -2,14 +2,17 @@
 
 #include "CoreMinimal.h"
 
+struct FDC1BuildStructureLink;
 class ADC1BuildActor;
 
-// 지지 판정 - 연결 저장 X , 소켓 Probe 질의로 판정
 namespace DC1BuildSupportHelper
 {
-	// 설치 판정 ( 클라 프리뷰 / 서버 재검사 )
-	bool HasSupport(ADC1BuildActor* InBuild);
+	// 설치 시점 링크 생성
+	void	BuildLinks(const ADC1BuildActor* InBuild, TArray<FDC1BuildStructureLink>& OutLinks);
 
-	// 연쇄 파괴 판정 ( 서버 ) - InOrigin 포함, 파괴될 전체 집합 / 집합만 Out, 직접 파괴 X
-	void CollectCascade(ADC1BuildActor* InOrigin, TSet<ADC1BuildActor*>& OutDoomed);
+	// 해당 건축물이 지지를 받고 있는가
+	bool	HasSupport(ADC1BuildActor* InBuild);
+
+	// 해당 건축물에 연결되어있는 건축물들 가져오기 - 파괴 전에 호출
+	void	GatherNeighbors(const ADC1BuildActor* InBuild, TArray<ADC1BuildActor*>& OutNeighbors);
 }

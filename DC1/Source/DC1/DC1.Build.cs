@@ -29,6 +29,9 @@ public class DC1 : ModuleRules
             "NavigationSystem",
             "StateTreeModule",
             "GameplayStateTreeModule",
+
+			"GeometryCollectionEngine",
+			"Niagara",
 		});
 
 		// Uncomment if you are using Slate UI

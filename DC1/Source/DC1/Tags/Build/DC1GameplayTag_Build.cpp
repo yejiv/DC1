@@ -2,7 +2,9 @@
 
 namespace DC1BuildTags
 {
-#pragma region Snap Point
+#pragma region Link Point
+	UE_DEFINE_GAMEPLAY_TAG(Build_Link_Surface, "Build.Link.Surface");
+
 	UE_DEFINE_GAMEPLAY_TAG(Build_Snap_Side_Default, "Build.Snap.Side.Default");
 
 	UE_DEFINE_GAMEPLAY_TAG(Build_Snap_Side_Floor, "Build.Snap.Side.Floor");

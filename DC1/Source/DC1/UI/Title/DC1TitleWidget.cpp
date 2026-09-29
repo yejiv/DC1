@@ -11,6 +11,9 @@
 
 #include "Controller/DC1LogoController.h"
 
+#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
+
 void UDC1TitleWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -44,7 +47,7 @@ void UDC1TitleWidget::NativeConstruct()
 
 void UDC1TitleWidget::OnStartClicked()
 {
-	if (false == ::IsValid(MenuSwitcher)) 
+	if (false == ::IsValid(MenuSwitcher))
 	{
 		return;
 	}

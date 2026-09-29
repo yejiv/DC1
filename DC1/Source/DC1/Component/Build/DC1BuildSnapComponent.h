@@ -8,7 +8,7 @@
 
 struct FDC1BuildSnapSocket;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class DC1_API UDC1BuildSnapComponent : public USceneComponent
 {
 	GENERATED_BODY()

@@ -18,10 +18,19 @@ enum class EDC1FadeType : uint8
 UENUM()
 enum class EDC1TabButtonState : uint8
 {
-	Default = 0, 
+	Default = 0,
 	Inactive = 1,		// Tab 비활성화
 	Active = 2,			// Tab 활성화
 	Disable = 3,		// Tab 활성화 불가
+};
+
+// CUSTOMIZE MENU (좌측 메뉴 버튼 구분용. 부모 위젯이 버튼 배열/게임시작 버튼을 이 값으로 관리)
+UENUM(BlueprintType)
+enum class EDC1CustomizeMenu : uint8
+{
+	Head = 0,
+	Hair = 1,
+	Eye = 2,
 };
 
 // TECH SLOT STATE
@@ -63,6 +72,7 @@ enum class EDC1BuildState : uint8
 	Preview = 1 UMETA(DisplayName = "Preview"),				// 배치 미리보기 ( 로컬 )
 	Construction = 2 UMETA(DisplayName = "Construction"),	// 설치 및 건설 진행 중 ( 서버 )
 	Completed = 3 UMETA(DisplayName = "Completed"),			// 건설 완료 ( 서버 )
+	Destorying = 4 UMETA(DisplayName = "Destroying"),		// 파괴 연출 중 ( 서버 -> 복제 )
 };
 
 UENUM(BlueprintType)

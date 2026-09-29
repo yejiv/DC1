@@ -4,7 +4,9 @@
 
 namespace DC1BuildTags
 {
-#pragma region Snap Point
+#pragma region Link Point
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Link_Surface);			// 바닥 or 지붕 표면과 연결
+
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side_Default);	// 단순 건축물 ( 옆면만 스냅 )
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Snap_Side_Floor);		// 바닥끼리 스냅

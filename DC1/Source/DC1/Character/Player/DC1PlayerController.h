@@ -7,6 +7,7 @@
 #include "GameplayTagContainer.h"
 #include "InputActionValue.h"
 #include "GameplayTagContainer.h"
+#include "Data/Appearance/DC1AppearanceTypes.h"	// Debug : 외형 테스트용. Debug region 제거 시 같이 제거
 #include "DC1PlayerController.generated.h"
 
 class ADC1Player;
@@ -34,8 +35,9 @@ public:
 	// State Build 관리, InteractComp Tick 관리
 	void SetBuildMode(bool Enabled);
 
-	UDC1BuildPlacementComponent* GetBuildPlacementComponent() const { return BuildPlacementComponent; }
-	UDC1InteractComponent* GetInteractComponent() const { return InteractComponent; }
+	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
+	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
+
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -103,6 +105,15 @@ private:
 	// 어트리뷰트 변경은 서버 권한이므로 RPC로 넘긴다
 	UFUNCTION(Server, Reliable)
 	void ServerDebugDamageSelf(float InDamageAmount);
+
+	// NumPad3~6 : 외형 적용 테스트용. 로컬 폰에만 적용한다 (복제 X)
+	void OnDebugNextHair();
+	void OnDebugNextHead();
+	void OnDebugRandomHairColor();
+	void OnDebugRandomSkinColor();
+	void ApplyDebugAppearance();
+
+	FDC1AppearanceData		DebugAppearance;
 #pragma endregion
 
 

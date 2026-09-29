@@ -83,6 +83,8 @@ private:
 	void	InitializeAbilitySystem();
 	// 장착 컴포넌트는 PlayerState 소유다. 폰이 준비됐음을 알려 스폰/부착을 트리거한다
 	void	InitializeEquip();
+	// AppearanceComponent도 PlayerState 소유. 폰의 3개 메쉬를 등록(SetParts)한다
+	void	InitializeAppearance();
 	void	Clear_Resource();
 
 private:
