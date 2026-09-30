@@ -44,7 +44,7 @@ struct FDC1BuildProbeData
 	float MaxSurfaceAngle = { 30.f };
 };
 
-UCLASS()
+UCLASS(ClassGroup = (DC1), meta = (BlueprintSpawnableComponent))
 class DC1_API UDC1BuildCheckComponent : public UBoxComponent
 {
 	GENERATED_BODY()
@@ -58,10 +58,14 @@ public:
 	const FVector					GetCheckBoxCenter() const  { return GetComponentLocation(); }
 	const bool						GetIsAutoSnap() const { return IsAutoSnap; }
 	const float						GetSnappedRotationStep() const { return SnappedRotationStep; }
+	const bool						GetIsPillar() const { return IsPillar; }
+
 	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
 public:
 	bool							CheckCanBuild();
+	bool							CheckOverlap();
+
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
 
 	float							ComputeOverlapRatio(const FTransform& InOtherTransform, const FVector& InOtherExtent) const;
@@ -73,7 +77,9 @@ public:
 
 private:
 	bool							CheckSurface();
-	bool							CheckOverlap();
+
+	// LandScape와 겹쳤을때
+	bool							IsGroundPenetrated(const UPrimitiveComponent* InGroundComp) const;
 
 	float							ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const;
 	FVector							GetAttachLocalOffset() const;				
@@ -81,6 +87,9 @@ private:
 	// 프로브 격자 루프 / 1개의 결과를 InOnProbe로 넘김
 	bool							ForEachProbe(TFunctionRef<bool(const FHitResult& InHit, bool InIsHit)> InOnProbe) const;
 	float							ComputeSurfaceAngle(const FHitResult& InHit) const;
+
+	float							GetAllowableGroundDepth() const;
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	FDC1BuildProbeData				BuildProbeData;
@@ -99,6 +108,14 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Overlap")
 	float							FreeOverlapAllowableRatio = { 0.005f };
+
+	// true = 기둥 박스 ( Landscape 겹침 허용 + 필수 ) / false = 메인 박스 ( Landscape 겹침 불가 )
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Overlap")
+	bool							IsPillar = { false };
+
+	// 메인 박스가 Landscape에 ( 박스 높이 * 이 비율 )까지 파묻히는 건 접촉으로 보고 통과 ( 기둥 박스는 사용 안 함 )
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Overlap", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float							GroundContactRatio = { 0.05f };
 
 private:
 	bool							IsCheckSurface = { false };

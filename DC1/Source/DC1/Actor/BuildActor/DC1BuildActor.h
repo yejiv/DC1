@@ -75,6 +75,8 @@ public:
 
 	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
 
+	const bool						GetHasPillar() const { return HasPillar; }
+
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
@@ -86,12 +88,10 @@ public:
 	const bool						GetBuildSocketsToWorld(TArray<FDC1BuildSnapSocket>& OutSockets) const;
 	void							SetCheckSurface(bool InIsCheckSurface);
 
-	const bool						CheckOverlapFromRatio(const ADC1BuildActor* InOther, float InAllowableRatio) const;
 	const bool						GetCheckBoxWorld(FDC1BuildBox& OutBox) const;
 	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 	
 	const bool						GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const;
-	
 
 protected:
 	virtual void					BeginPlay() override;
@@ -131,67 +131,69 @@ private:
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UStaticMeshComponent>		BuildMesh = { nullptr };
+	TObjectPtr<UStaticMeshComponent>				BuildMesh = { nullptr };
 
 	UPROPERTY(Replicated)
-	FDC1BuildActorData						BuildActorData;
+	FDC1BuildActorData								BuildActorData;
 
 	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_BuildState)
-	EDC1BuildState							BuildState = { EDC1BuildState::Default };
+	EDC1BuildState									BuildState = { EDC1BuildState::Default };
 
 	UPROPERTY()
 	TArray<TObjectPtr<UMaterialInstanceDynamic>>	BuildMIDs;
 
 private:
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UDC1BuildCheckComponent>		BuildCheckComp = { nullptr };
+	TObjectPtr<UDC1BuildCheckComponent>				BuildCheckComp = { nullptr };
+
+	UPROPERTY()
+	TArray<TObjectPtr<UDC1BuildCheckComponent>>		SubBuildCheckComps;
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UDC1BuildSnapComponent>		BuildSnapComp = { nullptr };
+	TObjectPtr<UDC1BuildSnapComponent>				BuildSnapComp = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UDC1BuildLinkComponent>		BuildLinkComp = { nullptr };
+	TObjectPtr<UDC1BuildLinkComponent>				BuildLinkComp = { nullptr };
 
 	// 이 건물 위에 다른 건물을 지을 수 있는가 ex) 바닥 = true
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
-	bool									IsBuildableSurface = { false };
+	bool											IsBuildableSurface = { false };
 
 	// Preview, Constrction 상태에서 사용할 Materail
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
-	TObjectPtr<UMaterialInterface>			TranslucentMaterial = { nullptr };
+	TObjectPtr<UMaterialInterface>					TranslucentMaterial = { nullptr };
 
 	// 해체 모드 조준 시 사용할 Material
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
-	TObjectPtr<UMaterialInterface>			DismantleOverlayMaterial = { nullptr };
+	TObjectPtr<UMaterialInterface>					DismantleOverlayMaterial = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
-	FLinearColor							PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f) };
+	FLinearColor									PreviewValidColor = { FLinearColor(0.f, 0.5f, 0.f, 1.f) };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
-	FLinearColor							PreviewInvalidColor = { FLinearColor::Red };
+	FLinearColor									PreviewInvalidColor = { FLinearColor::Red };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Support")
-	EDC1BuildSupportRule					SupportRule = { EDC1BuildSupportRule::Surface };
+	EDC1BuildSupportRule							SupportRule = { EDC1BuildSupportRule::Surface };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Support", meta = (ClampMin = "1", EditCondition = "SupportRule == EDC1BuildSupportRule::RoofSpan"))
-	int32									RoofSupportSpan = { 2 };
+	int32											RoofSupportSpan = { 2 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TSubclassOf<ADC1BuildDestroyActor>		DestroyClass;
+	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TObjectPtr<UGeometryCollection>			DestroyGeometryCollection = { nullptr };
+	TObjectPtr<UGeometryCollection>					DestroyGeometryCollection = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TObjectPtr<UNiagaraSystem>				DestroyDustFX = { nullptr };
+	TObjectPtr<UNiagaraSystem>						DestroyDustFX = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy", meta = (ClampMin = "0.2"))
-	float									DestroySequenceDuration = { 0.2f };
+	float											DestroySequenceDuration = { 0.2f };
 
 private:
-	bool									CanBuilding = { false };
-
-	FTimerHandle							DestroySequenceTimer;
-
-	bool									IsDestroying = { false };
+	bool											CanBuilding = { false };
+	FTimerHandle									DestroySequenceTimer;
+	bool											IsDestroying = { false };
+	bool											HasPillar = { false };
 };

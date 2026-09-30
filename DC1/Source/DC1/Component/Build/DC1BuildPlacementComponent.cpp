@@ -78,6 +78,8 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 		FHitResult SurfaceHit;
 		TraceSurface(SurfaceHit);
 
+		SurfaceHit.ImpactPoint.Z += ComputePillarHeightOffset();
+
 		PreviewActor->SetActorTransform(PreviewActor->ComputePlaceTransform(SurfaceHit, GetPlaceYaw()));
 	}
 
@@ -707,4 +709,27 @@ ADC1BuildActor* UDC1BuildPlacementComponent::TraceBuildActorByView(FVector& OutR
 	}
 
 	return Target;
+}
+
+float UDC1BuildPlacementComponent::ComputePillarHeightOffset() const
+{
+	if (false == ::IsValid(PreviewActor) || false == PreviewActor->GetHasPillar())
+	{
+		return 0.f;
+	}
+
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return 0.f;
+	}
+
+	float Pitch = FMath::Min(FRotator::NormalizeAxis(Pawn->GetController()->GetControlRotation().Pitch), MaxPillarDegree);
+
+	if (Pitch < 0.f)
+	{
+		return 0.f;
+	}
+
+	return PlaceDistance * FMath::Tan(FMath::DegreesToRadians(Pitch));
 }

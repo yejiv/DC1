@@ -32,6 +32,8 @@ public class DC1 : ModuleRules
 
 			"GeometryCollectionEngine",
 			"Niagara",
+
+			"Landscape",
 		});
 
 		// Uncomment if you are using Slate UI

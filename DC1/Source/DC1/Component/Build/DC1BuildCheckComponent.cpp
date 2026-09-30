@@ -12,6 +12,10 @@
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
 
+#include "Engine/OverlapResult.h"
+#include "CollisionShape.h"
+#include "LandscapeProxy.h"
+
 namespace 
 {
 	float ComputeBoxOverlapRatio(const FTransform& InA, const FVector& InExtentA, const FTransform& InB, const FVector& InExtentB)
@@ -45,6 +49,27 @@ namespace
 		const float MinVolume = FMath::Min(MyVolume, OtherVolume);
 
 		return (MinVolume > KINDA_SMALL_NUMBER) ? (OverlapVolume / MinVolume) : 0.f;
+	}
+
+	bool GetOtherBox(const UPrimitiveComponent* InOtherComp, FDC1BuildBox& OutBox)
+	{
+		if (false == ::IsValid(InOtherComp))
+		{
+			return false;
+		}
+
+		const ADC1BuildActor* OtherBuild = Cast<ADC1BuildActor>(InOtherComp->GetOwner());
+		if (true == ::IsValid(OtherBuild))
+		{
+			return OtherBuild->GetCheckBoxWorld(OutBox);
+		}
+		else
+		{
+			OutBox.Transform = FTransform(InOtherComp->Bounds.Origin);
+			OutBox.Extent = InOtherComp->Bounds.BoxExtent;
+		}
+
+		return true;
 	}
 }
 
@@ -205,42 +230,73 @@ bool UDC1BuildCheckComponent::CheckSurface()
 
 bool UDC1BuildCheckComponent::CheckOverlap()
 {
-	TArray<UPrimitiveComponent*> OverlapComps;
-	this->GetOverlappingComponents(OverlapComps);
-
+	const UWorld* World = GetWorld();
 	const ADC1BuildActor* MyBuild = GetOwner<ADC1BuildActor>();
-	if (false == ::IsValid(MyBuild))
+	if (false == ::IsValid(World) || false == ::IsValid(MyBuild))
 	{
 		return false;
 	}
 
-	for (const UPrimitiveComponent* OverlapComp: OverlapComps)
+	TArray<FOverlapResult> Overlaps;
+	FComponentQueryParams Params;
+	Params.AddIgnoredActor(MyBuild);
+
+	World->ComponentOverlapMulti(Overlaps, this, GetComponentLocation(), GetComponentQuat(), Params);
+
+	const float AllowableRatio = MyBuild->GetIsAutoSnap() ? SnapOverlapAllowableRatio : FreeOverlapAllowableRatio;
+
+	bool IsOnGround = false;
+
+	for (const FOverlapResult& Overlap : Overlaps)
 	{
-		const AActor* OtherActor = OverlapComp->GetOwner();
-		if (OtherActor == GetOwner())
+		const UPrimitiveComponent* OtherComp = Overlap.GetComponent();
+		if (false == ::IsValid(OtherComp))
 		{
 			continue;
 		}
 
-		// 살짝 겹치는 건 정상. 판정은 액터로, 측정은 체크박스로
-		const ADC1BuildActor* OtherBuild = Cast<ADC1BuildActor>(OtherActor);
-		
-		if (false == ::IsValid(OtherBuild))
+		if (true == ::IsValid(Cast<ALandscapeProxy>(OtherComp->GetOwner())))
 		{
-			continue;
+			if (true == IsPillar)
+			{
+				IsOnGround = true;
+				continue;
+			}
+			else
+			{
+				if (true == IsGroundPenetrated(OtherComp))
+				{
+					return false;
+				}
+
+				continue;
+			}
 		}
 
-		const float AllowableRatio = IsAutoSnap ? SnapOverlapAllowableRatio : FreeOverlapAllowableRatio;
-
-		if (true == MyBuild->CheckOverlapFromRatio(OtherBuild, AllowableRatio))
+		FDC1BuildBox OtherBox;
+		if (true == GetOtherBox(OtherComp, OtherBox))
 		{
-			continue;
+			float OverlapRatio = ComputeOverlapRatio(OtherBox.Transform, OtherBox.Extent);
+
+			if (OverlapRatio > AllowableRatio)
+			{
+				return false;
+			}
 		}
-		
-		return false;
 	}
 
-	return true;
+	return (false == IsPillar) || IsOnGround;
+}
+
+bool UDC1BuildCheckComponent::IsGroundPenetrated(const UPrimitiveComponent* InGroundComp) const
+{
+	// LandScape 판정 용 가상 위치로 이동 후 확인
+
+	const float AllowableDepth = GetAllowableGroundDepth();
+
+	const FVector RaisedLocation = GetComponentLocation() + (GetUpVector() * AllowableDepth);
+
+	return InGroundComp->OverlapComponent(RaisedLocation, GetComponentQuat(), FCollisionShape::MakeBox(GetScaledBoxExtent()));
 }
 
 float UDC1BuildCheckComponent::ComputeProbeAxisOffset(int32 InIndex, int32 InCount, float InExtent) const
@@ -295,7 +351,7 @@ bool UDC1BuildCheckComponent::ForEachProbe(TFunctionRef<bool(const FHitResult& I
 
 	const FVector TraceDirection = IsDown ? (GetUpVector() * -1.f) : (GetUpVector());
 
-	const float StartOffset = -2.f;
+	const float StartOffset = (GetAllowableGroundDepth() + 2.f) * -1.f;
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
@@ -340,4 +396,9 @@ float UDC1BuildCheckComponent::ComputeSurfaceAngle(const FHitResult& InHit) cons
 	const float NormalDot = FMath::Clamp(FVector::DotProduct(InHit.ImpactNormal, ExpectedNormal), -1.f, 1.f);
 	
 	return FMath::RadiansToDegrees(FMath::Acos(NormalDot));
+}
+
+float UDC1BuildCheckComponent::GetAllowableGroundDepth() const
+{
+	return (GetScaledBoxExtent().Z * 2.f) * GroundContactRatio;
 }

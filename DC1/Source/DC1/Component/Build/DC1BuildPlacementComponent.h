@@ -82,6 +82,7 @@ private:
 
 	ADC1BuildActor*		TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const;
 
+	float				ComputePillarHeightOffset() const;
 
 private:
 	// 배치 거리
@@ -106,6 +107,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapAimInflate = { 30.f };
+
+	UPROPERTY(EditAnywhere, Category = "Build|Placement")
+	float		MaxPillarDegree = { 60.f };
 
 private:
 	UPROPERTY()

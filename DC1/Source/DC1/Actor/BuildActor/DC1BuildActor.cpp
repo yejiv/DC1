@@ -81,22 +81,8 @@ void ADC1BuildActor::SetCheckSurface(bool InIsCheckSurface)
 {
 	if (true == ::IsValid(BuildCheckComp))
 	{
-		BuildCheckComp->SetCheckSurface(InIsCheckSurface);
+		BuildCheckComp->SetCheckSurface(InIsCheckSurface || HasPillar);
 	}
-}
-
-const bool ADC1BuildActor::CheckOverlapFromRatio(const ADC1BuildActor* InOther, float InAllowableRatio) const
-{
-	if (false == ::IsValid(InOther) || false == ::IsValid(BuildCheckComp) || false == ::IsValid(InOther->BuildCheckComp))
-	{
-		return false;
-	}
-
-	const UDC1BuildCheckComponent* OtherCheckComp = InOther->BuildCheckComp;
-
-	const float Ratio = BuildCheckComp->ComputeOverlapRatio(OtherCheckComp->GetComponentTransform(), OtherCheckComp->GetScaledBoxExtent());
-
-	return Ratio <= InAllowableRatio;
 }
 
 const bool ADC1BuildActor::GetCheckBoxWorld(FDC1BuildBox& OutBox) const
@@ -141,6 +127,17 @@ void ADC1BuildActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	for (UActorComponent* Comp : GetComponents())
+	{
+		UDC1BuildCheckComponent* CheckComp = Cast<UDC1BuildCheckComponent>(Comp);
+		if (true == ::IsValid(CheckComp) && CheckComp != BuildCheckComp)
+		{
+			SubBuildCheckComps.Add(CheckComp);
+
+			HasPillar |= CheckComp->GetIsPillar();
+		}
+	}
+
 	if (true == HasAuthority() && false == BuildActorData.BuildTag.IsValid())
 	{
 		BuildState = EDC1BuildState::Completed;
@@ -244,7 +241,14 @@ void ADC1BuildActor::SetDismantleHighlight(bool InIsHighlighted)
 
 bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 {
-	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this);
+	bool IsSubCheck = true;
+
+	for (UDC1BuildCheckComponent* SubCheck : SubBuildCheckComps)
+	{
+		IsSubCheck &= (SubCheck->CheckOverlap());
+	}
+
+	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this);
 
 	if (CanBuilding != CurrentCanBuilding)
 	{
