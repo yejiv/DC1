@@ -28,6 +28,10 @@ public:
 public:
 	int32			GetCapacity() const;
 	int32			GetBoxCapacity() const;
+	int32			GetBaseCapacity() const;
+
+	// 거점이 없으면 ③ 을 막는다
+	bool			HasBase() const;
 
 	// false = 빈 칸
 	bool			GetSlotInfo(EDC1PalContainer InContainer, int32 InSlotIndex, FDC1PalBoxSlotInfo& OutSlotInfo) const;

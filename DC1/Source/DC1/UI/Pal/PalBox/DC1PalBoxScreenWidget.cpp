@@ -178,6 +178,7 @@ void UDC1PalBoxScreenWidget::BindViewModel()
 	PalBoxViewModel->OnPickChanged.AddUObject(this, &ThisClass::HandlePickChanged);
 
 	Storage->OnSlotHovered.AddUObject(this, &ThisClass::HandleStorageSlotHovered);
+	BaseStorage->OnSlotHovered.AddUObject(this, &ThisClass::HandleBaseSlotHovered);
 
 	CreateSlots();
 	HandlePalsChanged();
@@ -186,6 +187,7 @@ void UDC1PalBoxScreenWidget::BindViewModel()
 void UDC1PalBoxScreenWidget::UnbindViewModel()
 {
 	Storage->OnSlotHovered.RemoveAll(this);
+	BaseStorage->OnSlotHovered.RemoveAll(this);
 
 	if (false == PalBoxViewModel.IsValid())
 	{
@@ -200,6 +202,7 @@ void UDC1PalBoxScreenWidget::UnbindViewModel()
 void UDC1PalBoxScreenWidget::CreateSlots()
 {
 	Storage->CreateSlots(PalBoxViewModel->GetBoxCapacity());
+	BaseStorage->CreateSlots(PalBoxViewModel->GetBaseCapacity());
 
 	const int32 Capacity = PalBoxViewModel->GetCapacity();
 	if (SlotWidgets.Num() == Capacity || nullptr == SlotWidgetClass)
@@ -247,23 +250,23 @@ void UDC1PalBoxScreenWidget::RefreshSlots()
 	}
 }
 
-void UDC1PalBoxScreenWidget::RefreshStorage()
+void UDC1PalBoxScreenWidget::RefreshStorage(UDC1PalBoxStorageWidget* InStorage, EDC1PalContainer InContainer)
 {
 	if (false == PalBoxViewModel.IsValid())
 	{
 		return;
 	}
 
-	for (int32 Index = 0; Index < Storage->GetSlotWidgets().Num(); ++Index)
+	for (int32 Index = 0; Index < InStorage->GetSlotWidgets().Num(); ++Index)
 	{
 		FDC1PalBoxSlotInfo SlotInfo;
-		if (true == PalBoxViewModel->GetSlotInfo(EDC1PalContainer::Box, Index, SlotInfo))
+		if (true == PalBoxViewModel->GetSlotInfo(InContainer, Index, SlotInfo))
 		{
-			Storage->SetSlotInfo(Index, SlotInfo);
+			InStorage->SetSlotInfo(Index, SlotInfo);
 		}
 		else
 		{
-			Storage->SetEmpty(Index);
+			InStorage->SetEmpty(Index);
 		}
 	}
 }
@@ -293,14 +296,29 @@ bool UDC1PalBoxScreenWidget::FindSlotAt(const FVector2D& InScreenPosition, EDC1P
 		}
 	}
 
-	const TArray<TObjectPtr<UDC1PalBoxStorageSlotWidget>>& StorageSlots = Storage->GetSlotWidgets();
-	for (int32 Index = 0; Index < StorageSlots.Num(); ++Index)
+	const TPair<const UDC1PalBoxStorageWidget*, EDC1PalContainer> Storages[] =
 	{
-		if (true == StorageSlots[Index]->GetCachedGeometry().IsUnderLocation(InScreenPosition))
+		{ Storage, EDC1PalContainer::Box },
+		{ BaseStorage, EDC1PalContainer::Base },
+	};
+
+	for (const TPair<const UDC1PalBoxStorageWidget*, EDC1PalContainer>& Pair : Storages)
+	{
+		// 거점이 없으면 ③ 은 칸이 아니다
+		if (false == Pair.Key->GetIsEnabled())
 		{
-			OutContainer = EDC1PalContainer::Box;
-			OutSlotIndex = Index;
-			return true;
+			continue;
+		}
+
+		const TArray<TObjectPtr<UDC1PalBoxStorageSlotWidget>>& StorageSlots = Pair.Key->GetSlotWidgets();
+		for (int32 Index = 0; Index < StorageSlots.Num(); ++Index)
+		{
+			if (true == StorageSlots[Index]->GetCachedGeometry().IsUnderLocation(InScreenPosition))
+			{
+				OutContainer = Pair.Value;
+				OutSlotIndex = Index;
+				return true;
+			}
 		}
 	}
 
@@ -310,7 +328,9 @@ bool UDC1PalBoxScreenWidget::FindSlotAt(const FVector2D& InScreenPosition, EDC1P
 void UDC1PalBoxScreenWidget::HandlePalsChanged()
 {
 	RefreshSlots();
-	RefreshStorage();
+	RefreshStorage(Storage, EDC1PalContainer::Box);
+	RefreshStorage(BaseStorage, EDC1PalContainer::Base);
+	BaseStorage->SetIsEnabled(true == PalBoxViewModel.IsValid() && true == PalBoxViewModel->HasBase());
 	RefreshDetail();
 }
 
@@ -359,6 +379,13 @@ void UDC1PalBoxScreenWidget::HandleSlotHovered(int32 InSlotIndex)
 void UDC1PalBoxScreenWidget::HandleStorageSlotHovered(int32 InSlotIndex)
 {
 	HoveredContainer = EDC1PalContainer::Box;
+	HoveredSlot = InSlotIndex;
+	RefreshDetail();
+}
+
+void UDC1PalBoxScreenWidget::HandleBaseSlotHovered(int32 InSlotIndex)
+{
+	HoveredContainer = EDC1PalContainer::Base;
 	HoveredSlot = InSlotIndex;
 	RefreshDetail();
 }

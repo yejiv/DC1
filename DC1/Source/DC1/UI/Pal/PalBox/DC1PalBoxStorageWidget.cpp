@@ -4,7 +4,18 @@
 
 #include "UI/Pal/PalBox/DC1PalBoxStorageSlotWidget.h"
 
+#include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
+
+void UDC1PalBoxStorageWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	if (nullptr != Text_Title && false == Title.IsEmpty())
+	{
+		Text_Title->SetText(Title);
+	}
+}
 
 void UDC1PalBoxStorageWidget::CreateSlots(int32 InCapacity)
 {

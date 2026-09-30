@@ -314,7 +314,7 @@ EStateTreeRunStatus FDC1PalWanderTask::EnterState(FStateTreeExecutionContext& Co
 	}
 
 	FNavLocation Destination;
-	if (false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), PalData->WanderRadius, Destination))
+	if (false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), AIController->GetWanderRadius(), Destination))
 	{
 		return EStateTreeRunStatus::Failed;
 	}

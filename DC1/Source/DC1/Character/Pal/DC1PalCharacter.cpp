@@ -2,6 +2,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Controller/DC1PalAIController.h"
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_PalPassive.h"
@@ -483,7 +484,7 @@ void ADC1PalCharacter::CancelCapture()
 	}
 }
 
-ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform)
+ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox)
 {
 	if (nullptr == InWorld || false == InInstance.IsValidPal())
 	{
@@ -522,6 +523,9 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	Pal->SpeciesTag = InInstance.SpeciesTag;
 	Pal->InstanceID = InInstance.PalID;
 	Pal->Team = EDC1Team::Player;
+
+	// OnPossess 가 이걸 보고 트리를 고르므로 FinishSpawning 전에
+	Pal->BasePalBox = InBasePalBox;
 
 	// 원본을 통째로 보관
 	Pal->PalInstance = InInstance;
