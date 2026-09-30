@@ -20,6 +20,10 @@ class UDC1BuildCheckComponent;
 class UDC1BuildSnapComponent;
 class UDC1BuildLinkComponent;
 
+class ADC1BuildDestroyActor;
+class UGeometryCollection;
+class UNiagaraSystem;
+
 // 머테리얼에서 사용할 파라미터 이름
 namespace DC1BuildMaterialParams
 {
@@ -119,6 +123,8 @@ protected:
 	void							SetMaterialTranslucentColor(const FLinearColor& InColor);
 
 	virtual void					ApplyState();
+	
+	void							PlayDestroyFX();
 
 private:
 	void							FinishDestroySequence();
@@ -171,7 +177,16 @@ private:
 	int32									RoofSupportSpan = { 2 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	float									DestroySequenceDuration = { 0.f };
+	TSubclassOf<ADC1BuildDestroyActor>		DestroyClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
+	TObjectPtr<UGeometryCollection>			DestroyGeometryCollection = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
+	TObjectPtr<UNiagaraSystem>				DestroyDustFX = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy", meta = (ClampMin = "0.2"))
+	float									DestroySequenceDuration = { 0.2f };
 
 private:
 	bool									CanBuilding = { false };

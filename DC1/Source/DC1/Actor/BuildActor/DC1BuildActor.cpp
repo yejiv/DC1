@@ -14,6 +14,11 @@
 
 #include "Net/UnrealNetwork.h"
 
+#include "Actor/BuildActor/Destroy/DC1BuildDestroyActor.h"
+#include "GeometryCollection/GeometryCollectionObject.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 // Sets default values
 ADC1BuildActor::ADC1BuildActor()
 {
@@ -185,8 +190,6 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 
 void ADC1BuildActor::BuildDestroy()
 {
-	// TODO Cost Return
-
 	Destroy();
 }
 
@@ -211,9 +214,11 @@ void ADC1BuildActor::BeginDestroySequence()
 		return;
 	}
 
+	// TODO Cost Return
+
 	IsDestroying = true;
 
-	// 연출 시작 ( Chaos ? )
+	SetState(EDC1BuildState::Destroying);
 
 	if (DestroySequenceDuration > 0.f)
 	{
@@ -303,7 +308,7 @@ void ADC1BuildActor::OnRep_BuildState()
 
 void ADC1BuildActor::SetState(EDC1BuildState InNewState)
 {
-	if (BuildState == InNewState)
+	if (BuildState == InNewState || BuildState == EDC1BuildState::Destroying)
 	{
 		return;
 	}
@@ -341,6 +346,43 @@ void ADC1BuildActor::ApplyState()
 
 		break;
 	}
+	case EDC1BuildState::Destroying:
+	{
+		SetActorTickEnabled(false);
+		PlayDestroyFX();
+		break;
+	}
+	}
+}
+
+void ADC1BuildActor::PlayDestroyFX()
+{
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(BuildMesh))
+	{
+		return;
+	}
+
+	BuildMesh->SetHiddenInGame(true);
+
+	if (true == ::IsValid(DestroyClass) && true == ::IsValid(DestroyGeometryCollection))
+	{
+		const FTransform SpawnTransform = BuildMesh->GetComponentTransform();
+		ADC1BuildDestroyActor* DestroyActor = GetWorld()->SpawnActorDeferred<ADC1BuildDestroyActor>(DestroyClass, SpawnTransform);
+		if (true == ::IsValid(DestroyActor))
+		{
+			DestroyActor->InitDestroy(DestroyGeometryCollection);
+			DestroyActor->FinishSpawning(SpawnTransform);
+		}
+	}
+
+	if (true == ::IsValid(DestroyDustFX))
+	{
+		UNiagaraComponent* Dust = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DestroyDustFX, BuildMesh->Bounds.Origin, GetActorRotation());
+		if (true == ::IsValid(Dust))
+		{
+			// Dust Setting 
+			// Dust->SetVariableVec3("Name", BuildMesh->Bounds.BoxExtent);
+		}
 	}
 }
 

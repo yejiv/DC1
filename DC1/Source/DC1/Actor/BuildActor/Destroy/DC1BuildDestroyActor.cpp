@@ -3,24 +3,40 @@
 
 #include "Actor/BuildActor/Destroy/DC1BuildDestroyActor.h"
 
-// Sets default values
+#include "GeometryCollection/GeometryCollectionComponent.h"
+#include "GeometryCollection/GeometryCollectionObject.h"
+
 ADC1BuildDestroyActor::ADC1BuildDestroyActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	bReplicates = false;
+
+	DestroyComp = CreateDefaultSubobject<UGeometryCollectionComponent>("DestroyComp");
+
+	RootComponent = DestroyComp;
 }
 
-// Called when the game starts or when spawned
 void ADC1BuildDestroyActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	SetLifeSpan(DestroyLifeTime);
+
+	if (false == ::IsValid(DestroyComp))
+	{
+		return;
+	}
+
+	DestroyComp->CrumbleActiveClusters();
 }
 
-// Called every frame
-void ADC1BuildDestroyActor::Tick(float DeltaTime)
+void ADC1BuildDestroyActor::InitDestroy(const UGeometryCollection* InCollection)
 {
-	Super::Tick(DeltaTime);
+	if (false == ::IsValid(DestroyComp) || false == ::IsValid(InCollection))
+	{
+		return;
+	}
 
+	DestroyComp->SetRestCollection(InCollection);
 }
