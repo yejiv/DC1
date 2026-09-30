@@ -85,7 +85,7 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	bool IsInRange = IsInBuildRange(PreviewActor, MaxDistance);
 
-	CanBuilding = PreviewActor->UpdatePreview(IsInRange);
+	CanBuilding = PreviewActor->UpdatePreview(IsInRange, GetOwner<APlayerController>()->PlayerState);
 }
 
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
@@ -217,7 +217,8 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	}
 
 	// 서버 검증 여유 수치
-	if (false == IsInBuildRange(NewBuild, MaxDistance, DistanceMarginFactor) || false == DC1BuildSupportHelper::HasSupport(NewBuild))
+	if (false == IsInBuildRange(NewBuild, MaxDistance, DistanceMarginFactor) || false == DC1BuildSupportHelper::HasSupport(NewBuild)
+		|| false == NewBuild->CanPlaceAt(GetOwner<APlayerController>()->PlayerState))
 	{
 		NewBuild->Destroy();
 		return;

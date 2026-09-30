@@ -242,9 +242,9 @@ void ADC1BuildActor::SetDismantleHighlight(bool InIsHighlighted)
 	BuildMesh->SetOverlayMaterial(OverlayMaterial);
 }
 
-bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
+bool ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuilder)
 {
-	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this);
+	const bool CurrentCanBuilding = BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this) && CanPlaceAt(InBuilder);
 
 	if (CanBuilding != CurrentCanBuilding)
 	{
