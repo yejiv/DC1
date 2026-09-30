@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,21 +6,31 @@
 #include "GameFramework/Actor.h"
 #include "DC1BuildDestroyActor.generated.h"
 
+class UGeometryCollection;
+class UGeometryCollectionComponent;
+
+/*
+직접 상속받아 사용하는 클래스가 아닌 파괴되는 시점에 교체할 클래스
+*/
+
 UCLASS()
 class DC1_API ADC1BuildDestroyActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ADC1BuildDestroyActor();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void	BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+public:
+	void			InitDestroy(const UGeometryCollection* InCollection);
 
+private:
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UGeometryCollectionComponent>	DestroyComp = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Destroy")
+	float										DestroyLifeTime = { 4.f };
 };

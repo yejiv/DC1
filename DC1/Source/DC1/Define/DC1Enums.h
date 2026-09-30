@@ -72,7 +72,7 @@ enum class EDC1BuildState : uint8
 	Preview = 1 UMETA(DisplayName = "Preview"),				// 배치 미리보기 ( 로컬 )
 	Construction = 2 UMETA(DisplayName = "Construction"),	// 설치 및 건설 진행 중 ( 서버 )
 	Completed = 3 UMETA(DisplayName = "Completed"),			// 건설 완료 ( 서버 )
-	Destorying = 4 UMETA(DisplayName = "Destroying"),		// 파괴 연출 중 ( 서버 -> 복제 )
+	Destroying = 4 UMETA(DisplayName = "Destroying"),		// 파괴 연출 중 ( 서버 -> 복제 )
 };
 
 UENUM(BlueprintType)

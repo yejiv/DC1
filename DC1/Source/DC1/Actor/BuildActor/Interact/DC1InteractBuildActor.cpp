@@ -149,7 +149,7 @@ void ADC1InteractBuildActor::ApplyState()
 		return;
 	}
 
-	ECollisionEnabled::Type EnabledType = BuildState == EDC1BuildState::Preview ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly;
+	ECollisionEnabled::Type EnabledType = (BuildState == EDC1BuildState::Preview || BuildState == EDC1BuildState::Destroying) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly;
 
 	InteractCollider->SetCollisionEnabled(EnabledType);
 
