@@ -40,7 +40,7 @@ private:
 	void			UnbindViewModel();
 	void			CreateSlots();
 	void			RefreshSlots();
-	void			RefreshStorage();
+	void			RefreshStorage(UDC1PalBoxStorageWidget* InStorage, EDC1PalContainer InContainer);
 	void			RefreshDetail();
 
 	// 마우스 아래 칸
@@ -50,6 +50,7 @@ private:
 	void			HandlePickChanged();
 	void			HandleSlotHovered(int32 InSlotIndex);
 	void			HandleStorageSlotHovered(int32 InSlotIndex);
+	void			HandleBaseSlotHovered(int32 InSlotIndex);
 
 private:
 	UPROPERTY(Transient, meta = (BindWidget))
@@ -57,6 +58,10 @@ private:
 
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1PalBoxStorageWidget>	Storage = { nullptr };
+
+	// ③ 거점에 있는 팰. 상자 패널을 그대로 쓴다
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UDC1PalBoxStorageWidget>	BaseStorage = { nullptr };
 
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1PalBoxDetailWidget>	Detail = { nullptr };

@@ -10,6 +10,7 @@
 #include "Data/Pal/DC1PalTypes.h"
 #include "DC1PalCharacter.generated.h"
 
+class ADC1PalBoxActor;
 class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
@@ -61,6 +62,9 @@ public:
 	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
 	const FGuid&						GetInstanceID() const { return InstanceID; }
 
+	// 거점 팰이면 소속 팰박스. 파트너·야생은 널. 서버 전용
+	ADC1PalBoxActor*					GetBasePalBox() const { return BasePalBox.Get(); }
+
 #pragma region Capture
 	float								GetHealthRatio() const;
 	float								GetCaptureRate() const;
@@ -71,7 +75,8 @@ public:
 	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지
 	void								CancelCapture();// BeginCapture 되돌리기
 
-	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform);
+	// InBasePalBox 가 있으면 거점 팰로 나온다
+	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox = nullptr);
 #pragma endregion
 
 	// 죽었다. 파티가 받아서 자동 회수한다. OnDeath의 맨 끝에서 발화한다
@@ -137,6 +142,8 @@ protected:
 
 	UPROPERTY(Transient)
 	FGuid InstanceID;
+
+	TWeakObjectPtr<ADC1PalBoxActor> BasePalBox;
 
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)

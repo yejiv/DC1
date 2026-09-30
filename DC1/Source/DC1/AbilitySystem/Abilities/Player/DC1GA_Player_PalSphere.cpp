@@ -35,6 +35,7 @@ void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle H
 		const UDC1PalPartyComponent* Party = PS->GetPalPartyComponent();
 		if (nullptr != Party && false == Party->CanAcceptPal())
 		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 			return;
 		}
 	}

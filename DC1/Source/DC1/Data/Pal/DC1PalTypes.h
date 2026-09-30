@@ -13,6 +13,7 @@ enum class EDC1PalContainer : uint8
 {
 	Party,
 	Box,
+	Base,
 };
 
 /**

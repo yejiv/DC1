@@ -9,6 +9,7 @@
 #include "DC1PalBoxStorageWidget.generated.h"
 
 class UUniformGridPanel;
+class UTextBlock;
 class UDC1PalBoxStorageSlotWidget;
 
 /**
@@ -29,12 +30,23 @@ public:
 public:
 	FOnPalBoxSlotHovered	OnSlotHovered;
 
+protected:
+	virtual void	NativePreConstruct() override;
+
 private:
 	void			HandleSlotHovered(int32 InSlotIndex);
 
 private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UUniformGridPanel>	SlotGrid = { nullptr };
+
+	// 헤더 제목. 상자와 거점이 같은 위젯을 써서 인스턴스마다 다르게 준다
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock>			Text_Title = { nullptr };
+
+	// 비우면 디자이너에 적힌 글자 그대로
+	UPROPERTY(EditAnywhere, Category = "PalBox")
+	FText							Title;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PalBox")
 	TSubclassOf<UDC1PalBoxStorageSlotWidget>	SlotWidgetClass;

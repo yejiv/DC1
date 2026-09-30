@@ -98,6 +98,16 @@ int32 UDC1PalBoxViewModel::GetBoxCapacity() const
 	return PalPartyComponent.IsValid() ? PalPartyComponent->GetBoxCapacity() : 0;
 }
 
+int32 UDC1PalBoxViewModel::GetBaseCapacity() const
+{
+	return PalPartyComponent.IsValid() ? PalPartyComponent->GetBaseCapacity() : 0;
+}
+
+bool UDC1PalBoxViewModel::HasBase() const
+{
+	return PalPartyComponent.IsValid() && PalPartyComponent->HasBase();
+}
+
 bool UDC1PalBoxViewModel::GetSlotInfo(EDC1PalContainer InContainer, int32 InSlotIndex, FDC1PalBoxSlotInfo& OutSlotInfo) const
 {
 	DC1PalBoxViewModel::FResolvedPal Resolved;

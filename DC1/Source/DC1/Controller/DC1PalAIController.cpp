@@ -2,6 +2,7 @@
 
 #include "Controller/DC1PalAIController.h"
 
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AI/DC1TeamTypes.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
@@ -17,6 +18,7 @@
 #include "Components/StateTreeAIComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "NavigationSystem.h"
 #include "StateTree.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -46,6 +48,30 @@ namespace DC1PalAIController
 		}
 
 		return false;
+	}
+
+	static AActor* FindClosestSensed(const TArray<TWeakObjectPtr<AActor>>& InCandidates, const TArray<TWeakObjectPtr<AActor>>& InSensedTargets, const FVector& InLocation)
+	{
+		AActor* Closest = nullptr;
+		float ClosestDistanceSq = TNumericLimits<float>::Max();
+
+		for (const TWeakObjectPtr<AActor>& Weak : InCandidates)
+		{
+			AActor* Candidate = Weak.Get();
+			if (false == IsSensed(InSensedTargets, Candidate))
+			{
+				continue;
+			}
+
+			const float DistanceSq = FVector::DistSquared(InLocation, Candidate->GetActorLocation());
+			if (DistanceSq < ClosestDistanceSq)
+			{
+				ClosestDistanceSq = DistanceSq;
+				Closest = Candidate;
+			}
+		}
+
+		return Closest;
 	}
 
 	static const UDC1GameplayAbility_PalSkill* FindSkillByTag(const UAbilitySystemComponent& ASC, const FGameplayTag& SkillTag)
@@ -111,9 +137,37 @@ void ADC1PalAIController::OnPossess(APawn* InPawn)
 		HomeLocation = InPawn->GetActorLocation();
 	}
 
+	// 거점 팰은 팰박스 기준으로 배회한다. 팰박스 자리는 NavMesh 가 비어 있을 수 있어 투영한다
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(InPawn);
+	const ADC1PalBoxActor* BasePalBox = IsValid(Pal) ? Pal->GetBasePalBox() : nullptr;
+	const UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	FNavLocation Projected;
+	if (nullptr != BasePalBox && nullptr != NavSystem
+		&& true == NavSystem->ProjectPointToNavigation(BasePalBox->GetActorLocation(), Projected, FVector(BasePalBox->GetBaseRadius())))
+	{
+		HomeLocation = Projected.Location;
+	}
+
 	ApplyPerceptionSettings();
 
 	TryStartBehavior();
+}
+
+float ADC1PalAIController::GetWanderRadius() const
+{
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	if (false == IsValid(Pal))
+	{
+		return 0.f;
+	}
+
+	if (const ADC1PalBoxActor* BasePalBox = Pal->GetBasePalBox())
+	{
+		return BasePalBox->GetBaseRadius();
+	}
+
+	const UDC1PalData* PalData = Pal->GetPalData();
+	return (nullptr != PalData) ? PalData->WanderRadius : 0.f;
 }
 
 void ADC1PalAIController::ApplyPerceptionSettings()
@@ -184,6 +238,13 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
+	// 거점 팰은 싸우지 않는다
+	if (const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(SelfPawn); nullptr != SelfPal && nullptr != SelfPal->GetBasePalBox())
+	{
+		SetCurrentTarget(nullptr);
+		return;
+	}
+
 	SensedTargets.RemoveAll([](const TWeakObjectPtr<AActor>& Weak)
 		{
 			return (false == Weak.IsValid());
@@ -191,13 +252,13 @@ void ADC1PalAIController::UpdateTarget()
 
 	const float Now = World->GetTimeSeconds();
 
-	// 한 번 때린 상대를 다시 보면 도발이 되살아난다
-	if (true == DC1PalAIController::IsSensed(SensedTargets, LastProvokedBy))
+	// 공격 중엔 표적을 안 바꿈
+	const UAbilitySystemComponent* SelfASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(SelfPawn);
+	if (true == IsValid(CurrentTarget) && nullptr != SelfASC && true == SelfASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking))
 	{
-		ProvokedTarget = LastProvokedBy;
+		return;
 	}
 
-	// Player 적
 	if (AActor* OwnerEnemy = GetFollowTargetEnemy())
 	{
 		SetCurrentTarget(OwnerEnemy);
@@ -205,12 +266,32 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	// 나를 떄린 적
-	if (true == DC1PalAIController::IsSensed(SensedTargets, ProvokedTarget))
+	const FVector SelfLocation = SelfPawn->GetActorLocation();
+
+	// 나를 때린 상대. 싸우던 상대가 안 보이면 때린 적 있는 다른 상대로 넘어간다.
+	// 도발 전이라도 때린 적 있는 상대가 다시 보이면 도발이 되살아난다
+	AActor* Opponent = (true == DC1PalAIController::IsSensed(SensedTargets, ProvokedTarget))
+		? ProvokedTarget.Get()
+		: DC1PalAIController::FindClosestSensed(Aggressors, SensedTargets, SelfLocation);
+
+	if (nullptr != Opponent)
 	{
-		SetCurrentTarget(ProvokedTarget);
+		ProvokedTarget = Opponent;
+		SetCurrentTarget(Opponent);
 		LastSeenTime = Now;
 		return;
+	}
+
+	// 도발된 동안엔 때린 적 없는 상대를 고르지 않는다. 기억으로 버틴다
+	if (true == IsProvoked())
+	{
+		if (false == DC1PalAIController::IsDead(ProvokedTarget) && ((Now - LastSeenTime) < ProvokeMemoryDuration))
+		{
+			SetCurrentTarget(ProvokedTarget);
+			return;
+		}
+
+		ProvokedTarget = nullptr;
 	}
 
 	// 잡고 있던 표적이 아직 보이면 안 바꾼다.
@@ -221,42 +302,10 @@ void ADC1PalAIController::UpdateTarget()
 	}
 
 	// 표적이 없을 때
-	const FVector SelfLocation = SelfPawn->GetActorLocation();
-
-	AActor* Closest = nullptr;
-	float ClosestDistanceSq = TNumericLimits<float>::Max();
-
-	for (const TWeakObjectPtr<AActor>& Weak : SensedTargets)
-	{
-		AActor* Candidate = Weak.Get();
-
-		if (true == DC1PalAIController::IsDead(Candidate))
-		{
-			continue;
-		}
-
-		const float DistanceSq = FVector::DistSquared(SelfLocation, Candidate->GetActorLocation());
-		if (DistanceSq < ClosestDistanceSq)
-		{
-			ClosestDistanceSq = DistanceSq;
-			Closest = Candidate;
-		}
-	}
-
-	if (nullptr != Closest)
+	if (AActor* Closest = DC1PalAIController::FindClosestSensed(SensedTargets, SensedTargets, SelfLocation))
 	{
 		SetCurrentTarget(Closest);
 		LastSeenTime = Now;
-		return;
-	}
-
-	// ---- 아무것도 안 보인다. 기억으로 버틴다 ----
-
-	if (true == IsValid(ProvokedTarget)
-		&& false == DC1PalAIController::IsDead(ProvokedTarget)
-		&& ((Now - LastSeenTime) < ProvokeMemoryDuration))
-	{
-		SetCurrentTarget(ProvokedTarget);
 		return;
 	}
 
@@ -267,7 +316,6 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	ProvokedTarget = nullptr;
 	SetCurrentTarget(nullptr);
 }
 
@@ -421,7 +469,7 @@ void ADC1PalAIController::ProvokeBy(AActor* InInstigator)
 	}
 
 	ProvokedTarget = InInstigator;
-	LastProvokedBy = InInstigator;
+	Aggressors.AddUnique(InInstigator);
 
 	// 맞을 때마다 기억 시간이 초기화된다
 	LastSeenTime = World->GetTimeSeconds();
@@ -444,7 +492,7 @@ void ADC1PalAIController::ClearTargetState()
 {
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
-	LastProvokedBy = nullptr;
+	Aggressors.Reset();
 
 	// SetCurrentTarget은 타겟이 이미 없으면 그냥 반환하므로 스킬은 따로 비운다
 	ClearSelectedSkill();
@@ -468,7 +516,15 @@ void ADC1PalAIController::ApplyStateTreeForTeam()
 		return;
 	}
 
-	UStateTree* Desired = (EDC1Team::Player == Pal->GetTeam()) ? PartnerStateTree : WildStateTree;
+	UStateTree* Desired = WildStateTree;
+	if (nullptr != Pal->GetBasePalBox())
+	{
+		Desired = BaseStateTree;
+	}
+	else if (EDC1Team::Player == Pal->GetTeam())
+	{
+		Desired = PartnerStateTree;
+	}
 
 	// BP에 안 넣었으면 컴포넌트에 이미 물려 있는 트리를 그대로 쓴다
 	if (nullptr == Desired)

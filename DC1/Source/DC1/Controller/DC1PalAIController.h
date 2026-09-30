@@ -73,8 +73,11 @@ public:
 	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
 	bool					UpdateFollowAnchor(float DeltaTime);
 
-	// 배회 기준점. 빙의 시점의 위치
+	// 배회 기준점. 빙의 시점의 위치, 거점 팰은 팰박스 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
+
+	// 배회 반경. 거점 팰은 거점 범위
+	float					GetWanderRadius() const;
 
 protected:
 	virtual void			BeginPlay() override;
@@ -103,6 +106,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TObjectPtr<UStateTree>	PartnerStateTree = { nullptr };
 
+	// 거점 팰. 진영은 Player 지만 주인을 따라가지 않는다
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	TObjectPtr<UStateTree>	BaseStateTree = { nullptr };
+
 	UPROPERTY(VisibleAnywhere, Category = "AI")
 	TObjectPtr<UStateTreeAIComponent> StateTreeComponent = { nullptr };
 
@@ -128,26 +135,25 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 	TObjectPtr<AActor>				CurrentTarget = { nullptr };
 
-	// 현재 감지 중인 적들. 죽으면 UpdateTarget에서 걸러짐.
+	// 현재 감지 중인 적들
 	TArray<TWeakObjectPtr<AActor>>	SensedTargets;
 
+	// 지금 싸울 상대
 	UPROPERTY()
 	TObjectPtr<AActor>				ProvokedTarget = { nullptr };
 
-	UPROPERTY()
-	TObjectPtr<AActor>				LastProvokedBy = { nullptr };
+	// 나를 때린 적 있는 상대
+	TArray<TWeakObjectPtr<AActor>>	Aggressors;
 
 	FGameplayTag					SelectedSkillTag;
 	FGameplayTag					SelectedActivationTag;
 
 	// 고른 줄의 복사본. 어빌리티가 발동 시점에 읽어간다.
-	// ProjectileClass 를 들고 있어서 UPROPERTY 로 잡아둔다
 	UPROPERTY()
 	FDC1PalSkillDef					SelectedSkillDef;
 	bool							bHasSelectedSkillDef = { false };
 
-	// 스킬별 마지막 사용 시각. 쿨타임 판정에 쓴다.
-	// 개체마다 따로여야 하므로 표가 아니라 컨트롤러가 들고 있다
+	// 스킬별 마지막 사용 시각. (쿨타임 판정)
 	TMap<FGameplayTag, float>		LastSkillUseTime;
 
 	float							SelectedMaxRange = { 0.f };
