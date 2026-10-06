@@ -7,7 +7,25 @@
 #include "Data/Pal/DC1PalTypes.h"
 #include "DC1PalSphere.generated.h"
 
+class UWidgetComponent;
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnPalCaptured, const FDC1PalInstance&);
+
+// 포획 게이지 표시값. 서버가 정하고 클라는 받아서 그림
+USTRUCT()
+struct FDC1CaptureDisplay
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int8					Stage = { INDEX_NONE };	//단계
+
+	UPROPERTY()
+	float					Chance = { 0.f };	//확률
+
+	UPROPERTY()
+	bool					bSuccess = { false };
+};
 
 /**
  *
@@ -32,7 +50,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Open")
 	TObjectPtr<UStaticMeshComponent>	BottomHalfMesh = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Capture")
+	TObjectPtr<UWidgetComponent>		CaptureWidgetComponent = { nullptr };
+
 protected:
+	virtual void			BeginPlay() override;
+
 	UFUNCTION()
 	void					OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
@@ -41,6 +64,14 @@ protected:
 	void					BeginShaking();	//판정 시작
 	void					OnShake(); //단계 판정
 	void					Resolve(bool bInSuccess);	//판정 후 정리
+
+	void					SetCaptureDisplay(int32 InStage, float InChance, bool bInSuccess);
+
+	UFUNCTION()
+	void					OnRep_CaptureDisplay();
+
+	// 던진 사람 화면에만 띄운다
+	void					RefreshCaptureWidget();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1.0"))
@@ -72,7 +103,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Open", meta = (ClampMin = "0.05"))
 	float					RiseDuration = { 0.25f };
 
+	// 성공 후 100% 를 보여주고 사라지기까지
+	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.1"))
+	float					SuccessHoldDuration = { 0.8f };
+
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
+	FDC1CaptureDisplay		CaptureDisplay;
+
 	
 	UPROPERTY(Replicated)
 	bool					bSphereOpen = { false }; // 열림 여부. 서버가 정함

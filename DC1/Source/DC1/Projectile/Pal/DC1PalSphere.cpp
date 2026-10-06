@@ -3,9 +3,11 @@
 #include "Projectile/Pal/DC1PalSphere.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "UI/Pal/DC1PalCaptureWidget.h"
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
@@ -35,6 +37,21 @@ ADC1PalSphere::ADC1PalSphere()
 	BottomHalfMesh = CreateDefaultSubobject<UStaticMeshComponent>("BottomHalfMesh");
 	BottomHalfMesh->SetupAttachment(HitCollider);
 	BottomHalfMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	CaptureWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("CaptureWidget"));
+	CaptureWidgetComponent->SetupAttachment(HitCollider);
+	CaptureWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	CaptureWidgetComponent->SetDrawAtDesiredSize(true);
+	CaptureWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CaptureWidgetComponent->SetVisibility(false);
+}
+
+void ADC1PalSphere::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 데디케이티드 서버에서는 만들어지지 않는다
+	CaptureWidgetComponent->InitWidget();
 }
 
 void ADC1PalSphere::Tick(float DeltaSeconds)
@@ -80,6 +97,7 @@ void ADC1PalSphere::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADC1PalSphere, bSphereOpen);
+	DOREPLIFETIME(ADC1PalSphere, CaptureDisplay);
 }
 
 float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRate, float InPalLevel) const
@@ -180,6 +198,8 @@ void ADC1PalSphere::BeginShaking()
 {
 	bSphereOpen = false;
 
+	SetCaptureDisplay(0, CaptureChance, false);
+
 	GetWorldTimerManager().SetTimer(CaptureTimer, this, &ThisClass::OnShake, ShakeInterval, true);
 }
 
@@ -204,6 +224,15 @@ void ADC1PalSphere::OnShake()
 		Resolve(true);
 		return;
 	}
+
+	// 남은 단계를 전부 버틸 확률 = 전체확률 ^ (남은 비중 / 비중 합)
+	float RemainingWeight = 0.f;
+	for (int32 Index = ShakeIndex; Index < StageCount; ++Index)
+	{
+		RemainingWeight += FMath::Max(0.f, ShakeWeights[Index]);
+	}
+
+	SetCaptureDisplay(ShakeIndex, FMath::Pow(CaptureChance, RemainingWeight / ShakeWeightSum), false);
 }
 
 void ADC1PalSphere::Resolve(bool bInSuccess)
@@ -222,12 +251,49 @@ void ADC1PalSphere::Resolve(bool bInSuccess)
 	if (true == bInSuccess)
 	{
 		OnPalCaptured.Broadcast(Pal->Fold());
-	}
-	else
-	{
-		Pal->CancelCapture();
-		Pal->OnCaptureFailed(GetInstigator());
+
+		SetCaptureDisplay(ShakeIndex, 1.f, true);
+		SetLifeSpan(SuccessHoldDuration);
+		return;
 	}
 
+	Pal->CancelCapture();
+	Pal->OnCaptureFailed(GetInstigator());
+
 	Destroy();
+}
+
+void ADC1PalSphere::SetCaptureDisplay(int32 InStage, float InChance, bool bInSuccess)
+{
+	CaptureDisplay.Stage = static_cast<int8>(InStage);
+	CaptureDisplay.Chance = InChance;
+	CaptureDisplay.bSuccess = bInSuccess;
+
+	ForceNetUpdate();
+	RefreshCaptureWidget();
+}
+
+void ADC1PalSphere::OnRep_CaptureDisplay()
+{
+	RefreshCaptureWidget();
+}
+
+void ADC1PalSphere::RefreshCaptureWidget()
+{
+	UDC1PalCaptureWidget* CaptureWidget = Cast<UDC1PalCaptureWidget>(CaptureWidgetComponent->GetUserWidgetObject());
+
+	if (nullptr == CaptureWidget)
+	{
+		return;
+	}
+
+	const APawn* Thrower = GetInstigator();
+	const bool bShow = (INDEX_NONE != CaptureDisplay.Stage) && IsValid(Thrower) && (true == Thrower->IsLocallyControlled());
+
+	CaptureWidgetComponent->SetVisibility(bShow);
+
+	if (true == bShow)
+	{
+		CaptureWidget->SetCaptureState(CaptureDisplay.Stage, CaptureDisplay.Chance, CaptureDisplay.bSuccess);
+	}
 }
