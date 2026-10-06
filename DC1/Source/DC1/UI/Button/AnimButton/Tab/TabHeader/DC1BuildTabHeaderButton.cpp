@@ -63,7 +63,7 @@ bool UDC1BuildTabHeaderButton::SetState(EDC1TabButtonState InState)
 		FDC1AnimPlayInfo PlayInfo;
 
 		PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
-		PlayInfo.bRestoreState = true;
+		PlayInfo.RestoreState = true;
 
 		PlayAnim(InactivedAnim, PlayInfo);
 	}

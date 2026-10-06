@@ -18,7 +18,7 @@ void ADC1LogoController::BeginPlay()
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		UE_LOG(LogTemp, Warning, TEXT("ADC1LogoController :: Failed to Find UIManager"));
 		return;
 	}
 
@@ -65,7 +65,7 @@ void ADC1LogoController::TravelToServer(const FString& IP)
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		UE_LOG(LogTemp, Warning, TEXT("ADC1LogoController :: Failed to Find UIManager"));
 		return;
 	}
 
@@ -94,7 +94,7 @@ void ADC1LogoController::TravelToServerFromCachedIP()
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		UE_LOG(LogTemp, Warning, TEXT("ADC1LogoController :: Failed to Find UIManager"));
 		return;
 	}
 

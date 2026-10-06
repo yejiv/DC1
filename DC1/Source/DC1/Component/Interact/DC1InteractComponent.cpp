@@ -191,19 +191,16 @@ void UDC1InteractComponent::Server_StartWork_Implementation(ADC1InteractBuildAct
 
 void UDC1InteractComponent::Server_StopWork_Implementation()
 {
-	if (nullptr != ServerWorkTarget)
+	ADC1InteractBuildActor* BuildTarget = ServerWorkTarget.Get();
+	if (true == ::IsValid(BuildTarget))
 	{
-		ADC1InteractBuildActor* BuildTarget = ServerWorkTarget.Get();
-		if (true == ::IsValid(BuildTarget))
+		ADC1Player* Player = GetPlayer();
+		if (false == ::IsValid(Player))
 		{
-			ADC1Player* Player = GetPlayer();
-			if (false == ::IsValid(Player))
-			{
-				return;
-			}
-
-			BuildTarget->RemoveWorker(Player);
+			return;
 		}
+
+		BuildTarget->RemoveWorker(Player);
 	}
 
 	ServerWorkTarget = nullptr;
@@ -288,7 +285,7 @@ void UDC1InteractComponent::SetCurrentTarget(AActor* InNewTarget)
 	ReleaseAllHeldKeys();
 	
 	IDC1InteractableInterface* PrevInteractable = GetCurrentInteractable();
-	if(nullptr != PrevInteractable)
+	if (nullptr != PrevInteractable)
 	{
 		PrevInteractable->GetOnInteractOptionsChanged().Remove(OptionsChangedHandle);
 	}
@@ -402,9 +399,10 @@ void UDC1InteractComponent::OnInteractKeyPressed(const FInputActionValue& Value,
 		PC->PressAbilityInput(Option->AbilityTag);
 		HeldAbilityTags.Add(InKey, Option->AbilityTag);
 		
-		if (true == PromptWidget.IsValid())
+		UDC1InteractPromptWidget* Prompt = PromptWidget.Get();
+		if (true == ::IsValid(Prompt))
 		{
-			PromptWidget->SetKeyHighlighted(InKey, true);
+			Prompt->SetKeyHighlighted(InKey, true);
 		}
 		break;
 	}
@@ -436,9 +434,10 @@ void UDC1InteractComponent::OnInteractKeyReleased(const FInputActionValue& Value
 		HoldConfirmElapsed = 0.f;
 	}
 
-	if (true == PromptWidget.IsValid())
+	UDC1InteractPromptWidget* Prompt = PromptWidget.Get();
+	if (true == ::IsValid(Prompt))
 	{
-		PromptWidget->SetKeyHighlighted(InKey, false);
+		Prompt->SetKeyHighlighted(InKey, false);
 	}
 }
 
@@ -467,17 +466,18 @@ void UDC1InteractComponent::ShowPrompt()
 		return;
 	}
 
-	PromptComponent = Player->GetInteractPromptWidgetComponent();
+	UWidgetComponent* PromptComp = Player->GetInteractPromptWidgetComponent();
+	PromptComponent = PromptComp;
 
-	if (true == PromptComponent.IsValid())
+	if (true == ::IsValid(PromptComp))
 	{
 		FVector PromptLocation = InteractCollider->Bounds.Origin + FVector(0.f, 0.f, InteractCollider->Bounds.BoxExtent.Z);
-		PromptComponent->SetWorldLocation(PromptLocation);
+		PromptComp->SetWorldLocation(PromptLocation);
 
 		// 이미 초기화된 경우에도 호출 가능한 함수
-		PromptComponent->InitWidget();
+		PromptComp->InitWidget();
 
-		PromptWidget = Cast<UDC1InteractPromptWidget>(PromptComponent->GetUserWidgetObject());
+		PromptWidget = Cast<UDC1InteractPromptWidget>(PromptComp->GetUserWidgetObject());
 	}
 
 	RefreshOptions();
@@ -485,9 +485,10 @@ void UDC1InteractComponent::ShowPrompt()
 
 void UDC1InteractComponent::HidePrompt()
 {
-	if (true == PromptComponent.IsValid())
+	UWidgetComponent* PromptComp = PromptComponent.Get();
+	if (true == ::IsValid(PromptComp))
 	{
-		PromptComponent->SetVisibility(false);
+		PromptComp->SetVisibility(false);
 	}
 
 	PromptWidget = nullptr;
@@ -520,7 +521,7 @@ void UDC1InteractComponent::RefreshOptions()
 			continue;
 		}
 
-		if (CurrentOptions.ContainsByPredicate([&Raw](const FDC1InteractOption& Option) {
+		if (true == CurrentOptions.ContainsByPredicate([&Raw](const FDC1InteractOption& Option) {
 			return Option.Key == Raw.Key;
 			}))
 		{
@@ -531,9 +532,10 @@ void UDC1InteractComponent::RefreshOptions()
 		CurrentOptions.Add(Raw);
 	}
 
-	if (true == PromptWidget.IsValid())
+	UDC1InteractPromptWidget* Prompt = PromptWidget.Get();
+	if (true == ::IsValid(Prompt))
 	{
-		PromptWidget->SetOptions(CurrentOptions);
+		Prompt->SetOptions(CurrentOptions);
 	}
 
 	UpdatePromptAndIMC();
@@ -566,9 +568,10 @@ void UDC1InteractComponent::TickHoldConfirm(float DeltaTime)
 
 	const float Ratio = FMath::Clamp(HoldConfirmElapsed / HoldConfirmDuration, 0.f, 1.f);
 
-	if (true == PromptWidget.IsValid())
+	UDC1InteractPromptWidget* Prompt = PromptWidget.Get();
+	if (true == ::IsValid(Prompt))
 	{
-		PromptWidget->SetHoldRatio(HoldConfirmKey.GetValue(), Ratio);
+		Prompt->SetHoldRatio(HoldConfirmKey.GetValue(), Ratio);
 	}
 
 	if (Ratio >= 1.f)
@@ -598,9 +601,10 @@ void UDC1InteractComponent::UpdatePromptAndIMC()
 	bool HasActiveScreen = (true == ::IsValid(UIManager)) && (true == UIManager->HasActiveScreen());
 	bool WantInteract = (false == CurrentOptions.IsEmpty()) && (false == HasActiveScreen);
 
-	if (true == PromptComponent.IsValid())
+	UWidgetComponent* PromptComp = PromptComponent.Get();
+	if (true == ::IsValid(PromptComp))
 	{
-		PromptComponent->SetVisibility(WantInteract);
+		PromptComp->SetVisibility(WantInteract);
 	}
 
 	for (EDC1InteractKey Key : {EDC1InteractKey::F, EDC1InteractKey::V, EDC1InteractKey::C})

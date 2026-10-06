@@ -2,15 +2,17 @@
 
 
 #include "Data/DA/UI/DC1UIData.h"
+#include "UI/DC1UserWidget.h"
 
 TSubclassOf<UDC1UserWidget> UDC1UIData::FindUserWidgetClassByTag(const FGameplayTag& UITag) const
 {
-	if (const TSubclassOf<UDC1UserWidget>* Found = UserWidgetEntries.Find(UITag))
+	TSubclassOf<UDC1UserWidget> WidgetClass = UserWidgetEntries.FindRef(UITag);
+	if (true == ::IsValid(WidgetClass))
 	{
-		return *Found;
+		return WidgetClass;
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("Can't find UserWidgetClass for UITag [%s]"), *UITag.ToString());
+	UE_LOG(LogTemp, Error, TEXT("UDC1UIData :: Can't find UserWidgetClass for UITag [%s]"), *UITag.ToString());
 
 	return nullptr;
 }

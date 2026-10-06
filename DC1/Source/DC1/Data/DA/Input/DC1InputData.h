@@ -21,7 +21,7 @@ struct FDC1InputMappingContext
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	int32 Priority = 0;
+	int32 Priority = { 0 };
 };
 
 USTRUCT(BlueprintType)

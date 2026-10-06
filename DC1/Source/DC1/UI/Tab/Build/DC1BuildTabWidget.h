@@ -34,7 +34,7 @@ private:
 
 private:
 	UPROPERTY()
-	TObjectPtr<UDC1BuildViewModel>	CachedViewModel;
+	TObjectPtr<UDC1BuildViewModel>	CachedViewModel = { nullptr };
 
-	bool							IsInit = false;
+	bool							IsInit = { false };
 };

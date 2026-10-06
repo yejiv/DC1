@@ -24,7 +24,7 @@ void ADC1PalBoxActor::OnCompletedInteract(ADC1Character* InInteractOwner, EDC1In
 		InteractF(InInteractOwner);
 		break;
 	case EDC1InteractKey::V:
-		UE_LOG(LogTemp, Warning, TEXT("빠른 이동"));
+		UE_LOG(LogTemp, Warning, TEXT("ADC1PalBoxActor :: 빠른 이동"));
 		break;
 	default:
 		return;

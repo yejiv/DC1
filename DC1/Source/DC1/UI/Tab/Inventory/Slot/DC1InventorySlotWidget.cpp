@@ -114,7 +114,7 @@ void UDC1InventorySlotWidget::ShowHoverImage()
 
 		// 호버 동안 무한 루프, 언호버 시 원래 값으로 복원
 		PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
-		PlayInfo.bRestoreState = true;
+		PlayInfo.RestoreState = true;
 		PlayInfo.NumLoops = 0;
 
 		PlayAnim(HoverAnim, PlayInfo);

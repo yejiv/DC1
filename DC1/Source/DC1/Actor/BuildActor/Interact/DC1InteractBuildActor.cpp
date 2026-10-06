@@ -290,7 +290,7 @@ void ADC1InteractBuildActor::SetMaterialBuildProgress()
 
 		if (false == MaterialProgressRanges.IsValidIndex(i))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Material None Progress Range : %d"), i);
+			UE_LOG(LogTemp, Warning, TEXT("ADC1InteractBuildActor :: Material None Progress Range : %d"), i);
 			continue;
 		}
 
