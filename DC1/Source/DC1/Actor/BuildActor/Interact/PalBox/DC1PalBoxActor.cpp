@@ -16,7 +16,22 @@ bool ADC1PalBoxActor::IsInBase(const FVector& InLocation) const
 	return FVector::DistSquared2D(InLocation, GetActorLocation()) <= FMath::Square(BaseRadius);
 }
 
-void ADC1PalBoxActor::Interact(ADC1Character* InInteractOwner)
+void ADC1PalBoxActor::OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey)
+{
+	switch (InKey)
+	{
+	case EDC1InteractKey::F :
+		InteractF(InInteractOwner);
+		break;
+	case EDC1InteractKey::V:
+		UE_LOG(LogTemp, Warning, TEXT("빠른 이동"));
+		break;
+	default:
+		return;
+	}
+}
+
+void ADC1PalBoxActor::InteractF(ADC1Character* InInteractOwner)
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))

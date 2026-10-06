@@ -5,11 +5,13 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Subsystem/DC1UIManagerSubsystem.h"
 
 #include "Character/DC1Character.h"
+#include "Character/Player/DC1PlayerController.h"
+#include "Component/Interact/DC1InteractComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "Tags/State/DC1GameplayTag_State.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -18,10 +20,12 @@ ADC1InteractBuildActor::ADC1InteractBuildActor()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-
 	InteractCollider = CreateDefaultSubobject<UBoxComponent>("InteractCollider");
 	InteractCollider->SetupAttachment(BuildMesh);
 	InteractCollider->SetGenerateOverlapEvents(true);
+
+	ConstructionOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Build", "건설"), EDC1InteractInputType::HoldAbility, DC1PlayerTags::Ability_Player_BuildWork);
+	ConstructionOptions.Emplace(EDC1InteractKey::C, NSLOCTEXT("Interact", "Cancel", "취소"), EDC1InteractInputType::HoldConfirm, FGameplayTag::EmptyTag);
 }
 
 void ADC1InteractBuildActor::Tick(float DeltaTime)
@@ -88,49 +92,49 @@ UPrimitiveComponent* ADC1InteractBuildActor::GetInteractCollider() const
 	return InteractCollider;
 }
 
-FGameplayTag ADC1InteractBuildActor::GetInteractAbilityTag() const
+void ADC1InteractBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
 {
-	if (BuildState == EDC1BuildState::Construction)
-	{
-		return InteractAbilityTag;
-	}
+	OutOptions.Reset();
 
-	return FGameplayTag::EmptyTag;
+	switch (BuildState)
+	{
+	case EDC1BuildState::Construction :
+		OutOptions = ConstructionOptions;
+		break;
+	case EDC1BuildState::Completed :
+		OutOptions = CompletedOptions;
+		break;
+	default:
+		return;
+	}
 }
 
-void ADC1InteractBuildActor::OnInteractableFocused()
+void ADC1InteractBuildActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey InKey)
 {
-	if (false == OnFocusedUITag.IsValid())
+	if (false == ::IsValid(InInteractOwner))
 	{
 		return;
 	}
 
-	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-	if (false == ::IsValid(UIManager))
+	if (true == IsUnderConstruction() && InKey == EDC1InteractKey::C)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		ADC1PlayerController* PC = InInteractOwner->GetController<ADC1PlayerController>();
+		if (true == ::IsValid(PC))
+		{
+			UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
+			if (true == ::IsValid(InteractComp))
+			{
+				InteractComp->RequestCancelBuild(this);
+			}
+		}
+
 		return;
 	}
 
-	// TODO Push World UI
-	//UIManager->PushScreen(OnFocusedUITag);
-}
-
-void ADC1InteractBuildActor::OnInteractableUnfocused()
-{
-	if (false == OnFocusedUITag.IsValid())
+	if (BuildState == EDC1BuildState::Completed)
 	{
-		return;
+		OnCompletedInteract(InInteractOwner, InKey);
 	}
-
-	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
-	if (false == ::IsValid(UIManager))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
-		return;
-	}
-
-	// TODO Pop World UI
 }
 
 void ADC1InteractBuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
@@ -138,6 +142,15 @@ void ADC1InteractBuildActor::InitBuild(const FDC1BuildActorData& InBuildActorDat
 	BuildActorData = InBuildActorData;
 
 	BuildState = InBuildActorData.RequiredWork > 0.f ? EDC1BuildState::Construction : EDC1BuildState::Completed;
+}
+
+void ADC1InteractBuildActor::BuildDestroy()
+{
+	CancelWorkersAbility();
+
+	Workers.Empty();
+
+	Super::BuildDestroy();
 }
 
 void ADC1InteractBuildActor::ApplyState()
@@ -175,15 +188,8 @@ void ADC1InteractBuildActor::ApplyState()
 
 		Workers.Empty();
 	}
-}
 
-void ADC1InteractBuildActor::BuildDestroy()
-{
-	CancelWorkersAbility();
-
-	Workers.Empty();
-
-	Super::BuildDestroy();
+	OnInteractOptionsChanged.Broadcast();
 }
 
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)

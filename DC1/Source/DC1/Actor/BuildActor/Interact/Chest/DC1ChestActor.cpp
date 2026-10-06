@@ -66,8 +66,13 @@ void ADC1ChestActor::AddDefaultItems()
 	}
 }
 
-void ADC1ChestActor::Interact(ADC1Character* InInteractOwner)
+void ADC1ChestActor::OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey)
 {
+	if (InKey != EDC1InteractKey::F)
+	{
+		return;
+	}
+
 	if (false == ::IsValid(InInteractOwner) || false == ::IsValid(ChestInventoryComp))
 	{
 		return;

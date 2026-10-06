@@ -102,6 +102,7 @@ protected:
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
+	virtual void					BuildDestroy();
 
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
@@ -116,7 +117,6 @@ public:
 
 	void							BeginDestroySequence();
 
-	virtual void					BuildDestroy();
 
 protected:
 	UFUNCTION()

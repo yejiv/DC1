@@ -18,6 +18,7 @@ class DC1_API ADC1InteractBuildActor : public ADC1BuildActor, public IDC1Interac
 
 public:
 	FDC1OnBuildCompleted			OnBuildCompleted;
+	FDC1OnInteractOptionsChanged	OnInteractOptionsChanged;
 
 public:
 	ADC1InteractBuildActor();
@@ -31,23 +32,25 @@ protected:
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
+	// IDC1InteractableInterface override
 	virtual UPrimitiveComponent*	GetInteractCollider() const override;
-	virtual FGameplayTag			GetInteractAbilityTag() const override;
-
-	virtual void					OnInteractableFocused() override;
-	virtual void					OnInteractableUnfocused() override;
-
+	virtual void					GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
+	virtual FDC1OnInteractOptionsChanged& GetOnInteractOptionsChanged() override { return OnInteractOptionsChanged; }
+	virtual void					Interact(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override final;
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData) override;
-
+	virtual void					BuildDestroy() override;
 
 	void							AddWorker(const ADC1Character* InWorker);
 	void							RemoveWorker(const ADC1Character* InWorker);
 
 protected:
 	virtual void					ApplyState() override;
-	virtual void					BuildDestroy() override;
+
+	// Completed 상태에서의 상호작용
+	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) {}
+	
 
 	UFUNCTION()
 	void							OnRep_BuildProgress();
@@ -65,11 +68,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UBoxComponent>				InteractCollider = { nullptr };
 
+	// 건설 중 옵션 F 건설(HoldAbility), C 취소(HoldConfirm)
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
-	FGameplayTag							InteractAbilityTag = { FGameplayTag::EmptyTag };
+	TArray<FDC1InteractOption>				ConstructionOptions;
 
+	// Completed 후 옵션 - ex) F : 상자 열기, V : 빠른 이동, C : 제작 취소
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
-	FGameplayTag							OnFocusedUITag = { FGameplayTag::EmptyTag };
+	TArray<FDC1InteractOption>				CompletedOptions;
 
 private:
 	// Completed 시점 Flash 지속시간
