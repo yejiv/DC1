@@ -79,6 +79,16 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	StaminaWidgetComponent->SetupAttachment(RootComponent);
 	StaminaWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	StaminaWidgetComponent->SetVisibility(false);
+
+	// InteractPrompWidget
+	InteractPromptWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("InteractPrompWidget");
+	InteractPromptWidgetComponent->SetupAttachment(RootComponent);
+	InteractPromptWidgetComponent->SetUsingAbsoluteLocation(true);
+	InteractPromptWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	InteractPromptWidgetComponent->SetDrawAtDesiredSize(true);
+	InteractPromptWidgetComponent->SetPivot({ 0.5f, 1.f });
+	InteractPromptWidgetComponent->SetVisibility(false);
+	InteractPromptWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
