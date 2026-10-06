@@ -48,7 +48,7 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget = { nullptr };
 
-	UPROPERTY(EditAnywhere, Category = "UserButton")
+	UPROPERTY(EditAnywhere, Category = "RowWidget")
 	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass = { nullptr };
 
 private:
