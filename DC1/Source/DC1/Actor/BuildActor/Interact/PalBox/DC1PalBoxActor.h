@@ -24,6 +24,9 @@ public:
 public:
 	virtual void					Interact(ADC1Character* InInteractOwner) override;
 
+	// 거점이 이미 있거나 다른 거점 범위와 겹치면 못 짓는다
+	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const override;
+
 protected:
 	// 거점 범위 반경
 	UPROPERTY(EditDefaultsOnly, Category = "PalBox", meta = (ClampMin = "0.0"))

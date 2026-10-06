@@ -239,7 +239,7 @@ void ADC1BuildActor::SetDismantleHighlight(bool InIsHighlighted)
 	BuildMesh->SetOverlayMaterial(OverlayMaterial);
 }
 
-bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
+bool ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuilder)
 {
 	bool IsSubCheck = true;
 
@@ -248,7 +248,8 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange)
 		IsSubCheck &= (SubCheck->CheckOverlap());
 	}
 
-	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this);
+	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this) && CanPlaceAt(InBuilder);
+
 
 	if (CanBuilding != CurrentCanBuilding)
 	{
