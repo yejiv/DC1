@@ -121,6 +121,21 @@ enum class EDC1InventorySource : uint8
 	Player = 0 UMETA(DisplayName = "Player"),
 	Valuable = 1 UMETA(DisplayName = "Valuable"),
 	Chest = 2 UMETA(DisplayName = "Chest"),
+	Equipment = 3 UMETA(DisplayName = "Equipment"),
+};
+
+// 장비 칸 타입 (아이템이 어느 장비 칸에 들어갈 수 있는지)
+UENUM(BlueprintType)
+enum class EDC1EquipSlotType : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),				// 장비 불가 아이템
+	Weapon = 1 UMETA(DisplayName = "Weapon"),
+	Head = 2 UMETA(DisplayName = "Head"),
+	Body = 3 UMETA(DisplayName = "Body"),
+	Shield = 4 UMETA(DisplayName = "Shield"),
+	Glider = 5 UMETA(DisplayName = "Glider"),
+	Accessory = 6 UMETA(DisplayName = "Accessory"),
+	Food = 7 UMETA(DisplayName = "Food"),
 };
 
 // 팰 속성

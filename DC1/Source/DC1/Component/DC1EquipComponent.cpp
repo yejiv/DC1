@@ -12,6 +12,12 @@
 #include "Item/Equip/Tool/DC1Tool.h"
 
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/DC1InventoryTypes.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1ItemHelper.h"
+#include "Define/DC1Macro.h"
 
 // Sets default values for this component's properties
 UDC1EquipComponent::UDC1EquipComponent()
@@ -28,6 +34,28 @@ UDC1EquipComponent::UDC1EquipComponent()
 void UDC1EquipComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 장비 칸 변경은 서버에서만 실제 액터 교체로 이어진다
+	if (true == GetOwner()->HasAuthority())
+	{
+		if (UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent())
+		{
+			Inventory->OnEquipmentSlotChanged.AddUObject(this, &ThisClass::HandleEquipmentSlotChanged);
+		}
+
+		// 구독 전에 인벤토리가 먼저 장착했을 수 있으므로 폰이 있으면 한 번 맞춘다
+		SyncWeaponsFromInventory();
+	}
+}
+
+void UDC1EquipComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent())
+	{
+		Inventory->OnEquipmentSlotChanged.RemoveAll(this);
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void UDC1EquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -43,8 +71,6 @@ void UDC1EquipComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-// TODO : 인벤토리 연동 전 임시 구현. 아래 본문은 통째로 교체 예정
-//        (WeaponClass 직접 스폰 -> 인벤토리의 아이템 ID 기반 스폰)
 void UDC1EquipComponent::Init_Equip()
 {
 	AActor* Owner = GetOwner();
@@ -53,27 +79,10 @@ void UDC1EquipComponent::Init_Equip()
 	ADC1Player* Player = GetOwningPlayer();
 	if (false == IsValid(Player)) return;
 
-	WeaponSlots.SetNum(CanWeaponEquip);
-
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Player;
 	SpawnParams.Instigator = Player;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	const int32 SlotNum = FMath::Min(WeaponClass.Num(), WeaponSlots.Num());
-	for (int32 Index = 0; Index < SlotNum; ++Index)
-	{
-		if (nullptr == WeaponClass[Index]) continue;
-
-		ADC1Weapon* Weapon = GetWorld()->SpawnActor<ADC1Weapon>(WeaponClass[Index], Player->GetActorTransform(), SpawnParams);
-		if (false == IsValid(Weapon)) continue;
-
-		// 안 든 무기도 캐릭터를 따라다녀야 원점에 남거나 관련성에서 밀려나지 않는다
-		Weapon->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		Weapon->SetActorHiddenInGame(true);
-
-		WeaponSlots[Index] = Weapon;
-	}
 
 	ToolSlots.Reset();
 
@@ -88,6 +97,21 @@ void UDC1EquipComponent::Init_Equip()
 		Tool->SetActorHiddenInGame(true);
 
 		ToolSlots.Add(Tool);
+	}
+
+	// 폰이 없던 동안 바뀐 무기 칸도 여기서 한 번에 맞춘다
+	SyncWeaponsFromInventory();
+}
+
+void UDC1EquipComponent::SyncWeaponsFromInventory()
+{
+	if (false == IsValid(GetOwningPlayer())) return;
+
+	// 잠긴 칸 포함 전체 무기 칸 수만큼 (잠긴 칸은 비어 있어 주먹)
+	WeaponSlots.SetNum(DC1EquipSlotLayout::GetTypeSlotCount(EDC1EquipSlotType::Weapon));
+	for (int32 Index = 0; Index < WeaponSlots.Num(); ++Index)
+	{
+		RefreshWeaponSlot(Index);
 	}
 
 	ApplyWeaponAttach();
@@ -111,13 +135,103 @@ ADC1Player* UDC1EquipComponent::GetOwningPlayer() const
 	return Cast<ADC1Player>(OwnerState->GetPawn());
 }
 
+UDC1PlayerInventoryComponent* UDC1EquipComponent::GetInventoryComponent() const
+{
+	const ADC1PlayerState* OwnerState = Cast<ADC1PlayerState>(GetOwner());
+	if (nullptr == OwnerState) return nullptr;
+
+	return OwnerState->GetInventoryComponent();
+}
+
+void UDC1EquipComponent::HandleEquipmentSlotChanged(int32 InEquipSlotIndex)
+{
+	// TODO : 방어구/장신구/음식 칸은 ADC1Equip 파생 클래스가 생기면 여기서 분기
+	if (EDC1EquipSlotType::Weapon != DC1EquipSlotLayout::GetSlotType(InEquipSlotIndex)) return;
+
+	// 폰이 없으면 건너뛴다. 폰이 붙을 때 Init_Equip이 전체를 다시 맞춘다
+	if (false == IsValid(GetOwningPlayer())) return;
+
+	const int32 WeaponIndex = DC1EquipSlotLayout::GetLocalIndex(InEquipSlotIndex);
+	RefreshWeaponSlot(WeaponIndex);
+
+	// 지금 든 칸이 바뀌었으면 바로 교체 (비었으면 주먹)
+	if (WeaponIndex == CurrentWeaponIndex)
+	{
+		ApplyWeaponAttach();
+	}
+}
+
+void UDC1EquipComponent::RefreshWeaponSlot(int32 InWeaponIndex)
+{
+	if (false == WeaponSlots.IsValidIndex(InWeaponIndex)) return;
+
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player)) return;
+
+	// 든 무기였다면 파괴된 액터를 붙잡지 않도록 먼저 비운다
+	if (ADC1Weapon* OldWeapon = WeaponSlots[InWeaponIndex])
+	{
+		if (OldWeapon == CurrentWeapon)
+		{
+			CurrentWeapon = nullptr;
+		}
+		OldWeapon->Destroy();
+		WeaponSlots[InWeaponIndex] = nullptr;
+	}
+
+	UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent();
+	if (nullptr == Inventory) return;
+
+	const int32 EquipSlotIndex = DC1EquipSlotLayout::GetEquipIndex(EDC1EquipSlotType::Weapon, InWeaponIndex);
+	const FDC1InventorySlotInfo& SlotInfo = Inventory->GetEquipmentSlot(EquipSlotIndex);
+	if (true == SlotInfo.IsEmpty()) return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(SlotInfo.ItemID);
+	if (nullptr == EquipRow) return;
+
+	// 장착 시점 1회 로드라 동기 로드로 처리
+	UClass* EquipClass = EquipRow->EquipClass.LoadSynchronous();
+	if (nullptr == EquipClass || false == EquipClass->IsChildOf(ADC1Weapon::StaticClass()))
+	{
+		LOG_WARNING(TEXT("[Equip] %s : EquipClass가 비어 있거나 ADC1Weapon이 아님"), *SlotInfo.ItemID.ToString());
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Player;
+	SpawnParams.Instigator = Player;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ADC1Weapon* Weapon = GetWorld()->SpawnActor<ADC1Weapon>(EquipClass, Player->GetActorTransform(), SpawnParams);
+	if (false == IsValid(Weapon)) return;
+
+	// 안 든 무기도 캐릭터를 따라다녀야 원점에 남거나 관련성에서 밀려나지 않는다
+	Weapon->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Weapon->SetActorHiddenInGame(true);
+
+	WeaponSlots[InWeaponIndex] = Weapon;
+}
+
 void UDC1EquipComponent::Server_ChangeWeapon_Implementation(int32 Delta)
 {
+	const int32 WeaponCount = GetUnlockedWeaponCount();
+	if (WeaponCount <= 0) return;
+
 	CurrentWeaponIndex += Delta;
-	if (CurrentWeaponIndex < 0) CurrentWeaponIndex = CanWeaponEquip - 1;
-	else if (CurrentWeaponIndex >= CanWeaponEquip) CurrentWeaponIndex = 0;
+	if (CurrentWeaponIndex < 0) CurrentWeaponIndex = WeaponCount - 1;
+	else if (CurrentWeaponIndex >= WeaponCount) CurrentWeaponIndex = 0;
 
 	ApplyWeaponAttach();
+}
+
+int32 UDC1EquipComponent::GetUnlockedWeaponCount() const
+{
+	if (const UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent())
+	{
+		return Inventory->GetUnlockedSlotCount(EDC1EquipSlotType::Weapon);
+	}
+
+	return DC1EquipSlotLayout::DefaultUnlockedWeaponCount;
 }
 
 void UDC1EquipComponent::OnRep_CurrentWeapon()

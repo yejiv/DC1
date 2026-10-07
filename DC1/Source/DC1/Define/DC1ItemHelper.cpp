@@ -5,37 +5,51 @@
 
 #pragma region Item Helper
 
+namespace
+{
+	// 전체 행을 돌며 ItemID 필드로 검색 (아이템이 많아지면 캐시 고려)
+	template <typename TRow>
+	const TRow* FindRowByItemID(const FGameplayTag& InDataTableTag, FName InItemID)
+	{
+		if (InItemID.IsNone())
+		{
+			return nullptr;
+		}
+
+		const UDataTable* DataTable = DC1DataTableHelper::GetDataTable(InDataTableTag);
+		if (false == ::IsValid(DataTable))
+		{
+			return nullptr;
+		}
+
+		// 행 메모리를 TRow로 캐스팅하므로 행 구조체 타입을 먼저 확인
+		const UScriptStruct* RowStruct = DataTable->GetRowStruct();
+		if (nullptr == RowStruct || false == RowStruct->IsChildOf(TRow::StaticStruct()))
+		{
+			return nullptr;
+		}
+
+		for (const TPair<FName, uint8*>& RowPair : DataTable->GetRowMap())
+		{
+			const TRow* Row = reinterpret_cast<const TRow*>(RowPair.Value);
+			if (nullptr != Row && InItemID == Row->ItemID)
+			{
+				return Row;
+			}
+		}
+
+		return nullptr;
+	}
+}
+
 const FDC1ItemRow* DC1ItemHelper::FindItemRow(FName InItemID)
 {
-	if (InItemID.IsNone())
-	{
-		return nullptr;
-	}
+	return FindRowByItemID<FDC1ItemRow>(DC1DataTableTags::DataTable_Item, InItemID);
+}
 
-	const UDataTable* ItemDataTable = DC1DataTableHelper::GetDataTable(DC1DataTableTags::DataTable_Item);
-	if (false == ::IsValid(ItemDataTable))
-	{
-		return nullptr;
-	}
-
-	// 행 메모리를 FDC1ItemRow로 캐스팅하므로 행 구조체 타입을 먼저 확인
-	const UScriptStruct* RowStruct = ItemDataTable->GetRowStruct();
-	if (nullptr == RowStruct || false == RowStruct->IsChildOf(FDC1ItemRow::StaticStruct()))
-	{
-		return nullptr;
-	}
-
-	// 행 이름과 무관하게 ItemID 필드로 검색 (아이템 수가 많아지면 ItemID -> 행 캐시 도입 고려)
-	for (const TPair<FName, uint8*>& RowPair : ItemDataTable->GetRowMap())
-	{
-		const FDC1ItemRow* ItemRow = reinterpret_cast<const FDC1ItemRow*>(RowPair.Value);
-		if (nullptr != ItemRow && InItemID == ItemRow->ItemID)
-		{
-			return ItemRow;
-		}
-	}
-
-	return nullptr;
+const FDC1EquipItemRow* DC1ItemHelper::FindEquipItemRow(FName InItemID)
+{
+	return FindRowByItemID<FDC1EquipItemRow>(DC1DataTableTags::DataTable_EquipItem, InItemID);
 }
 
 #pragma endregion

@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Component/Inventory/DC1ValuableInventoryComponent.h"
+#include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Net/UnrealNetwork.h"
 

@@ -4,7 +4,7 @@
 
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Item/Equip/Weapon/DC1Weapon.h"
 
 void UDC1EquipViewModel::BindSource(ADC1PlayerState* InPlayerState)

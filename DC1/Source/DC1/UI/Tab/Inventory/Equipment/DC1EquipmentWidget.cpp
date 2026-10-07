@@ -2,67 +2,118 @@
 
 #include "UI/Tab/Inventory/Equipment/DC1EquipmentWidget.h"
 
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
-#include "Components/Border.h"
-#include "Components/TextBlock.h"
-#include "Components/ProgressBar.h"
+#include "Component/Inventory/DC1InventoryTypes.h"
+#include "Engine/Texture2D.h"
+
+void UDC1EquipmentWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	// DC1EquipSlotLayout 인덱스 순서와 같아야 함
+	EquipSlots =
+	{
+		InventorySlot_Weapon1, InventorySlot_Weapon2, InventorySlot_Weapon3, InventorySlot_Weapon4, InventorySlot_Weapon5, InventorySlot_Weapon6,
+		InventorySlot_Head,
+		InventorySlot_Body,
+		InventorySlot_Shield,
+		InventorySlot_Glider,
+		InventorySlot_Accessory1, InventorySlot_Accessory2, InventorySlot_Accessory3, InventorySlot_Accessory4,
+		InventorySlot_Food1, InventorySlot_Food2, InventorySlot_Food3, InventorySlot_Food4, InventorySlot_Food5,
+	};
+	ensure(DC1EquipSlotLayout::SlotCount == EquipSlots.Num());
+
+	for (int32 Index = 0; Index < EquipSlots.Num(); ++Index)
+	{
+		UDC1InventorySlotWidget* SlotWidget = EquipSlots[Index];
+		if (false == ::IsValid(SlotWidget))
+		{
+			continue;
+		}
+
+		SlotWidget->InitSlot(Index, SlotSize, EDC1InventorySource::Equipment);
+		SlotWidget->SetWeightVisibility(false);
+
+		const TObjectPtr<UTexture2D>* EmptyIcon = EmptySlotIcons.Find(DC1EquipSlotLayout::GetSlotType(Index));
+		SlotWidget->SetEmptyIcon(nullptr != EmptyIcon ? EmptyIcon->Get() : nullptr);
+	}
+}
 
 void UDC1EquipmentWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	CreateUI();
-}
 
-void UDC1EquipmentWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
-{
-	CachedViewModel = NewViewModel;
-}
-
-void UDC1EquipmentWidget::CreateUI()
-{
-	// ========== 장비 슬롯 생성 ==========
-
-	// 무기 슬롯 4개
-	for (int32 i = 0; i < 4; ++i)
+	if (::IsValid(CachedViewModel))
 	{
-		UBorder* WeaponSlot = NewObject<UBorder>(this);
-		WeaponSlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
-		WeaponSlots.Add(WeaponSlot);
+		// SetViewModel에서 이미 구독했을 수 있으므로 중복 구독 방지
+		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
+		CachedViewModel->OnEquipmentUIUpdated.AddUObject(this, &ThisClass::HandleEquipmentUpdated);
 	}
 
-	// 머리
-	HeadSlot = NewObject<UBorder>(this);
-	HeadSlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
+	RefreshAllSlots();
+}
 
-	// 몸
-	ChestSlot = NewObject<UBorder>(this);
-	ChestSlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
-
-	// 방패
-	ShieldSlot = NewObject<UBorder>(this);
-	ShieldSlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
-
-	// 글라이더
-	GliderSlot = NewObject<UBorder>(this);
-	GliderSlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
-
-	// 장신구 2개
-	for (int32 i = 0; i < 2; ++i)
+void UDC1EquipmentWidget::NativeDestruct()
+{
+	if (::IsValid(CachedViewModel))
 	{
-		UBorder* AccessorySlot = NewObject<UBorder>(this);
-		AccessorySlot->SetBrushColor(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f));
-		AccessorySlots.Add(AccessorySlot);
+		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
 	}
 
-	// ========== 플레이어 정보 생성 ==========
+	Super::NativeDestruct();
+}
 
-	// 이름
-	PlayerNameText = NewObject<UTextBlock>(this);
-	PlayerNameText->SetText(FText::FromString(TEXT("플레이어")));
-	PlayerNameText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+void UDC1EquipmentWidget::SetViewModel(UDC1InventoryViewModel* InViewModel)
+{
+	if (::IsValid(CachedViewModel))
+	{
+		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
+	}
 
-	// 레벨
-	PlayerLevelText = NewObject<UTextBlock>(this);
-	PlayerLevelText->SetText(FText::FromString(TEXT("Lv.1")));
-	PlayerLevelText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+	CachedViewModel = InViewModel;
+
+	if (::IsValid(CachedViewModel))
+	{
+		CachedViewModel->OnEquipmentUIUpdated.AddUObject(this, &ThisClass::HandleEquipmentUpdated);
+	}
+
+	RefreshAllSlots();
+}
+
+int32 UDC1EquipmentWidget::GetEquipSlotIndexFromPosition(const FVector2D& InScreenPos) const
+{
+	for (int32 Index = 0; Index < EquipSlots.Num(); ++Index)
+	{
+		const UDC1InventorySlotWidget* SlotWidget = EquipSlots[Index];
+		if (true == ::IsValid(SlotWidget) && true == SlotWidget->GetCachedGeometry().IsUnderLocation(InScreenPos))
+		{
+			return Index;
+		}
+	}
+
+	return -1;
+}
+
+void UDC1EquipmentWidget::RefreshAllSlots()
+{
+	for (int32 Index = 0; Index < EquipSlots.Num(); ++Index)
+	{
+		UDC1InventorySlotWidget* SlotWidget = EquipSlots[Index];
+		if (false == ::IsValid(SlotWidget))
+		{
+			continue;
+		}
+
+		// SetSlotData는 VM이 없거나 빈 칸이면 ClearSlot으로 처리
+		SlotWidget->SetSlotData(CachedViewModel);
+
+		// 빈 칸 아이콘 갱신 뒤에 적용해야 잠긴 칸에서 실루엣이 숨겨짐
+		SlotWidget->SetLocked(::IsValid(CachedViewModel) && CachedViewModel->IsEquipSlotLocked(Index));
+	}
+}
+
+void UDC1EquipmentWidget::HandleEquipmentUpdated()
+{
+	RefreshAllSlots();
 }

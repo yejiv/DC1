@@ -60,12 +60,15 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		Image_Icon->SetVisibility(ESlateVisibility::Visible);
 	}
 
+	// 장착된 아이템은 개수/무게를 표시하지 않음
+	const bool bIsEquipment = (EDC1InventorySource::Equipment == InSlotSource);
+
 	if (IsValid(Text_Count))
 	{
 		if (InventorySlotInfo.StackCount >= 1)
 		{
 			Text_Count->SetText(FText::AsNumber(InventorySlotInfo.StackCount));
-			Text_Count->SetVisibility(ESlateVisibility::Visible);
+			Text_Count->SetVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 		}
 		else
 		{
@@ -80,7 +83,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		CurrentItemWeight = ItemData->Weight;
 		float TotalWeight = CurrentItemWeight * InventorySlotInfo.StackCount;
 		Text_Weight->SetText(FText::AsNumber(TotalWeight));
-		Text_Weight->SetVisibility(ESlateVisibility::Visible);
+		Text_Weight->SetVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 	}
 }
 

@@ -122,16 +122,23 @@ void UDC1InventorySlotsWidget::UnbindViewModelEvents()
 
 void UDC1InventorySlotsWidget::SyncSlotCountWithSource()
 {
-	// 고정 칸 출처(플레이어/상자)는 기존대로 유지 - 상자는 OpenChest에서 RefreshSlotCapacity로 맞춤
-	if (EDC1InventorySource::Valuable != SlotSource || !CachedViewModel)
+	// 상자는 OpenChest에서 RefreshSlotCapacity로 맞춤
+	if (EDC1InventorySource::Chest == SlotSource || !CachedViewModel)
 	{
 		return;
 	}
 
-	const int32 ValuableSlotCount = CachedViewModel->GetValuableSlotCount();
-	if (ValuableSlotCount != SlotWidgets.Num())
+	const int32 SourceSlotCount = CachedViewModel->GetSlotCountBySource(SlotSource);
+
+	// 플레이어 인벤토리가 아직 연결 전이면(0칸) 연결 후 갱신 때 맞춤
+	if (EDC1InventorySource::Player == SlotSource && 0 == SourceSlotCount)
 	{
-		CreateSlotWidgets(ValuableSlotCount);
+		return;
+	}
+
+	if (SourceSlotCount != SlotWidgets.Num())
+	{
+		CreateSlotWidgets(SourceSlotCount);
 	}
 }
 

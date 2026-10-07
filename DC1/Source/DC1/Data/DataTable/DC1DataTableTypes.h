@@ -7,6 +7,8 @@
 #include "Define/DC1Enums.h"
 #include "DC1DataTableTypes.generated.h"
 
+class ADC1Equip;
+
 USTRUCT(BlueprintType)
 struct FDC1LoadingTipRow : public FTableRowBase
 {
@@ -116,10 +118,10 @@ struct FDC1ItemRow : public FTableRowBase
 	FText	ItemName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EDC1ItemRarity ItemRarity;
+	EDC1ItemRarity ItemRarity = EDC1ItemRarity::Common;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Weight;
+	float Weight = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxStack = 9999;
@@ -128,9 +130,32 @@ struct FDC1ItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bIsValuable = false;
 
+	// 먹이 주머니가 여는 음식 칸 수 (0이면 주머니 아님, 여러 개면 가장 큰 값만 적용)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0", ClampMax = "5"))
+	int32 FoodPouchSlotCount = 0;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description = FText::FromString(TEXT("설명 텍스트"));
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> ItemIcon;
+};
+
+// 장비 아이템 전용 데이터 (FDC1ItemRow와 ItemID로 연결, 행이 있어야 장착 가능)
+USTRUCT(BlueprintType)
+struct FDC1EquipItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// FDC1ItemRow::ItemID와 같은 값
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName ItemID;
+
+	// 장착 가능한 장비 칸
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EDC1EquipSlotType EquipSlotType = EDC1EquipSlotType::Weapon;
+
+	// 장착 시 스폰할 액터 ( 현재는 무기 칸만 사용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftClassPtr<ADC1Equip> EquipClass;
 };
