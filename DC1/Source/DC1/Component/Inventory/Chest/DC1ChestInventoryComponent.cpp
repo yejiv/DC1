@@ -1,6 +1,6 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Component/Inventory/DC1ChestInventoryComponent.h"
+#include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
 UDC1ChestInventoryComponent::UDC1ChestInventoryComponent()

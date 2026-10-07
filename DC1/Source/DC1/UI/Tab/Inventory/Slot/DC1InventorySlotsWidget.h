@@ -73,7 +73,7 @@ protected:
 	void BindViewModelEvents();
 	void UnbindViewModelEvents();
 
-	/** 귀중품처럼 슬롯 수가 가변인 출처면 VM의 슬롯 수에 맞춰 칸을 다시 만듦 */
+	// 출처(플레이어/귀중품)의 실제 칸 수에 맞춰 칸을 다시 만드는 함수 (상자 제외)
 	void SyncSlotCountWithSource();
 
 private:

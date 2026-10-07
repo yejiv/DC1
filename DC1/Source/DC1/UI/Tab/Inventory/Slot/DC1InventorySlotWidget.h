@@ -14,6 +14,7 @@ class USizeBox;
 class UImage;
 class UTextBlock;
 class UWidgetAnimation;
+class UTexture2D;
 
 class UDC1InventoryEntryWidget;
 
@@ -59,10 +60,19 @@ public:
 	 */
 	void OverrideDisplayCount(int32 NewCount);
 
+	// 빈 칸일 때 보여줄 아이콘을 지정하는 함수 (장비 칸 실루엣용)
+	void SetEmptyIcon(UTexture2D* InIcon);
+
+	// 잠긴 칸 표시(사선)를 켜고 끄는 함수
+	void SetLocked(bool bInLocked);
+
 protected:
 	void UpdateRarityColor(EDC1ItemRarity Rarity);
 	void ShowHoverImage();
 	void HideHoverImage();
+
+	// 빈 칸 아이콘 표시 여부를 갱신하는 함수
+	void UpdateEmptyIconVisibility(bool bIsEmpty);
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -79,6 +89,14 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventoryEntryWidget> EntryWidget;
+
+	// 빈 칸 실루엣 아이콘 (장비 칸용, WBP에 없어도 됨)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UImage> Image_EmptyIcon;
+
+	// 잠긴 칸 사선 이미지 (장비 칸용, WBP에 없어도 됨)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UImage> Image_Lock;
 
 private:
 	int32 CurrentSlotIndex = -1;

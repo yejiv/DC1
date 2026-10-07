@@ -2,9 +2,9 @@
 
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryComponentBase.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
-#include "Component/Inventory/DC1ChestInventoryComponent.h"
-#include "Component/Inventory/DC1ValuableInventoryComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
+#include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Define/DC1ItemHelper.h"
 #include "Character/Player/DC1PlayerState.h"
 
@@ -21,6 +21,7 @@ void UDC1InventoryViewModel::BindSource(ADC1PlayerState* InPlayerState)
 	// 위젯 생성 순서와 무관하도록 구독 직후 현재 값을 한 번 알림
 	OnInventoryUpdated.Broadcast();
 	OnValuableInventoryUpdated.Broadcast();
+	OnEquipmentUIUpdated.Broadcast();
 }
 
 void UDC1InventoryViewModel::ClearSource()
@@ -119,6 +120,7 @@ void UDC1InventoryViewModel::SetPlayerInventoryComponent(UDC1PlayerInventoryComp
 	{
 		MyInventoryComp->OnInventoryUpdated.RemoveAll(this);
 		MyInventoryComp->OnSlotChanged.RemoveAll(this);
+		MyInventoryComp->OnEquipmentUpdated.RemoveAll(this);
 	}
 
 	MyInventoryComp = InPlayerComp;
@@ -129,6 +131,7 @@ void UDC1InventoryViewModel::SetPlayerInventoryComponent(UDC1PlayerInventoryComp
 		MyInventoryComp->OnSlotChanged.AddUObject(this, &UDC1InventoryViewModel::HandleSlotUpdated);
 		// 레거시 전체 갱신 이벤트도 유지 (필요시)
 		MyInventoryComp->OnInventoryUpdated.AddUObject(this, &UDC1InventoryViewModel::HandleInventoryUpdated);
+		MyInventoryComp->OnEquipmentUpdated.AddUObject(this, &UDC1InventoryViewModel::HandleEquipmentUpdated);
 	}
 }
 
@@ -161,6 +164,8 @@ const FDC1InventorySlotInfo& UDC1InventoryViewModel::GetSlotBySource(EDC1Invento
 		return GetValuableSlot(Index);
 	case EDC1InventorySource::Chest:
 		return GetChestSlot(Index);
+	case EDC1InventorySource::Equipment:
+		return GetEquipmentSlot(Index);
 	default:
 		return GetSlot(Index);
 	}
@@ -174,6 +179,8 @@ int32 UDC1InventoryViewModel::GetSlotCountBySource(EDC1InventorySource InSource)
 		return GetValuableSlotCount();
 	case EDC1InventorySource::Chest:
 		return GetChestSlotCount();
+	case EDC1InventorySource::Equipment:
+		return GetEquipmentSlotCount();
 	default:
 		return GetSlotCount();
 	}
@@ -252,6 +259,11 @@ void UDC1InventoryViewModel::HandleValuableInventoryUpdated()
 void UDC1InventoryViewModel::HandleValuableSlotUpdated(int32 SlotIndex)
 {
 	OnValuableSlotUIUpdated.Broadcast(SlotIndex);
+}
+
+void UDC1InventoryViewModel::HandleEquipmentUpdated()
+{
+	OnEquipmentUIUpdated.Broadcast();
 }
 
 const FDC1ItemRow* UDC1InventoryViewModel::GetItemData(FName ItemID) const
@@ -335,6 +347,127 @@ void UDC1InventoryViewModel::RequestSortValuables()
 }
 
 // ========================
+// 장비
+// ========================
+
+int32 UDC1InventoryViewModel::GetEquipmentSlotCount() const
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return 0;
+	}
+
+	return MyInventoryComp->GetEquipmentSlots().Num();
+}
+
+const FDC1InventorySlotInfo& UDC1InventoryViewModel::GetEquipmentSlot(int32 Index) const
+{
+	static const FDC1InventorySlotInfo EmptySlot;
+
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return EmptySlot;
+	}
+
+	return MyInventoryComp->GetEquipmentSlot(Index);
+}
+
+EDC1EquipSlotType UDC1InventoryViewModel::GetEquipSlotType(int32 Index) const
+{
+	return DC1EquipSlotLayout::GetSlotType(Index);
+}
+
+bool UDC1InventoryViewModel::CanEquipToSlot(FName ItemID, int32 EquipSlotIndex) const
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return false;
+	}
+
+	return MyInventoryComp->CanEquipToSlot(ItemID, EquipSlotIndex);
+}
+
+bool UDC1InventoryViewModel::IsEquipSlotLocked(int32 EquipSlotIndex) const
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return true;
+	}
+
+	return false == MyInventoryComp->IsEquipSlotUnlocked(EquipSlotIndex);
+}
+
+float UDC1InventoryViewModel::GetCurrentWeight() const
+{
+	return ::IsValid(MyInventoryComp) ? MyInventoryComp->GetCurrentWeight() : 0.f;
+}
+
+float UDC1InventoryViewModel::GetMaxWeight() const
+{
+	return ::IsValid(MyInventoryComp) ? MyInventoryComp->GetMaxWeight() : 0.f;
+}
+
+void UDC1InventoryViewModel::RequestDropDraggedItem()
+{
+	if (false == bIsDragging)
+	{
+		return;
+	}
+
+	if (::IsValid(MyInventoryComp) && false == bDragSourceIsChest && false == bDragSourceIsEquipment)
+	{
+		MyInventoryComp->RequestDropItem(DragSourceSlotIndex, DragStackCount);
+	}
+
+	EndDrag();
+}
+
+void UDC1InventoryViewModel::RequestDiscardDraggedItem()
+{
+	if (false == bIsDragging)
+	{
+		return;
+	}
+
+	if (::IsValid(MyInventoryComp) && false == bDragSourceIsChest && false == bDragSourceIsEquipment)
+	{
+		MyInventoryComp->RequestDiscardItem(DragSourceSlotIndex, DragStackCount);
+	}
+
+	EndDrag();
+}
+
+void UDC1InventoryViewModel::RequestEquipItem(int32 SlotIndex, int32 EquipSlotIndex)
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return;
+	}
+
+	MyInventoryComp->RequestEquipItem(SlotIndex, EquipSlotIndex);
+}
+
+void UDC1InventoryViewModel::RequestEquipItemAuto(int32 SlotIndex)
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return;
+	}
+
+	MyInventoryComp->RequestEquipItemAuto(SlotIndex);
+}
+
+void UDC1InventoryViewModel::RequestUnequipItem(int32 EquipSlotIndex, int32 ToSlotIndex /* = -1 */)
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return;
+	}
+
+	MyInventoryComp->RequestUnequipItem(EquipSlotIndex, ToSlotIndex);
+}
+
+// ========================
 // 드래그 세션
 // ========================
 
@@ -342,6 +475,7 @@ void UDC1InventoryViewModel::BeginDrag(bool bFromChest, int32 SlotIndex, int32 S
 {
 	bIsDragging = true;
 	bDragSourceIsChest = bFromChest;
+	bDragSourceIsEquipment = false;
 	DragSourceSlotIndex = SlotIndex;
 	DragStackCount = StackCount;
 
@@ -353,6 +487,7 @@ void UDC1InventoryViewModel::EndDrag()
 {
 	bIsDragging = false;
 	bDragSourceIsChest = false;
+	bDragSourceIsEquipment = false;
 	DragSourceSlotIndex = -1;
 	DragStackCount = 0;
 	DragItemData = nullptr;
@@ -364,6 +499,18 @@ void UDC1InventoryViewModel::RequestDrop(bool bTargetIsChest, int32 TargetSlotIn
 {
 	if (!bIsDragging)
 	{
+		return;
+	}
+
+	// 장비 칸에서 시작한 드래그는 플레이어 인벤토리로만 해제 (상자로 직접 이동 불가)
+	if (true == bDragSourceIsEquipment)
+	{
+		if (false == bTargetIsChest)
+		{
+			RequestUnequipItem(DragSourceSlotIndex, TargetSlotIndex);
+		}
+
+		EndDrag();
 		return;
 	}
 
@@ -383,6 +530,38 @@ void UDC1InventoryViewModel::RequestDrop(bool bTargetIsChest, int32 TargetSlotIn
 	{
 		// 플레이어 <-> 상자 이전 (bTargetIsChest가 곧 이동 방향, 드롭한 슬롯 기준으로 이동/병합/교환)
 		RequestTransferItem(bTargetIsChest, DragSourceSlotIndex, TargetSlotIndex, DragStackCount);
+	}
+
+	EndDrag();
+}
+
+void UDC1InventoryViewModel::BeginDragFromEquipment(int32 EquipSlotIndex)
+{
+	const FDC1InventorySlotInfo& SourceSlot = GetEquipmentSlot(EquipSlotIndex);
+	if (true == SourceSlot.IsEmpty())
+	{
+		return;
+	}
+
+	bIsDragging = true;
+	bDragSourceIsChest = false;
+	bDragSourceIsEquipment = true;
+	DragSourceSlotIndex = EquipSlotIndex;
+	DragStackCount = SourceSlot.StackCount;
+	DragItemData = GetItemData(SourceSlot.ItemID);
+}
+
+void UDC1InventoryViewModel::RequestDropToEquipment(int32 EquipSlotIndex)
+{
+	if (false == bIsDragging)
+	{
+		return;
+	}
+
+	// 플레이어 인벤토리에서 시작한 드래그만 장착 (상자 -> 장비, 장비 -> 장비는 취소)
+	if (false == bDragSourceIsChest && false == bDragSourceIsEquipment)
+	{
+		RequestEquipItem(DragSourceSlotIndex, EquipSlotIndex);
 	}
 
 	EndDrag();

@@ -10,6 +10,7 @@
 class ADC1Weapon;
 class ADC1Tool;
 class ADC1Player;
+class UDC1PlayerInventoryComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
 
@@ -25,14 +26,14 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	// ASC 준비 후 서버에서 1회. 슬롯 무기 스폰 + 초기 장착
-	// TODO : 본문은 인벤토리 연동 전 임시 구현 (.cpp 의 동명 TODO 참고)
+	// 인벤토리 무기 칸 기준으로 무기를 스폰하고 장착하는 함수 (폰이 붙을 때 서버)
 	void		Init_Equip();
 
 	// 폰이 이 PlayerState에 붙은 시점에 폰이 직접 호출한다.
@@ -53,6 +54,21 @@ private:
 	// 소유자는 PlayerState다. 폰은 아직 없거나 교체됐을 수 있어 캐싱하지 않고 매번 얻는다
 	ADC1Player*	GetOwningPlayer() const;
 
+	// 같은 PlayerState의 인벤토리 조회 함수
+	UDC1PlayerInventoryComponent*	GetInventoryComponent() const;
+
+	// 장비 칸 변경 시 무기 액터를 교체하는 함수 (서버)
+	void		HandleEquipmentSlotChanged(int32 InEquipSlotIndex);
+
+	// 무기 칸 하나를 인벤토리 기준으로 다시 스폰하는 함수 (비면 주먹)
+	void		RefreshWeaponSlot(int32 InWeaponIndex);
+
+	// 무기 칸 전체를 인벤토리 기준으로 다시 맞추고 현재 칸 무기를 드는 함수 (서버, 폰 필요)
+	void		SyncWeaponsFromInventory();
+
+	// 휠로 순환할 수 있는 무기 칸 수 조회 함수 (인벤토리의 열린 무기 칸 수)
+	int32		GetUnlockedWeaponCount() const;
+
 	UFUNCTION()
 	void		OnRep_CurrentWeapon();
 
@@ -61,10 +77,6 @@ private:
 	void		ApplyWeaponAttach();
 
 public:
-	// Temp
-	UPROPERTY(EditDefaultsOnly, Category = "Equip")
-	TArray<TSubclassOf<ADC1Weapon>>		WeaponClass;
-
 	// 슬롯 선택은 서버에서만 굴린다. 클라는 CurrentWeapon만 보면 되므로 복제하지 않는다
 	UPROPERTY()
 	int32								CurrentWeaponIndex = {};
@@ -76,9 +88,6 @@ private:
 	void		SetWeaponState(WEAPONSTATE WeaponState);
 
 private:
-	int32								MaxWeaponEquip = { 6 };
-	int32								CanWeaponEquip = { 4 };
-
 	UPROPERTY()
 	TArray<TObjectPtr<ADC1Weapon>>		WeaponSlots;
 

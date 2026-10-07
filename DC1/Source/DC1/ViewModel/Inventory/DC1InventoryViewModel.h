@@ -57,6 +57,9 @@ public:
 	/** 드래그 세션 종료 이벤트 */
 	FOnDragEnded OnDragEnded;
 
+	// 장비 칸 갱신 이벤트
+	FOnInventoryUpdated OnEquipmentUIUpdated;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetTargetChest(UDC1ChestInventoryComponent* InChestComp);
@@ -104,6 +107,48 @@ public:
 
 	const FDC1ItemRow* GetItemData(FName ItemID) const;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
+	int32 GetEquipmentSlotCount() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
+	const FDC1InventorySlotInfo& GetEquipmentSlot(int32 Index) const;
+
+	// 장비 칸 타입 조회 함수 (빈 칸 아이콘 표시용)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
+	EDC1EquipSlotType GetEquipSlotType(int32 Index) const;
+
+	// 아이템이 장비 칸에 맞는지 확인하는 함수 (드롭 가능 표시용)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
+	bool CanEquipToSlot(FName ItemID, int32 EquipSlotIndex) const;
+
+	// 장비 칸 잠김 여부 조회 함수 (사선 잠금 표시용)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
+	bool IsEquipSlotLocked(int32 EquipSlotIndex) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
+	float GetCurrentWeight() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
+	float GetMaxWeight() const;
+
+	// 드래그 중인 아이템을 버리는 함수 (플레이어 인벤토리에서 시작한 드래그만)
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
+	void RequestDropDraggedItem();
+
+	// 드래그 중인 아이템을 폐기하는 함수 (플레이어 인벤토리에서 시작한 드래그만)
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
+	void RequestDiscardDraggedItem();
+
+	// 장비 장착/해제 요청 함수
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
+	void RequestEquipItem(int32 SlotIndex, int32 EquipSlotIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
+	void RequestEquipItemAuto(int32 SlotIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
+	void RequestUnequipItem(int32 EquipSlotIndex, int32 ToSlotIndex = -1);
+
 	/**
 	 * 특정 슬롯을 갱신
 	 * @param SlotIndex 갱신할 슬롯 인덱스
@@ -150,6 +195,9 @@ public:
 	bool IsDragSourceChest() const { return bDragSourceIsChest; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Drag")
+	bool IsDragSourceEquipment() const { return bDragSourceIsEquipment; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Drag")
 	int32 GetDragSourceSlotIndex() const { return DragSourceSlotIndex; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Drag")
@@ -179,6 +227,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
 	void RequestDrop(bool bTargetIsChest, int32 TargetSlotIndex);
 
+	// 장비 칸에서 드래그를 시작하는 함수
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
+	void BeginDragFromEquipment(int32 EquipSlotIndex);
+
+	// 드래그 중인 아이템을 장비 칸에 드롭하는 함수 (인벤토리에서 시작한 드래그만 장착)
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
+	void RequestDropToEquipment(int32 EquipSlotIndex);
+
 protected:
 	/** 플레이어 인벤토리 구독 교체 (BindSource/ClearSource 전용) */
 	void SetPlayerInventoryComponent(UDC1PlayerInventoryComponent* InPlayerComp);
@@ -192,6 +248,7 @@ protected:
 	void HandleChestSlotUpdated(int32 SlotIndex);
 	void HandleValuableInventoryUpdated();
 	void HandleValuableSlotUpdated(int32 SlotIndex);
+	void HandleEquipmentUpdated();
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
@@ -208,6 +265,8 @@ protected:
 private:
 	bool bIsDragging = false;
 	bool bDragSourceIsChest = false;
+	// 장비 칸에서 시작한 드래그인지 (true면 DragSourceSlotIndex는 장비 칸 인덱스)
+	bool bDragSourceIsEquipment = false;
 	int32 DragSourceSlotIndex = -1;
 	int32 DragStackCount = 0;
 	const FDC1ItemRow* DragItemData = nullptr;

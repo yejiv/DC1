@@ -3,7 +3,7 @@
 
 #include "Actor/BuildActor/Interact/Chest/DC1ChestActor.h"
 
-#include "Component/Inventory/DC1ChestInventoryComponent.h"
+#include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Character/DC1Character.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "UI/Tab/Inventory/Chest/DC1ChestLootScreenWidget.h"

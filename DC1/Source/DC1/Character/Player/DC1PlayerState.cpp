@@ -8,8 +8,8 @@
 #include "Component/DC1EquipComponent.h"
 #include "Component/DC1TechTreeComponent.h"
 #include "Component/Appearance/DC1AppearanceComponent.h"
-#include "Component/Inventory/DC1PlayerInventoryComponent.h"
-#include "Component/Inventory/DC1ValuableInventoryComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 
 #include "Save/DC1PlayerSaveGame.h"
