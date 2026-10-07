@@ -89,6 +89,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interact")
 	float	HoldConfirmDuration = { 2.f };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Interact")
+	FVector	InteractPromtOffset = { FVector(0.f, 30.f, 0.f) };
+
 private:
 	TWeakObjectPtr<AActor>				CurrentTarget = { nullptr };
 

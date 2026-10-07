@@ -27,6 +27,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "RowWidget")
 	TSubclassOf<UDC1InteractPromptRowWidget> RowWidgetClass = { nullptr };
 
+	UPROPERTY(EditAnywhere, Category = "RowWidget")
+	float RowSpacing = { 10.f };
+
 	UPROPERTY()
 	TMap<EDC1InteractKey, TObjectPtr<UDC1InteractPromptRowWidget>> RowWidgetByKey;
 };

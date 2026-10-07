@@ -86,7 +86,7 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	InteractPromptWidgetComponent->SetUsingAbsoluteLocation(true);
 	InteractPromptWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	InteractPromptWidgetComponent->SetDrawAtDesiredSize(true);
-	InteractPromptWidgetComponent->SetPivot({ 0.5f, 1.f });
+	InteractPromptWidgetComponent->SetPivot({ 0.5f, 0.5f });
 	InteractPromptWidgetComponent->SetVisibility(false);
 	InteractPromptWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

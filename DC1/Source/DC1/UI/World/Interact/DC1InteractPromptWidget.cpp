@@ -5,6 +5,7 @@
 
 
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
 #include "UI/World/Interact/DC1InteractPromptRowWidget.h"
 
 void UDC1InteractPromptWidget::SetOptions(const TArray<FDC1InteractOption>& InOptions)
@@ -17,6 +18,8 @@ void UDC1InteractPromptWidget::SetOptions(const TArray<FDC1InteractOption>& InOp
 	PromptVerticalBox->ClearChildren();
 	RowWidgetByKey.Empty();
 
+	bool HasChild = false;
+
 	for (const FDC1InteractOption& Option : InOptions)
 	{
 		UDC1InteractPromptRowWidget* RowWidget = CreateWidget<UDC1InteractPromptRowWidget>(this, RowWidgetClass);
@@ -27,9 +30,16 @@ void UDC1InteractPromptWidget::SetOptions(const TArray<FDC1InteractOption>& InOp
 
 		RowWidget->SetOption(Option);
 		RowWidget->SetFillRatio(0.f);
+		
+		int32 RowIndex = PromptVerticalBox->GetChildrenCount();
+		UVerticalBoxSlot* RowSlot = PromptVerticalBox->AddChildToVerticalBox(RowWidget);
+		if (true == ::IsValid(RowSlot) && RowIndex > 0)
+		{
+			RowSlot->SetPadding(FMargin(0.f, RowSpacing, 0.f, 0.f));
+		}
 
-		PromptVerticalBox->AddChild(RowWidget);
 		RowWidgetByKey.Add(Option.Key, RowWidget);
+
 	}
 }
 

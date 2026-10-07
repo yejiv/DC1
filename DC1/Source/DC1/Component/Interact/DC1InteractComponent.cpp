@@ -471,7 +471,7 @@ void UDC1InteractComponent::ShowPrompt()
 
 	if (true == ::IsValid(PromptComp))
 	{
-		FVector PromptLocation = InteractCollider->Bounds.Origin + FVector(0.f, 0.f, InteractCollider->Bounds.BoxExtent.Z);
+		FVector PromptLocation = InteractCollider->Bounds.Origin + InteractPromtOffset;
 		PromptComp->SetWorldLocation(PromptLocation);
 
 		// 이미 초기화된 경우에도 호출 가능한 함수

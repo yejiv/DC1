@@ -5,16 +5,22 @@
 
 #include "Interface/DC1InteractableInterface.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 
 void UDC1InteractPromptRowWidget::SetOption(const FDC1InteractOption& InOption)
 {
-	if (false == ::IsValid(KeyText) || false == ::IsValid(DisplayText))
+	if (false == ::IsValid(KeyImage) || false == ::IsValid(DisplayText))
 	{
 		return;
 	}
 
-	KeyText->SetText(UEnum::GetDisplayValueAsText(InOption.Key));
+	UTexture2D* Icon = KeyIcons.FindRef(InOption.Key);
+	if (true == ::IsValid(Icon))
+	{
+		KeyImage->SetBrushFromTexture(Icon);
+	}
+
 	DisplayText->SetText(InOption.DisplayText);
 }
 

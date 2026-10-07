@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "Interface/DC1InteractableInterface.h"
 #include "DC1InteractPromptRowWidget.generated.h"
 
-struct FDC1InteractOption;
-
 class UTextBlock;
+class UImage;
 class UProgressBar;
 
 UCLASS()
@@ -22,11 +22,14 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>		KeyText = { nullptr };
+	TObjectPtr<UImage>			KeyImage = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>		DisplayText = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar>	FillBar = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interact")
+	TMap<EDC1InteractKey, TObjectPtr<UTexture2D>> KeyIcons;
 };
