@@ -98,7 +98,7 @@ void UDC1GA_Player_ClimbAtTop::EndAbility(const FGameplayAbilitySpecHandle Handl
 {
 	if (CMC.IsValid() && MOVE_Flying == CMC->MovementMode)
 	{
-		CMC->SetMovementMode(MOVE_Falling);
+		CMC->SetMovementMode(bWasCancelled ? MOVE_Falling : MOVE_Walking);
 	}
 	CMC.Reset();
 
