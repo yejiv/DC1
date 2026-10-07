@@ -5,6 +5,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DC1CharacterMovementComponent.generated.h"
 
+struct FCollisionQueryParams;
+struct FCollisionObjectQueryParams;
+
 struct FSavedMove_DC1 : public FSavedMove_Character {
 
 	typedef FSavedMove_Character Super;
@@ -36,6 +39,12 @@ struct FNetworkPredictionData_Client_DC1 : public FNetworkPredictionData_Client_
 
 };
 
+enum ECustomMovementMode : int
+{
+	CMOVE_None,
+	CMOVE_Climb,
+};
+
 UCLASS()
 class DC1_API UDC1CharacterMovementComponent : public UCharacterMovementComponent
 {
@@ -49,11 +58,49 @@ public:
 
 private:
 	virtual void UpdateFromCompressedFlags(uint8 Flags) override;
+	virtual void UpdateCharacterStateBeforeMovement(float DeltaSeconds) override;
+
+	virtual void	PhysCustom(float deltaTime, int32 Iterations) override;
+	void			PhysClimbing(float deltaTime, int32 Iterations);
+
+	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
+	// 벽타기 중엔 회전을 PhysClimbing(RotateToWall)이 전담한다
+	virtual void PhysicsRotation(float DeltaTime) override;
 
 public:
 	void ToggleMove();
 	void SetWalk(bool IsWalk);
 	void SetSprint(bool Sprint);
+
+	bool IsClimbing() const { return MovementMode == MOVE_Custom && CustomMovementMode == CMOVE_Climb; }
+	bool IsArriveAtTop() const { return bArriveAtTop; }
+	bool CanMantle() const { return bCanMantle; }
+
+	// 올라설 수 있는지 지금 위치에서 새로 판정한다(멤버를 건드리지 않음).
+	// 이동 계산 밖(GA 활성화 등)에서 써도 된다. 성공 시 올라선 뒤 캡슐 중심 위치를 돌려준다
+	bool FindMantleTarget(FVector& OutTargetLocation) const;
+	const FVector& GetClimbWallNormal() const { return ClimbWallNormal; }
+
+	// 벽 평면 기준 방향. 입력(PC OnMove)과 이동(PhysClimbing)이 같은 정의를 쓰도록 여기서만 계산한다
+	// 벽 법선이 없으면 ZeroVector
+	FVector GetClimbRightVector() const;
+	FVector GetClimbUpVector() const;
+
+private:
+	void			ConfirmMovement();
+
+	bool			HasWallAtHeadHeight();
+	bool			DetectWall();
+	bool			CheckInputDirectionToWall();
+
+	void			UpdateCanMantle();
+	void			AttachToWall();
+	void			RotateToWall(float DeltaTime);
+
+	void			ResetClimbState();
+
+	// 벽타기 판정 쿼리 공통 설정. 모든 판정이 같은 대상/제외 조건을 쓰도록 한 곳에서 채운다
+	void			SetupClimbQueryParams(FCollisionQueryParams& InOutQueryParams, FCollisionObjectQueryParams& OutObjectParams) const;
 
 public:
 
@@ -68,4 +115,59 @@ private:
 	float	JogSpeed = { 300.f };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float	SprintSpeed = { 650.f };
+
+private:
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ClimbSpeed = { 100.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ClimbJumpSpeed = { 300.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ClimbFriction = { 8.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	BrakingDecelerationClimbing = { 1000.f };
+	// 벽 타기 가능한 최대 각도
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ClimbMaxAngle = { 120.f };
+	// 다시 벽에 붙을 수 있는 Z 속도 임계점
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ReattachZThreshold = { 10.f };
+	// 벽 탐지 거리
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	DetectWallRange = { 50.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float	ForwardDegree = { 45.f };
+
+	// 꼭대기 바닥 탐색 시작 높이: 머리 위로 이만큼 여유
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle")
+	float	MantleTraceHeadMargin = { 10.f };
+	// 착지 지점: 벽면에서 캡슐 반지름 + 이만큼 더 안쪽
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle")
+	float	MantleLandingInset = { 10.f };
+	// 착지 공간 검사 시 바닥에서 캡슐을 띄우는 높이(붙이면 바닥과 닿아 항상 겹침)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle")
+	float	MantleOverlapLift = { 2.f };
+	// 착지 공간 검사 캡슐 반지름 배율(옆 벽에 스치는 정도로 실패하지 않게 살짝 줄임)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle", meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	float	MantleOverlapRadiusScale = { 0.95f };
+
+	// 벽에 붙어 있을 때 캡슐 표면과 벽 사이 간격(딱 붙이면 이동 Sweep이 매번 벽에 걸림)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Attach")
+	float	ClimbWallGap = { 2.f };
+	// 목표 간격과의 오차가 이 값 이하면 보정하지 않음(울퉁불퉁한 벽에서 떨림 방지)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Attach")
+	float	ClimbAttachTolerance = { 0.5f };
+	// 한 번에 보정하는 최대 거리(볼록 모서리 등에서 거리가 급변할 때 순간이동 방지)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Attach")
+	float	ClimbAttachMaxStep = { 5.f };
+	// 벽을 바라보도록 도는 보간 속도(낮을수록 모서리에서 부드럽게 돈다)
+	UPROPERTY(EditDefaultsOnly, Category = "Climb|Attach")
+	float	ClimbRotationInterpSpeed = { 10.f };
+
+	// 벽 탐지 결과(유효 히트 법선 평균). ZeroVector면 벽 없음
+	FVector	ClimbWallNormal = { FVector::ZeroVector };
+
+	// 벽 꼭대기 도착 여부
+	bool	bArriveAtTop = { false };
+	// 꼭대기 올라설 수 있는가 여부(소유 클라에서만 갱신. 착지 위치는 GA가 FindMantleTarget으로 직접 구한다)
+	bool	bCanMantle = { false };
 };

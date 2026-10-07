@@ -22,7 +22,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
 
 
 #include "Component/Build/DC1BuildPlacementComponent.h"
@@ -225,12 +225,36 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 		return;
 	}
 
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(ControlObject->GetCharacterMovement());
+	if (false == IsValid(CMC))
+	{
+		return;
+	}
+
 	const FVector2D MoveVector = Value.Get<FVector2D>();
 
-	FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
+	// ClimbAtTop 판정
+	if (true == CMC->CanMantle() && MoveVector.X > 0.f)
+	{
+		ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_ClimbAtTop);
+	}
 
-	const FVector Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
-	const FVector Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+	const bool IsClimbing = CMC->IsClimbing();
+
+	FVector Forward = {};
+	FVector Right = {};
+
+	if (IsClimbing)
+	{
+		Right = CMC->GetClimbRightVector();
+		Forward = CMC->GetClimbUpVector();
+	}
+	else
+	{
+		FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
+		Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
+		Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+	}
 
 	ControlObject->AddMovementInput(Forward * MoveVector.X);
 	ControlObject->AddMovementInput(Right * MoveVector.Y);

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Character/DC1Character.h"
 #include "GameplayTagContainer.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "DC1Player.generated.h"
 
 class USkeletalMeshComponent;
@@ -13,6 +14,8 @@ class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
 class UWidgetComponent;
+
+class UGameplayEffect;
 
 class UDC1AbilitySystemComponent;
 /**
@@ -40,6 +43,9 @@ public:
 	bool GetAimingState() const { return IsAiming; }
 
 public:
+	bool CanClimb() const;
+
+public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
@@ -57,6 +63,8 @@ private:
 	virtual void UnPossessed() override;
 	virtual void OnRep_PlayerState() override;
 	virtual void NotifyControllerChanged() override;
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -91,12 +99,27 @@ private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount);
+	void	HandleStaminaChanged(const FOnAttributeChangeData& Data);
 
 	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
+
+	// 벽타기 진입/이탈 시 State.Climbing 태그 반영. 이동 모드가 바뀌는 클라(예측)·서버 양쪽에서 호출된다
+	void	ApplyClimbState(bool IsApply);
+	// 서버 전용. 벽타기 소모 GE 제거 + 핸들 무효화
+	void	RemoveClimbStaminaCost(UDC1AbilitySystemComponent* ASC);
+
+	UFUNCTION()
+	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
 
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	TSubclassOf<UGameplayEffect>			ClimbStaminaCostClass = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float											ClimbMovingSpeedThreshold = { 1.f };
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
@@ -106,6 +129,10 @@ private:
 	FDelegateHandle								AimStateTagHandle;
 	FDelegateHandle								ZoomInStateTagHandle;
 	TMap<FGameplayTag, FDelegateHandle>	PlayerStateTagHandles;
+
+	FActiveGameplayEffectHandle				ClimbStaminaCostHandle;
+	// 서버 전용. 벽타기 중 스태미나 고갈 감시(Clear_Resource에서 Remove)
+	FDelegateHandle								StaminaChangedHandle;
 
 private:
 	bool	IsAiming = {};

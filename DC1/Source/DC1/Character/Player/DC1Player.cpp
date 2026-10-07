@@ -17,6 +17,7 @@
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/Appearance/DC1AppearanceComponent.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 
@@ -119,6 +120,18 @@ void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponen
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, DC1PlayerTags::Event_Player_Hit, Payload);
 }
 
+bool ADC1Player::CanClimb() const
+{
+	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent());
+	if (nullptr == ASC)
+		return false;
+
+	if (ASC->GetNumericAttribute(UDC1AttributeSet::GetStaminaAttribute()) <= 20.f)
+		return false;
+
+	return true;
+}
+
 void ADC1Player::ToggleMove()
 {
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();
@@ -216,6 +229,87 @@ void ADC1Player::NotifyControllerChanged()
 	StaminaWidgetComponent->SetVisibility(IsLocallyControlled());
 }
 
+void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+	// CMC가 MovementMode를 이미 갱신한 뒤 호출된다
+	if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement()))
+	{
+		ApplyClimbState(CMC->IsClimbing());
+	}
+}
+
+void ADC1Player::ApplyClimbState(bool IsApply)
+{
+	// 보정 후 리플레이로 여러 번 호출될 수 있어 Add/Remove(카운트 누적) 대신 값을 직접 설정한다
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent()))
+	{
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing, IsApply ? 1 : 0);
+
+		// 이동 여부 태그는 벽타기 중에만 의미가 있다. 이탈 시 남지 않게 끈다
+		if (false == IsApply)
+		{
+			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing_Moving, 0);
+		}
+
+		if (true == HasAuthority())
+		{
+			if (true == IsApply)
+			{
+				if (false == ClimbStaminaCostHandle.IsValid())
+				{
+					if (false == IsValid(ClimbStaminaCostClass))
+						return;
+
+					FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ClimbStaminaCostClass, 1.f, ASC->MakeEffectContext());
+
+					if (SpecHandle.IsValid())
+					{
+						ClimbStaminaCostHandle = ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+					}
+				}	
+			}
+			else
+			{
+				RemoveClimbStaminaCost(ASC);
+			}
+		}
+	}
+}
+
+void ADC1Player::RemoveClimbStaminaCost(UDC1AbilitySystemComponent* ASC)
+{
+	if (nullptr == ASC || false == ClimbStaminaCostHandle.IsValid())
+	{
+		return;
+	}
+
+	// 제거 시 GE의 OnCompleteAlways(회복 지연 GE)가 이어받는다
+	ASC->RemoveActiveGameplayEffect(ClimbStaminaCostHandle);
+
+	// 핸들을 비우지 않으면 다음 벽타기에서 "이미 적용 중"으로 보고 적용을 건너뛴다
+	ClimbStaminaCostHandle.Invalidate();
+}
+
+void ADC1Player::HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity)
+{
+	// 소모 GE는 서버에서만 계산된다
+	if (false == HasAuthority())
+		return;
+
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement());
+	if (nullptr == CMC || false == CMC->IsClimbing())
+		return;   // 벽타기 밖에서는 ApplyClimbState(false)가 이미 0으로 꺼둠
+
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (nullptr == ASC)
+		return;
+
+	const bool bMoving = GetVelocity().SizeSquared() > FMath::Square(ClimbMovingSpeedThreshold);
+	ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing_Moving, bMoving ? 1 : 0);
+}
+
 void ADC1Player::InitializeEquip()
 {
 	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
@@ -268,13 +362,27 @@ void ADC1Player::InitializeAbilitySystem()
 
 	// ZoomIn State Delegate Register
 	RegisterStateHandle(DC1StateTags::State_ZoomIn, &ThisClass::OnZoomStateChanged, ASC);
+
+	// Stamina 0되면 벽에서 벗어나도록 Delgate Register
+	if (HasAuthority() && false == StaminaChangedHandle.IsValid())
+	{
+		StaminaChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetStaminaAttribute()).AddUObject(this, &ThisClass::HandleStaminaChanged);
+	}
+
+	// CharacterMovement Delegate Register
+	OnCharacterMovementUpdated.AddUniqueDynamic(this, &ThisClass::HandleOnCharacterMovementUpdated);
 }
 
 void ADC1Player::Clear_Resource()
 {
+	OnCharacterMovementUpdated.RemoveAll(this);
+
 	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
 	{
 		UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent());
+		if (nullptr == ASC)
+			return;
+		
 		ASC->SetAvatarActor(nullptr);
 
 		for (TPair pair : WeaponStateTagHandles)
@@ -290,6 +398,20 @@ void ADC1Player::Clear_Resource()
 				ASC->UnregisterGameplayTagEvent(Pair.Value, Pair.Key);
 				Pair.Value.Reset();
 			}
+		}
+
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing, 0);
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing_Moving, 0);
+
+		if (true == HasAuthority())
+		{
+			RemoveClimbStaminaCost(ASC);
+		}
+
+		if (true == StaminaChangedHandle.IsValid())
+		{
+			ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetStaminaAttribute()).Remove(StaminaChangedHandle);
+			StaminaChangedHandle.Reset();
 		}
 	}
 }
@@ -341,6 +463,21 @@ void ADC1Player::OnAimStateChanged(const FGameplayTag Tag, int32 NewCount)
 void ADC1Player::OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	CurrentTargetArmLength = NewCount > 0 ? FixedTargetArmLength - ZoomInLength : FixedTargetArmLength;
+}
+
+void ADC1Player::HandleStaminaChanged(const FOnAttributeChangeData& Data)
+{
+	if (Data.NewValue > 0)
+		return;
+
+	if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement()))
+	{
+		if (true == CMC->IsClimbing())
+		{
+			CMC->SetMovementMode(MOVE_Falling);
+			ApplyClimbState(false);
+		}
+	}
 }
 
 void ADC1Player::RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC)
