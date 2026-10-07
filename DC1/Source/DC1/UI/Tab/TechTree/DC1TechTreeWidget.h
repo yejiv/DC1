@@ -48,7 +48,7 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget = { nullptr };
 
-	UPROPERTY(EditAnywhere, Category = "UserButton")
+	UPROPERTY(EditAnywhere, Category = "RowWidget")
 	TSubclassOf<UDC1TechTreeRowWidget>			RowWidgetClass = { nullptr };
 
 private:
@@ -59,7 +59,7 @@ private:
 	TArray<TObjectPtr<UDC1TechTreeButton>>		TechSlots;
 
 	UPROPERTY()
-	TObjectPtr<UDC1TechTreeViewModel>			CachedViewModel;
+	TObjectPtr<UDC1TechTreeViewModel>			CachedViewModel = { nullptr };
 
 	int32										CachedLevel = { 0 };
 

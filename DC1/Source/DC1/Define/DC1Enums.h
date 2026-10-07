@@ -4,7 +4,6 @@
 
 
 #pragma region UI ENUM
-
 // FADE TYPE
 UENUM(BlueprintType)
 enum class EDC1FadeType : uint8
@@ -60,7 +59,6 @@ enum class EDC1PalSlotShift : uint8
 	Prev = 1,		// 선택이 이전 인덱스로 (1번 키). 아이콘은 오른쪽으로 밀린다
 	Next = 2,		// 선택이 다음 인덱스로 (3번 키). 아이콘은 왼쪽으로 밀린다
 };
-
 #pragma endregion
 
 #pragma region BUILD

@@ -19,7 +19,8 @@ void UDC1BuildViewModel::BindSource(ADC1PlayerState* InPlayerState)
 
 	// 배치 컴포넌트는 PlayerController에 존재
 	UDC1BuildPlacementComponent* PlacementComponent = nullptr;
-	if (ADC1PlayerController* PC = Cast<ADC1PlayerController>(InPlayerState->GetPlayerController()))
+	ADC1PlayerController* PC = Cast<ADC1PlayerController>(InPlayerState->GetPlayerController());
+	if (true == ::IsValid(PC))
 	{
 		PlacementComponent = PC->GetBuildPlacementComponent();
 	}
@@ -65,13 +66,13 @@ bool UDC1BuildViewModel::IsBuildUnlocked(const FGameplayTag& InBuildTag) const
 		return false;
 	}
 
-	const FGameplayTag* TechTag = TechTagByBuildTag.Find(InBuildTag);
-	if (nullptr == TechTag)
+	const FGameplayTag TechTag = TechTagByBuildTag.FindRef(InBuildTag);
+	if (false == TechTag.IsValid())
 	{
 		return false;
 	}
 
-	return TechComp->IsTechUnlocked(*TechTag);
+	return TechComp->IsTechUnlocked(TechTag);
 }
 
 void UDC1BuildViewModel::GetBuildTagsByTechTag(const FGameplayTag& InTechTag, TArray<FGameplayTag>& OutBuildTags) const
@@ -102,7 +103,7 @@ void UDC1BuildViewModel::CacheBuildRows()
 
 	if (false == DC1DataTableHelper::GetAllRows<FDC1BuildRow>(DC1DataTableTags::DataTable_UI_Build, AllBuildRows))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Build DataTable is NULL"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildViewModel :: Build DataTable is NULL"));
 		return;
 	}
 
@@ -113,13 +114,13 @@ void UDC1BuildViewModel::CacheBuildRows()
 
 		if (false == BuildTag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Build Tag is Invalid"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildViewModel :: Build Tag is Invalid"));
 			continue;
 		}
 
 		if (false == TechTag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Build Data Tech Tag is Invalid"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildViewModel :: Build Data Tech Tag is Invalid"));
 			continue;
 		}
 

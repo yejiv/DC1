@@ -96,7 +96,7 @@ void UDC1TechTreeButton::SetState(EDC1TechSlotState InNewState)
 
 		// 일회성 해금 연출 - 끝나면 원복
 		PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
-		PlayInfo.bRestoreState = true;
+		PlayInfo.RestoreState = true;
 
 		PlayAnim(UnlockedAnim, PlayInfo);
 	}

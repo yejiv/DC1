@@ -50,9 +50,15 @@ bool UDC1BuildSnapSolver::BeginManualSnap(const FDC1BuildSnapInput& InInput)
 		return false;
 	}
 
+	const ADC1BuildActor* TargetActor = SnapPair.TargetActor.Get();
+	if (false == ::IsValid(TargetActor))
+	{
+		return false;
+	}
+
 	SnapSocketLocationWorld = SnapPair.TargetSocket.SocketTransform.GetLocation();
 	SnapSocketNormalWorld = SnapPair.TargetSocket.SocketTransform.GetUnitAxis(EAxis::X);
-	SnapBaseYaw = SnapPair.TargetActor->GetActorRotation().Yaw;
+	SnapBaseYaw = TargetActor->GetActorRotation().Yaw;
 
 	const FQuat SnapQuat = FRotator(0.f, SnapBaseYaw, 0.f).Quaternion();
 	SnapMinDistance = InInput.Preview->GetExtentCenterToDirection(SnapSocketNormalWorld, SnapQuat) + SnapContactMargin;

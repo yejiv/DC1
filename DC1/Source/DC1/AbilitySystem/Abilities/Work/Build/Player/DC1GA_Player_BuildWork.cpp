@@ -71,9 +71,10 @@ void UDC1GA_Player_BuildWork::StartWork(ADC1InteractBuildActor* InBuildTarget)
 
 void UDC1GA_Player_BuildWork::StopWork()
 {
-	if (nullptr != WorkTarget.Get())
+	ADC1InteractBuildActor* Target = WorkTarget.Get();
+	if (true == ::IsValid(Target))
 	{
-		WorkTarget.Get()->OnBuildCompleted.Remove(BuildCompletedDelegateHandle);
+		Target->OnBuildCompleted.Remove(BuildCompletedDelegateHandle);
 	}
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
@@ -94,7 +95,7 @@ void UDC1GA_Player_BuildWork::OnWorkStarted()
 	IsPlayingMontage = false;
 
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true);
-	if(true == ::IsValid(ReleaseTask))
+	if (true == ::IsValid(ReleaseTask))
 	{
 		ReleaseTask->OnRelease.AddDynamic(this, &ThisClass::OnInputReleased);
 		ReleaseTask->ReadyForActivation();
@@ -149,7 +150,7 @@ void UDC1GA_Player_BuildWork::FinishWork()
 	IsSectionEnd = true;
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
-	if (nullptr != InteractComp)
+	if (true == ::IsValid(InteractComp))
 	{
 		InteractComp->RequestStopWork();
 	}

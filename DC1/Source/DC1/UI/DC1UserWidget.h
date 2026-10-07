@@ -17,7 +17,7 @@ struct FDC1AnimPlayInfo
 
 	TEnumAsByte<EUMGSequencePlayMode::Type> PlayMode = { EUMGSequencePlayMode::Forward };
 
-	bool bRestoreState = { false };
+	bool RestoreState = { false };
 
 	// 0 = 무한 루프
 	int32 NumLoops = { 1 };

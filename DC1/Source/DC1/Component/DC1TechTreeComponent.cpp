@@ -23,7 +23,7 @@ int32 UDC1TechTreeComponent::GetPlayerLevel() const
 	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
 	if (false == ::IsValid(ASC))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent ::  Can't Find ASC"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Can't Find ASC"));
 		return 0;
 	}
 
@@ -178,7 +178,7 @@ const FDC1TechRow* UDC1TechTreeComponent::FindTechRow(const FGameplayTag& InTech
 	const FDC1TechRow* Found = TechRowsByTag.Find(InTechTag);
 	if (nullptr == Found)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Cant Find TechRows by %s"), *InTechTag.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Can't Find TechRows by %s"), *InTechTag.ToString());
 
 		return nullptr;
 	}
@@ -209,7 +209,7 @@ void UDC1TechTreeComponent::CachedTechRows()
 	TArray<FDC1TechRow> AllRows;
 	if (false == DC1DataTableHelper::GetAllRows<FDC1TechRow>(DC1DataTableTags::DataTable_UI_TechTree, AllRows))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TechTree DataTable is NULL"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: TechTree DataTable is NULL"));
 		return;
 	}
 
@@ -220,13 +220,13 @@ void UDC1TechTreeComponent::CachedTechRows()
 		const FGameplayTag& TechTag = Row.TechTag;
 		if (false == TechTag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Tech Tag is Invalid"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Tech Tag is Invalid"));
 			continue;
 		}
 
 		if (nullptr != TechRowsByTag.Find(TechTag))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Duplication TechTag"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Duplication TechTag"));
 			continue;
 		}
 
@@ -239,7 +239,7 @@ void UDC1TechTreeComponent::BindLevelChange()
 	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
 	if (false == ::IsValid(ASC))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent ::  Can't Find ASC"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeComponent :: Can't Find ASC"));
 		return;
 	}
 

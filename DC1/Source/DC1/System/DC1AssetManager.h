@@ -59,9 +59,10 @@ inline const AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& Asse
 {
 	UDC1AssetManager& AssetManager = Get();
 
-	if (TObjectPtr<const UObject>* Cached = AssetManager.TagToLoadedDataAsset.Find(AssetTag))
+	const UObject* Cached = AssetManager.TagToLoadedDataAsset.FindRef(AssetTag);
+	if (true == ::IsValid(Cached))
 	{
-		return Cast<AssetType>(Cached->Get());
+		return Cast<AssetType>(Cached);
 	}
 
 	UDC1AssetData* AssetData = AssetManager.LoadedPrimaryAssetData;
@@ -77,7 +78,7 @@ inline const AssetType* UDC1AssetManager::GetAssetByTag(const FGameplayTag& Asse
 		LoadedAsset = Cast<AssetType>(AssetPath.ResolveObject());
 		if (false == ::IsValid(LoadedAsset))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Attempted sync loading because asset hadn't loaded yet [%s]."), *AssetTag.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("UDC1AssetManager :: Attempted sync loading because asset hadn't loaded yet [%s]."), *AssetTag.ToString());
 			LoadedAsset = Cast<AssetType>(AssetPath.TryLoad());
 		}
 	}

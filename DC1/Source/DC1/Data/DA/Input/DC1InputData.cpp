@@ -14,7 +14,7 @@ const UInputMappingContext* UDC1InputData::FindInputMappingContextbyTag(const FG
 		}
 	}
 
-	UE_LOG(LogWindows, Error, TEXT("Can't find IMC for InputTag [%s]"), *Tag.ToString());
+	UE_LOG(LogWindows, Error, TEXT("UDC1InputData :: Can't find IMC for InputTag [%s]"), *Tag.ToString());
 
 	return nullptr;
 }
@@ -29,7 +29,7 @@ const FDC1InputMappingContext* UDC1InputData::FindIMCEntrybyTag(const FGameplayT
 		}
 	}
 
-	UE_LOG(LogWindows, Error, TEXT("Can't find IMC for InputTag [%s]"), *Tag.ToString());
+	UE_LOG(LogWindows, Error, TEXT("UDC1InputData :: Can't find IMC for InputTag [%s]"), *Tag.ToString());
 
 	return nullptr;
 }
@@ -44,7 +44,7 @@ const UInputAction* UDC1InputData::FindInputActionbyTag(const FGameplayTag& Tag)
 		}
 	}
 
-	UE_LOG(LogWindows, Error, TEXT("Can't find IMC for InputTag [%s]"), *Tag.ToString());
+	UE_LOG(LogWindows, Error, TEXT("UDC1InputData :: Can't find IMC for InputTag [%s]"), *Tag.ToString());
 
 	return nullptr;
 }
