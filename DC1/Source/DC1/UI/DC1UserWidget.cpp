@@ -91,7 +91,7 @@ void UDC1UserWidget::PlayAnim(UWidgetAnimation* InAnim, const FDC1AnimPlayInfo& 
 	}
 	else
 	{
-		PlayAnimation(InAnim, 0.f, InPlayInfo.NumLoops, InPlayInfo.PlayMode, 1.f, InPlayInfo.bRestoreState);
+		PlayAnimation(InAnim, 0.f, InPlayInfo.NumLoops, InPlayInfo.PlayMode, 1.f, InPlayInfo.RestoreState);
 	}
 
 	PlayingAnims.Add(InAnim, InPlayInfo);
@@ -106,7 +106,7 @@ void UDC1UserWidget::SnapAnimToEdge(UWidgetAnimation* InAnim, const FDC1AnimPlay
 
 	StopAnimation(InAnim);
 
-	if (true == InPlayInfo.bRestoreState)
+	if (true == InPlayInfo.RestoreState)
 	{
 		return;
 	}
@@ -131,7 +131,7 @@ void UDC1UserWidget::StopAnim(UWidgetAnimation* InAnim)
 void UDC1UserWidget::HandleAnimFinished(FWidgetAnimationState& InState)
 {
 	const UWidgetAnimation* FinishedAnim = InState.GetAnimation();
-	if (nullptr == FinishedAnim)
+	if (false == ::IsValid(FinishedAnim))
 	{
 		return;
 	}

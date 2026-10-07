@@ -31,6 +31,7 @@ public:
 	virtual void SetAttackCollision(bool OnCollision) override;
 
 	USphereComponent* GetInteractDetectCollider() const { return InteractDetectCollider; }
+	UWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
 
 public:
 	UFUNCTION()
@@ -78,6 +79,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UWidgetComponent>			InteractPromptWidgetComponent = { nullptr };
 
 private:
 	void	InitializeAbilitySystem();

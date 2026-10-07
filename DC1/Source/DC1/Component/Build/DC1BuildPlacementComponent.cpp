@@ -108,7 +108,7 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 	PreviewActor = SpawnBuildActor(*BuildRow, FTransform::Identity, true);
 	if (false == ::IsValid(PreviewActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Cant Spawn Build Actor : %s"), *InBuildTag.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Can't Spawn Build Actor : %s"), *InBuildTag.ToString());
 		return false;
 	}
 
@@ -164,7 +164,7 @@ void UDC1BuildPlacementComponent::ConfirmPlacement()
 {
 	if (false == ::IsValid(PreviewActor) || false == CanBuilding)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ConfirmPlacement :: CanBuilding false"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: ConfirmPlacement - CanBuilding false"));
 		return;
 	}
 
@@ -214,7 +214,7 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	ADC1BuildActor* NewBuild = SpawnBuildActor(*BuildRow, InTransform, false);
 	if (false == ::IsValid(NewBuild))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Server_PlaceBuild :: Failed Spawn Build Actor"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Server_PlaceBuild - Failed Spawn Build Actor"));
 		return;
 	}
 
@@ -254,7 +254,7 @@ void UDC1BuildPlacementComponent::CacheBuildRows()
 	TArray<FDC1BuildRow> AllRows;
 	if (false == DC1DataTableHelper::GetAllRows<FDC1BuildRow>(DC1DataTableTags::DataTable_UI_Build, AllRows))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Build DataTable is NULL"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Build DataTable is NULL"));
 		return;
 	}
 
@@ -265,13 +265,13 @@ void UDC1BuildPlacementComponent::CacheBuildRows()
 		const FGameplayTag& BuildTag = Row.BuildTag;
 		if (false == BuildTag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Build Tag is Invalid"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Build Tag is Invalid"));
 			continue;
 		}
 
 		if (nullptr != BuildRowsByTag.Find(BuildTag))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Duplication BuildTag"));
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Duplication BuildTag"));
 			continue;
 		}
 
@@ -284,7 +284,7 @@ const FDC1BuildRow* UDC1BuildPlacementComponent::FindBuildRow(const FGameplayTag
 	const FDC1BuildRow* BuildRow = BuildRowsByTag.Find(InBuildTag);
 	if (nullptr == BuildRow)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Cant Find BuildRow : %s"), *InBuildTag.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Can't Find BuildRow : %s"), *InBuildTag.ToString());
 		return nullptr;
 	}
 
@@ -310,16 +310,16 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 	}
 
 	// SoftclassPtr 동기 Load
-	if (nullptr == InRow.BuildActorClass)
+	if (true == InRow.BuildActorClass.IsNull())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Empty Build Actor Class : %s"), *(InRow.BuildTag).ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Empty Build Actor Class : %s"), *(InRow.BuildTag).ToString());
 		return nullptr;
 	}
 
 	UClass* LoadedClass = InRow.BuildActorClass.LoadSynchronous();
 	if (false == ::IsValid(LoadedClass))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed Load Build Actor  Class : %s"), *(InRow.BuildTag).ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Failed Load Build Actor Class : %s"), *(InRow.BuildTag).ToString());
 		return nullptr;
 	}
 
@@ -327,7 +327,7 @@ ADC1BuildActor* UDC1BuildPlacementComponent::SpawnBuildActor(const FDC1BuildRow&
 	ADC1BuildActor* NewBuildActor = World->SpawnActorDeferred<ADC1BuildActor>(LoadedClass, InTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (false == ::IsValid(NewBuildActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Cant Spawn Build Actor : %s"), *(InRow.BuildTag).ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Can't Spawn Build Actor : %s"), *(InRow.BuildTag).ToString());
 		return nullptr;
 	}
 
@@ -542,7 +542,7 @@ void UDC1BuildPlacementComponent::UpdateDismantleTarget()
 void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
 {
 	ADC1PlayerController* PC = GetOwner<ADC1PlayerController>();
-	if (nullptr != PC)
+	if (true == ::IsValid(PC))
 	{
 		PC->SetIMCEnabled(DC1IMCTags::IMC_Build, InEnabled);
 		PC->SetBuildMode(InEnabled);

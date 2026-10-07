@@ -29,9 +29,6 @@ public:
 	UDC1ChestInventoryComponent*	GetChestInventoryComponent() const { return ChestInventoryComp; }
 
 public:
-	virtual void					Interact(ADC1Character* InInteractOwner) override;
-
-public:
 	// 아이템 보관, 서버 권한 + 상자의 보관 가능 여부를 확인 후 처리
 	bool							StoreItem(FName InItemID, int32 InCount = 1);
 
@@ -44,6 +41,9 @@ protected:
 private:
 	// 아이템 DataTable의 앞쪽 행을 상자에 미리 채워 넣음 (서버 전용)
 	void							AddDefaultItems();
+
+	// Interact
+	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
 
 protected:
 	// 상자 종류별 수납 칸 수 ( BP 서브클래스에서 상자 종류에 맞게 설정, 예: 나무 10 / 금속 24 / 제련 금속 40 )

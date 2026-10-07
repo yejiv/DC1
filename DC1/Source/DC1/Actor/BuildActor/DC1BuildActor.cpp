@@ -283,7 +283,7 @@ bool ADC1BuildActor::TraceCheckBox(const FVector& InRayStart, const FVector& InR
 
 	const bool IsEnter = FMath::LineExtentBoxIntersection(LocalBox, LocalRayStart, LocalRayEnd, FVector(InInflate), LocalHit, LocalNormal, HitTime);
 	
-	if(true == IsEnter && HitTime > 0.f)
+	if (true == IsEnter && HitTime > 0.f)
 	{
 		OutImpactPoint = BoxTransform.TransformPositionNoScale(LocalHit);
 
