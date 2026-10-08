@@ -10,6 +10,8 @@
 class UDC1InventoryViewModel;
 class UDC1InventorySlotWidget;
 class UTexture2D;
+class UImage;
+class UMaterialInstanceDynamic;
 
 // 팰월드 스타일 장비창 (장비 칸 19개 표시, 입력은 부모 InventoryWidget이 처리)
 UCLASS()
@@ -33,8 +35,12 @@ protected:
 	void RefreshAllSlots();
 
 	void HandleEquipmentUpdated();
+	void SetupPlayerPreview();
 
 private:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage> Image_CharacterPreview;
+
 	// 무기
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_Weapon1;
@@ -109,4 +115,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> PlayerPreviewMID = { nullptr };
 };
