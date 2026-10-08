@@ -32,6 +32,10 @@ namespace DC1BuildTags
 		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Weapon_WeaponBench00, "Build.Crafting.Weapon.WeaponBench00");
 	#pragma endregion
 	
+	#pragma region CRAFTING_DEFOREST_AND_MINING
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_DeforestAndMining_LoggingCamp, "Build.Crafting.DeforestAndMining.LoggingCamp");
+	#pragma endregion
+
 	#pragma region PAL_PALMANAGEMENT
 		UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalManagement_PalBox, "Build.Pal.PalManagement.PalBox");
 	#pragma endregion

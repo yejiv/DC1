@@ -12,6 +12,7 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_ClimbAtTop, "Ability.Player.ClimbAtTop");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_BuildWork, "Ability.Player.BuildWork");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_ProductionWork, "Ability.Player.ProductionWork");
 #pragma endregion
 
 #pragma region Event

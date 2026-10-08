@@ -17,6 +17,7 @@ namespace DC1PlayerTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_ClimbAtTop);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_BuildWork);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_ProductionWork);
 #pragma endregion
 
 #pragma region Event

@@ -98,17 +98,10 @@ void ADC1PlayerController::SetBuildMode(bool Enabled)
 	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent());
 	if (true == ::IsValid(ASC))
 	{
-		if (true == Enabled)
-		{
-			ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_BuildWork);
-			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 1);
-		}
-		else
-		{
-			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 0);
-		}
-	}
+		int32 NewCount = (true == Enabled) ? 1 : 0;
 
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, NewCount);
+	}
 }
 
 void ADC1PlayerController::PressAbilityInput(const FGameplayTag& InAbilityTag)

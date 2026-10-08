@@ -7,6 +7,8 @@ namespace DC1ItemTags
 {
 #pragma region Tool
 	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_Hammer, "Item.Tool.Hammer");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_DeforestAxe, "Item.Tool.DeforestAxe");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_MiningPickaxe, "Item.Tool.MiningPickaxe");
 #pragma endregion
 
 #pragma region Consumption

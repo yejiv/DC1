@@ -5,6 +5,7 @@
 
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 
@@ -161,7 +162,20 @@ void UDC1GA_Player_BuildWork::FinishWork()
 	}
 	else
 	{
-		MontageJumpToSection(EndSectionName);
+		UAnimMontage* Montage = GetCurrentMontage();
+		if (true == ::IsValid(Montage) && Montage->IsValidSectionName(EndSectionName))
+		{
+			MontageJumpToSection(EndSectionName);
+		}
+		else
+		{
+			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+			if (true == ::IsValid(ASC))
+			{
+				FName CurrentSectionName = ASC->GetCurrentMontageSectionName();
+				MontageSetNextSectionName(CurrentSectionName, NAME_None);
+			}
+		}
 	}
 }
 

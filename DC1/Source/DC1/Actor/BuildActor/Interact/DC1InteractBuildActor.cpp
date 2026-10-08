@@ -50,28 +50,23 @@ void ADC1InteractBuildActor::Tick(float DeltaTime)
 		return;
 	}
 
-	// Construction 처리
-	if (true == Workers.IsEmpty() || false == HasAuthority())
+	// 건설 / 생산 처리
+	if (true == Workers.IsEmpty())
+	{
+		SetActorTickEnabled(false);
+		return;
+	}
+
+	if (false == HasAuthority())
 	{
 		return;
 	}
 
 	const float TotalWorkSpeed = ComputeTotalWorkSpeed();
 
-	if (TotalWorkSpeed > 0.f && BuildActorData.RequiredWork > 0.f && CurrentWork < BuildActorData.RequiredWork)
+	if (TotalWorkSpeed > 0.f)
 	{
-		CurrentWork += (TotalWorkSpeed * DeltaTime);
-
-		BuildProgress = (CurrentWork / BuildActorData.RequiredWork);
-
-		if (BuildProgress >= 1.f)
-		{
-			BuildProgress = 1.f;
-
-			SetState(EDC1BuildState::Completed);
-		}
-
-		SetMaterialBuildProgress();
+		OnWorkTick(TotalWorkSpeed * DeltaTime);
 	}
 }
 
@@ -147,8 +142,7 @@ void ADC1InteractBuildActor::InitBuild(const FDC1BuildActorData& InBuildActorDat
 void ADC1InteractBuildActor::BuildDestroy()
 {
 	CancelWorkersAbility();
-
-	Workers.Empty();
+	ClearWorkers();
 
 	Super::BuildDestroy();
 }
@@ -192,14 +186,46 @@ void ADC1InteractBuildActor::ApplyState()
 	OnInteractOptionsChanged.Broadcast();
 }
 
+bool ADC1InteractBuildActor::CanAcceptWorker() const
+{
+	return IsUnderConstruction();
+}
+
+void ADC1InteractBuildActor::OnWorkTick(float InWork)
+{
+	if (BuildState != EDC1BuildState::Construction)
+	{
+		return;
+	}
+
+
+	if (BuildActorData.RequiredWork > 0.f && CurrentWork < BuildActorData.RequiredWork)
+	{
+		CurrentWork += InWork;
+		
+		BuildProgress = (CurrentWork / BuildActorData.RequiredWork);
+
+		if (BuildProgress >= 1.f)
+		{
+			BuildProgress = 1.f;
+
+			SetState(EDC1BuildState::Completed);
+		}
+
+		SetMaterialBuildProgress();
+	}
+}
+
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)
 {
-	if (false == ::IsValid(InWorker) || false == HasAuthority() || BuildState != EDC1BuildState::Construction)
+	if (false == ::IsValid(InWorker) || false == HasAuthority() || false == CanAcceptWorker())
 	{
 		return;
 	}
 
 	Workers.Add(InWorker);
+
+	SetActorTickEnabled(true);
 }
 
 void ADC1InteractBuildActor::RemoveWorker(const ADC1Character* InWorker)
@@ -210,6 +236,11 @@ void ADC1InteractBuildActor::RemoveWorker(const ADC1Character* InWorker)
 	}
 
 	Workers.Remove(InWorker);
+}
+
+void ADC1InteractBuildActor::ClearWorkers()
+{
+	Workers.Empty();
 }
 
 void ADC1InteractBuildActor::OnRep_BuildProgress()
@@ -225,8 +256,6 @@ void ADC1InteractBuildActor::BuildCompleted()
 	}
 
 	BuildMIDs.Reset();
-
-	SetActorTickEnabled(false);
 }
 
 void ADC1InteractBuildActor::CancelWorkersAbility()
@@ -234,7 +263,10 @@ void ADC1InteractBuildActor::CancelWorkersAbility()
 	FGameplayTagContainer WorkTags;
 	WorkTags.AddTag(DC1StateTags::State_Build_Working);
 
-	for (TWeakObjectPtr<const ADC1Character> Worker : Workers)
+	// 서버 환경에서 RemoveWorker로 인한 동기화 문제 방지
+	TSet<TWeakObjectPtr<const ADC1Character>> CachedWorker = Workers;
+
+	for (TWeakObjectPtr<const ADC1Character> Worker : CachedWorker)
 	{
 		const ADC1Character* WorkCharacter = Worker.Get();
 		if (false == ::IsValid(WorkCharacter))
@@ -288,23 +320,7 @@ void ADC1InteractBuildActor::SetMaterialBuildProgress()
 			continue;
 		}
 
-		if (false == MaterialProgressRanges.IsValidIndex(i))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ADC1InteractBuildActor :: Material None Progress Range : %d"), i);
-			continue;
-		}
-
-		const FVector2D& Range = MaterialProgressRanges[i];
-		const float RangeSize = (Range.Y - Range.X);
-
-		float MaterialProgress = 0.f;
-
-		if (RangeSize > KINDA_SMALL_NUMBER)
-		{
-			MaterialProgress = FMath::Clamp(((BuildProgress - Range.X) / RangeSize), 0.f, 1.f);
-		}
-
-		BuildMIDs[i]->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, MaterialProgress);
+		BuildMIDs[i]->SetScalarParameterValue(DC1BuildMaterialParams::BuildProgress, BuildProgress);
 	}
 }
 
