@@ -142,6 +142,15 @@ bool ADC1Player::CanClimb() const
 	return true;
 }
 
+void ADC1Player::Server_ReleaseClimb_Implementation()
+{
+	UDC1CharacterMovementComponent* CMC = CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement());
+	if (false == IsValid(CMC))
+		return;
+
+	CMC->ReleaseClimb();
+}
+
 void ADC1Player::ToggleMove()
 {
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();
@@ -247,6 +256,13 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 	if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement()))
 	{
 		ApplyClimbState(CMC->IsClimbing());
+
+		const bool WasClimbing = (PrevMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Climb);
+		if (true == HasAuthority() && true == WasClimbing && 
+			true == CMC->IsFalling() && true == bPressedJump)
+		{
+			ApplyClimbJumpStamina();
+		}
 	}
 }
 
@@ -300,6 +316,23 @@ void ADC1Player::RemoveClimbStaminaCost(UDC1AbilitySystemComponent* ASC)
 
 	// 핸들을 비우지 않으면 다음 벽타기에서 "이미 적용 중"으로 보고 적용을 건너뛴다
 	ClimbStaminaCostHandle.Invalidate();
+}
+
+void ADC1Player::ApplyClimbJumpStamina()
+{
+	if (false == IsValid(ClimbJumpCostClass))
+		return;
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponent()))
+	{
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ClimbJumpCostClass, 1.f, ASC->MakeEffectContext());
+		if (false == SpecHandle.IsValid())
+			return;
+
+		SpecHandle.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_StaminaCost, -ClimbJumpStaminaCost);
+
+		ASC->ApplyGameplayEffectSpecToSelf(*(SpecHandle.Data).Get());
+	}
 }
 
 void ADC1Player::HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity)

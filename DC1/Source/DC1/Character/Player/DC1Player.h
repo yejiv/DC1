@@ -43,8 +43,11 @@ public:
 public:
 	bool GetAimingState() const { return IsAiming; }
 
-public:
 	bool CanClimb() const;
+
+public:
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseClimb();
 
 public:
 	void ToggleMove();
@@ -111,6 +114,8 @@ private:
 	void	ApplyClimbState(bool IsApply);
 	// 서버 전용. 벽타기 소모 GE 제거 + 핸들 무효화
 	void	RemoveClimbStaminaCost(UDC1AbilitySystemComponent* ASC);
+	// 서버 전용. 벽 타는 도중 점프 시 스태미나 소모
+	void	ApplyClimbJumpStamina();
 
 	UFUNCTION()
 	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
@@ -121,9 +126,14 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Climb")
 	TSubclassOf<UGameplayEffect>			ClimbStaminaCostClass = { nullptr };
+	// 벽 점프 1회 비용(Instant, SetByCaller.StaminaCost). GE_Stamina_Cost 지정
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	TSubclassOf<UGameplayEffect>			ClimbJumpCostClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Climb")
 	float											ClimbMovingSpeedThreshold = { 1.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float											ClimbJumpStaminaCost = { 10.f };
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;

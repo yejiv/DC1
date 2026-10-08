@@ -476,6 +476,16 @@ void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
 	}
 }
 
+void ADC1PlayerController::OnClimbReleasePressed(const FInputActionValue& Value)
+{
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(ControlObject->GetCharacterMovement());
+	if (false == IsValid(CMC))
+		return;
+
+	CMC->ReleaseClimb();
+	ControlObject->Server_ReleaseClimb();
+}
+
 void ADC1PlayerController::InitPlayerStateBindings()
 {
 	ADC1PlayerState* OwnerPlayerState = GetPlayerState<ADC1PlayerState>();
@@ -816,6 +826,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
 	{
 		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
+	}
+
+	// Climb
+	if (const UInputAction* ClimbReleaseAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ClimbRelease))
+	{
+		EnhancedInputComponent->BindAction(ClimbReleaseAction, ETriggerEvent::Started, this, &ThisClass::OnClimbReleasePressed);
 	}
 }
 

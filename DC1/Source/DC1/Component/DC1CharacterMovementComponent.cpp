@@ -261,6 +261,16 @@ void UDC1CharacterMovementComponent::PhysicsRotation(float DeltaTime)
 	Super::PhysicsRotation(DeltaTime);
 }
 
+bool UDC1CharacterMovementComponent::CanAttemptJump() const
+{
+	bool CanJump = Super::CanAttemptJump();
+
+	if (IsClimbing())
+		CanJump = true;
+
+	return CanJump;
+}
+
 void UDC1CharacterMovementComponent::ToggleMove()
 {
 	Safe_bWantsToWalk = ~Safe_bWantsToWalk;
@@ -280,7 +290,21 @@ void UDC1CharacterMovementComponent::ConfirmMovement()
 {
 	ResetClimbState();
 
-	if (MOVE_Walking != MovementMode && MOVE_Falling != MovementMode)
+	// 벽을 놓은 경우 W키를 다시 뗐다가 누를 때까지 벽타기 제한
+	if (bReleaseClimb)
+	{
+		if (true == Acceleration.IsNearlyZero())
+		{
+			bReleaseClimb = false;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	//if (MOVE_Walking != MovementMode && MOVE_Falling != MovementMode)
+	if (MOVE_Falling != MovementMode)
 	{
 		return;
 	}
@@ -465,6 +489,11 @@ bool UDC1CharacterMovementComponent::FindMantleTarget(FVector& OutTargetLocation
 	{
 		return false;
 	}
+	// 걸어서 넘을 수 있는 지형은 벽으로 판정하지 않는다.
+	if (WallHit.ImpactNormal.Z >= GetWalkableFloorZ())
+	{
+		return false;
+	}
 
 	const float WallDistance = FVector::Dist2D(WallTraceStart, WallHit.ImpactPoint);
 
@@ -601,6 +630,15 @@ void UDC1CharacterMovementComponent::ResetClimbState()
 {
 	bArriveAtTop = false;
 	bCanMantle = false;
+}
+
+void UDC1CharacterMovementComponent::ReleaseClimb()
+{
+	if (false == IsClimbing())
+		return;
+
+	SetMovementMode(MOVE_Falling);
+	bReleaseClimb = true;
 }
 
 void UDC1CharacterMovementComponent::SetupClimbQueryParams(FCollisionQueryParams& InOutQueryParams, FCollisionObjectQueryParams& OutObjectParams) const
