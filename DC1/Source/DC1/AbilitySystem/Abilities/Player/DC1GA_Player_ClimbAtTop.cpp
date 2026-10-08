@@ -118,7 +118,7 @@ void UDC1GA_Player_ClimbAtTop::OnUpFailed()
 void UDC1GA_Player_ClimbAtTop::OnUpReached()
 {
 	UAbilityTask_ApplyRootMotionMoveToForce* ForwardTask = UAbilityTask_ApplyRootMotionMoveToForce::ApplyRootMotionMoveToForce(
-		this, NAME_None, MantleTargetLocation, Duration * (1.f - UpRatio),
+		this, NAME_None, MantleTargetLocation, Duration * (0.9f - UpRatio),
 		false, MOVE_Flying, false, nullptr,
 		ERootMotionFinishVelocityMode::SetVelocity, FVector::ZeroVector, 0.f
 	);
