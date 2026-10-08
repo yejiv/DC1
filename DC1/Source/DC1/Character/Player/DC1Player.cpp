@@ -142,6 +142,15 @@ bool ADC1Player::CanClimb() const
 	return true;
 }
 
+void ADC1Player::Server_ReleaseClimb_Implementation()
+{
+	UDC1CharacterMovementComponent* CMC = CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement());
+	if (false == IsValid(CMC))
+		return;
+
+	CMC->ReleaseClimb();
+}
+
 void ADC1Player::ToggleMove()
 {
 	CastChecked<UDC1CharacterMovementComponent>(GetCharacterMovement())->ToggleMove();

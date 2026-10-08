@@ -84,6 +84,9 @@ private:
 	void OnPalSlotPrevPressed(const FInputActionValue& Value);
 	void OnPalSlotNextPressed(const FInputActionValue& Value);
 
+	// Climb
+	void OnClimbReleasePressed(const FInputActionValue& Value);
+
 private:
 	void InitPlayerStateBindings();
 

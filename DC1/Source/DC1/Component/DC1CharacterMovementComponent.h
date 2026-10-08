@@ -67,6 +67,8 @@ private:
 	// 벽타기 중엔 회전을 PhysClimbing(RotateToWall)이 전담한다
 	virtual void PhysicsRotation(float DeltaTime) override;
 
+	virtual bool CanAttemptJump() const override;
+
 public:
 	void ToggleMove();
 	void SetWalk(bool IsWalk);
@@ -85,6 +87,8 @@ public:
 	// 벽 법선이 없으면 ZeroVector
 	FVector GetClimbRightVector() const;
 	FVector GetClimbUpVector() const;
+
+	void ReleaseClimb();
 
 private:
 	void			ConfirmMovement();
@@ -170,4 +174,6 @@ private:
 	bool	bArriveAtTop = { false };
 	// 꼭대기 올라설 수 있는가 여부(소유 클라에서만 갱신. 착지 위치는 GA가 FindMantleTarget으로 직접 구한다)
 	bool	bCanMantle = { false };
+	// 벽 놓을 경우 다시 잡는 것을 막기위한 변수
+	bool	bReleaseClimb = { false };
 };

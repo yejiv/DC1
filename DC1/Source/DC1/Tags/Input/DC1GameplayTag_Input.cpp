@@ -23,6 +23,7 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Jump, "Input.Default.Jump");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Crouch, "Input.Default.Crouch");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Dodge, "Input.Default.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ClimbRelease, "Input.Default.ClimbRelease");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Attack, "Input.Default.Attack");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ZoomIn, "Input.Default.ZoomIn");

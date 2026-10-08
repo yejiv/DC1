@@ -43,8 +43,11 @@ public:
 public:
 	bool GetAimingState() const { return IsAiming; }
 
-public:
 	bool CanClimb() const;
+
+public:
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseClimb();
 
 public:
 	void ToggleMove();
