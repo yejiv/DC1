@@ -2,52 +2,48 @@
 
 
 #include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
-#include "Character/Player/DC1Player.h"
-#include "Character/Player/DC1PlayerState.h"
-#include "Component/DC1EquipComponent.h"
+UDC1GA_Base_Work::UDC1GA_Base_Work(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// 건설 완료, 파괴 시점에 GA 취소를 위한 Tag
+	ActivationOwnedTags.AddTag(DC1StateTags::State_Working);
+}
 
 void UDC1GA_Base_Work::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	// 도구를 쓰지 않는 Work도 있으므로 태그가 비어 있으면 무기를 그대로 둔다
-	if (false == EquipToolTag.IsValid())
+	if (false == CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 
-	UDC1EquipComponent* EquipComp = GetEquipComponent();
-	if (nullptr == EquipComp)
+	if (true == ActorInfo->IsLocallyControlled())
 	{
-		return;
+		ADC1InteractBuildActor* WorkActor = FindWorkTarget();
+		if (false == ::IsValid(WorkActor))
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+
+		StartWork(WorkActor);
 	}
 
-	// 착용/해제는 EquipComponent가 서버 권한을 확인한다
-	EquipComp->EquipTool(EquipToolTag);
+	OnWorkStarted();
 }
 
 void UDC1GA_Base_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (true == EquipToolTag.IsValid())
+	const FGameplayAbilityActorInfo* Info = (nullptr == ActorInfo) ? GetCurrentActorInfo() : ActorInfo;
+
+	if (nullptr != Info && true == Info->IsLocallyControlled())
 	{
-		if (UDC1EquipComponent* EquipComp = GetEquipComponent())
-		{
-			EquipComp->UnequipTool(EquipToolTag);
-		}
+		StopWork();
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-}
-
-UDC1EquipComponent* UDC1GA_Base_Work::GetEquipComponent() const
-{
-	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
-	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo());
-	if (false == ::IsValid(PS))
-	{
-		return nullptr;
-	}
-
-	return PS->GetEquipComponent();
 }

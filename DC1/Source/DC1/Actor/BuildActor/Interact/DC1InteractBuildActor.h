@@ -51,6 +51,14 @@ protected:
 	// Completed 상태에서의 상호작용
 	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) {}
 	
+	// 작업이 가능한 상태인지 ex) IsConstruction
+	virtual bool					CanAcceptWorker() const;
+
+	// 이번 Tick 작업량 소비 ( WorkSpeed 합 * DeltaTime ) - 서버
+	virtual void					OnWorkTick(float InWork);
+
+	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
+	void							ClearWorkers();
 
 	UFUNCTION()
 	void							OnRep_BuildProgress();
@@ -80,10 +88,6 @@ private:
 	// Completed 시점 Flash 지속시간
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	float									CompleteFlashDuration = { 0.4f };
-
-	// 머테리얼 슬롯별 진행도 구간 ( ex) Body = 0 ~ 0.5, Head = 0.5 ~ 1 )
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
-	TArray<FVector2D>						MaterialProgressRanges;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material|TranslucentColor")
 	FLinearColor							ConstructionColor = { FLinearColor::Blue };

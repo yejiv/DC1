@@ -16,7 +16,9 @@ namespace DC1AnimTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Throw);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Dodge_Roll);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Dodge_Step);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_ClimbAtTop);
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Build_Working);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Build);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Deforest);
 #pragma endregion
 }

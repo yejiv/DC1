@@ -18,6 +18,7 @@ UDC1GA_Player_Sprint::UDC1GA_Player_Sprint(const FObjectInitializer& ObjectIniti
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Sprinting);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Aiming);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
 }
 
 bool UDC1GA_Player_Sprint::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const

@@ -23,6 +23,9 @@ UDC1GA_Player_PalSphere::UDC1GA_Player_PalSphere(const FObjectInitializer& Objec
 	: Super(ObjectInitializer)
 {
 	ThrowMontageTag = DC1AnimTags::Anim_Action_Throw;
+
+	// 벽타기 중 조준·던지기 금지(조준 회전이 벽타기 회전을 덮어쓴다)
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
 }
 
 void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
