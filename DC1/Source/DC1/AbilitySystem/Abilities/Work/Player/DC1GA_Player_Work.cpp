@@ -1,9 +1,11 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilitySystem/Abilities/Work/Build/Player/DC1GA_Player_BuildWork.h"
+#include "AbilitySystem/Abilities/Work/Player/DC1GA_Player_Work.h"
 
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1EquipComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
@@ -13,29 +15,43 @@
 #include "Data/DA/Anim/DC1AnimData.h"
 #include "Tags/DC1GamePlayTags.h"
 
-UDC1GA_Player_BuildWork::UDC1GA_Player_BuildWork(const FObjectInitializer& ObjectInitializer)
+UDC1GA_Player_Work::UDC1GA_Player_Work(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Build_Placement);
 }
 
-void UDC1GA_Player_BuildWork::OnInputReleased(float TimeHeld)
+void UDC1GA_Player_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	// 착용하지 않은 도구는 UnequipTool이 태그 비교로 무시한다 - 착용 전에 끝나는 경로( 대상 없음, Commit 실패 )도 그대로 통과
+	if (true == EquipToolTag.IsValid())
+	{
+		if (UDC1EquipComponent* EquipComp = GetEquipComponent())
+		{
+			EquipComp->UnequipTool(EquipToolTag);
+		}
+	}
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UDC1GA_Player_Work::OnInputReleased(float TimeHeld)
 {
 	FinishWork();
 }
 
-void UDC1GA_Player_BuildWork::OnMontageCompleted()
+void UDC1GA_Player_Work::OnMontageCompleted()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UDC1GA_Player_BuildWork::OnMontageAborted()
+void UDC1GA_Player_Work::OnMontageAborted()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
-ADC1InteractBuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
+ADC1InteractBuildActor* UDC1GA_Player_Work::FindWorkTarget() const
 {
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
 	if (false == ::IsValid(InteractComp))
@@ -43,34 +59,34 @@ ADC1InteractBuildActor* UDC1GA_Player_BuildWork::FindBuildTarget() const
 		return nullptr;
 	}
 
-	AActor* BuildTraget = InteractComp->GetCurrentTarget();
-	if (false == ::IsValid(BuildTraget))
+	AActor* CurrentTarget = InteractComp->GetCurrentTarget();
+	if (false == ::IsValid(CurrentTarget))
 	{
 		return nullptr;
 	}
 
-	return Cast<ADC1InteractBuildActor>(BuildTraget);
+	return Cast<ADC1InteractBuildActor>(CurrentTarget);
 }
 
-void UDC1GA_Player_BuildWork::StartWork(ADC1InteractBuildActor* InBuildTarget)
+void UDC1GA_Player_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
 {
-	if (true == ::IsValid(InBuildTarget))
+	if (true == ::IsValid(InWorkTarget))
 	{
-		BuildCompletedDelegateHandle = InBuildTarget->OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
-		WorkTarget = InBuildTarget;
+		BuildCompletedDelegateHandle = InWorkTarget->OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
+		WorkTarget = InWorkTarget;
 	}
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
-	if (false == ::IsValid(InteractComp)) 
+	if (false == ::IsValid(InteractComp))
 	{
 		return;
 	}
 
-	InteractComp->RequestStartWork(InBuildTarget);
+	InteractComp->RequestStartWork(InWorkTarget);
 	InteractComp->SetTargetLocked(true);
 }
 
-void UDC1GA_Player_BuildWork::StopWork()
+void UDC1GA_Player_Work::StopWork()
 {
 	ADC1InteractBuildActor* Target = WorkTarget.Get();
 	if (true == ::IsValid(Target))
@@ -90,10 +106,20 @@ void UDC1GA_Player_BuildWork::StopWork()
 	InteractComp->SetTargetLocked(false);
 }
 
-void UDC1GA_Player_BuildWork::OnWorkStarted()
+void UDC1GA_Player_Work::OnWorkStarted()
 {
 	IsSectionEnd = false;
 	IsPlayingMontage = false;
+
+	// 도구를 쓰지 않는 Work도 있으므로 태그가 비어 있으면 무기를 그대로 둔다
+	// 착용/해제는 EquipComponent가 서버 권한을 확인한다
+	if (true == EquipToolTag.IsValid())
+	{
+		if (UDC1EquipComponent* EquipComp = GetEquipComponent())
+		{
+			EquipComp->EquipTool(EquipToolTag);
+		}
+	}
 
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true);
 	if (true == ::IsValid(ReleaseTask))
@@ -124,7 +150,7 @@ void UDC1GA_Player_BuildWork::OnWorkStarted()
 	}
 }
 
-UDC1InteractComponent* UDC1GA_Player_BuildWork::GetInteractComponent() const
+UDC1InteractComponent* UDC1GA_Player_Work::GetInteractComponent() const
 {
 	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 	if (nullptr == ActorInfo)
@@ -141,7 +167,19 @@ UDC1InteractComponent* UDC1GA_Player_BuildWork::GetInteractComponent() const
 	return PC->GetInteractComponent();
 }
 
-void UDC1GA_Player_BuildWork::FinishWork()
+UDC1EquipComponent* UDC1GA_Player_Work::GetEquipComponent() const
+{
+	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo());
+	if (false == ::IsValid(PS))
+	{
+		return nullptr;
+	}
+
+	return PS->GetEquipComponent();
+}
+
+void UDC1GA_Player_Work::FinishWork()
 {
 	if (true == IsSectionEnd)
 	{
@@ -179,7 +217,7 @@ void UDC1GA_Player_BuildWork::FinishWork()
 	}
 }
 
-void UDC1GA_Player_BuildWork::HandleBuildCompleted()
+void UDC1GA_Player_Work::HandleBuildCompleted()
 {
 	FinishWork();
 }

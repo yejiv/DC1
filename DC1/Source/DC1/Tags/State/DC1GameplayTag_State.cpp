@@ -20,7 +20,7 @@ namespace DC1StateTags
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Build_Placement, "State.Build.Placement");
 
-	UE_DEFINE_GAMEPLAY_TAG(State_Build_Working, "State.Build.Working");
+	UE_DEFINE_GAMEPLAY_TAG(State_Working, "State.Working");
 #pragma endregion
 
 #pragma region Common

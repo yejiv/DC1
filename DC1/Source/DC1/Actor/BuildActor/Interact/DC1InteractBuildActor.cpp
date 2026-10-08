@@ -261,7 +261,7 @@ void ADC1InteractBuildActor::BuildCompleted()
 void ADC1InteractBuildActor::CancelWorkersAbility()
 {
 	FGameplayTagContainer WorkTags;
-	WorkTags.AddTag(DC1StateTags::State_Build_Working);
+	WorkTags.AddTag(DC1StateTags::State_Working);
 
 	// 서버 환경에서 RemoveWorker로 인한 동기화 문제 방지
 	TSet<TWeakObjectPtr<const ADC1Character>> CachedWorker = Workers;
