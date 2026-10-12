@@ -328,7 +328,7 @@ void ADC1PlayerController::OnJump(const FInputActionValue& Value)
 	}
 
 	ControlObject->UnCrouch();
-	ControlObject->Jump();
+	ControlObject->TryJumpOrGlide();
 }
 
 void ADC1PlayerController::StopJumping(const FInputActionValue& Value)

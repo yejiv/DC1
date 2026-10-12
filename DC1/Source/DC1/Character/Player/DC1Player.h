@@ -44,6 +44,7 @@ public:
 	bool GetAimingState() const { return IsAiming; }
 
 	bool CanClimb() const;
+	bool CanGlide() const;
 
 public:
 	UFUNCTION(Server, Reliable)
@@ -55,7 +56,12 @@ public:
 	void PlayAbility(const FGameplayTag& AbilityTag);
 	void CancelAbility(const FGameplayTag& AbilityTag);
 
+	void TryJumpOrGlide();
+
 	void Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip);
+
+	// Stamina 잔존량 체크
+	bool	CheckRemainStamina(float Stamina) const;
 
 private:
 	virtual void PostInitializeComponents() override;
@@ -106,17 +112,19 @@ private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount);
-	void	HandleStaminaChanged(const FOnAttributeChangeData& Data);
 
 	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
 
 	// 벽타기 진입/이탈 시 State.Climbing 태그 반영. 이동 모드가 바뀌는 클라(예측)·서버 양쪽에서 호출된다
 	void	ApplyClimbState(bool IsApply);
-	// 서버 전용. 벽타기 소모 GE 제거 + 핸들 무효화
-	void	RemoveClimbStaminaCost(UDC1AbilitySystemComponent* ASC);
+	// 서버 전용. 소모 GE 제거 + 핸들 무효화
+	void	RemoveGameplayEffect(UDC1AbilitySystemComponent* ASC, FActiveGameplayEffectHandle& Handle);
 	// 서버 전용. 벽 타는 도중 점프 시 스태미나 소모
 	void	ApplyClimbJumpStamina();
 
+	void	ApplyGlideState(bool IsApply);
+
+private:
 	UFUNCTION()
 	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
 
@@ -124,6 +132,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Glide")
+	TSubclassOf<UGameplayEffect>			GlideStaminaCostClass = { nullptr };
 	UPROPERTY(EditDefaultsOnly, Category = "Climb")
 	TSubclassOf<UGameplayEffect>			ClimbStaminaCostClass = { nullptr };
 	// 벽 점프 1회 비용(Instant, SetByCaller.StaminaCost). GE_Stamina_Cost 지정
@@ -145,8 +155,7 @@ private:
 	TMap<FGameplayTag, FDelegateHandle>	PlayerStateTagHandles;
 
 	FActiveGameplayEffectHandle				ClimbStaminaCostHandle;
-	// 서버 전용. 벽타기 중 스태미나 고갈 감시(Clear_Resource에서 Remove)
-	FDelegateHandle								StaminaChangedHandle;
+	FActiveGameplayEffectHandle				GlideStaminaCostHandle;
 
 private:
 	bool	IsAiming = {};
