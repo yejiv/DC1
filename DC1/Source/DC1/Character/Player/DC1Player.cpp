@@ -377,6 +377,14 @@ void ADC1Player::ApplyGlideState(bool IsApply)
 	{
 		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Gliding, IsApply ? 1 : 0);
 
+		if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+		{
+			if (UDC1EquipComponent* EquipComponent = PS->GetEquipComponent())
+			{
+				EquipComponent->SetGliderVisibility(IsApply);
+			}
+		}
+
 		if (true == HasAuthority())
 		{
 			if (true == IsApply)

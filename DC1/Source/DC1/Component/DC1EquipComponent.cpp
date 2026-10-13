@@ -10,6 +10,7 @@
 #include "Character/Player/DC1Player.h"
 #include "Item/Equip/Weapon/DC1Weapon.h"
 #include "Item/Equip/Tool/DC1Tool.h"
+#include "Item/Equip/Glider/DC1Glider.h"
 
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
@@ -44,7 +45,7 @@ void UDC1EquipComponent::BeginPlay()
 		}
 
 		// 구독 전에 인벤토리가 먼저 장착했을 수 있으므로 폰이 있으면 한 번 맞춘다
-		SyncWeaponsFromInventory();
+		SyncEquipsFromInventory();
 	}
 }
 
@@ -63,6 +64,7 @@ void UDC1EquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UDC1EquipComponent, CurrentWeapon);
+	DOREPLIFETIME(UDC1EquipComponent, CurrentGlider);
 }
 
 // Called every frame
@@ -84,7 +86,15 @@ void UDC1EquipComponent::Init_Equip()
 	SpawnParams.Instigator = Player;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+	for (ADC1Tool* OldTool : ToolSlots)
+	{
+		if (true == IsValid(OldTool))
+		{
+			OldTool->Destroy();
+		}
+	}
 	ToolSlots.Reset();
+	CurrentTool = nullptr;
 
 	for (const TSubclassOf<ADC1Tool>& ToolType : ToolClass)
 	{
@@ -99,22 +109,22 @@ void UDC1EquipComponent::Init_Equip()
 		ToolSlots.Add(Tool);
 	}
 
-	// 폰이 없던 동안 바뀐 무기 칸도 여기서 한 번에 맞춘다
-	SyncWeaponsFromInventory();
+	// 폰이 없던 동안 바뀐 장비 칸도 여기서 한 번에 맞춘다
+	SyncEquipsFromInventory();
 }
 
-void UDC1EquipComponent::SyncWeaponsFromInventory()
+void UDC1EquipComponent::SyncEquipsFromInventory()
 {
 	if (false == IsValid(GetOwningPlayer())) return;
 
-	// 잠긴 칸 포함 전체 무기 칸 수만큼 (잠긴 칸은 비어 있어 주먹)
-	WeaponSlots.SetNum(DC1EquipSlotLayout::GetTypeSlotCount(EDC1EquipSlotType::Weapon));
-	for (int32 Index = 0; Index < WeaponSlots.Num(); ++Index)
-	{
-		RefreshWeaponSlot(Index);
-	}
+	EquipSlots.SetNum(DC1EquipSlotLayout::SlotCount);
 
-	ApplyWeaponAttach();
+	// 장비 칸 변경 이벤트와 같은 경로로 모든 칸을 한 번씩 맞춘다
+	// 지금 든 무기 칸도 이 루프에서 HandleWeaponChanged가 들어준다 (잠긴/빈 칸은 주먹)
+	for (int32 EquipSlotIndex = 0; EquipSlotIndex < DC1EquipSlotLayout::SlotCount; ++EquipSlotIndex)
+	{
+		HandleEquipmentSlotChanged(EquipSlotIndex);
+	}
 }
 
 void UDC1EquipComponent::HandlePawnReady()
@@ -125,6 +135,13 @@ void UDC1EquipComponent::HandlePawnReady()
 	// 클라 포함. PlayerState가 폰보다 먼저 도착하면 OnRep_CurrentWeapon이 폰을 못 찾고
 	// 그냥 지나간다. 그때 놓친 콜라이더 적용을 여기서 만회한다
 	ApplyWeaponCollider();
+}
+
+void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
+{
+	if (nullptr == CurrentGlider) return;
+
+	CurrentGlider->SetActorHiddenInGame(!IsVisiblity);
 }
 
 ADC1Player* UDC1EquipComponent::GetOwningPlayer() const
@@ -145,56 +162,91 @@ UDC1PlayerInventoryComponent* UDC1EquipComponent::GetInventoryComponent() const
 
 void UDC1EquipComponent::HandleEquipmentSlotChanged(int32 InEquipSlotIndex)
 {
-	// TODO : 방어구/장신구/음식 칸은 ADC1Equip 파생 클래스가 생기면 여기서 분기
-	if (EDC1EquipSlotType::Weapon != DC1EquipSlotLayout::GetSlotType(InEquipSlotIndex)) return;
-
 	// 폰이 없으면 건너뛴다. 폰이 붙을 때 Init_Equip이 전체를 다시 맞춘다
 	if (false == IsValid(GetOwningPlayer())) return;
+	if (false == EquipSlots.IsValidIndex(InEquipSlotIndex)) return;
 
-	const int32 WeaponIndex = DC1EquipSlotLayout::GetLocalIndex(InEquipSlotIndex);
-	RefreshWeaponSlot(WeaponIndex);
+	// 모든 칸 공통: 이전 적용 해제 + ItemID 갱신. 적용은 아래 타입별 함수가 한다
+	RefreshEquipSlot(InEquipSlotIndex);
 
-	// 지금 든 칸이 바뀌었으면 바로 교체 (비었으면 주먹)
-	if (WeaponIndex == CurrentWeaponIndex)
+	EDC1EquipSlotType SlotType = DC1EquipSlotLayout::GetSlotType(InEquipSlotIndex);
+
+	switch (SlotType)
 	{
-		ApplyWeaponAttach();
+	case EDC1EquipSlotType::Weapon:
+		HandleWeaponChanged(InEquipSlotIndex);
+		break;
+	case EDC1EquipSlotType::Head:
+		break;
+	case EDC1EquipSlotType::Body:
+		break;
+	case EDC1EquipSlotType::Shield:
+		break;
+	case EDC1EquipSlotType::Glider:
+		HandleGliderChanged(InEquipSlotIndex);
+		break;
+	case EDC1EquipSlotType::Accessory:
+		break;
+	case EDC1EquipSlotType::Food:
+		break;
 	}
 }
 
-void UDC1EquipComponent::RefreshWeaponSlot(int32 InWeaponIndex)
+void UDC1EquipComponent::RefreshEquipSlot(int32 InEquipSlotIndex)
 {
-	if (false == WeaponSlots.IsValidIndex(InWeaponIndex)) return;
+	if (false == EquipSlots.IsValidIndex(InEquipSlotIndex)) return;
 
-	ADC1Player* Player = GetOwningPlayer();
-	if (false == IsValid(Player)) return;
+	FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
 
-	// 든 무기였다면 파괴된 액터를 붙잡지 않도록 먼저 비운다
-	if (ADC1Weapon* OldWeapon = WeaponSlots[InWeaponIndex])
+	// 이전 적용 해제. 칸에 무엇이 들어 있는지만 보므로 타입 분기가 필요 없다
+	if (ADC1Equip* OldEquip = EquipSlot.EquipActor)
 	{
-		if (OldWeapon == CurrentWeapon)
+		// 든 무기였다면 파괴된 액터를 붙잡지 않도록 먼저 비운다
+		if (OldEquip == CurrentWeapon)
 		{
 			CurrentWeapon = nullptr;
 		}
-		OldWeapon->Destroy();
-		WeaponSlots[InWeaponIndex] = nullptr;
+
+		if (OldEquip == CurrentGlider)
+		{
+			CurrentGlider = nullptr;
+		}
+		OldEquip->Destroy();
 	}
+	EquipSlot.EquipActor = nullptr;
 
-	UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent();
-	if (nullptr == Inventory) return;
+	// 인벤토리 기준으로 지금 적용할 아이템 갱신 (비었으면 NAME_None)
+	EquipSlot.ItemID = NAME_None;
 
-	const int32 EquipSlotIndex = DC1EquipSlotLayout::GetEquipIndex(EDC1EquipSlotType::Weapon, InWeaponIndex);
-	const FDC1InventorySlotInfo& SlotInfo = Inventory->GetEquipmentSlot(EquipSlotIndex);
-	if (true == SlotInfo.IsEmpty()) return;
+	if (UDC1PlayerInventoryComponent* Inventory = GetInventoryComponent())
+	{
+		const FDC1InventorySlotInfo& SlotInfo = Inventory->GetEquipmentSlot(InEquipSlotIndex);
+		if (false == SlotInfo.IsEmpty())
+		{
+			EquipSlot.ItemID = SlotInfo.ItemID;
+		}
+	}
+}
 
-	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(SlotInfo.ItemID);
-	if (nullptr == EquipRow) return;
+ADC1Equip* UDC1EquipComponent::SpawnEquipActor(int32 InEquipSlotIndex)
+{
+	if (false == EquipSlots.IsValidIndex(InEquipSlotIndex)) return nullptr;
+
+	FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
+	if (NAME_None == EquipSlot.ItemID) return nullptr;
+
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player)) return nullptr;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlot.ItemID);
+	if (nullptr == EquipRow) return nullptr;
 
 	// 장착 시점 1회 로드라 동기 로드로 처리
 	UClass* EquipClass = EquipRow->EquipClass.LoadSynchronous();
-	if (nullptr == EquipClass || false == EquipClass->IsChildOf(ADC1Weapon::StaticClass()))
+	if (nullptr == EquipClass)
 	{
-		LOG_WARNING(TEXT("[Equip] %s : EquipClass가 비어 있거나 ADC1Weapon이 아님"), *SlotInfo.ItemID.ToString());
-		return;
+		LOG_WARNING(TEXT("[Equip] %s : EquipClass가 비어 있음"), *EquipSlot.ItemID.ToString());
+		return nullptr;
 	}
 
 	FActorSpawnParameters SpawnParams;
@@ -202,14 +254,17 @@ void UDC1EquipComponent::RefreshWeaponSlot(int32 InWeaponIndex)
 	SpawnParams.Instigator = Player;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ADC1Weapon* Weapon = GetWorld()->SpawnActor<ADC1Weapon>(EquipClass, Player->GetActorTransform(), SpawnParams);
-	if (false == IsValid(Weapon)) return;
+	ADC1Equip* Equip = GetWorld()->SpawnActor<ADC1Equip>(EquipClass, Player->GetActorTransform(), SpawnParams);
+	if (false == IsValid(Equip)) return nullptr;
 
-	// 안 든 무기도 캐릭터를 따라다녀야 원점에 남거나 관련성에서 밀려나지 않는다
-	Weapon->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	Weapon->SetActorHiddenInGame(true);
+	// 안 든 장비도 캐릭터를 따라다녀야 원점에 남거나 관련성에서 밀려나지 않는다
+	// 소켓 부착과 숨김은 타입별 적용 함수가 한다
+	Equip->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
-	WeaponSlots[InWeaponIndex] = Weapon;
+	// 타입이 맞지 않아도 칸에 저장해 둬야 다음 Refresh에서 파괴된다
+	EquipSlot.EquipActor = Equip;
+
+	return Equip;
 }
 
 void UDC1EquipComponent::Server_ChangeWeapon_Implementation(int32 Delta)
@@ -232,6 +287,11 @@ int32 UDC1EquipComponent::GetUnlockedWeaponCount() const
 	}
 
 	return DC1EquipSlotLayout::DefaultUnlockedWeaponCount;
+}
+
+int32 UDC1EquipComponent::GetCurrentWeaponEquipIndex() const
+{
+	return DC1EquipSlotLayout::GetEquipIndex(EDC1EquipSlotType::Weapon, CurrentWeaponIndex);
 }
 
 void UDC1EquipComponent::OnRep_CurrentWeapon()
@@ -271,14 +331,63 @@ void UDC1EquipComponent::ApplyWeaponStateTag()
 void UDC1EquipComponent::ApplyWeaponAttach()
 {
 	// 폰이 없어 Init_Equip이 아직 못 돌았으면 슬롯이 비어 있다
-	if (false == WeaponSlots.IsValidIndex(CurrentWeaponIndex)) return;
+	const int32 EquipSlotIndex = GetCurrentWeaponEquipIndex();
+	if (false == EquipSlots.IsValidIndex(EquipSlotIndex)) return;
 
 	SetWeaponState(WEAPONSTATE::DETACH);
-	CurrentWeapon = WeaponSlots[CurrentWeaponIndex];
+	CurrentWeapon = Cast<ADC1Weapon>(EquipSlots[EquipSlotIndex].EquipActor);
 	SetWeaponState(WEAPONSTATE::ATTACH);
 
 	ApplyWeaponStateTag();
 	OnRep_CurrentWeapon();
+}
+
+void UDC1EquipComponent::HandleWeaponChanged(int32 InEquipSlotIndex)
+{
+	if (ADC1Equip* Equip = SpawnEquipActor(InEquipSlotIndex))
+	{
+		// 안 든 무기는 숨겨 둔다. 표시는 SetWeaponState(ATTACH)가 한다
+		Equip->SetActorHiddenInGame(true);
+
+		if (nullptr == Cast<ADC1Weapon>(Equip))
+		{
+			LOG_WARNING(TEXT("[Equip] %s : 무기 칸인데 EquipClass가 ADC1Weapon이 아님"), *EquipSlots[InEquipSlotIndex].ItemID.ToString());
+		}
+	}
+
+	// 지금 든 칸이 바뀌었으면 바로 교체 (비었으면 주먹)
+	if (InEquipSlotIndex == GetCurrentWeaponEquipIndex())
+	{
+		ApplyWeaponAttach();
+	}
+}
+
+void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
+{
+	if (ADC1Equip* Equip = SpawnEquipActor(InEquipSlotIndex))
+	{
+		Equip->SetActorHiddenInGame(true);
+
+		if (nullptr == Cast<ADC1Glider>(Equip))
+		{
+			LOG_WARNING(TEXT("[Equip] %s : Glider 아닌 아이템 장착"), *EquipSlots[InEquipSlotIndex].ItemID.ToString());
+		}
+	}
+
+	if (false == EquipSlots.IsValidIndex(InEquipSlotIndex)) return;
+
+	CurrentGlider = Cast<ADC1Glider>(EquipSlots[InEquipSlotIndex].EquipActor);
+
+	if (nullptr == CurrentGlider) return;
+
+	if (ADC1Player* Player = GetOwningPlayer())
+	{
+		CurrentGlider->AttachToComponent(
+			Player->GetMesh(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			CurrentGlider->AttachSocketName
+		);
+	}
 }
 
 void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
