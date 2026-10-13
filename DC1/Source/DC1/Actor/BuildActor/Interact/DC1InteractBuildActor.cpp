@@ -6,12 +6,16 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
+#include "Define/DC1Enums.h"
 #include "Character/DC1Character.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Player/DC1GameplayTag_Player.h"
+
+#include "Components/WidgetComponent.h"
+#include "UI/World/BuildInfo/DC1BuildInfoWidget.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -21,11 +25,29 @@ ADC1InteractBuildActor::ADC1InteractBuildActor()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	InteractCollider = CreateDefaultSubobject<UBoxComponent>("InteractCollider");
+
+	InteractCollider->SetCollisionProfileName(DC1CollisionProfile::Interaction);
 	InteractCollider->SetupAttachment(BuildMesh);
 	InteractCollider->SetGenerateOverlapEvents(true);
 
 	ConstructionOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Build", "건설"), EDC1InteractInputType::HoldAbility, DC1PlayerTags::Ability_Player_BuildWork);
 	ConstructionOptions.Emplace(EDC1InteractKey::C, NSLOCTEXT("Interact", "Cancel", "취소"), EDC1InteractInputType::HoldConfirm, FGameplayTag::EmptyTag);
+
+	InfoWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("InfoWidgetComponent");
+	InfoWidgetComponent->SetupAttachment(BuildMesh);
+	InfoWidgetComponent->SetUsingAbsoluteLocation(false);
+	InfoWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	InfoWidgetComponent->SetDrawAtDesiredSize(true);
+	InfoWidgetComponent->SetPivot({ 0.5f, 0.5f });
+	InfoWidgetComponent->SetVisibility(false);
+	InfoWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	InfoWidgetComponent->SetInitialSharedLayerName("InteractInfo");
+	InfoWidgetComponent->SetInitialLayerZOrder(-200);
+}
+
+float ADC1InteractBuildActor::GetRemainingWork() const
+{
+	return FMath::Max(0.f, BuildActorData.RequiredWork * ( 1.f - BuildProgress));
 }
 
 void ADC1InteractBuildActor::Tick(float DeltaTime)
@@ -53,6 +75,7 @@ void ADC1InteractBuildActor::Tick(float DeltaTime)
 	// 건설 / 생산 처리
 	if (true == Workers.IsEmpty())
 	{
+		SetCurrentWorkSpeed(0.f);
 		SetActorTickEnabled(false);
 		return;
 	}
@@ -63,6 +86,7 @@ void ADC1InteractBuildActor::Tick(float DeltaTime)
 	}
 
 	const float TotalWorkSpeed = ComputeTotalWorkSpeed();
+	SetCurrentWorkSpeed(TotalWorkSpeed);
 
 	if (TotalWorkSpeed > 0.f)
 	{
@@ -75,6 +99,7 @@ void ADC1InteractBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, BuildProgress);
+	DOREPLIFETIME(ThisClass, CurrentWorkSpeed);
 }
 
 UPrimitiveComponent* ADC1InteractBuildActor::GetInteractCollider() const
@@ -132,6 +157,12 @@ void ADC1InteractBuildActor::Interact(ADC1Character* InInteractOwner, EDC1Intera
 	}
 }
 
+void ADC1InteractBuildActor::OnLocalFocusChanged(bool InIsFocused)
+{
+	IsLocalFocused = InIsFocused;
+	UpdateInfoState();
+}
+
 void ADC1InteractBuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 {
 	BuildActorData = InBuildActorData;
@@ -180,10 +211,12 @@ void ADC1InteractBuildActor::ApplyState()
 
 		OnBuildCompleted.Broadcast();
 
-		Workers.Empty();
+		ClearWorkers();
 	}
 
 	OnInteractOptionsChanged.Broadcast();
+
+	UpdateInfoState();
 }
 
 bool ADC1InteractBuildActor::CanAcceptWorker() const
@@ -205,6 +238,9 @@ void ADC1InteractBuildActor::OnWorkTick(float InWork)
 		
 		BuildProgress = (CurrentWork / BuildActorData.RequiredWork);
 
+		// Standalone 처리
+		OnWorkProgressChanged.Broadcast();
+
 		if (BuildProgress >= 1.f)
 		{
 			BuildProgress = 1.f;
@@ -214,6 +250,26 @@ void ADC1InteractBuildActor::OnWorkTick(float InWork)
 
 		SetMaterialBuildProgress();
 	}
+}
+
+EDC1BuildInfoState ADC1InteractBuildActor::ComputeInfoState() const
+{
+	if (BuildState == EDC1BuildState::Construction && true == IsLocalFocused)
+	{
+		return EDC1BuildInfoState::Construction;
+	}
+
+	return EDC1BuildInfoState::Hidden;
+}
+
+TSubclassOf<UDC1BuildInfoWidget> ADC1InteractBuildActor::GetInfoWidgetClass(EDC1BuildInfoState InState) const
+{
+	if (BuildState == EDC1BuildState::Construction)
+	{
+		return ConstructionInfoWidgetClass;
+	}
+
+	return nullptr;
 }
 
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)
@@ -241,11 +297,54 @@ void ADC1InteractBuildActor::RemoveWorker(const ADC1Character* InWorker)
 void ADC1InteractBuildActor::ClearWorkers()
 {
 	Workers.Empty();
+
+	SetCurrentWorkSpeed(0.f);
+}
+
+void ADC1InteractBuildActor::UpdateInfoState()
+{
+	EDC1BuildInfoState NewState = ComputeInfoState();
+	if (InfoState == NewState)
+	{
+		return;
+	}
+
+	if (NewState != EDC1BuildInfoState::Hidden)
+	{
+		TSubclassOf<UDC1BuildInfoWidget> WidgetClass = GetInfoWidgetClass(NewState);
+		if (false == ::IsValid(WidgetClass))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ADC1InteractBuildActor :: Empty Widget Class To [%s]"), *GetNameSafe(this));
+			NewState = EDC1BuildInfoState::Hidden;
+		}
+		else if(InfoWidgetComponent->GetWidgetClass() != WidgetClass)
+		{
+			ReleaseInfoWidget();
+			InfoWidgetComponent->SetWidgetClass(WidgetClass);
+		}
+	}
+
+	EDC1BuildInfoState PrevState = InfoState;
+	InfoState = NewState;
+	InfoWidgetComponent->SetVisibility(InfoState != EDC1BuildInfoState::Hidden);
+
+	UDC1BuildInfoWidget* Widget = AcquireInfoWidget();
+	if (true == ::IsValid(Widget))
+	{
+		Widget->SetInfoState(PrevState, InfoState);
+	}
 }
 
 void ADC1InteractBuildActor::OnRep_BuildProgress()
 {
 	SetMaterialBuildProgress();
+
+	OnWorkProgressChanged.Broadcast();
+}
+
+void ADC1InteractBuildActor::OnRep_CurrentWorkSpeed()
+{
+	OnWorkProgressChanged.Broadcast();
 }
 
 void ADC1InteractBuildActor::BuildCompleted()
@@ -332,5 +431,49 @@ void ADC1InteractBuildActor::SetMaterialFlash()
 		{
 			MID->SetScalarParameterValue(DC1BuildMaterialParams::FlashAmount, FlashAmount);
 		}
+	}
+}
+
+void ADC1InteractBuildActor::SetCurrentWorkSpeed(float InWorkSpeed)
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	if (true == FMath::IsNearlyEqual(CurrentWorkSpeed, InWorkSpeed))
+	{
+		return;
+	}
+
+	CurrentWorkSpeed = InWorkSpeed;
+
+	OnWorkProgressChanged.Broadcast();
+}
+
+UDC1BuildInfoWidget* ADC1InteractBuildActor::AcquireInfoWidget()
+{
+	UDC1BuildInfoWidget* Widget = Cast<UDC1BuildInfoWidget>(InfoWidgetComponent->GetUserWidgetObject());
+	if (false == ::IsValid(Widget) && InfoState != EDC1BuildInfoState::Hidden)
+	{
+		InfoWidgetComponent->InitWidget();
+
+		Widget = Cast<UDC1BuildInfoWidget>(InfoWidgetComponent->GetUserWidgetObject());
+	}
+
+	if (true == ::IsValid(Widget))
+	{
+		Widget->BindBuildActor(this);
+	}
+
+	return Widget;
+}
+
+void ADC1InteractBuildActor::ReleaseInfoWidget()
+{
+	UDC1BuildInfoWidget* Widget = Cast<UDC1BuildInfoWidget>(InfoWidgetComponent->GetUserWidgetObject());
+	if (true == ::IsValid(Widget))
+	{
+		Widget->UnbindBuildActor();
 	}
 }

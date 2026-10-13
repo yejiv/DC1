@@ -9,7 +9,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
-#include "Components/WidgetComponent.h"
 #include "Camera/CameraComponent.h"
 
 #include "Character/Player/DC1PlayerState.h"
@@ -17,6 +16,7 @@
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/Appearance/DC1AppearanceComponent.h"
+#include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
@@ -82,7 +82,7 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	StaminaWidgetComponent->SetVisibility(false);
 
 	// InteractPrompWidget
-	InteractPromptWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("InteractPrompWidget");
+	InteractPromptWidgetComponent = CreateDefaultSubobject<UDC1ScreenOffsetWidgetComponent>("InteractPrompWidget");
 	InteractPromptWidgetComponent->SetupAttachment(RootComponent);
 	InteractPromptWidgetComponent->SetUsingAbsoluteLocation(true);
 	InteractPromptWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);

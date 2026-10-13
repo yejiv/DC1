@@ -19,6 +19,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 
+#include "Define/DC1Enums.h"
+
 // Sets default values
 ADC1BuildActor::ADC1BuildActor()
 {
@@ -33,6 +35,7 @@ ADC1BuildActor::ADC1BuildActor()
 
 	BuildCheckComp = CreateDefaultSubobject<UDC1BuildCheckComponent>("BuildCheckComp");
 	BuildCheckComp->SetupAttachment(BuildMesh);
+	BuildCheckComp->SetCollisionProfileName(DC1CollisionProfile::BuildCheck);
 
 	BuildSnapComp = CreateDefaultSubobject<UDC1BuildSnapComponent>("BuildSnapComp");
 	BuildSnapComp->SetupAttachment(BuildCheckComp);

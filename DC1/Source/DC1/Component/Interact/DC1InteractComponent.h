@@ -12,6 +12,7 @@ struct FInputActionValue;
 class ADC1Player;
 class APlayerController;
 class ADC1InteractBuildActor;
+class ADC1ProductionBuildActor;
 class UDC1InteractPromptWidget;
 class UDC1UIManagerSubsystem;
 class UWidgetComponent;
@@ -39,7 +40,7 @@ public:
 	void						RequestCancelBuild(ADC1InteractBuildActor* InBuildTarget);
 	void						RequestStartWork(ADC1InteractBuildActor* InBuildTarget);
 	void						RequestStopWork();
-	
+	void						RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget);
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -51,6 +52,10 @@ private:
 	UFUNCTION(Server, Reliable)
 	void						Server_StopWork();
 	
+	UFUNCTION(Server, Reliable)
+	void						Server_CollectProduct(ADC1ProductionBuildActor* InProductionTarget);
+
+	void						HandleScreenStackChanged();
 
 	IDC1InteractableInterface*	GetCurrentInteractable() const;
 	ADC1Player*					GetPlayer() const;
@@ -89,8 +94,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interact")
 	float	HoldConfirmDuration = { 2.f };
 
-	UPROPERTY(EditDefaultsOnly, Category = "Interact")
-	FVector	InteractPromtOffset = { FVector(0.f, 30.f, 0.f) };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Interact|Widget")
+	FVector2D								InteractPromptScreenOffset = { FVector2D::ZeroVector };
 
 private:
 	TWeakObjectPtr<AActor>				CurrentTarget = { nullptr };
@@ -112,4 +118,6 @@ private:
 
 	// IMC 중복 호출 방지용 캐시
 	TSet<EDC1InteractKey>				EnabledKeyLayers;
+
+	bool								IsRefreshPending = { false };
 };

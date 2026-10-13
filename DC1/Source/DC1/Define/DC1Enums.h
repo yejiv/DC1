@@ -2,6 +2,17 @@
 
 #include "DC1Enums.generated.h"
 
+#pragma region Collision Preset Profile Name
+namespace DC1CollisionProfile
+{
+	inline constexpr TCHAR Player[] = TEXT("Player");
+	inline constexpr TCHAR Interaction[] = TEXT("Interaction");
+	inline constexpr TCHAR Building[] = TEXT("Building");
+	inline constexpr TCHAR BuildCheck[] = TEXT("BuildCheck");
+	inline constexpr TCHAR BuildInteractionInfo[] = TEXT("BuildInteractionInfo");
+}
+
+#pragma endregion
 
 #pragma region UI ENUM
 // FADE TYPE

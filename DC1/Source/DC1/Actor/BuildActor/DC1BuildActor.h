@@ -184,7 +184,7 @@ private:
 	int32											RoofSupportSpan = { 2 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass;
+	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
 	TObjectPtr<UGeometryCollection>					DestroyGeometryCollection = { nullptr };

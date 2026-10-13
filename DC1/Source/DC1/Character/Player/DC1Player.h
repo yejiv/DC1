@@ -14,6 +14,7 @@ class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
 class UWidgetComponent;
+class UDC1ScreenOffsetWidgetComponent;
 
 class UGameplayEffect;
 
@@ -33,8 +34,8 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual void SetAttackCollision(bool OnCollision) override;
 
-	USphereComponent* GetInteractDetectCollider() const { return InteractDetectCollider; }
-	UWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
+	USphereComponent*					GetInteractDetectCollider() const { return InteractDetectCollider; }
+	UDC1ScreenOffsetWidgetComponent*	GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
 
 public:
 	UFUNCTION()
@@ -92,7 +93,7 @@ public:
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UWidgetComponent>			InteractPromptWidgetComponent = { nullptr };
+	TObjectPtr<UDC1ScreenOffsetWidgetComponent>		InteractPromptWidgetComponent = { nullptr };
 
 private:
 	void	InitializeAbilitySystem();
