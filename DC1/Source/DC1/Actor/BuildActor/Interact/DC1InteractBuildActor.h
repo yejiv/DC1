@@ -83,6 +83,8 @@ protected:
 	// InfoState에 따른 WidgetClass
 	virtual TSubclassOf<UDC1BuildInfoWidget> GetInfoWidgetClass(EDC1BuildInfoState InState) const;
 
+	virtual void					BuildCompleted();
+
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();
 
@@ -95,7 +97,6 @@ protected:
 	void							OnRep_CurrentWorkSpeed();
 
 private:
-	void							BuildCompleted();
 
 	void							CancelWorkersAbility();
 	float							ComputeTotalWorkSpeed();
