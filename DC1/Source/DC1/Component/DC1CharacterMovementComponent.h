@@ -98,6 +98,9 @@ public:
 
 	bool IsGliding() const { return MovementMode == MOVE_Custom && CustomMovementMode == CMOVE_Glide; }
 
+	// 무기를 쥘 수 없는 이동 상태인지. 이동 모드 조건이 추가되면 여기만 고친다
+	bool IsWeaponBlockedByMovement() const;
+
 private:
 	void			ConfirmGlideMovement();
 	void			ConfirmClimbMovement();

@@ -66,7 +66,11 @@ public:
 	ADC1Glider*				GetCurrentGlider() const { return CurrentGlider; }
 
 	void						SetGliderVisibility(bool IsVisiblity);
-	void						SetWeaponVisibility(bool IsVisiblity);
+
+	// 무기 표시 최종 판단 (이동 조건 + 도구 + 팰스피어). 조건이 추가되면 여기만 고친다
+	bool						CanShowWeapon() const;
+	// CanShowWeapon 결과대로 지금 든 무기의 표시를 맞춘다
+	void						RefreshWeaponVisibility();
 
 public:
 	FOnEquipWeaponChanged		OnWeaponChanged;

@@ -302,8 +302,7 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 		// Weapon Visiblity Setting
 		if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
 		{
-			bool WeaponVisibility = (false == OnGliding && false == OnClimbing);
-			EquipComponent->SetWeaponVisibility(WeaponVisibility);
+			EquipComponent->RefreshWeaponVisibility();
 		}
 
 		const bool WasClimbing = (PrevMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Climb);
@@ -433,6 +432,16 @@ void ADC1Player::ApplyGlideState(bool IsApply)
 	}
 }
 
+FGameplayTag ADC1Player::ConvertWeaponTagToAnimTag(const FGameplayTag& Tag)
+{
+	// 무기 상태 태그 -> Draw 몽타주 태그. 매핑에 없는 태그는 빈 태그를 돌려준다
+	if (Tag.MatchesTagExact(DC1StateTags::State_Weapon_None))		return DC1AnimTags::Anim_Draw_None;
+	if (Tag.MatchesTagExact(DC1StateTags::State_Weapon_Melee))	return DC1AnimTags::Anim_Draw_Melee;
+	if (Tag.MatchesTagExact(DC1StateTags::State_Weapon_Bow))		return DC1AnimTags::Anim_Draw_Bow;
+
+	return FGameplayTag();
+}
+
 void ADC1Player::HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity)
 {
 	// 소모 GE는 서버에서만 계산된다
@@ -558,6 +567,26 @@ void ADC1Player::OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount)
 			if (UAnimInstance* Instance = GetMesh()->GetAnimInstance())
 			{
 				Instance->LinkAnimClassLayers(LayerClass);
+
+				if (false == OldWeaponTag.MatchesTag(Tag))
+				{
+					OldWeaponTag = Tag;
+
+					UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement());
+					if (false == IsValid(CMC))
+						return;
+					// 무기 교체로 인한 Visibility, Draw Animation 차단
+					if (true == CMC->IsWeaponBlockedByMovement())
+						return;
+
+					FGameplayTag DrawAnimTag = ConvertWeaponTagToAnimTag(Tag);
+					if (false == DrawAnimTag.IsValid())
+						return;
+					UAnimMontage* DrawAnimMontage = AnimData->FindMontageByTag(DrawAnimTag);
+					if (false == IsValid(DrawAnimMontage))
+						return;
+					Instance->Montage_Play(DrawAnimMontage);
+				}
 			}
 		}
 	}

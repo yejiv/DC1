@@ -346,6 +346,11 @@ bool UDC1CharacterMovementComponent::CanAttemptJump() const
 	return CanJump;
 }
 
+bool UDC1CharacterMovementComponent::IsWeaponBlockedByMovement() const
+{
+	return IsGliding() || IsClimbing();
+}
+
 void UDC1CharacterMovementComponent::ToggleMove()
 {
 	Safe_bWantsToWalk = ~Safe_bWantsToWalk;

@@ -127,6 +127,9 @@ private:
 	void	ApplyGlideState(bool IsApply);
 
 private:
+	FGameplayTag ConvertWeaponTagToAnimTag(const FGameplayTag& Tag);
+
+private:
 	UFUNCTION()
 	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
 
@@ -149,6 +152,9 @@ private:
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
+
+private:
+	FGameplayTag								OldWeaponTag = {};
 
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;

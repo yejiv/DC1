@@ -13,6 +13,7 @@
 #include "Item/Equip/Glider/DC1Glider.h"
 
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Character/Player/DC1PlayerState.h"
@@ -144,11 +145,34 @@ void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
 	CurrentGlider->SetActorHiddenInGame(!IsVisiblity);
 }
 
-void UDC1EquipComponent::SetWeaponVisibility(bool IsVisiblity)
+bool UDC1EquipComponent::CanShowWeapon() const
 {
-	if (nullptr == CurrentWeapon) return;
+	if (nullptr != CurrentTool || true == IsPalSphereEquipped) 
+		return false;
 
-	CurrentWeapon->SetActorHiddenInGame(!IsVisiblity);
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player))
+		return false;
+
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(Player->GetCharacterMovement());
+	if (false == IsValid(CMC))
+		return false;
+
+	if (true == CMC->IsWeaponBlockedByMovement())
+		return false;
+
+	return true;
+}
+
+void UDC1EquipComponent::RefreshWeaponVisibility()
+{
+	if (false == GetOwner()->HasAuthority())
+		return;
+
+	if (nullptr == CurrentWeapon)
+		return;
+
+	CurrentWeapon->SetActorHiddenInGame(!CanShowWeapon());
 }
 
 ADC1Player* UDC1EquipComponent::GetOwningPlayer() const
@@ -403,10 +427,7 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 
 	if (WeaponState == WEAPONSTATE::ATTACH)
 	{
-		// 도구/팰스피어 착용 중에는 무기 표시를 보류한다. 각 Unequip에서 다시 꺼낸다
-		if (nullptr != CurrentTool || true == IsPalSphereEquipped) return;
-
-		CurrentWeapon->SetActorHiddenInGame(false);
+		// 소켓 부착은 항상 한다. 표시 여부는 CanShowWeapon이 정한다
 		if (ADC1Player* Player = GetOwningPlayer())
 		{
 			CurrentWeapon->AttachToComponent(
@@ -415,6 +436,8 @@ void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)
 				CurrentWeapon->AttackSocketName
 			);
 		}
+
+		RefreshWeaponVisibility();
 	}
 	else
 	{

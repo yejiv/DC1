@@ -415,6 +415,16 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
+		// Draw 몽타주가 이 액션들의 몽타주를 끊어 어빌리티가 종료되므로 교체를 막는다
+		FGameplayTagContainer ChangeBlockedTags;
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Working);
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Dodging);
+
+		if (true == ASC->HasAnyMatchingGameplayTags(ChangeBlockedTags))
+		{
+			return;
+		}
+
 		ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_Attack);
 	}
 
