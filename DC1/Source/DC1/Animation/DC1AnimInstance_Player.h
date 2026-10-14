@@ -28,6 +28,10 @@ public:
 	bool				IsAiming = { false };
 	UPROPERTY(BlueprintReadOnly)
 	bool				IsClimbing = { false };
+	UPROPERTY(BlueprintReadOnly)
+	bool				IsGliding = { false };
+	UPROPERTY(BlueprintReadOnly)
+	bool				IsOnGround = { false };
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector2D		MoveXY = {};

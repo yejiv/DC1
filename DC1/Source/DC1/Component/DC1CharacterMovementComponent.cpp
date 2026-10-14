@@ -20,6 +20,7 @@ void FSavedMove_DC1::Clear()
 
 	Saved_bWantsToWalk = false;
 	Saved_bWantsToSprint = false;
+	Saved_bWantsToGlide = false;
 }
 
 uint8 FSavedMove_DC1::GetCompressedFlags() const
@@ -27,6 +28,7 @@ uint8 FSavedMove_DC1::GetCompressedFlags() const
 	uint8 Result = Super::GetCompressedFlags();
 	if (Saved_bWantsToWalk) Result |= WALK;
 	if (Saved_bWantsToSprint) Result |= SPRINT;
+	if (Saved_bWantsToGlide) Result |= GLIDE;
 	return Result;
 }
 
@@ -47,6 +49,7 @@ void FSavedMove_DC1::SetMoveFor(ACharacter* C, float InDeltaTime, FVector const&
 	{
 		Saved_bWantsToWalk = CMC->Safe_bWantsToWalk;
 		Saved_bWantsToSprint = CMC->Safe_bWantsToSprint;
+		Saved_bWantsToGlide = CMC->Safe_bWantsToGlide;
 	}
 }
 
@@ -60,6 +63,7 @@ void FSavedMove_DC1::PrepMoveFor(ACharacter* C)
 	{
 		CMC->Safe_bWantsToWalk = Saved_bWantsToWalk;
 		CMC->Safe_bWantsToSprint = Saved_bWantsToSprint;
+		CMC->Safe_bWantsToGlide = Saved_bWantsToGlide;
 	}
 }
 #pragma endregion
@@ -129,23 +133,39 @@ void UDC1CharacterMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 
 	Safe_bWantsToWalk = (0 != (Flags & FSavedMove_DC1::EMoveFlag::WALK));
 	Safe_bWantsToSprint = (0 != (Flags & FSavedMove_DC1::EMoveFlag::SPRINT));
+	Safe_bWantsToGlide = (0 != (Flags & FSavedMove_DC1::EMoveFlag::GLIDE));
 }
 
 void UDC1CharacterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
 {
 	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
 
-	ConfirmMovement();
+	// SimulatedProxy인 경우 Movement 계산 생략
+	if (ENetRole::ROLE_SimulatedProxy == GetOwnerRole())
+		return;
+
+	ConfirmGlideMovement();
+	ConfirmClimbMovement();
 }
 
 void UDC1CharacterMovementComponent::PhysCustom(float deltaTime, int32 Iterations)
 {
 	Super::PhysCustom(deltaTime, Iterations);
 
+	if (ENetRole::ROLE_SimulatedProxy == GetOwnerRole())
+	{
+		FHitResult Hit = {};
+		SafeMoveUpdatedComponent(Velocity * deltaTime, UpdatedComponent->GetComponentQuat(), true, Hit);
+		return;
+	}
+
 	switch (CustomMovementMode)
 	{
 	case ECustomMovementMode::CMOVE_Climb:
 		PhysClimbing(deltaTime, Iterations);
+		break;
+	case ECustomMovementMode::CMOVE_Glide:
+		PhysGliding(deltaTime, Iterations);
 		break;
 	}
 }
@@ -237,9 +257,64 @@ void UDC1CharacterMovementComponent::PhysClimbing(float deltaTime, int32 Iterati
 	}
 }
 
+void UDC1CharacterMovementComponent::PhysGliding(float deltaTime, int32 Iterations)
+{
+	if (deltaTime < MIN_TICK_TIME)
+		return;
+
+	float remainingTime = deltaTime;
+
+	while (remainingTime >= MIN_TICK_TIME && Iterations < MaxSimulationIterations)
+	{
+		Iterations++;
+		const float timeTick = GetSimulationTimeStep(remainingTime, Iterations);
+		remainingTime -= timeTick;
+
+		// Glide Off
+		if (false == Safe_bWantsToGlide)
+		{
+			SetMovementMode(MOVE_Falling);
+			StartNewPhysics(remainingTime + timeTick, Iterations - 1);
+			return;
+		}
+
+		// Calc Velocity
+		Velocity.Z = 0.f;
+		CalcVelocity(timeTick, GlideFriction, false, BrakingDecelerationGliding);
+		Velocity.Z = -GlideFallSpeed;
+
+		const FVector Delta = Velocity * timeTick;
+		FHitResult Hit = {};
+		SafeMoveUpdatedComponent(Delta, UpdatedComponent->GetComponentQuat(), true, Hit);
+
+		FHitResult MoveHit = Hit;
+		if (MoveHit.Time < 1.f)
+		{
+			SlideAlongSurface(Delta, 1.f - MoveHit.Time, MoveHit.Normal, MoveHit, false);
+		}
+
+		// 바닥에 닿으면 Glide 종료
+		if (Delta.Z < 0.f && true == IsWalkable(Hit))
+		{
+			SetMovementMode(MOVE_Walking);
+			StartNewPhysics(remainingTime, Iterations);
+			return;
+		}
+	}
+}
+
 void UDC1CharacterMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
 {
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+
+	if (true == IsGliding())
+	{
+		Velocity.Z = 0.f;
+	}
+	else
+	{
+		Safe_bWantsToGlide = false;
+	}
 
 	ResetClimbState();
 
@@ -271,6 +346,11 @@ bool UDC1CharacterMovementComponent::CanAttemptJump() const
 	return CanJump;
 }
 
+bool UDC1CharacterMovementComponent::IsWeaponBlockedByMovement() const
+{
+	return IsGliding() || IsClimbing();
+}
+
 void UDC1CharacterMovementComponent::ToggleMove()
 {
 	Safe_bWantsToWalk = ~Safe_bWantsToWalk;
@@ -286,9 +366,40 @@ void UDC1CharacterMovementComponent::SetSprint(bool Sprint)
 	Safe_bWantsToSprint = Sprint;
 }
 
-void UDC1CharacterMovementComponent::ConfirmMovement()
+void UDC1CharacterMovementComponent::SetGlide(bool IsGlide)
+{
+	Safe_bWantsToGlide = IsGlide;
+}
+
+void UDC1CharacterMovementComponent::ConfirmGlideMovement()
+{
+	if (ADC1Player* OwnerPlayer = Cast<ADC1Player>(GetOwner()))
+	{
+		if (true == IsGliding() && false == OwnerPlayer->CanGlide())
+		{
+			SetMovementMode(MOVE_Falling);
+		}
+
+		if (true == IsFalling() && true == Safe_bWantsToGlide && true == OwnerPlayer->CanGlide())
+		{
+			SetMovementMode(MOVE_Custom, CMOVE_Glide);
+		}
+	}
+}
+
+void UDC1CharacterMovementComponent::ConfirmClimbMovement()
 {
 	ResetClimbState();
+
+	ADC1Player* OwnerPlayer = Cast<ADC1Player>(GetOwner());
+	if (false == IsValid(OwnerPlayer))
+		return;
+
+	if (true == IsClimbing() && false == OwnerPlayer->CheckRemainStamina(0.f))
+	{
+		SetMovementMode(MOVE_Falling);
+		return;
+	}
 
 	// 벽을 놓은 경우 W키를 다시 뗐다가 누를 때까지 벽타기 제한
 	if (bReleaseClimb)
@@ -303,8 +414,7 @@ void UDC1CharacterMovementComponent::ConfirmMovement()
 		}
 	}
 
-	//if (MOVE_Walking != MovementMode && MOVE_Falling != MovementMode)
-	if (MOVE_Falling != MovementMode)
+	if (MOVE_Falling != MovementMode && false == IsGliding())
 	{
 		return;
 	}
@@ -315,24 +425,21 @@ void UDC1CharacterMovementComponent::ConfirmMovement()
 	}
 
 	// 진입 판정
-	if (ADC1Player* OwnerPlayer = Cast<ADC1Player>(GetOwner()))
-	{
-		if (true == Acceleration.IsNearlyZero())
-			return;
+	if (true == Acceleration.IsNearlyZero())
+		return;
 
-		if (true == DetectWall() && true == CheckInputDirectionToWall())
+	if (true == DetectWall() && true == CheckInputDirectionToWall())
+	{
+		if (true == HasWallAtHeadHeight())
 		{
-			if (true == HasWallAtHeadHeight())
+			if (true == OwnerPlayer->CanClimb())
 			{
-				if (true == OwnerPlayer->CanClimb())
-				{
-					SetMovementMode(MOVE_Custom, CMOVE_Climb);
-				}
+				SetMovementMode(MOVE_Custom, CMOVE_Climb);
 			}
-			else
-			{
-				UpdateCanMantle();
-			}
+		}
+		else
+		{
+			UpdateCanMantle();
 		}
 	}
 }
@@ -450,6 +557,15 @@ void UDC1CharacterMovementComponent::UpdateCanMantle()
 
 	FVector UnusedTargetLocation;
 	bCanMantle = FindMantleTarget(UnusedTargetLocation);
+}
+
+bool UDC1CharacterMovementComponent::CanGliding() const
+{
+	ADC1Player* Player = Cast<ADC1Player>(CharacterOwner);
+	if (false == IsValid(Player))
+		return false;
+
+	return Player->CanGlide();
 }
 
 bool UDC1CharacterMovementComponent::FindMantleTarget(FVector& OutTargetLocation) const
