@@ -42,9 +42,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Panel")
 	TMap<EDC1ConstructionInfoPanel, int32>	PanelToSwitchIndex;
 
+	// No Work
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>					RemainingWorkText;
 
+	// Working
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>					RemainingTimeText;
 
