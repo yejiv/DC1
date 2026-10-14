@@ -144,6 +144,13 @@ void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
 	CurrentGlider->SetActorHiddenInGame(!IsVisiblity);
 }
 
+void UDC1EquipComponent::SetWeaponVisibility(bool IsVisiblity)
+{
+	if (nullptr == CurrentWeapon) return;
+
+	CurrentWeapon->SetActorHiddenInGame(!IsVisiblity);
+}
+
 ADC1Player* UDC1EquipComponent::GetOwningPlayer() const
 {
 	const APlayerState* OwnerState = Cast<APlayerState>(GetOwner());

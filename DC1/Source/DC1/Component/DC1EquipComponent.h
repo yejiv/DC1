@@ -66,6 +66,7 @@ public:
 	ADC1Glider*				GetCurrentGlider() const { return CurrentGlider; }
 
 	void						SetGliderVisibility(bool IsVisiblity);
+	void						SetWeaponVisibility(bool IsVisiblity);
 
 public:
 	FOnEquipWeaponChanged		OnWeaponChanged;

@@ -18,6 +18,7 @@ class UWidgetComponent;
 class UGameplayEffect;
 
 class UDC1AbilitySystemComponent;
+class UDC1EquipComponent;
 /**
  * 
  */
@@ -35,6 +36,7 @@ public:
 
 	USphereComponent* GetInteractDetectCollider() const { return InteractDetectCollider; }
 	UWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
+	UDC1EquipComponent* GetEquipComponent() const;
 
 public:
 	UFUNCTION()

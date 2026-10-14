@@ -115,6 +115,15 @@ void ADC1Player::SetAttackCollision(bool OnCollision)
 	ActiveCollider->SetCollisionEnabled(CollisionType);
 }
 
+UDC1EquipComponent* ADC1Player::GetEquipComponent() const
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS))
+		return nullptr;
+	
+	return PS->GetEquipComponent();
+}
+
 void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 물리적으로 말이 안 되는 것과 창 단위 중복만 여기서 거른다. 팀 판정은 GA가 한다.
@@ -137,6 +146,13 @@ bool ADC1Player::CanClimb() const
 
 bool ADC1Player::CanGlide() const
 {
+	if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
+	{
+		ADC1Glider* Glider = EquipComponent->GetCurrentGlider();
+		if (nullptr == Glider)
+			return false;
+	}
+
 	return CheckRemainStamina(0.f);
 }
 
@@ -277,8 +293,18 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 	// CMC가 MovementMode를 이미 갱신한 뒤 호출된다
 	if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(GetCharacterMovement()))
 	{
-		ApplyGlideState(CMC->IsGliding());
-		ApplyClimbState(CMC->IsClimbing());
+		bool OnGliding = CMC->IsGliding();
+		bool OnClimbing = CMC->IsClimbing();
+
+		ApplyGlideState(OnGliding);
+		ApplyClimbState(OnClimbing);
+
+		// Weapon Visiblity Setting
+		if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
+		{
+			bool WeaponVisibility = (false == OnGliding && false == OnClimbing);
+			EquipComponent->SetWeaponVisibility(WeaponVisibility);
+		}
 
 		const bool WasClimbing = (PrevMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Climb);
 		if (true == HasAuthority() && true == WasClimbing && 
@@ -377,12 +403,9 @@ void ADC1Player::ApplyGlideState(bool IsApply)
 	{
 		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Gliding, IsApply ? 1 : 0);
 
-		if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+		if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
 		{
-			if (UDC1EquipComponent* EquipComponent = PS->GetEquipComponent())
-			{
-				EquipComponent->SetGliderVisibility(IsApply);
-			}
+			EquipComponent->SetGliderVisibility(IsApply);
 		}
 
 		if (true == HasAuthority())
