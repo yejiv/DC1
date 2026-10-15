@@ -107,34 +107,30 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 		return;
 	}
 
-	const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(DC1DataTableTags::DataTable_Item);
-	if (false == ::IsValid(ItemDataTable))
+	// 테스트용: 일반/귀중품 테이블의 모든 아이템을 1~100개 랜덤 지급 (귀중품은 AddItem이 귀중품 인벤토리로 넘김)
+	const FGameplayTag TableTags[] = { DC1DataTableTags::DataTable_Item, DC1DataTableTags::DataTable_ValuableItem };
+	for (const FGameplayTag& TableTag : TableTags)
 	{
-		return;
-	}
+		const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(TableTag);
+		if (false == ::IsValid(ItemDataTable))
+		{
+			continue;
+		}
 
+		TArray<FDC1ItemRow*> AllRows;
+		ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("Items"), AllRows);
 
-	TArray<FDC1ItemRow*> AllRows;
-	ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("Items"), AllRows);
-	if (true == AllRows.IsEmpty())
-	{
-		return;
-	}
+		for (const FDC1ItemRow* Row : AllRows)
+		{
+			if (nullptr == Row)
+			{
+				continue;
+			}
 
-	TMap<int32, TArray<FDC1ItemRow*>> RowsByLevel;
-
-	for (FDC1ItemRow* Row : AllRows)
-	{
-		FName ItemID = Row->ItemID;
-		AddItem(ItemID, 1);
-
-		FText ItemName = Row->ItemName;
-	}
-
-	// 행 이름이 아니라 ItemID 필드 기준 (행 이름은 ItemID와 다를 수 있음)
-	if (AllRows.Num() > 1 && nullptr != AllRows[1])
-	{
-		AddItem(AllRows[1]->ItemID, 1);
+			// AddItem은 MaxStack을 보지 않고 한 칸에 누적하므로 무기처럼 1개짜리는 1개만
+			const int32 MaxCount = FMath::Clamp(Row->MaxStack, 1, 100);
+			AddItem(Row->ItemID, FMath::RandRange(1, MaxCount));
+		}
 	}
 }
 
