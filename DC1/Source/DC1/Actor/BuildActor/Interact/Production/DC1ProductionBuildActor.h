@@ -8,12 +8,16 @@
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnProductionChanged);
 
+class USphereComponent;
+class ADC1PalCharacter;
+
 UCLASS()
 class DC1_API ADC1ProductionBuildActor : public ADC1InteractBuildActor
 {
 	GENERATED_BODY()
 	
 public:
+	// 생산 상태 변경 ( NoItem, Compact, Detail )
 	FDC1OnProductionChanged			OnProductionChanged;
 
 public:
@@ -25,15 +29,31 @@ public:
 	int32			GetStoredCount() const { return StoredCount; }
 	int32			GetMaxStoredCount() const { return MaxStoredCount; }
 
+	virtual FGameplayTag	GetRequiredWorkTag() const override;
+
 protected:
+	virtual void	BeginPlay() override;
 	virtual void	GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 	virtual void	GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
+	virtual bool	ShouldKeepOptionsWhileHeld() const override;
+
+	void			CollectProduct(ADC1Character* InCollect);
+
 
 protected:
-	virtual bool	CanAcceptWorker() const override;
+	virtual void	ApplyState() override;
+	virtual bool	CanAcceptWorker(const ADC1Character* InWorker) const override;
 	virtual void	OnWorkTick(float InWork) override;
+
+	virtual EDC1BuildInfoState			ComputeInfoState() const override;
+	virtual TSubclassOf<UDC1BuildInfoWidget>	GetInfoWidgetClass(EDC1BuildInfoState InState) const override;
+
+	virtual void	OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
+
+	virtual bool	CanPalWork() const override;
+	virtual bool	HasPalWorkerSlot() const override;
 
 	UFUNCTION()
 	void			OnRep_ProductionProgress();
@@ -41,12 +61,29 @@ protected:
 	UFUNCTION()
 	void			OnRep_StoredCount(int32 OldCount);
 
+
 private:
+	bool			IsCompleted() const { return BuildState == EDC1BuildState::Completed; }
+	APawn*			GetLocalPawn() const;
+
+
 	// 서버 전용
 	void			SetStoredCount(int32 InNewCount);
 
 	// 서버 SetStoredCount / 클라 OnRep 수렴점
 	void			ApplyStoredCount(int32 InOldCount);
+
+	void			RefreshLocalInRange();
+
+	// 건설 완료 + 생산 아이템 지정 + 작업량 유효
+	bool			CanProduce() const;
+
+	// 범위 구체 판정 - 로컬 플레이어 폰 한정
+	UFUNCTION()
+	void			OnInfoRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+	void			OnInfoRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 protected:
 	// DT_Item의 Item ID 값
@@ -54,7 +91,7 @@ protected:
 	FName							ProductItemID = { NAME_None };
 
 	// 아이템 1개당 생산 필요 작업량
-	UPROPERTY(EditdefaultsOnly, Category = "Prudoction", meta = (ClampMin = "0.01"))
+	UPROPERTY(EditdefaultsOnly, Category = "Production", meta = (ClampMin = "0.01"))
 	float							RequiredWorkPerItem = { 100.f };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production", meta = (ClampMin = "1"))
@@ -63,6 +100,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Interact")
 	TArray<FDC1InteractOption>		CollectOptions;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
+	TObjectPtr<USphereComponent>	InfoRangeSphere = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
+	TSubclassOf<UDC1BuildInfoWidget>		ProductionInfoWidgetClass = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
+	int32							MaxPalWorekrs = { 1 };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (Categories = "Pal.Work"))
+	FGameplayTag					RequiredWorkTag;
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };
@@ -70,7 +119,11 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_StoredCount)
 	int32							StoredCount = { 0 };
 
+
 private:
 	// 누적 작업량 - 서버
 	float							CurrentProductionWork = { 0.f };
+
+	bool							IsLocalInRange = { false };
+
 };

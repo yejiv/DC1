@@ -45,6 +45,9 @@ public:
 	void								SetOrientToMovement(bool Enable);
 	virtual void						GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 
+	// 탑승 중엔 탄 플레이어 카메라
+	virtual void						CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
+
 	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
 	int32								GetLevel() const;
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
@@ -90,7 +93,11 @@ protected:
 
 	virtual void						BeginPlay() override;
 
+	virtual void						NotifyControllerChanged() override;
+
 	virtual void						OnTeamChanged();
+
+	void								ApplyTeamCollisionProfile();
 
 	UFUNCTION()
 	void								OnRep_Team();

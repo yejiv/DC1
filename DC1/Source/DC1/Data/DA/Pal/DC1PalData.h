@@ -76,6 +76,18 @@ public:
 	float							RotationRateYaw = { 360.f };
 #pragma endregion
 
+#pragma region Ride
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride")
+	bool							bRideable = { false };
+
+	// 스켈레톤 소켓
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
+	FName							RideSocketName = { TEXT("RideMarker") };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.0"))
+	float							RideSpeed = { 700.f };
+#pragma endregion
+
 #pragma region Stats
 	// 레벨당 성장 계수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ClampMin = "0.0"))

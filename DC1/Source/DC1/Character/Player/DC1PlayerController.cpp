@@ -207,7 +207,25 @@ void ADC1PlayerController::SetPawn(APawn* InPawn)
 {
 	Super::SetPawn(InPawn);
 
-	ControlObject = Cast<ADC1Player>(InPawn);
+	if (ADC1Player* PossessedPlayer = Cast<ADC1Player>(InPawn))
+	{
+		ControlObject = PossessedPlayer;
+		return;
+	}
+
+	// 탄 팰
+	if (nullptr != InPawn)
+	{
+		return;
+	}
+
+	// Possess 직전 UnPossess 의 null. 탑승·하차 중이면 무시
+	if (IsValid(ControlObject) && nullptr != ControlObject->GetRiddenPawn())
+	{
+		return;
+	}
+
+	ControlObject = nullptr;
 }
 
 bool ADC1PlayerController::InputKey(const FInputKeyEventArgs& Params)
@@ -275,8 +293,10 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 		Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
 	}
 
-	ControlObject->AddMovementInput(Forward * MoveVector.X);
-	ControlObject->AddMovementInput(Right * MoveVector.Y);
+	// 탑승 중이면 팰
+	APawn* MovePawn = GetPawn();
+	MovePawn->AddMovementInput(Forward * MoveVector.X);
+	MovePawn->AddMovementInput(Right * MoveVector.Y);
 }
 
 void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
@@ -328,7 +348,7 @@ void ADC1PlayerController::OnJump(const FInputActionValue& Value)
 	}
 
 	ControlObject->UnCrouch();
-	ControlObject->Jump();
+	ControlObject->TryJumpOrGlide();
 }
 
 void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
@@ -415,6 +435,16 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
+		// Draw 몽타주가 이 액션들의 몽타주를 끊어 어빌리티가 종료되므로 교체를 막는다
+		FGameplayTagContainer ChangeBlockedTags;
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Working);
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Dodging);
+
+		if (true == ASC->HasAnyMatchingGameplayTags(ChangeBlockedTags))
+		{
+			return;
+		}
+
 		ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_Attack);
 	}
 

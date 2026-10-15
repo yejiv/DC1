@@ -7,12 +7,29 @@
 #include "GameplayTagContainer.h"
 #include "DC1EquipComponent.generated.h"
 
+class ADC1Equip;
 class ADC1Weapon;
+class ADC1Glider;
 class ADC1Tool;
 class ADC1Player;
 class UDC1PlayerInventoryComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
+
+// 장비 칸 하나에 실제로 적용된 상태. 인벤토리 칸이 바뀌면 이전 적용을 되돌리는 기준이 된다
+USTRUCT()
+struct FDC1EquipSlot
+{
+	GENERATED_BODY()
+
+	// 이 칸에 적용된 아이템 (비었으면 NAME_None)
+	UPROPERTY()
+	FName ItemID = { NAME_None };
+
+	// 액터로 스폰되는 타입(무기, 글라이더)만 채워진다
+	UPROPERTY()
+	TObjectPtr<ADC1Equip> EquipActor = { nullptr };
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1EquipComponent : public UActorComponent
@@ -45,7 +62,15 @@ public:
 	void		Server_ChangeWeapon(int32 Delta);
 
 public:
-	ADC1Weapon*				GetCurrentWeapon() { return CurrentWeapon; }
+	ADC1Weapon*			GetCurrentWeapon() const { return CurrentWeapon; }
+	ADC1Glider*				GetCurrentGlider() const { return CurrentGlider; }
+
+	void						SetGliderVisibility(bool IsVisiblity);
+
+	// 무기 표시 최종 판단 (이동 조건 + 도구 + 팰스피어). 조건이 추가되면 여기만 고친다
+	bool						CanShowWeapon() const;
+	// CanShowWeapon 결과대로 지금 든 무기의 표시를 맞춘다
+	void						RefreshWeaponVisibility();
 
 public:
 	FOnEquipWeaponChanged		OnWeaponChanged;
@@ -57,17 +82,23 @@ private:
 	// 같은 PlayerState의 인벤토리 조회 함수
 	UDC1PlayerInventoryComponent*	GetInventoryComponent() const;
 
-	// 장비 칸 변경 시 무기 액터를 교체하는 함수 (서버)
+	// 장비 칸 변경 시 이전 적용을 되돌리고 칸 타입별로 다시 적용하는 함수 (서버)
 	void		HandleEquipmentSlotChanged(int32 InEquipSlotIndex);
 
-	// 무기 칸 하나를 인벤토리 기준으로 다시 스폰하는 함수 (비면 주먹)
-	void		RefreshWeaponSlot(int32 InWeaponIndex);
+	// 모든 칸 공통. 이전 적용(액터 등)을 해제하고 인벤토리 기준으로 ItemID를 갱신하는 함수
+	void		RefreshEquipSlot(int32 InEquipSlotIndex);
 
-	// 무기 칸 전체를 인벤토리 기준으로 다시 맞추고 현재 칸 무기를 드는 함수 (서버, 폰 필요)
-	void		SyncWeaponsFromInventory();
+	// 액터로 스폰되는 타입(무기, 글라이더)용. 칸의 ItemID로 액터를 스폰해 캐릭터에 붙이고 칸에 저장한다 (비었거나 실패면 nullptr)
+	ADC1Equip*	SpawnEquipActor(int32 InEquipSlotIndex);
+
+	// 장비 칸 전체를 인벤토리 기준으로 다시 맞추는 함수 (서버, 폰 필요)
+	void		SyncEquipsFromInventory();
 
 	// 휠로 순환할 수 있는 무기 칸 수 조회 함수 (인벤토리의 열린 무기 칸 수)
 	int32		GetUnlockedWeaponCount() const;
+
+	// 지금 든 무기의 장비 칸 인덱스 조회 함수 (무기 순번 -> EquipSlots 인덱스, 없으면 -1)
+	int32		GetCurrentWeaponEquipIndex() const;
 
 	UFUNCTION()
 	void		OnRep_CurrentWeapon();
@@ -76,21 +107,33 @@ private:
 	void		ApplyWeaponStateTag();
 	void		ApplyWeaponAttach();
 
+private:
+	// 무기 칸 적용: 액터 스폰 후 숨김, 지금 든 칸이면 바로 교체 (비었으면 주먹)
+	void		HandleWeaponChanged(int32 InEquipSlotIndex);
+
+	// 글라이더 칸 적용: 액터 스폰 후 숨김
+	void		HandleGliderChanged(int32 InEquipSlotIndex);
+
 public:
 	// 슬롯 선택은 서버에서만 굴린다. 클라는 CurrentWeapon만 보면 되므로 복제하지 않는다
+	// 무기 순번(0 ~ 열린 무기 칸 수 - 1). EquipSlots 접근 시 GetCurrentWeaponEquipIndex로 변환
 	UPROPERTY()
 	int32								CurrentWeaponIndex = {};
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	TObjectPtr<ADC1Weapon>	CurrentWeapon = {};
+
+	// 장착한 글라이더. 클라에서도 활공 모드 전환 시 표시를 토글해야 해서 모두에게 복제한다
+	UPROPERTY(Replicated)
+	TObjectPtr<ADC1Glider>		CurrentGlider = {};
 
 private:
 	enum class WEAPONSTATE { DETACH, ATTACH };
 	void		SetWeaponState(WEAPONSTATE WeaponState);
 
 private:
+	// 장비 칸 인덱스(DC1EquipSlotLayout)로 접근. 크기는 SlotCount
 	UPROPERTY()
-	TArray<TObjectPtr<ADC1Weapon>>		WeaponSlots;
-
+	TArray<FDC1EquipSlot>			EquipSlots;
 
 // Tool
 public:

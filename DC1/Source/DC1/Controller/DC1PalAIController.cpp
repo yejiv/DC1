@@ -16,7 +16,9 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Components/StateTreeAIComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "StateTree.h"
@@ -694,6 +696,71 @@ void ADC1PalAIController::HandleTeamChanged()
 	RefreshPerception();
 
 	TryStartBehavior();
+}
+
+bool ADC1PalAIController::RequestRideApproach(APawn* InRider, float InAcceptanceRadius, FDC1OnRideApproachFinished InOnFinished)
+{
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData || false == IsValid(InRider))
+	{
+		return false;
+	}
+
+	StopBehavior();
+	Pal->SetOrientToMovement(true);
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+
+	const EPathFollowingRequestResult::Type Result = MoveToActor(InRider, InAcceptanceRadius);
+	if (EPathFollowingRequestResult::AlreadyAtGoal == Result)
+	{
+		InOnFinished.ExecuteIfBound(true);
+		return true;
+	}
+
+	if (EPathFollowingRequestResult::RequestSuccessful != Result)
+	{
+		TryStartBehavior();
+		return false;
+	}
+
+	RideApproachRequestID = GetCurrentMoveRequestID();
+	OnRideApproachFinished = MoveTemp(InOnFinished);
+	return true;
+}
+
+void ADC1PalAIController::CancelRideApproach()
+{
+	if (false == IsRideApproaching())
+	{
+		return;
+	}
+
+	// StopMovement 의 OnMoveCompleted 무시
+	OnRideApproachFinished.Unbind();
+	StopMovement();
+}
+
+void ADC1PalAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+{
+	Super::OnMoveCompleted(RequestID, Result);
+
+	// 끊긴 Follow 이동 완료도 온다
+	if (false == IsRideApproaching() || false == RequestID.IsEquivalent(RideApproachRequestID))
+	{
+		return;
+	}
+
+	FDC1OnRideApproachFinished Finished = MoveTemp(OnRideApproachFinished);
+	OnRideApproachFinished.Unbind();
+
+	const bool IsArrived = Result.IsSuccess();
+	if (false == IsArrived)
+	{
+		TryStartBehavior();
+	}
+
+	Finished.ExecuteIfBound(IsArrived);
 }
 
 void ADC1PalAIController::TryStartBehavior()

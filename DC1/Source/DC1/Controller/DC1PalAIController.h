@@ -12,6 +12,8 @@ class UStateTreeAIComponent;
 class UStateTree;
 class UAISenseConfig_Sight;
 
+DECLARE_DELEGATE_OneParam(FDC1OnRideApproachFinished, bool /*bArrived*/);
+
 /**
  *
  */
@@ -79,9 +81,15 @@ public:
 	// 배회 반경. 거점 팰은 거점 범위
 	float					GetWanderRadius() const;
 
+	// 실패 시 트리 복구
+	bool					RequestRideApproach(APawn* InRider, float InAcceptanceRadius, FDC1OnRideApproachFinished InOnFinished);
+	void					CancelRideApproach();
+	bool					IsRideApproaching() const { return OnRideApproachFinished.IsBound(); }
+
 protected:
 	virtual void			BeginPlay() override;
 	virtual void			OnPossess(APawn* InPawn) override;
+	virtual void			OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
 
 	UFUNCTION()
 	void					OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
@@ -174,4 +182,8 @@ protected:
 
 	// 시야에서 놓친 뒤 따라가는 시간
 	float							ProvokeMemoryDuration = { 10.f };
+
+	// 바인딩 = 달려가는 중
+	FDC1OnRideApproachFinished		OnRideApproachFinished;
+	FAIRequestID					RideApproachRequestID;
 };

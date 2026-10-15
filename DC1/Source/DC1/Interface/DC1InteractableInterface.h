@@ -72,4 +72,10 @@ public:
 
 	// InputType - Press, HoldConfirm 옵션 실행
 	virtual void							Interact(ADC1Character* InInteractOwner, EDC1InteractKey InKey) {}
+
+	// (InputType == HoldAbility) 키를 누르는 동안 옵션 변경(갱신)을 키 Release까지 미룰 것인가
+	virtual bool							ShouldKeepOptionsWhileHeld() const { return false; }
+
+	// 로컬 플레이어 포커스 변경
+	virtual void							OnLocalFocusChanged(bool InIsFocused) {}
 };

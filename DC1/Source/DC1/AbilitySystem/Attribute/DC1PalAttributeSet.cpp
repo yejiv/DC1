@@ -2,7 +2,7 @@
 
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
-
+#include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 #include "GenericTeamAgentInterface.h"
 
@@ -16,6 +16,26 @@ UDC1PalAttributeSet::UDC1PalAttributeSet()
 	InitMaxHealth(1.f);
 	InitAttackPower(1.f);
 	InitDefensePower(1.f);
+	InitSanity(100.f);
+	InitMaxSanity(100.f);
+}
+
+void UDC1PalAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PalAttributeSet, Sanity, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PalAttributeSet, MaxSanity, COND_None, REPNOTIFY_Always);
+}
+
+void UDC1PalAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{
+	Super::PreAttributeChange(Attribute, NewValue);
+
+	if (GetSanityAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxSanity());
+	}
 }
 
 bool UDC1PalAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data)
@@ -48,4 +68,14 @@ bool UDC1PalAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackDat
 	// 이 검사만 여기 남는 이유는 출처를 가리지 않아야 하기 때문이다 —
 	// 플레이어가 자기 파트너를 때리는 것도 막아야 하는데, 그쪽은 아직 공용 GE(계산기 없음)를 쓴다
 	return (ETeamAttitude::Hostile == Self->GetTeamAttitudeTowards(*Causer));
+}
+
+void UDC1PalAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PalAttributeSet, Sanity, OldSanity)
+}
+
+void UDC1PalAttributeSet::OnRep_MaxSanity(const FGameplayAttributeData& OldMaxHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PalAttributeSet, MaxSanity, OldMaxHealth)
 }

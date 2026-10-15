@@ -14,7 +14,8 @@ struct FSavedMove_DC1 : public FSavedMove_Character {
 
 	enum EMoveFlag {
 		WALK = CompressedFlags::FLAG_Custom_0,
-		SPRINT = CompressedFlags::FLAG_Custom_1
+		SPRINT = CompressedFlags::FLAG_Custom_1,
+		GLIDE = CompressedFlags::FLAG_Custom_2,
 	};
 
 	FSavedMove_DC1();
@@ -27,6 +28,7 @@ struct FSavedMove_DC1 : public FSavedMove_Character {
 
 	uint8 Saved_bWantsToWalk : 1;
 	uint8 Saved_bWantsToSprint : 1;
+	uint8 Saved_bWantsToGlide : 1;
 };
 
 struct FNetworkPredictionData_Client_DC1 : public FNetworkPredictionData_Client_Character {
@@ -43,6 +45,7 @@ enum ECustomMovementMode : int
 {
 	CMOVE_None,
 	CMOVE_Climb,
+	CMOVE_Glide,
 };
 
 UCLASS()
@@ -62,6 +65,7 @@ private:
 
 	virtual void	PhysCustom(float deltaTime, int32 Iterations) override;
 	void			PhysClimbing(float deltaTime, int32 Iterations);
+	void			PhysGliding(float deltaTime, int32 Iterations);
 
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
 	// 벽타기 중엔 회전을 PhysClimbing(RotateToWall)이 전담한다
@@ -73,10 +77,12 @@ public:
 	void ToggleMove();
 	void SetWalk(bool IsWalk);
 	void SetSprint(bool Sprint);
+	void SetGlide(bool IsGlide);
 
 	bool IsClimbing() const { return MovementMode == MOVE_Custom && CustomMovementMode == CMOVE_Climb; }
 	bool IsArriveAtTop() const { return bArriveAtTop; }
 	bool CanMantle() const { return bCanMantle; }
+	bool CanGliding() const;
 
 	// 올라설 수 있는지 지금 위치에서 새로 판정한다(멤버를 건드리지 않음).
 	// 이동 계산 밖(GA 활성화 등)에서 써도 된다. 성공 시 올라선 뒤 캡슐 중심 위치를 돌려준다
@@ -90,8 +96,14 @@ public:
 
 	void ReleaseClimb();
 
+	bool IsGliding() const { return MovementMode == MOVE_Custom && CustomMovementMode == CMOVE_Glide; }
+
+	// 무기를 쥘 수 없는 이동 상태인지. 이동 모드 조건이 추가되면 여기만 고친다
+	bool IsWeaponBlockedByMovement() const;
+
 private:
-	void			ConfirmMovement();
+	void			ConfirmGlideMovement();
+	void			ConfirmClimbMovement();
 
 	bool			HasWallAtHeadHeight();
 	bool			DetectWall();
@@ -110,7 +122,9 @@ public:
 
 	uint8 Safe_bWantsToWalk : 1;
 	uint8 Safe_bWantsToSprint : 1;
+	uint8 Safe_bWantsToGlide : 1;
 
+// Move
 private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
@@ -120,6 +134,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float	SprintSpeed = { 650.f };
 
+// Climb
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Climb")
 	float	ClimbSpeed = { 100.f };
@@ -176,4 +191,13 @@ private:
 	bool	bCanMantle = { false };
 	// 벽 놓을 경우 다시 잡는 것을 막기위한 변수
 	bool	bReleaseClimb = { false };
+
+// Gliding
+private:
+	UPROPERTY(EditDefaultsOnly, Category = "Glide")
+	float	GlideFriction = { 8.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Glide")
+	float	BrakingDecelerationGliding = { 1000.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Glide")
+	float	GlideFallSpeed = { 300.f };
 };

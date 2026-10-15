@@ -3,11 +3,12 @@
 
 #include "Component/Interact/DC1InteractComponent.h"
 #include "Define/DC1Enums.h"
-#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
+#include "Actor/BuildActor/Interact/Production/DC1ProductionBuildActor.h"
 #include "Character/Player/DC1Player.h"
 
 #include "Components/SphereComponent.h"
-#include "Components/WidgetComponent.h"
+
+#include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "Interface/DC1InteractableInterface.h"
 
 #include "Character/Player/DC1PlayerController.h"
@@ -112,7 +113,7 @@ void UDC1InteractComponent::BeginPlay()
 		return;
 	}
 
-	UIManager->OnScreenStackChanged.AddUObject(this, &ThisClass::UpdatePromptAndIMC);
+	UIManager->OnScreenStackChanged.AddUObject(this, &ThisClass::HandleScreenStackChanged);
 }
 
 void UDC1InteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -142,6 +143,11 @@ void UDC1InteractComponent::RequestStartWork(ADC1InteractBuildActor* InBuildTarg
 void UDC1InteractComponent::RequestStopWork()
 {
 	Server_StopWork();
+}
+
+void UDC1InteractComponent::RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget)
+{
+	Server_CollectProduct(InProductionTarget);
 }
 
 void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildActor* InBuildTarget)
@@ -204,6 +210,40 @@ void UDC1InteractComponent::Server_StopWork_Implementation()
 	}
 
 	ServerWorkTarget = nullptr;
+}
+
+void UDC1InteractComponent::Server_CollectProduct_Implementation(ADC1ProductionBuildActor* InProductionTarget)
+{
+	ADC1Player* Player = GetPlayer();
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	if (false == ::IsValid(InProductionTarget) || false == IsInInteractRange(Player, InProductionTarget))
+	{
+		return;
+	}
+
+	InProductionTarget->CollectProduct(Player);
+}
+
+
+void UDC1InteractComponent::HandleScreenStackChanged()
+{
+	UDC1UIManagerSubsystem* UIManager = GetUIManager();
+	if (true == ::IsValid(UIManager) && true == UIManager->HasActiveScreen())
+	{
+		ReleaseAllHeldKeys();
+	}
+
+	if (true == IsRefreshPending)
+	{
+		RefreshOptions();
+		return;
+	}
+
+	UpdatePromptAndIMC();
 }
 
 AActor* UDC1InteractComponent::FindBestTarget() const
@@ -284,10 +324,12 @@ void UDC1InteractComponent::SetCurrentTarget(AActor* InNewTarget)
 
 	ReleaseAllHeldKeys();
 	
+	// 기존 타겟 정리
 	IDC1InteractableInterface* PrevInteractable = GetCurrentInteractable();
 	if (nullptr != PrevInteractable)
 	{
 		PrevInteractable->GetOnInteractOptionsChanged().Remove(OptionsChangedHandle);
+		PrevInteractable->OnLocalFocusChanged(false);
 	}
 	
 	OptionsChangedHandle.Reset();
@@ -295,11 +337,13 @@ void UDC1InteractComponent::SetCurrentTarget(AActor* InNewTarget)
 
 	CurrentTarget = InNewTarget;
 
+	// 새로운 타겟 상호작용 표시
 	IDC1InteractableInterface* CurrentInteractable = GetCurrentInteractable();
 	if (nullptr != CurrentInteractable)
 	{
 		OptionsChangedHandle = CurrentInteractable->GetOnInteractOptionsChanged().AddUObject(this, &ThisClass::RefreshOptions);
 		ShowPrompt();
+		CurrentInteractable->OnLocalFocusChanged(true);
 	}
 }
 
@@ -439,6 +483,11 @@ void UDC1InteractComponent::OnInteractKeyReleased(const FInputActionValue& Value
 	{
 		Prompt->SetKeyHighlighted(InKey, false);
 	}
+
+	if (true == HeldAbilityTags.IsEmpty() && true == IsRefreshPending)
+	{
+		RefreshOptions();
+	}
 }
 
 const FDC1InteractOption* UDC1InteractComponent::FindOption(EDC1InteractKey InKey) const
@@ -466,14 +515,14 @@ void UDC1InteractComponent::ShowPrompt()
 		return;
 	}
 
-	UWidgetComponent* PromptComp = Player->GetInteractPromptWidgetComponent();
+	UDC1ScreenOffsetWidgetComponent* PromptComp = Player->GetInteractPromptWidgetComponent();
 	PromptComponent = PromptComp;
 
 	if (true == ::IsValid(PromptComp))
 	{
-		FVector PromptLocation = InteractCollider->Bounds.Origin + InteractPromtOffset;
+		FVector PromptLocation = InteractCollider->Bounds.Origin;
 		PromptComp->SetWorldLocation(PromptLocation);
-
+		PromptComp->SetScreenOffset(InteractPromptScreenOffset);
 		// 이미 초기화된 경우에도 호출 가능한 함수
 		PromptComp->InitWidget();
 
@@ -495,15 +544,25 @@ void UDC1InteractComponent::HidePrompt()
 	CurrentOptions.Empty();
 
 	UpdatePromptAndIMC();
+
+	IsRefreshPending = false;
 }
 
 void UDC1InteractComponent::RefreshOptions()
 {
+	IDC1InteractableInterface* Interactable = GetCurrentInteractable();
+	if (false == HeldAbilityTags.IsEmpty() && nullptr != Interactable && true == Interactable->ShouldKeepOptionsWhileHeld())
+	{
+		IsRefreshPending = true;
+		return;
+	}
+
+	IsRefreshPending = false;
+
 	ReleaseAllHeldKeys();
 
 	CurrentOptions.Empty();
 
-	IDC1InteractableInterface* Interactable = GetCurrentInteractable();
 	if (nullptr == Interactable)
 	{
 		UpdatePromptAndIMC();

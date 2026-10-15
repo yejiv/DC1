@@ -83,3 +83,8 @@ bool ADC1PalBoxActor::CanPlaceAt(const APlayerState* InBuilder) const
 
 	return true;
 }
+
+void ADC1PalBoxActor::OnPlaced(const APlayerState* InBuilder)
+{
+
+}
