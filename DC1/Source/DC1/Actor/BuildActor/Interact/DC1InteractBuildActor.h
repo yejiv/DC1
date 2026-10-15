@@ -8,6 +8,7 @@
 #include "DC1InteractBuildActor.generated.h"
 
 class ADC1Character;
+class ADC1PalCharacter;
 class UWidgetComponent;
 class UDC1BuildInfoWidget;
 
@@ -24,6 +25,7 @@ enum class EDC1BuildInfoState : uint8
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnBuildCompleted);
 DECLARE_MULTICAST_DELEGATE(FDC1OnWorkProgressChanged);
+DECLARE_MULTICAST_DELEGATE(FDC1OnPalWorkersChanged);
 
 UCLASS()
 class DC1_API ADC1InteractBuildActor : public ADC1BuildActor, public IDC1InteractableInterface
@@ -37,6 +39,8 @@ public:
 	FDC1OnInteractOptionsChanged	OnInteractOptionsChanged;
 	// 작업속도 변화 및 작업 진행도에 따른 진행도 표시 변경
 	FDC1OnWorkProgressChanged		OnWorkProgressChanged;
+	// 배정된 팰 목록 변경
+	FDC1OnPalWorkersChanged			OnPalWorkersChanged;
 
 public:
 	ADC1InteractBuildActor();
@@ -48,6 +52,10 @@ public:
 	float							GetCurrentWorkSpeed() const { return CurrentWorkSpeed; }
 	EDC1BuildInfoState				GetInfoState() const { return InfoState; }
 	float							GetRemainingWork() const;
+	const TArray<TWeakObjectPtr<ADC1PalCharacter>>& GetPalWorkers() const { return PalWorkers; }
+	bool							IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const;
+
+	virtual FGameplayTag			GetRequiredWorkTag() const;
 
 public:
 	virtual void					Tick(float DeltaTime) override;
@@ -70,6 +78,9 @@ public:
 	void							AddWorker(const ADC1Character* InWorker);
 	void							RemoveWorker(const ADC1Character* InWorker);
 
+	bool							AssignPalWorker(ADC1PalCharacter* InPal);
+	void							UnassignPalWorker(ADC1PalCharacter* InPal);
+
 protected:
 	virtual void					ApplyState() override;
 	// Completed 상태에서의 상호작용
@@ -83,18 +94,28 @@ protected:
 	// InfoState에 따른 WidgetClass
 	virtual TSubclassOf<UDC1BuildInfoWidget> GetInfoWidgetClass(EDC1BuildInfoState InState) const;
 
+	// 팰이 지금 작업할 수 있는 상태인지
+	virtual bool					CanPalWork() const;
+	// 팰이 작업할 자리가 남아있는지
+	virtual bool					HasPalWorkerSlot() const { return true; }
+
 	void							BuildCompleted();
 
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();
+	void							ClearPalWokrers();
 
 	void							UpdateInfoState();
 
+	
 	UFUNCTION()
 	void							OnRep_BuildProgress();
 
 	UFUNCTION()
 	void							OnRep_CurrentWorkSpeed();
+
+	UFUNCTION()
+	void							OnRep_PalWorkers();
 
 private:
 
@@ -111,6 +132,14 @@ private:
 	UDC1BuildInfoWidget*			AcquireInfoWidget();
 	// InfoWidget Unbind
 	void							ReleaseInfoWidget();
+
+	// 팀 / 적성 / 거점 위치
+	bool							CanAssignPal(const ADC1PalCharacter* InPal) const;
+	// 서버 직접 / 클라 OnRep 수렴점
+	void							ApplyPalWorkers();
+
+	// Debug
+	void							DebugAssignNearbyPals();
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
@@ -131,6 +160,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|UI")
 	TSubclassOf<UDC1BuildInfoWidget>		ConstructionInfoWidgetClass = { nullptr };
 
+	UPROPERTY(ReplicatedUsing = OnRep_PalWorkers)
+	TArray<TWeakObjectPtr<ADC1PalCharacter>>	PalWorkers;
+
 protected:
 	bool									IsLocalFocused = { false };
 
@@ -149,6 +181,10 @@ private:
 	// Workers 작업 속도 합
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWorkSpeed)
 	float									CurrentWorkSpeed = { 0.f };
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Debug", meta = (ClampMin = "0"))
+	float									DebugAssignRadius = { 0.f };
 
 private:
 	TSet<TWeakObjectPtr<const ADC1Character>>	Workers;
