@@ -7,12 +7,18 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include "Define/DC1Enums.h"
-#include "Character/DC1Character.h"
+#include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Player/DC1GameplayTag_Player.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
+
+#include "Data/DA/Pal/DC1PalData.h"
+
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 
 #include "Components/WidgetComponent.h"
 #include "UI/World/BuildInfo/DC1BuildInfoWidget.h"
@@ -48,6 +54,16 @@ ADC1InteractBuildActor::ADC1InteractBuildActor()
 float ADC1InteractBuildActor::GetRemainingWork() const
 {
 	return FMath::Max(0.f, BuildActorData.RequiredWork * ( 1.f - BuildProgress));
+}
+
+bool ADC1InteractBuildActor::IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const
+{
+	return PalWorkers.Contains(InPal);
+}
+
+FGameplayTag ADC1InteractBuildActor::GetRequiredWorkTag() const
+{
+	return IsUnderConstruction() ? DC1PalTags::Pal_Work_Handiwork : FGameplayTag::EmptyTag;
 }
 
 void ADC1InteractBuildActor::Tick(float DeltaTime)
@@ -174,6 +190,7 @@ void ADC1InteractBuildActor::BuildDestroy()
 {
 	CancelWorkersAbility();
 	ClearWorkers();
+	ClearPalWokrers();
 
 	Super::BuildDestroy();
 }
@@ -199,6 +216,12 @@ void ADC1InteractBuildActor::ApplyState()
 		SetMaterialTranslucentColor(ConstructionColor);
 		SetMaterialBuildProgress();
 		SetActorTickEnabled(true);
+
+		// DEBUG
+		if (true == HasAuthority() && DebugAssignRadius > 0.f)
+		{
+			DebugAssignNearbyPals();
+		}
 	}
 	else if (BuildState == EDC1BuildState::Completed)
 	{
@@ -212,6 +235,13 @@ void ADC1InteractBuildActor::ApplyState()
 		OnBuildCompleted.Broadcast();
 
 		ClearWorkers();
+		ClearPalWokrers();
+
+		// DEBUG 생산 적성 팰 배정
+		if (true == HasAuthority() && DebugAssignRadius > 0.f)
+		{
+			DebugAssignNearbyPals();
+		}
 	}
 
 	OnInteractOptionsChanged.Broadcast();
@@ -219,8 +249,14 @@ void ADC1InteractBuildActor::ApplyState()
 	UpdateInfoState();
 }
 
-bool ADC1InteractBuildActor::CanAcceptWorker() const
+bool ADC1InteractBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
 {
+	const ADC1PalCharacter* Pal = Cast<const ADC1PalCharacter>(InWorker);
+	if (true == ::IsValid(Pal))
+	{
+		return IsPalWorkerAssigned(Pal) && CanPalWork();
+	}
+
 	return IsUnderConstruction();
 }
 
@@ -272,9 +308,14 @@ TSubclassOf<UDC1BuildInfoWidget> ADC1InteractBuildActor::GetInfoWidgetClass(EDC1
 	return nullptr;
 }
 
+bool ADC1InteractBuildActor::CanPalWork() const
+{
+	return IsUnderConstruction();
+}
+
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)
 {
-	if (false == ::IsValid(InWorker) || false == HasAuthority() || false == CanAcceptWorker())
+	if (false == ::IsValid(InWorker) || false == HasAuthority() || false == CanAcceptWorker(InWorker))
 	{
 		return;
 	}
@@ -294,11 +335,84 @@ void ADC1InteractBuildActor::RemoveWorker(const ADC1Character* InWorker)
 	Workers.Remove(InWorker);
 }
 
+bool ADC1InteractBuildActor::AssignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (false == HasAuthority() || false == ::IsValid(InPal))
+	{
+		return false;
+	}
+
+	bool IsChange = false;
+
+	PalWorkers.RemoveAll([&IsChange](TWeakObjectPtr<ADC1PalCharacter> Worker) {
+		if (false == Worker.IsValid())
+		{
+			IsChange = true;
+			return true;
+		}
+		else
+			return false;});
+
+	if (IsPalWorkerAssigned(InPal))
+	{
+		if (true == IsChange)
+		{
+			ApplyPalWorkers();
+		}
+		return true;
+	}
+
+	if (false == CanPalWork() || false == HasPalWorkerSlot() || false == CanAssignPal(InPal))
+	{
+		if (true == IsChange)
+		{
+			ApplyPalWorkers();
+		}
+
+		return false;
+	}
+
+	PalWorkers.Add(InPal);
+	ApplyPalWorkers();
+
+	return true;
+}
+
+void ADC1InteractBuildActor::UnassignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	RemoveWorker(InPal);
+	if (PalWorkers.Remove(InPal) > 0)
+	{
+		ApplyPalWorkers();
+	}
+}
+
 void ADC1InteractBuildActor::ClearWorkers()
 {
 	Workers.Empty();
 
 	SetCurrentWorkSpeed(0.f);
+}
+
+void ADC1InteractBuildActor::ClearPalWokrers()
+{
+	if (false == HasAuthority())
+	{
+		return;
+	}
+
+	if (true == PalWorkers.IsEmpty())
+	{
+		return;
+	}
+
+	PalWorkers.Empty();
+	ApplyPalWorkers();
 }
 
 void ADC1InteractBuildActor::UpdateInfoState()
@@ -345,6 +459,11 @@ void ADC1InteractBuildActor::OnRep_BuildProgress()
 void ADC1InteractBuildActor::OnRep_CurrentWorkSpeed()
 {
 	OnWorkProgressChanged.Broadcast();
+}
+
+void ADC1InteractBuildActor::OnRep_PalWorkers()
+{
+	ApplyPalWorkers();
 }
 
 void ADC1InteractBuildActor::BuildCompleted()
@@ -476,4 +595,48 @@ void ADC1InteractBuildActor::ReleaseInfoWidget()
 	{
 		Widget->UnbindBuildActor();
 	}
+}
+
+bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
+{
+	if (false == ::IsValid(InPal) || EDC1Team::Player != InPal->GetTeam())
+	{
+		return false;
+	}
+
+	FGameplayTag RequiredTag = GetRequiredWorkTag();
+	if (false == RequiredTag.IsValid())
+	{
+		return false;
+	}
+
+	const UDC1PalData* PalData = InPal->GetPalData();
+	if (false == ::IsValid(PalData) || false == PalData->WorkSuitability.Contains(RequiredTag))
+	{
+		return false;
+	}
+
+	// 거점 배치 팰
+	ADC1PalBoxActor* PalBox = InPal->GetBasePalBox();
+	if (true == ::IsValid(PalBox))
+	{
+		return PalBox->IsInBase(GetActorLocation());
+	}
+
+	// 소환된 팰 , TODO 거리 제한 
+	return true;
+}
+
+void ADC1InteractBuildActor::ApplyPalWorkers()
+{
+	OnPalWorkersChanged.Broadcast();
+}
+
+void ADC1InteractBuildActor::DebugAssignNearbyPals()
+{
+	//// 첫 성공 팰 AddWorker, 나머지는 배정만
+	//for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
+	//{
+
+	//}
 }

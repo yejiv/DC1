@@ -20,6 +20,7 @@
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "GameplayEffectExtension.h"
 
 #include "Tags/DC1GamePlayTags.h"
 #include "System/DC1AssetManager.h"
@@ -493,6 +494,18 @@ void ADC1Player::HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector Ol
 	ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing_Moving, bMoving ? 1 : 0);
 }
 
+void ADC1Player::HandleDamaged(const FOnAttributeChangeData& Data)
+{
+	if (false == HasAuthority() || Data.NewValue <= 0.f || nullptr == Data.GEModData)
+		return;
+
+	FGameplayEventData Payload = {};
+	Payload.ContextHandle = Data.GEModData->EffectSpec.GetContext();
+	Payload.Target = this;
+	Payload.Instigator = Data.GEModData->EffectSpec.GetContext().GetEffectCauser();
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, DC1PlayerTags::Event_Player_Damaged, Payload);
+}
+
 void ADC1Player::InitializeEquip()
 {
 	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
@@ -548,6 +561,12 @@ void ADC1Player::InitializeAbilitySystem()
 
 	// CharacterMovement Delegate Register
 	OnCharacterMovementUpdated.AddUniqueDynamic(this, &ThisClass::HandleOnCharacterMovementUpdated);
+
+	// Changed Damage Delegate Register
+	if (false == DamagedHandle.IsValid())
+	{
+		DamagedHandle = ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).AddUObject(this, &ThisClass::HandleDamaged);
+	}
 }
 
 void ADC1Player::Clear_Resource()
@@ -576,6 +595,7 @@ void ADC1Player::Clear_Resource()
 				Pair.Value.Reset();
 			}
 		}
+		PlayerStateTagHandles.Reset();
 
 		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Gliding, 0);
 		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Climbing, 0);
@@ -586,6 +606,8 @@ void ADC1Player::Clear_Resource()
 			RemoveGameplayEffect(ASC, ClimbStaminaCostHandle);
 			RemoveGameplayEffect(ASC, GlideStaminaCostHandle);
 		}
+
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).RemoveAll(this);
 	}
 }
 

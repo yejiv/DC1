@@ -218,16 +218,23 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 		return;
 	}
 
+	APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return;
+	}
+
 	// 서버 검증 여유 수치
 	if (false == IsInBuildRange(NewBuild, MaxDistance, DistanceMarginFactor) || false == DC1BuildSupportHelper::HasSupport(NewBuild)
-		|| false == NewBuild->CanPlaceAt(GetOwner<APlayerController>()->PlayerState))
+		|| false == NewBuild->CanPlaceAt(PC->PlayerState))
 	{
 		NewBuild->Destroy();
 		return;
 	}
 
+	NewBuild->OnPlaced(PC->PlayerState);
 	// TODO Cost 감소
-	// ..
+	// ..d
 }
 
 void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1BuildActor* InTarget)
