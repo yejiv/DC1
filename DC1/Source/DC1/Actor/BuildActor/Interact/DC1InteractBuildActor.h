@@ -75,7 +75,7 @@ protected:
 	// Completed 상태에서의 상호작용
 	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) {}
 	// 작업이 가능한 상태인지 ex) IsConstruction
-	virtual bool					CanAcceptWorker() const;
+	virtual bool					CanAcceptWorker(const ADC1Character* InWorker) const;
 	// 이번 Tick 작업량 소비 ( WorkSpeed 합 * DeltaTime ) - 서버
 	virtual void					OnWorkTick(float InWork);
 	// 클래스에 따른 InfoState 분기
@@ -83,7 +83,7 @@ protected:
 	// InfoState에 따른 WidgetClass
 	virtual TSubclassOf<UDC1BuildInfoWidget> GetInfoWidgetClass(EDC1BuildInfoState InState) const;
 
-	virtual void					BuildCompleted();
+	void							BuildCompleted();
 
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();
