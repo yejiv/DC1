@@ -104,13 +104,14 @@ public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
 	virtual void					BuildDestroy();
 
+	// 건물별 추가 설치 조건. 기본은 허용 ( 미리보기 · 서버 검증 양쪽에서 호출 )
+	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const { return true; }
+	virtual void					OnPlaced(const APlayerState* InBuilder) {};
+
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
 
 	bool							UpdatePreview(bool InIsInRange, const APlayerState* InBuilder);
-
-	// 건물별 추가 설치 조건. 기본은 허용 ( 미리보기 · 서버 검증 양쪽에서 호출 )
-	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const { return true; }
 	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const;
 
 	void							InitPreview(const FDC1BuildActorData& InBuildActorData);

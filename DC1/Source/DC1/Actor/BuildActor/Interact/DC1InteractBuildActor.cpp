@@ -219,7 +219,7 @@ void ADC1InteractBuildActor::ApplyState()
 	UpdateInfoState();
 }
 
-bool ADC1InteractBuildActor::CanAcceptWorker() const
+bool ADC1InteractBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
 {
 	return IsUnderConstruction();
 }
@@ -274,7 +274,7 @@ TSubclassOf<UDC1BuildInfoWidget> ADC1InteractBuildActor::GetInfoWidgetClass(EDC1
 
 void ADC1InteractBuildActor::AddWorker(const ADC1Character* InWorker)
 {
-	if (false == ::IsValid(InWorker) || false == HasAuthority() || false == CanAcceptWorker())
+	if (false == ::IsValid(InWorker) || false == HasAuthority() || false == CanAcceptWorker(InWorker))
 	{
 		return;
 	}
