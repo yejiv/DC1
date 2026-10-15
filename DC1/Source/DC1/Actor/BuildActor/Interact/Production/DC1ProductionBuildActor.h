@@ -9,6 +9,7 @@
 DECLARE_MULTICAST_DELEGATE(FDC1OnProductionChanged);
 
 class USphereComponent;
+class ADC1PalCharacter;
 
 UCLASS()
 class DC1_API ADC1ProductionBuildActor : public ADC1InteractBuildActor
@@ -16,6 +17,7 @@ class DC1_API ADC1ProductionBuildActor : public ADC1InteractBuildActor
 	GENERATED_BODY()
 	
 public:
+	// 생산 상태 변경 ( NoItem, Compact, Detail )
 	FDC1OnProductionChanged			OnProductionChanged;
 
 public:
@@ -27,6 +29,8 @@ public:
 	int32			GetStoredCount() const { return StoredCount; }
 	int32			GetMaxStoredCount() const { return MaxStoredCount; }
 
+	virtual FGameplayTag	GetRequiredWorkTag() const override;
+
 protected:
 	virtual void	BeginPlay() override;
 	virtual void	GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -37,9 +41,10 @@ public:
 
 	void			CollectProduct(ADC1Character* InCollect);
 
+
 protected:
 	virtual void	ApplyState() override;
-	virtual bool	CanAcceptWorker() const override;
+	virtual bool	CanAcceptWorker(const ADC1Character* InWorker) const override;
 	virtual void	OnWorkTick(float InWork) override;
 
 	virtual EDC1BuildInfoState			ComputeInfoState() const override;
@@ -47,14 +52,20 @@ protected:
 
 	virtual void	OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
 
+	virtual bool	CanPalWork() const override;
+	virtual bool	HasPalWorkerSlot() const override;
+
 	UFUNCTION()
 	void			OnRep_ProductionProgress();
 
 	UFUNCTION()
 	void			OnRep_StoredCount(int32 OldCount);
 
+
 private:
+	bool			IsCompleted() const { return BuildState == EDC1BuildState::Completed; }
 	APawn*			GetLocalPawn() const;
+
 
 	// 서버 전용
 	void			SetStoredCount(int32 InNewCount);
@@ -63,6 +74,9 @@ private:
 	void			ApplyStoredCount(int32 InOldCount);
 
 	void			RefreshLocalInRange();
+
+	// 건설 완료 + 생산 아이템 지정 + 작업량 유효
+	bool			CanProduce() const;
 
 	// 범위 구체 판정 - 로컬 플레이어 폰 한정
 	UFUNCTION()
@@ -92,6 +106,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
 	TSubclassOf<UDC1BuildInfoWidget>		ProductionInfoWidgetClass = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
+	int32							MaxPalWorekrs = { 1 };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (Categories = "Pal.Work"))
+	FGameplayTag					RequiredWorkTag;
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };
@@ -99,9 +119,11 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_StoredCount)
 	int32							StoredCount = { 0 };
 
+
 private:
 	// 누적 작업량 - 서버
 	float							CurrentProductionWork = { 0.f };
 
 	bool							IsLocalInRange = { false };
+
 };

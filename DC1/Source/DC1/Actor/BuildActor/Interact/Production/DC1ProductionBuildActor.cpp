@@ -5,7 +5,7 @@
 
 #include "Net/UnrealNetwork.h"
 
-#include "Character/DC1Character.h"
+#include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Interact/DC1InteractComponent.h"
@@ -15,12 +15,15 @@
 
 #include "Define/DC1Enums.h"
 
+//DEBUG
+#include "EngineUtils.h"
+
 ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 {
-	// EmptyTag 채우기 - 제작, 채광, 벌목
+	// AbilityTag 채우기 - 제작, 채광, 벌목
 	CompletedOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Production", "생산"), EDC1InteractInputType::HoldAbility, FGameplayTag::EmptyTag);
 
-	// 비워두기
+	// AbilityTag 비워두기
 	CollectOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Collect", "획득"), EDC1InteractInputType::Press, FGameplayTag::EmptyTag);
 
 	InfoRangeSphere = CreateDefaultSubobject<USphereComponent>("InfoRangeSphere");
@@ -30,6 +33,11 @@ ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 	InfoRangeSphere->SetGenerateOverlapEvents(true);
 	InfoRangeSphere->SetCanEverAffectNavigation(false);
 	
+}
+
+FGameplayTag ADC1ProductionBuildActor::GetRequiredWorkTag() const
+{
+	return (true == IsCompleted()) ? RequiredWorkTag : Super::GetRequiredWorkTag();
 }
 
 void ADC1ProductionBuildActor::BeginPlay()
@@ -52,13 +60,14 @@ void ADC1ProductionBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ThisClass, ProductionProgress);
 	DOREPLIFETIME(ThisClass, StoredCount);
+	DOREPLIFETIME(ThisClass, PalWorkers);
 }
 
 void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
 {
 	Super::GetInteractOptions(OutOptions);
 
-	if (BuildState != EDC1BuildState::Completed || StoredCount <= 0)
+	if (false == IsCompleted() || StoredCount <= 0)
 	{
 		return;
 	}
@@ -82,13 +91,13 @@ void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& Ou
 
 bool ADC1ProductionBuildActor::ShouldKeepOptionsWhileHeld() const
 {
-	return (BuildState == EDC1BuildState::Completed) && (StoredCount < MaxStoredCount);
+	return (true == IsCompleted()) && (StoredCount < MaxStoredCount);
 }
 
 void ADC1ProductionBuildActor::CollectProduct(ADC1Character* InCollect)
 {
 	if (false == HasAuthority() || false == ::IsValid(InCollect) ||
-		(BuildState != EDC1BuildState::Completed) || StoredCount <= 0 || (true == ProductItemID.IsNone()))
+		(false == IsCompleted()) || StoredCount <= 0 || (true == ProductItemID.IsNone()))
 	{
 		return;
 	}
@@ -118,7 +127,7 @@ void ADC1ProductionBuildActor::CollectProduct(ADC1Character* InCollect)
 
 void ADC1ProductionBuildActor::ApplyState()
 {
-	bool IsLocalAndIsCompleted = (BuildState == EDC1BuildState::Completed) && (NM_DedicatedServer != GetNetMode());
+	bool IsLocalAndIsCompleted = (true == IsCompleted()) && (NM_DedicatedServer != GetNetMode());
 	ECollisionEnabled::Type CollisionType = IsLocalAndIsCompleted ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision;
 	
 	InfoRangeSphere->SetCollisionEnabled(CollisionType);
@@ -128,20 +137,26 @@ void ADC1ProductionBuildActor::ApplyState()
 	Super::ApplyState();
 }
 
-bool ADC1ProductionBuildActor::CanAcceptWorker() const
+bool ADC1ProductionBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
 {
-	if (true == Super::CanAcceptWorker())
+	if (true == Super::CanAcceptWorker(InWorker))
 	{
 		return true;
 	}
 
-	return ( BuildState == EDC1BuildState::Completed ) && ( StoredCount <= 0 ) && 
-			( false == ProductItemID.IsNone() ) && ( RequiredWorkPerItem > 0.f );
+	const ADC1PalCharacter* Pal = Cast<const ADC1PalCharacter>(InWorker);
+	if (nullptr != Pal)
+	{
+		// 팰은 Super에서 전부 판단
+		return false;
+	}
+
+	return (true == CanProduce()) && (StoredCount <= 0);
 }
 
 void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 {
-	if (BuildState != EDC1BuildState::Completed)
+	if (false == IsCompleted())
 	{
 		Super::OnWorkTick(InWork);
 		return;
@@ -166,6 +181,7 @@ void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 	{
 		CurrentProductionWork = 0.f;
 		ClearWorkers();
+		ClearPalWokrers();
 	}
 
 	ProductionProgress = CurrentProductionWork / RequiredWorkPerItem;
@@ -182,7 +198,7 @@ void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 
 EDC1BuildInfoState ADC1ProductionBuildActor::ComputeInfoState() const
 {
-	if (BuildState != EDC1BuildState::Completed)
+	if (false == IsCompleted())
 	{
 		return Super::ComputeInfoState();
 	}
@@ -207,7 +223,7 @@ EDC1BuildInfoState ADC1ProductionBuildActor::ComputeInfoState() const
 
 TSubclassOf<UDC1BuildInfoWidget> ADC1ProductionBuildActor::GetInfoWidgetClass(EDC1BuildInfoState InState) const
 {
-	if (BuildState == EDC1BuildState::Completed)
+	if (true == IsCompleted())
 	{
 		return ProductionInfoWidgetClass;
 	}
@@ -236,6 +252,16 @@ void ADC1ProductionBuildActor::OnCompletedInteract(ADC1Character* InInteractOwne
 			InteractComp->RequestCollectProduct(this);
 		}
 	}
+}
+
+bool ADC1ProductionBuildActor::CanPalWork() const
+{
+	return (Super::CanPalWork() || ( CanProduce() && StoredCount < MaxStoredCount ));
+}
+
+bool ADC1ProductionBuildActor::HasPalWorkerSlot() const
+{
+	return (true == IsCompleted()) ? PalWorkers.Num() < MaxPalWorekrs : Super::HasPalWorkerSlot();
 }
 
 void ADC1ProductionBuildActor::OnRep_ProductionProgress()
@@ -299,6 +325,11 @@ void ADC1ProductionBuildActor::RefreshLocalInRange()
 	APawn* LocalPawn = GetLocalPawn();
 
 	IsLocalInRange = (::IsValid(LocalPawn)) && InfoRangeSphere->IsOverlappingActor(LocalPawn);
+}
+
+bool ADC1ProductionBuildActor::CanProduce() const
+{
+	return (true == IsCompleted()) && (false == ProductItemID.IsNone()) && (RequiredWorkPerItem > 0.f);
 }
 
 void ADC1ProductionBuildActor::OnInfoRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
