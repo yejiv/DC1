@@ -138,6 +138,18 @@ enum class EDC1EquipSlotType : uint8
 	Food = 7 UMETA(DisplayName = "Food"),
 };
 
+// 인벤토리 스탯 패널에 표시하는 플레이어 스탯
+UENUM(BlueprintType)
+enum class EDC1PlayerStat : uint8
+{
+	Health = 0 UMETA(DisplayName = "Health"),
+	Stamina = 1 UMETA(DisplayName = "Stamina"),
+	Attack = 2 UMETA(DisplayName = "Attack"),
+	Defense = 3 UMETA(DisplayName = "Defense"),
+	WorkSpeed = 4 UMETA(DisplayName = "WorkSpeed"),
+	Weight = 5 UMETA(DisplayName = "Weight"),
+};
+
 // 팰 속성
 UENUM(BlueprintType)
 enum class EDC1PalElement : uint8

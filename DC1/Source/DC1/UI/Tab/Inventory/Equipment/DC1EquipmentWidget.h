@@ -102,6 +102,10 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_Food5;
 
+	// 스피어 모듈 (기능 미구현이라 장비 칸 인덱스에 넣지 않고 잠긴 칸으로만 표시)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_SphereModule;
+
 	// 빈 칸 실루엣 아이콘 (칸 타입별)
 	UPROPERTY(EditAnywhere, Category = "Equipment")
 	TMap<EDC1EquipSlotType, TObjectPtr<UTexture2D>> EmptySlotIcons;

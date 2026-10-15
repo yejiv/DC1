@@ -9,6 +9,8 @@
 class UDC1ChestInventoryComponent;
 class UDC1ValuableInventoryComponent;
 
+struct FOnAttributeChangeData;
+
 // 플레이어 인벤토리 (무게/장비 칸 포함, PlayerState 부착, COND_OwnerOnly 복제)
 
 UCLASS()
@@ -36,7 +38,7 @@ public:
 	float GetCurrentWeight() const { return CurrentWeight; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
-	float GetMaxWeight() const { return MaxWeight; }
+	float GetMaxWeight() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	float GetWeightPercentage() const;
@@ -241,6 +243,8 @@ protected:
 	// 귀중품 인벤토리 변경 시 음식 칸 수를 다시 계산하는 함수 (서버)
 	void HandleValuableInventoryUpdated();
 
+	void HandleMaxWeightChanged(const FOnAttributeChangeData& InData);
+
 	// 열린 칸 수 복제 수신 시 장비 UI 갱신 이벤트를 보내는 함수
 	UFUNCTION()
 	void OnRep_UnlockedSlotCounts();
@@ -250,9 +254,6 @@ protected:
 	void OnRep_CurrentWeight();
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Weight")
-	float MaxWeight = 100.0f;
-
 	// 시작할 때 무기 칸에 장착할 아이템 ID (순서대로 무기 1, 2 ...)
 	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Equipment")
 	TArray<FName> DefaultWeaponItemIDs;

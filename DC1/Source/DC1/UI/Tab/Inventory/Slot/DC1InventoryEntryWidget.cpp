@@ -49,15 +49,16 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		// (IsPending일 때 nullptr을 넣으면 흰색 사각형으로 표시됨)
 		if (true == ItemData->ItemIcon.IsNull())
 		{
-			// 아이콘이 지정되지 않은 아이템
+			// 아이콘이 지정되지 않은 아이템은 흰 사각형 대신 숨김
 			Image_Icon->SetBrushFromTexture(nullptr);
+			Image_Icon->SetVisibility(ESlateVisibility::Hidden);
 		}
 		else
 		{
 			Image_Icon->SetBrushFromSoftTexture(ItemData->ItemIcon);
+			Image_Icon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+			Image_Icon->SetVisibility(ESlateVisibility::Visible);
 		}
-		Image_Icon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
-		Image_Icon->SetVisibility(ESlateVisibility::Visible);
 	}
 
 	// 장착된 아이템은 개수/무게를 표시하지 않음

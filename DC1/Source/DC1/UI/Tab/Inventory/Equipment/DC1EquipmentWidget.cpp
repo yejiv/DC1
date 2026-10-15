@@ -53,6 +53,14 @@ void UDC1EquipmentWidget::NativeOnInitialized()
 		const TObjectPtr<UTexture2D>* EmptyIcon = EmptySlotIcons.Find(DC1EquipSlotLayout::GetSlotType(Index));
 		SlotWidget->SetEmptyIcon(nullptr != EmptyIcon ? EmptyIcon->Get() : nullptr);
 	}
+
+	if (::IsValid(InventorySlot_SphereModule))
+	{
+		InventorySlot_SphereModule->InitSlot(INDEX_NONE, SlotSize, EDC1InventorySource::Equipment);
+		InventorySlot_SphereModule->SetWeightVisibility(false);
+		InventorySlot_SphereModule->ClearSlot();
+		InventorySlot_SphereModule->SetLocked(true);
+	}
 }
 
 void UDC1EquipmentWidget::NativeConstruct()

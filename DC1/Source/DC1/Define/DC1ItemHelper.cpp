@@ -44,7 +44,22 @@ namespace
 
 const FDC1ItemRow* DC1ItemHelper::FindItemRow(FName InItemID)
 {
-	return FindRowByItemID<FDC1ItemRow>(DC1DataTableTags::DataTable_Item, InItemID);
+	if (const FDC1ItemRow* ItemRow = FindRowByItemID<FDC1ItemRow>(DC1DataTableTags::DataTable_Item, InItemID))
+	{
+		return ItemRow;
+	}
+
+	return FindValuableItemRow(InItemID);
+}
+
+const FDC1ValuableItemRow* DC1ItemHelper::FindValuableItemRow(FName InItemID)
+{
+	return FindRowByItemID<FDC1ValuableItemRow>(DC1DataTableTags::DataTable_ValuableItem, InItemID);
+}
+
+bool DC1ItemHelper::IsValuableItem(FName InItemID)
+{
+	return nullptr != FindValuableItemRow(InItemID);
 }
 
 const FDC1EquipItemRow* DC1ItemHelper::FindEquipItemRow(FName InItemID)
