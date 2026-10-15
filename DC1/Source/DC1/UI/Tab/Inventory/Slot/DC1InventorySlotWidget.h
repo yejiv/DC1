@@ -98,6 +98,10 @@ private:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UImage> Image_Lock;
 
+	// 등급 그라데이션 (있으면 바탕은 고정색, 등급은 이 이미지 틴트로 표시)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UImage> Image_Rarity;
+
 private:
 	int32 CurrentSlotIndex = -1;
 	bool bIsBeingDragged = false;

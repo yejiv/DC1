@@ -29,6 +29,15 @@ public:
 	FGameplayAttributeData MaxSatiety;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxSatiety)
 
+	// 방패 장비가 주는 보호막 (데미지 흡수는 미구현)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Shield, Category = "Attributes")
+	FGameplayAttributeData Shield;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, Shield)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxShield, Category = "Attributes")
+	FGameplayAttributeData MaxShield;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxShield)
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -46,4 +55,10 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MaxSatiety(const FGameplayAttributeData& OldMaxSatiety);
+
+	UFUNCTION()
+	void OnRep_Shield(const FGameplayAttributeData& OldShield);
+
+	UFUNCTION()
+	void OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield);
 };

@@ -65,13 +65,18 @@ void UDC1PlayerStatPanelWidget::NativeDestruct()
 		CachedViewModel->CancelPending();
 	}
 
-	bEnhanceMode = false;
+	if (bEnhanceMode)
+	{
+		bEnhanceMode = false;
+		OnEnhanceModeChanged.Broadcast(false);
+	}
 
 	Super::NativeDestruct();
 }
 
 void UDC1PlayerStatPanelWidget::SetEnhanceMode(bool bInEnhanceMode)
 {
+	const bool bChanged = bEnhanceMode != bInEnhanceMode;
 	bEnhanceMode = bInEnhanceMode;
 
 	for (UDC1PlayerStatWidget* StatWidget : StatWidgets)
@@ -83,6 +88,11 @@ void UDC1PlayerStatPanelWidget::SetEnhanceMode(bool bInEnhanceMode)
 	}
 
 	RefreshButtons();
+
+	if (bChanged)
+	{
+		OnEnhanceModeChanged.Broadcast(bEnhanceMode);
+	}
 }
 
 void UDC1PlayerStatPanelWidget::RefreshButtons()

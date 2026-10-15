@@ -11,23 +11,6 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/TextureRenderTarget2D.h"
 
-namespace
-{
-	// 고정 카메라 - 정면(+X)에서 원점을 바라보는 배치를 Yaw만큼 공전
-	constexpr float CameraDistance = 250.f;
-	constexpr float CameraHeight = 20.f;
-	constexpr float CameraRight = -10.f;	// 양수면 화면 기준 오른쪽
-	constexpr float CameraYaw = -20.f;
-	constexpr float CameraPitch = 10.f;	// 양수면 내려다봄
-	constexpr float CameraFOV = 30.f;
-
-	// 카메라 오른쪽 = -Y
-	FVector GetFixedCameraLocation()
-	{
-		return FRotator(0.f, CameraYaw, 0.f).RotateVector(FVector(CameraDistance, -CameraRight, CameraHeight));
-	}
-}
-
 ADC1PlayerPreviewActor::ADC1PlayerPreviewActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -72,8 +55,6 @@ ADC1PlayerPreviewActor::ADC1PlayerPreviewActor()
 	// 정면에서 캐릭터를 바라봄, 자기 컴포넌트만 촬영
 	CaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>("CaptureComponent");
 	CaptureComponent->SetupAttachment(Root);
-	CaptureComponent->SetRelativeLocationAndRotation(GetFixedCameraLocation(), FRotator(-CameraPitch, 180.f + CameraYaw, 0.f));
-	CaptureComponent->FOVAngle = CameraFOV;
 	CaptureComponent->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	CaptureComponent->bCaptureEveryFrame = false;
@@ -126,6 +107,11 @@ void ADC1PlayerPreviewActor::ApplyPreviewSettings()
 	FillLight->SetRelativeLocation(FillLightOffset);
 	FillLight->SetIntensity(FillLightIntensity);
 	FillLight->SetLightColor(FillLightColor);
+
+	// 카메라 오른쪽 = -Y
+	const FVector CameraLocation = FRotator(0.f, CameraYaw, 0.f).RotateVector(FVector(CameraDistance, -CameraRight, CameraHeight));
+	CaptureComponent->SetRelativeLocationAndRotation(CameraLocation, FRotator(-CameraPitch, 180.f + CameraYaw, 0.f));
+	CaptureComponent->FOVAngle = CameraFOV;
 }
 
 void ADC1PlayerPreviewActor::SetRenderTarget(UTextureRenderTarget2D* InRenderTarget)

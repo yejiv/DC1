@@ -16,6 +16,11 @@ void UDC1InventorySlotsWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
+	if (::IsValid(SlotGrid))
+	{
+		SlotGrid->SetSlotPadding(SlotMargin);
+	}
+
 	if (SlotWidgets.Num() == 0)
 	{
 		CreateSlotWidgets(DefaultSlotCapacity);
@@ -174,7 +179,7 @@ int32 UDC1InventorySlotsWidget::CalculateSlotIndex(FVector2D ScreenSpaceMousePos
 	const FGeometry& GridGeometry = SlotGrid->GetCachedGeometry();
 	FVector2D MouseWidgetPos = GridGeometry.AbsoluteToLocal(ScreenSpaceMousePos);
 
-	FMargin GridPadding = SlotGrid->SlotPadding;
+	const FMargin GridPadding = SlotGrid->GetSlotPadding();
 
 	const float CellStrideX = GridPadding.Left + SlotSize + GridPadding.Right;
 	const float CellStrideY = GridPadding.Top + SlotSize + GridPadding.Bottom;

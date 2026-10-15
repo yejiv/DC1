@@ -21,6 +21,8 @@ UDC1PlayerSet::UDC1PlayerSet()
 	InitMaxWeight(100.f);
 	InitSatiety(100.f);
 	InitMaxSatiety(100.f);
+	InitShield(0.f);
+	InitMaxShield(0.f);
 }
 
 void UDC1PlayerSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -30,6 +32,8 @@ void UDC1PlayerSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxWeight, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, Satiety, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxSatiety, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, Shield, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxShield, COND_None, REPNOTIFY_Always);
 }
 
 void UDC1PlayerSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -41,7 +45,12 @@ void UDC1PlayerSet::PreAttributeChange(const FGameplayAttribute& Attribute, floa
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxSatiety());
 	}
 
-	if (GetMaxWeightAttribute() == Attribute)
+	if (GetShieldAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxShield());
+	}
+
+	if (GetMaxWeightAttribute() == Attribute || GetMaxShieldAttribute() == Attribute)
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
 	}
@@ -55,6 +64,12 @@ void UDC1PlayerSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, 
 	if (GetSatietyAttribute() == Attribute)
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxSatiety());
+	}
+
+	// 보호막도 주기 회복 GE가 Base를 올릴 예정
+	if (GetShieldAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxShield());
 	}
 }
 
@@ -91,4 +106,14 @@ void UDC1PlayerSet::OnRep_Satiety(const FGameplayAttributeData& OldSatiety)
 void UDC1PlayerSet::OnRep_MaxSatiety(const FGameplayAttributeData& OldMaxSatiety)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, MaxSatiety, OldMaxSatiety);
+}
+
+void UDC1PlayerSet::OnRep_Shield(const FGameplayAttributeData& OldShield)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, Shield, OldShield);
+}
+
+void UDC1PlayerSet::OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, MaxShield, OldMaxShield);
 }

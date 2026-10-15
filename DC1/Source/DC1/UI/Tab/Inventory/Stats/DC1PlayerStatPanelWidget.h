@@ -9,11 +9,20 @@ class UTextBlock;
 class UDC1PlayerStatWidget;
 class UDC1PlayerStatsViewModel;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnEnhanceModeChanged, bool /*bEnhanceMode*/);
+
 // 인벤토리 스탯 패널 (남은 포인트, 스탯 6줄, 강화 모드 확정/취소)
 UCLASS()
 class DC1_API UDC1PlayerStatPanelWidget : public UDC1UserWidget
 {
 	GENERATED_BODY()
+
+public:
+	// 강화 모드 동안 부모 화면이 다른 입력을 막는 데 사용
+	FDC1OnEnhanceModeChanged OnEnhanceModeChanged;
+
+public:
+	bool IsEnhanceMode() const { return bEnhanceMode; }
 
 protected:
 	virtual void NativeOnInitialized() override;

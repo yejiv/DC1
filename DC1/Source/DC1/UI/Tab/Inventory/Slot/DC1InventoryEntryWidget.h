@@ -10,6 +10,7 @@
 class USizeBox;
 class UTextBlock;
 class UImage;
+class UBorder;
 class UDC1InventorySlotWidget;
 class UDC1InventoryViewModel;
 
@@ -56,6 +57,8 @@ public:
 protected:
 	virtual void NativeConstruct() override;
 
+	void ApplyWeightVisibility(ESlateVisibility InVisibility);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USizeBox> SizeBox_Root;
@@ -68,6 +71,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_Weight;
+
+	// 무게 숫자 뒤 배경 (있으면 숫자 대신 배경째로 표시/숨김)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UBorder> Border_Weight;
 
 private:
 	// 아이템 정보 캐시 (UI 표시용)

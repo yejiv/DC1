@@ -82,6 +82,27 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Preview|Character")
 	FRotator CharacterRotation = { FRotator::ZeroRotator };
 
+	// 고정 카메라 - 정면(+X)에서 원점을 바라보는 배치를 Yaw만큼 공전 (렌더 타깃 2:3 기준으로 전신 + 든 무기가 들어오게)
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera", meta = (ClampMin = "10"))
+	float CameraDistance = { 275.f };
+
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera")
+	float CameraHeight = { 8.f };
+
+	// 양수면 화면 기준 오른쪽
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera")
+	float CameraRight = { -30.f };
+
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera")
+	float CameraYaw = { -20.f };
+
+	// 양수면 내려다봄
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera")
+	float CameraPitch = { 3.f };
+
+	UPROPERTY(EditAnywhere, Category = "Preview|Camera", meta = (ClampMin = "5", ClampMax = "170"))
+	float CameraFOV = { 30.f };
+
 	UPROPERTY(EditAnywhere, Category = "Preview|Light")
 	FVector KeyLightOffset = { 200.f, -120.f, 150.f };
 

@@ -115,12 +115,12 @@ void UDC1PlayerStatWidget::Refresh()
 	{
 		const float PendingAmount = bHasViewModel ? CachedViewModel->GetPendingAmount(Stat) : 0.f;
 		TextBlock_Pending->SetText(FText::Format(INVTEXT("+{0}"), FormatStatNumber(PendingAmount)));
-		TextBlock_Pending->SetVisibility(0.f < PendingAmount ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+		TextBlock_Pending->SetVisibility(0.f < PendingAmount ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 	}
 
-	// 방어력처럼 강화할 수 없는 스탯은 강화 모드에서도 버튼을 숨김
+	// 방어력처럼 강화할 수 없는 스탯은 강화 모드에서도 버튼을 숨김, 평소엔 자리도 차지하지 않음
 	const bool bShowButtons = bEnhanceMode && bHasViewModel && CachedViewModel->IsEnhanceableStat(Stat);
-	const ESlateVisibility ButtonVisibility = bShowButtons ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
+	const ESlateVisibility ButtonVisibility = bShowButtons ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
 
 	if (::IsValid(Button_Increase))
 	{

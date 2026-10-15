@@ -5,6 +5,7 @@
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 
+#include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -84,7 +85,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		CurrentItemWeight = ItemData->Weight;
 		float TotalWeight = CurrentItemWeight * InventorySlotInfo.StackCount;
 		Text_Weight->SetText(FText::AsNumber(TotalWeight));
-		Text_Weight->SetVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
+		ApplyWeightVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 	}
 }
 
@@ -111,7 +112,7 @@ void UDC1InventoryEntryWidget::ClearEntry()
 	if (IsValid(Text_Weight))
 	{
 		Text_Weight->SetText(FText::AsNumber(0));
-		Text_Weight->SetVisibility(ESlateVisibility::Hidden);
+		ApplyWeightVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -133,6 +134,18 @@ void UDC1InventoryEntryWidget::SetWeightVisibility(bool bVisible)
 {
 	if (IsValid(Text_Weight))
 	{
-		Text_Weight->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		ApplyWeightVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
+}
+
+void UDC1InventoryEntryWidget::ApplyWeightVisibility(ESlateVisibility InVisibility)
+{
+	if (::IsValid(Border_Weight))
+	{
+		Text_Weight->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Border_Weight->SetVisibility(InVisibility);
+		return;
+	}
+
+	Text_Weight->SetVisibility(InVisibility);
 }
