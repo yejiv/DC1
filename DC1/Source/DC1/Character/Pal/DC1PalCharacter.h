@@ -16,6 +16,7 @@ class UDC1PalAttributeSet;
 class UDC1PalData;
 class UDC1PalRegistryData;
 class UWidgetComponent;
+struct FInputActionValue;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
@@ -94,6 +95,12 @@ protected:
 	virtual void						BeginPlay() override;
 
 	virtual void						NotifyControllerChanged() override;
+
+	// 탑승 입력. IMC_Ride 가 켜져 있는 동안 받는다
+	virtual void						SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	void								OnRideMove(const FInputActionValue& Value);
+	void								OnRideJumpPressed(const FInputActionValue& Value);
+	void								OnRideJumpReleased(const FInputActionValue& Value);
 
 	virtual void						OnTeamChanged();
 

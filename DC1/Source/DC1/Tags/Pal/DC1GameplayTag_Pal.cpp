@@ -128,4 +128,11 @@ namespace DC1PalTags
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Attack_Hit, "Event.Pal.Attack.Hit");
 #pragma endregion
+
+#pragma region Ride
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Ride, "IMC.Ride");
+
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Move, "Input.Ride.Move");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Jump, "Input.Ride.Jump");
+#pragma endregion
 }
