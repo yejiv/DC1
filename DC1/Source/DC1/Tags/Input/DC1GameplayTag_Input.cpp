@@ -8,6 +8,9 @@ namespace DC1IMCTags
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Default, "IMC.Default");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_UI, "IMC.UI");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Build, "IMC.Build");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_F, "IMC.Interact.F");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_V, "IMC.Interact.V");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_C, "IMC.Interact.C");
 }
 
 namespace DC1InputTags
@@ -20,6 +23,7 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Jump, "Input.Default.Jump");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Crouch, "Input.Default.Crouch");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Dodge, "Input.Default.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ClimbRelease, "Input.Default.ClimbRelease");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Attack, "Input.Default.Attack");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ZoomIn, "Input.Default.ZoomIn");
@@ -30,7 +34,6 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_PalSlotNext, "Input.Default.PalSlotNext");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Default_ChangeWeapon, "Input.Default.ChangeWeapon");
-	UE_DEFINE_GAMEPLAY_TAG(Input_Default_Interact, "Input.Default.Interact");
 #pragma endregion
 
 #pragma region UI
@@ -50,4 +53,11 @@ namespace DC1InputBuildTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Cancel, "Input.Build.Cancel");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Rotate, "Input.Build.Rotate");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Build_Snap, "Input.Build.Snap");
+}
+
+namespace DC1InputInteractTags
+{
+	UE_DEFINE_GAMEPLAY_TAG(Input_Interact_F, "Input.Interact.F");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Interact_V, "Input.Interact.V");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Interact_C, "Input.Interact.C");
 }

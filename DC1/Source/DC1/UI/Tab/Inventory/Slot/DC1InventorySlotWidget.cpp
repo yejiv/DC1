@@ -79,6 +79,8 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 	{
 		EntryWidget->SetEntryData(ViewModel, CurrentSlotIndex, SlotSource);
 	}
+
+	UpdateEmptyIconVisibility(false);
 }
 
 void UDC1InventorySlotWidget::ClearSlot()
@@ -91,6 +93,47 @@ void UDC1InventorySlotWidget::ClearSlot()
 	{
 		EntryWidget->ClearEntry();
 	}
+
+	UpdateEmptyIconVisibility(true);
+}
+
+void UDC1InventorySlotWidget::SetEmptyIcon(UTexture2D* InIcon)
+{
+	if (false == ::IsValid(Image_EmptyIcon))
+	{
+		return;
+	}
+
+	// 표시 여부는 다음 SetSlotData / ClearSlot에서 갱신
+	Image_EmptyIcon->SetBrushFromTexture(InIcon);
+}
+
+void UDC1InventorySlotWidget::SetLocked(bool bInLocked)
+{
+	if (false == ::IsValid(Image_Lock))
+	{
+		return;
+	}
+
+	Image_Lock->SetVisibility(bInLocked ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+
+	// 잠긴 칸에는 실루엣 아이콘을 숨김
+	if (true == bInLocked && ::IsValid(Image_EmptyIcon))
+	{
+		Image_EmptyIcon->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void UDC1InventorySlotWidget::UpdateEmptyIconVisibility(bool bIsEmpty)
+{
+	if (false == ::IsValid(Image_EmptyIcon))
+	{
+		return;
+	}
+
+	// 아이콘이 지정된 빈 칸에서만 표시
+	const bool bShow = bIsEmpty && nullptr != Image_EmptyIcon->GetBrush().GetResourceObject();
+	Image_EmptyIcon->SetVisibility(bShow ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 }
 
 void UDC1InventorySlotWidget::UpdateRarityColor(EDC1ItemRarity Rarity)
@@ -114,7 +157,7 @@ void UDC1InventorySlotWidget::ShowHoverImage()
 
 		// 호버 동안 무한 루프, 언호버 시 원래 값으로 복원
 		PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
-		PlayInfo.bRestoreState = true;
+		PlayInfo.RestoreState = true;
 		PlayInfo.NumLoops = 0;
 
 		PlayAnim(HoverAnim, PlayInfo);

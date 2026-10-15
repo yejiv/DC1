@@ -5,7 +5,7 @@
 #include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 
-#include "Component/Inventory/DC1ChestInventoryComponent.h"
+#include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 

@@ -10,10 +10,13 @@
 class UDC1InventoryViewModel;
 class UDC1InventorySlotsWidget;
 class UDC1InventorySlotWidget;
+class UDC1EquipmentWidget;
 
 class UBorder;
 class UVerticalBox;
 class UButton;
+class UProgressBar;
+class UTextBlock;
 
 /**
  * I키 인벤토리 패널 (팰월드 형태)
@@ -58,6 +61,25 @@ protected:
 	UFUNCTION()
 	void HandleSortButtonClicked();
 
+	// 장비 칸 클릭 처리 함수 (좌클릭: 드래그 시작/드롭, 우클릭: 해제)
+	FReply HandleEquipSlotMouseDown(const FKey& InButton, int32 InEquipSlotIndex);
+
+	// 인벤토리 칸 우클릭 처리 함수 (맞는 장비 칸에 자동 장착)
+	FReply HandleInventorySlotRightClick(const FVector2D& InScreenPos);
+
+	// 마우스를 따라다니는 드래그 복제 슬롯을 만드는 함수
+	void CreateDragSlotCopy(int32 InSlotIndex, EDC1InventorySource InSource, int32 InDisplayCount);
+
+	// 버리기/폐기 버튼 함수 (드래그 중인 아이템 처리)
+	UFUNCTION()
+	void HandleDropButtonClicked();
+
+	UFUNCTION()
+	void HandleDiscardButtonClicked();
+
+	// 무게 게이지와 텍스트를 갱신하는 함수
+	void UpdateWeightDisplay();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UBorder> InventoryBorder;
@@ -78,6 +100,23 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventorySlotsWidget> InventorySlotsWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDC1EquipmentWidget> EquipmentWidget;
+
+	// 인벤토리 아래 버리기 / 폐기 버튼
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Button_Drop;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Button_Discard;
+
+	// 총 중량 게이지
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UProgressBar> ProgressBar_Weight;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> TextBlock_Weight;
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;

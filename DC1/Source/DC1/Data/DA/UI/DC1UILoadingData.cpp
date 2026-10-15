@@ -5,14 +5,14 @@
 
 const FUILoadingEntry* UDC1UILoadingData::GetRandomSprites() const
 {
-    if (true == LoadingEntries.IsEmpty())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Empty UI Loading Data"));
+	if (true == LoadingEntries.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1UILoadingData :: Empty UI Loading Data"));
         
-        return nullptr;
-    }
+		return nullptr;
+	}
 
-    int32 RandomNum = FMath::RandRange(0, LoadingEntries.Num() - 1);
+	int32 RandomNum = FMath::RandRange(0, LoadingEntries.Num() - 1);
     
-    return &LoadingEntries[RandomNum];
+	return &LoadingEntries[RandomNum];
 }

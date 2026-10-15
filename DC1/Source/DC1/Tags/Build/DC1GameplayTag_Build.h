@@ -36,6 +36,9 @@ namespace DC1BuildTags
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Weapon_WeaponBench00);
 	#pragma endregion
 	
+#pragma region CRAFTING_DEFOREST_AND_MINING
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_DeforestAndMining_LoggingCamp);
+#pragma endregion
 	
 	#pragma region PAL_PALMANAGEMENT
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Pal_PalManagement_PalBox);

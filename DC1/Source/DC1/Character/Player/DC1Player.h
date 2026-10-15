@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Character/DC1Character.h"
 #include "GameplayTagContainer.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "DC1Player.generated.h"
 
 class USkeletalMeshComponent;
@@ -13,8 +14,12 @@ class UCameraComponent;
 class UPrimitiveComponent;
 class USphereComponent;
 class UWidgetComponent;
+class UDC1ScreenOffsetWidgetComponent;
+
+class UGameplayEffect;
 
 class UDC1AbilitySystemComponent;
+class UDC1EquipComponent;
 /**
  * 
  */
@@ -31,6 +36,8 @@ public:
 	virtual void SetAttackCollision(bool OnCollision) override;
 
 	USphereComponent* GetInteractDetectCollider() const { return InteractDetectCollider; }
+	UDC1ScreenOffsetWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
+	UDC1EquipComponent* GetEquipComponent() const;
 
 public:
 	UFUNCTION()
@@ -39,13 +46,25 @@ public:
 public:
 	bool GetAimingState() const { return IsAiming; }
 
+	bool CanClimb() const;
+	bool CanGlide() const;
+
+public:
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseClimb();
+
 public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
 	void PlayAbility(const FGameplayTag& AbilityTag);
 	void CancelAbility(const FGameplayTag& AbilityTag);
 
+	void TryJumpOrGlide();
+
 	void Change_AttackCollider(UPrimitiveComponent* AttackCollider, bool IsEquip);
+
+	// Stamina 잔존량 체크
+	bool	CheckRemainStamina(float Stamina) const;
 
 private:
 	virtual void PostInitializeComponents() override;
@@ -57,6 +76,8 @@ private:
 	virtual void UnPossessed() override;
 	virtual void OnRep_PlayerState() override;
 	virtual void NotifyControllerChanged() override;
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 public:
 	// 탑승 = 폰에 붙어 있음. 아니면 null
@@ -86,6 +107,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UDC1ScreenOffsetWidgetComponent>		InteractPromptWidgetComponent = { nullptr };
+
 private:
 	void	InitializeAbilitySystem();
 	// 장착 컴포넌트는 PlayerState 소유다. 폰이 준비됐음을 알려 스폰/부착을 트리거한다
@@ -101,18 +125,53 @@ private:
 
 	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
 
+	// 벽타기 진입/이탈 시 State.Climbing 태그 반영. 이동 모드가 바뀌는 클라(예측)·서버 양쪽에서 호출된다
+	void	ApplyClimbState(bool IsApply);
+	// 서버 전용. 소모 GE 제거 + 핸들 무효화
+	void	RemoveGameplayEffect(UDC1AbilitySystemComponent* ASC, FActiveGameplayEffectHandle& Handle);
+	// 서버 전용. 벽 타는 도중 점프 시 스태미나 소모
+	void	ApplyClimbJumpStamina();
+
+	void	ApplyGlideState(bool IsApply);
+
+private:
+	FGameplayTag ConvertWeaponTagToAnimTag(const FGameplayTag& Tag);
+
+private:
+	UFUNCTION()
+	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
+
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Glide")
+	TSubclassOf<UGameplayEffect>			GlideStaminaCostClass = { nullptr };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	TSubclassOf<UGameplayEffect>			ClimbStaminaCostClass = { nullptr };
+	// 벽 점프 1회 비용(Instant, SetByCaller.StaminaCost). GE_Stamina_Cost 지정
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	TSubclassOf<UGameplayEffect>			ClimbJumpCostClass = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float											ClimbMovingSpeedThreshold = { 1.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	float											ClimbJumpStaminaCost = { 10.f };
+
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
+
+private:
+	FGameplayTag								OldWeaponTag = {};
 
 private:
 	TMap<FGameplayTag, FDelegateHandle> WeaponStateTagHandles;
 	FDelegateHandle								AimStateTagHandle;
 	FDelegateHandle								ZoomInStateTagHandle;
 	TMap<FGameplayTag, FDelegateHandle>	PlayerStateTagHandles;
+
+	FActiveGameplayEffectHandle				ClimbStaminaCostHandle;
+	FActiveGameplayEffectHandle				GlideStaminaCostHandle;
 
 private:
 	bool	IsAiming = {};

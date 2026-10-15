@@ -102,6 +102,7 @@ protected:
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
+	virtual void					BuildDestroy();
 
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
@@ -116,7 +117,6 @@ public:
 
 	void							BeginDestroySequence();
 
-	virtual void					BuildDestroy();
 
 protected:
 	UFUNCTION()
@@ -184,7 +184,7 @@ private:
 	int32											RoofSupportSpan = { 2 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass;
+	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
 	TObjectPtr<UGeometryCollection>					DestroyGeometryCollection = { nullptr };

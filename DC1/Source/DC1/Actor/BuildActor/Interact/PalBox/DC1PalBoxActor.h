@@ -21,8 +21,11 @@ public:
 	// 거점 범위 판단
 	bool							IsInBase(const FVector& InLocation) const;
 
-public:
-	virtual void					Interact(ADC1Character* InInteractOwner) override;
+protected:
+	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
+
+private:
+	void							InteractF(ADC1Character* InInteractOwner);
 
 	// 거점이 이미 있거나 다른 거점 범위와 겹치면 못 짓는다
 	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const override;

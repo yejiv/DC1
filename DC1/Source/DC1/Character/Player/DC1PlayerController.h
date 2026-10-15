@@ -38,6 +38,9 @@ public:
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
 
+	void PressAbilityInput(const FGameplayTag& InAbilityTag);
+	void ReleaseAbilityInput(const FGameplayTag& InAbilityTag);
+
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -71,9 +74,6 @@ private:
 	void OnAttackPressed(const FInputActionValue& Value);
 	void OnAttackReleased(const FInputActionValue& Value);
 
-	void OnInteractionPressed(const FInputActionValue& Value);
-	void OnInteractionReleased(const FInputActionValue& Value);
-
 	void ChangeWeapon(const FInputActionValue& Value);
 
 	void OnThrowPressed(const FInputActionValue& Value);
@@ -83,6 +83,9 @@ private:
 	void OnCallPalPressed(const FInputActionValue& Value);
 	void OnPalSlotPrevPressed(const FInputActionValue& Value);
 	void OnPalSlotNextPressed(const FInputActionValue& Value);
+
+	// Climb
+	void OnClimbReleasePressed(const FInputActionValue& Value);
 
 private:
 	void InitPlayerStateBindings();
@@ -148,5 +151,4 @@ private:
 private:
 	bool			IsTurn = { true };
 	bool			IsActiveScreen = { false };
-	FGameplayTag	PressedInteractAbilityTag = { FGameplayTag::EmptyTag };
 };

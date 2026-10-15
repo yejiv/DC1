@@ -9,6 +9,7 @@
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "DrawDebugHelpers.h"
 #include "Define/DC1Structs.h"
+#include "Define/DC1Enums.h"
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
 
@@ -77,6 +78,7 @@ namespace
 UDC1BuildCheckComponent::UDC1BuildCheckComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	
 }
 
 const float UDC1BuildCheckComponent::GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const

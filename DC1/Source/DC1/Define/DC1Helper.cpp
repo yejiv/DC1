@@ -21,7 +21,7 @@ const UDataTable* DC1DataTableHelper::GetDataTable(const FGameplayTag& InTableTa
 		return nullptr;
 	}
 
-    return OutTable;
+	return OutTable;
 }
 
 #pragma endregion

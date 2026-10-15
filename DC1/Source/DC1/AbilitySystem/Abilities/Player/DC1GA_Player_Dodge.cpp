@@ -25,6 +25,8 @@ UDC1GA_Player_Dodge::UDC1GA_Player_Dodge(const FObjectInitializer& ObjectInitial
 	// 회피 중 재진입 금지
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dodging);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
+	// 벽타기 중 회피 금지(bUseControllerRotationYaw로 벽을 등지게 된다)
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
 }
 
 bool UDC1GA_Player_Dodge::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const

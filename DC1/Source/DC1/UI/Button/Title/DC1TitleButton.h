@@ -27,10 +27,10 @@ protected:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock>			TextLabel;
+	TObjectPtr<UTextBlock>			TextLabel = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>				HoverImage;
+	TObjectPtr<UImage>				HoverImage = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Button_LabelText")
 	FText							Button_LabelText;

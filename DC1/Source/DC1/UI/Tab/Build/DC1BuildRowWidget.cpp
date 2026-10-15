@@ -64,13 +64,13 @@ UDC1BuildButton* UDC1BuildRowWidget::AddBuildSlot(const FDC1BuildRow& InBuildRow
 
 bool UDC1BuildRowWidget::VisibleSlot(const FGameplayTag& InSlotTag)
 {
-	TObjectPtr<UDC1BuildButton>* Found = Slots.Find(InSlotTag);
-	if (nullptr == Found)
+	UDC1BuildButton* Found = Slots.FindRef(InSlotTag);
+	if (false == ::IsValid(Found))
 	{
 		return false;
 	}
 
-	(*Found)->SetVisibility(ESlateVisibility::Visible);
+	Found->SetVisibility(ESlateVisibility::Visible);
 	
 	if (ESlateVisibility::Visible != GetVisibility())
 	{

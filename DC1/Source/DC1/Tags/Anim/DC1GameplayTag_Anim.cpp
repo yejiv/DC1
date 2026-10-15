@@ -11,10 +11,16 @@ namespace DC1AnimTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Attack_Melee, "Anim.Attack.Melee");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Attack_Bow, "Anim.Attack.Bow");
 
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Draw_None, "Anim.Draw.None");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Draw_Melee, "Anim.Draw.Melee");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Draw_Bow, "Anim.Draw.Bow");
+
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Throw, "Anim.Action.Throw");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Dodge_Roll, "Anim.Action.Dodge.Roll");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Dodge_Step, "Anim.Action.Dodge.Step");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_ClimbAtTop, "Anim.Action.ClimbAtTop");
 
-	UE_DEFINE_GAMEPLAY_TAG(Anim_Build_Working, "Anim.Build.Working");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Build, "Anim.Action.Working.Build");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Deforest, "Anim.Action.Working.Deforest");
 #pragma endregion
 }

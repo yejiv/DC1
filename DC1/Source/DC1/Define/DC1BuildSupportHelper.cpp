@@ -162,7 +162,7 @@ namespace
 
 		for (const FDC1BuildStructureLink& Link : InLinkComp->GetLinks())
 		{
-			if (true == Link.MySnapType.MatchesTagExact(InType) && nullptr != Link.Other.Get())
+			if (true == Link.MySnapType.MatchesTagExact(InType) && true == Link.Other.IsValid())
 			{
 				return true;
 			}

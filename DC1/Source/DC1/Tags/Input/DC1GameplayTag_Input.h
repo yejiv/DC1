@@ -12,6 +12,10 @@ namespace DC1IMCTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Default);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_UI);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Build);
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Interact_F);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Interact_V);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Interact_C);
 }
 
 namespace DC1InputTags
@@ -24,6 +28,7 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Jump);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Crouch);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Dodge);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_ClimbRelease);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Attack);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_ZoomIn);
@@ -34,7 +39,6 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_PalSlotNext);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_ChangeWeapon);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Default_Interact);
 #pragma endregion
 
 
@@ -55,4 +59,11 @@ namespace DC1InputBuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Cancel);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Rotate);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Snap);
+}
+
+namespace DC1InputInteractTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Interact_F);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Interact_V);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Interact_C);
 }

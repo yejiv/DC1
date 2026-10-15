@@ -52,30 +52,30 @@ void UDC1BuildWidget::InitBuild(UDC1BuildViewModel* InViewModel)
 		const FGameplayTag& BuildTag = BuildRow.BuildTag;
 		const FGameplayTag& RowTag = BuildTag.RequestDirectParent();
 
-		TObjectPtr<UDC1BuildRowWidget>* FoundRow = BuildRowsByTag.Find(RowTag);
-		if (nullptr == FoundRow)
+		UDC1BuildRowWidget* RowWidget = BuildRowsByTag.FindRef(RowTag);
+		if (false == ::IsValid(RowWidget))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find RowWidget by %s"), *BuildTag.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Can't Find RowWidget by %s"), *BuildTag.ToString());
 			continue;
 		}
 
-		(*FoundRow)->AddBuildSlot(BuildRow, InViewModel);
+		RowWidget->AddBuildSlot(BuildRow, InViewModel);
 
 		if (true == InViewModel->IsBuildUnlocked(BuildTag))
 		{
-			(*FoundRow)->VisibleSlot(BuildTag);
+			RowWidget->VisibleSlot(BuildTag);
 		}
 	}
 }
 
 bool UDC1BuildWidget::VisibleSlot(const FGameplayTag& InRowTag, const FGameplayTag& InSlotTag)
 {
-	TObjectPtr<UDC1BuildRowWidget>* Found = BuildRowsByTag.Find(InRowTag);
-	if (nullptr == Found)
+	UDC1BuildRowWidget* RowWidget = BuildRowsByTag.FindRef(InRowTag);
+	if (false == ::IsValid(RowWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Cant Find TechRow by %s"), *InRowTag.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildWidget :: Can't Find TechRow by %s"), *InRowTag.ToString());
 		return false;
 	}
 
-	return (*Found)->VisibleSlot(InSlotTag);
+	return RowWidget->VisibleSlot(InSlotTag);
 }

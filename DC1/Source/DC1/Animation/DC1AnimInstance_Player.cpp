@@ -7,6 +7,7 @@
 
 #include "Character/Player/DC1Player.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
 
 UDC1AnimInstance_Player::UDC1AnimInstance_Player(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -18,6 +19,7 @@ void UDC1AnimInstance_Player::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation();
 
 	Player = Cast<ADC1Player>(Owner);
+	CMC = Cast<UDC1CharacterMovementComponent>(MovementComponent);
 }
 
 void UDC1AnimInstance_Player::NativeUpdateAnimation(float DeltaSeconds)
@@ -29,17 +31,21 @@ void UDC1AnimInstance_Player::NativeUpdateAnimation(float DeltaSeconds)
 		LOG(TEXT("Player X"));
 		return;
 	}
-	if (false == IsValid(MovementComponent))
+	if (false == IsValid(CMC))
 	{
 		LOG(TEXT("MovementComponent X"));
 		return;
 	}
 
-	IsCrouch = MovementComponent->IsCrouching();
+	IsCrouch = CMC->IsCrouching();
 	IsAiming = Player->GetAimingState();
+	IsClimbing = CMC->IsClimbing();
+	IsGliding = CMC->IsGliding();
+	IsOnGround = CMC->IsMovingOnGround();
 
 	Compute_Direction();
 	Compute_AimPitch(DeltaSeconds);
+	Compute_ClimbVelocity();
 }
 
 void UDC1AnimInstance_Player::Compute_AimPitch(float DeltaSeconds)
@@ -53,9 +59,17 @@ void UDC1AnimInstance_Player::Compute_AimPitch(float DeltaSeconds)
 	AimPitch = FMath::FInterpTo(AimPitch, TargetPitch, DeltaSeconds, AimPitchInterpSpeed);
 }
 
+void UDC1AnimInstance_Player::Compute_ClimbVelocity()
+{
+	FVector LocalVelocity = Player->GetActorTransform().InverseTransformVectorNoScale(CMC->Velocity);
+
+	ClimbVelocity.X = LocalVelocity.Y;
+	ClimbVelocity.Y = LocalVelocity.Z;
+}
+
 void UDC1AnimInstance_Player::Compute_Direction()
 {
-	FVector LocalVelocity = Player->GetActorRotation().UnrotateVector(MovementComponent->Velocity);
+	FVector LocalVelocity = Player->GetActorRotation().UnrotateVector(CMC->Velocity);
 	if (LocalVelocity.Size2D() == 0)
 	{
 		MoveXY = {};

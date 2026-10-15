@@ -22,7 +22,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Component/DC1CharacterMovementComponent.h"
 
 
 #include "Component/Build/DC1BuildPlacementComponent.h"
@@ -98,17 +98,36 @@ void ADC1PlayerController::SetBuildMode(bool Enabled)
 	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent());
 	if (true == ::IsValid(ASC))
 	{
-		if (true == Enabled)
-		{
-			ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_BuildWork);
-			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 1);
-		}
-		else
-		{
-			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, 0);
-		}
+		int32 NewCount = (true == Enabled) ? 1 : 0;
+
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Build_Placement, NewCount);
+	}
+}
+
+void ADC1PlayerController::PressAbilityInput(const FGameplayTag& InAbilityTag)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
 	}
 
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->AbilityInputPressedByTag(InAbilityTag);
+	}
+}
+
+void ADC1PlayerController::ReleaseAbilityInput(const FGameplayTag& InAbilityTag)
+{
+	if (false == IsValid(ControlObject))
+	{
+		return;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
+	{
+		ASC->AbilityInputReleasedByTag(InAbilityTag);
+	}
 }
 
 void ADC1PlayerController::BeginPlay()
@@ -243,12 +262,36 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 		return;
 	}
 
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(ControlObject->GetCharacterMovement());
+	if (false == IsValid(CMC))
+	{
+		return;
+	}
+
 	const FVector2D MoveVector = Value.Get<FVector2D>();
 
-	FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
+	// ClimbAtTop 판정
+	if (true == CMC->CanMantle() && MoveVector.X > 0.f)
+	{
+		ControlObject->PlayAbility(DC1PlayerTags::Ability_Player_ClimbAtTop);
+	}
 
-	const FVector Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
-	const FVector Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+	const bool IsClimbing = CMC->IsClimbing();
+
+	FVector Forward = {};
+	FVector Right = {};
+
+	if (IsClimbing)
+	{
+		Right = CMC->GetClimbRightVector();
+		Forward = CMC->GetClimbUpVector();
+	}
+	else
+	{
+		FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
+		Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
+		Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
+	}
 
 	// 탑승 중이면 팰
 	APawn* MovePawn = GetPawn();
@@ -305,7 +348,7 @@ void ADC1PlayerController::OnJump(const FInputActionValue& Value)
 	}
 
 	ControlObject->UnCrouch();
-	ControlObject->Jump();
+	ControlObject->TryJumpOrGlide();
 }
 
 void ADC1PlayerController::StopJumping(const FInputActionValue& Value)
@@ -363,80 +406,12 @@ void ADC1PlayerController::OnAttack(const FInputActionValue& Value)
 
 void ADC1PlayerController::OnAttackPressed(const FInputActionValue& Value)
 {
-	if (false == IsValid(ControlObject))
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_Attack);
-	}
+	PressAbilityInput(DC1PlayerTags::Ability_Player_Attack);
 }
 
 void ADC1PlayerController::OnAttackReleased(const FInputActionValue& Value)
 {
-	if (false == IsValid(ControlObject))
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_Attack);
-	}
-}
-
-void ADC1PlayerController::OnInteractionPressed(const FInputActionValue& Value)
-{
-	if (false == IsValid(ControlObject))
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		IDC1InteractableInterface* Interactable = InteractComponent->GetCurrentInteractable();
-		if (nullptr != Interactable)
-		{
-			const FGameplayTag AbilityTag = Interactable->GetInteractAbilityTag();
-
-			if (true == AbilityTag.IsValid())
-			{
-				ASC->AbilityInputPressedByTag(AbilityTag);
-				PressedInteractAbilityTag = AbilityTag;
-			}
-			else
-			{
-				Interactable->Interact(ControlObject);	
-			}
-		}
-		else
-		{
-			// 탑승/하차
-			if (const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>())
-			{
-				if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
-				{
-					Party->Server_ToggleRide();
-				}
-			}
-		}
-	}
-}
-
-void ADC1PlayerController::OnInteractionReleased(const FInputActionValue& Value)
-{
-	if (false == IsValid(ControlObject) || false == PressedInteractAbilityTag.IsValid())
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		ASC->AbilityInputReleasedByTag(PressedInteractAbilityTag);
-		PressedInteractAbilityTag = FGameplayTag::EmptyTag;
-	}
+	ReleaseAbilityInput(DC1PlayerTags::Ability_Player_Attack);
 }
 
 void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
@@ -460,6 +435,16 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
 	{
+		// Draw 몽타주가 이 액션들의 몽타주를 끊어 어빌리티가 종료되므로 교체를 막는다
+		FGameplayTagContainer ChangeBlockedTags;
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Working);
+		ChangeBlockedTags.AddTag(DC1StateTags::State_Dodging);
+
+		if (true == ASC->HasAnyMatchingGameplayTags(ChangeBlockedTags))
+		{
+			return;
+		}
+
 		ASC->CancelAbilityByTag(DC1PlayerTags::Ability_Player_Attack);
 	}
 
@@ -471,28 +456,12 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 
 void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)
 {
-	if (false == IsValid(ControlObject))
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		ASC->AbilityInputPressedByTag(DC1PlayerTags::Ability_Player_PalSphere);
-	}
+	PressAbilityInput(DC1PlayerTags::Ability_Player_PalSphere);
 }
 
 void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
 {
-	if (false == IsValid(ControlObject))
-	{
-		return;
-	}
-
-	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(ControlObject->GetAbilitySystemComponent()))
-	{
-		ASC->AbilityInputReleasedByTag(DC1PlayerTags::Ability_Player_PalSphere);
-	}
+	ReleaseAbilityInput(DC1PlayerTags::Ability_Player_PalSphere);
 }
 
 void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
@@ -535,6 +504,16 @@ void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
 	{
 		Party->CycleSlot(1);
 	}
+}
+
+void ADC1PlayerController::OnClimbReleasePressed(const FInputActionValue& Value)
+{
+	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(ControlObject->GetCharacterMovement());
+	if (false == IsValid(CMC))
+		return;
+
+	CMC->ReleaseClimb();
+	ControlObject->Server_ReleaseClimb();
 }
 
 void ADC1PlayerController::InitPlayerStateBindings()
@@ -855,13 +834,6 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 		EnhancedInputComponent->BindAction(ChangeWeaponAction, ETriggerEvent::Triggered, this, &ThisClass::ChangeWeapon);
 	}
 
-	// Interact
-	if (const UInputAction* InteractAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Interact))
-	{
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::OnInteractionPressed);
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::OnInteractionReleased);
-	}
-
 	// Throw
 	if (const UInputAction* ThrowAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Throw))
 	{
@@ -884,6 +856,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
 	{
 		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
+	}
+
+	// Climb
+	if (const UInputAction* ClimbReleaseAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_ClimbRelease))
+	{
+		EnhancedInputComponent->BindAction(ClimbReleaseAction, ETriggerEvent::Started, this, &ThisClass::OnClimbReleasePressed);
 	}
 }
 

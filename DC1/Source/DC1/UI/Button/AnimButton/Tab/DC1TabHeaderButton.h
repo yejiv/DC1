@@ -33,7 +33,7 @@ public:
 	virtual bool	SetState(EDC1TabButtonState InState);
 
 protected:
-	EDC1TabButtonState	ButtonState = EDC1TabButtonState::Default;
+	EDC1TabButtonState	ButtonState = { EDC1TabButtonState::Default };
 
 private:
 	// ActiveBackgroundImage Anim 

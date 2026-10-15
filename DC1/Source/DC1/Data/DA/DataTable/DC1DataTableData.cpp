@@ -6,11 +6,5 @@
 
 UDataTable* UDC1DataTableData::GetDataTable(const FGameplayTag& TableTag) const
 {
-	TObjectPtr<UDataTable> const* Found = DataTables.Find(TableTag);
-	if (nullptr == Found)
-	{
-		return nullptr;
-	}
-
-	return *Found;
+	return DataTables.FindRef(TableTag);
 }

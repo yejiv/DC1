@@ -54,7 +54,7 @@ void UDC1TechTreeWidget::SetViewModel(UDC1TechTreeViewModel* InViewModel)
 		CachedViewModel->OnTechStateChanged.AddUObject(this, &ThisClass::RefreshAll);
 		CachedViewModel->OnTechUnlocked.AddWeakLambda(this, [](const FGameplayTag& Tag)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Unlocked : %s "), *Tag.ToString());
+				UE_LOG(LogTemp, Warning, TEXT("UDC1TechTreeWidget :: Unlocked : %s"), *Tag.ToString());
 			});
 	}
 	else

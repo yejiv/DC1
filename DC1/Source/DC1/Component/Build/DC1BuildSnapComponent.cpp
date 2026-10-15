@@ -36,7 +36,7 @@ void UDC1BuildSnapComponent::LayoutSockets()
 	const UBoxComponent* ParentBox = Cast<UBoxComponent>(GetAttachParent());
 	if (false == ::IsValid(ParentBox))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Parent Component is not Box Component || None Parent"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildSnapComponent :: Parent Component is not Box Component || None Parent"));
 		return;
 	}
 
@@ -90,7 +90,7 @@ void UDC1BuildSnapComponent::DrawDebugSockets()
 	const UBoxComponent* ParentBox = Cast<UBoxComponent>(GetAttachParent());
 	if (false == ::IsValid(ParentBox))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Parent Component is not Box Component || None Parent"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildSnapComponent :: Parent Component is not Box Component || None Parent"));
 		return;
 	}
 

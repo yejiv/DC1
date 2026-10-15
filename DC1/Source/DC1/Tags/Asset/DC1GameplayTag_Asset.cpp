@@ -52,5 +52,6 @@ namespace DC1DataTableTags
 
 #pragma region Item
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_Item, "DataTable.Item");
+	UE_DEFINE_GAMEPLAY_TAG(DataTable_EquipItem, "DataTable.EquipItem");
 #pragma endregion
 }

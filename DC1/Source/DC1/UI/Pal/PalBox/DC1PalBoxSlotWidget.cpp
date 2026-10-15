@@ -51,7 +51,7 @@ void UDC1PalBoxSlotWidget::HandleHovered()
 
 	// 호버 동안 무한 루프, 언호버 시 원래 값으로 복원
 	LoopInfo.PlayMode = EUMGSequencePlayMode::Forward;
-	LoopInfo.bRestoreState = true;
+	LoopInfo.RestoreState = true;
 	LoopInfo.NumLoops = 0;
 
 	PlayAnim(HoverLoopAnim, LoopInfo);
