@@ -21,8 +21,10 @@
 
 #include "UI/World/DC1PalHealthWidget.h"
 
+#include "Camera/CameraTypes.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
@@ -37,13 +39,22 @@ namespace DC1PalCharacter
 
 		if (const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Pawn))
 		{
-			const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController());
-			if (EDC1Team::Player != Pal->GetTeam() || nullptr == PalController)
+			if (EDC1Team::Player != Pal->GetTeam())
 			{
 				return nullptr;
 			}
 
-			Pawn = Cast<APawn>(PalController->GetFollowTarget());
+			// 탑승 중이면 팰의 PlayerState 가 주인 것
+			if (false == Pal->IsPlayerControlled())
+			{
+				const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController());
+				if (nullptr == PalController)
+				{
+					return nullptr;
+				}
+
+				Pawn = Cast<APawn>(PalController->GetFollowTarget());
+			}
 		}
 
 		const ADC1PlayerState* PlayerState = (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
@@ -89,6 +100,23 @@ void ADC1PalCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& Out
 	OutRotation = GetActorRotation();
 }
 
+void ADC1PalCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+	TArray<AActor*> AttachedActors;
+	GetAttachedActors(AttachedActors);
+
+	for (AActor* Attached : AttachedActors)
+	{
+		if (APawn* Rider = Cast<APawn>(Attached))
+		{
+			Rider->CalcCamera(DeltaTime, OutResult);
+			return;
+		}
+	}
+
+	Super::CalcCamera(DeltaTime, OutResult);
+}
+
 void ADC1PalCharacter::SetOrientToMovement(bool Enable)
 {
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
@@ -107,6 +135,9 @@ void ADC1PalCharacter::PostInitializeComponents()
 void ADC1PalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 서버에선 OnRep_Team 이 안 온다
+	ApplyTeamCollisionProfile();
 
 	if (false == IsValid(HealthWidgetComponent))
 	{
@@ -131,6 +162,22 @@ void ADC1PalCharacter::BeginPlay()
 
 	GetWorldTimerManager().SetTimer(HealthWidgetVisibilityTimer, this,
 		&ThisClass::UpdateHealthWidgetVisibility, HealthWidgetCheckInterval, true);
+}
+
+void ADC1PalCharacter::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+
+	// 서버·클라 설정이 같아야 예측이 맞는다
+	const bool IsRidden = (nullptr != Cast<APlayerController>(GetController()));
+
+	SetOrientToMovement(IsRidden);
+
+	UCharacterMovementComponent* Movement = GetCharacterMovement();
+	if (nullptr != Movement && nullptr != PalData)
+	{
+		Movement->MaxWalkSpeed = IsRidden ? PalData->RideSpeed : PalData->RunSpeed;
+	}
 }
 
 void ADC1PalCharacter::UpdateHealthWidgetVisibility()
@@ -608,13 +655,17 @@ void ADC1PalCharacter::OnRep_Team()
 	OnTeamChanged();
 }
 
-void ADC1PalCharacter::OnTeamChanged()
+void ADC1PalCharacter::ApplyTeamCollisionProfile()
 {
-	// EnemyPal 차단
 	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
 		Capsule->SetCollisionProfileName((EDC1Team::Player == Team) ? TEXT("AllyPal") : TEXT("EnemyPal"));
 	}
+}
+
+void ADC1PalCharacter::OnTeamChanged()
+{
+	ApplyTeamCollisionProfile();
 
 	// 적대 판정은 sight query 생성 시점에 한 번만 해서 진영이 바뀌면 양쪽을 다 갱신!
 

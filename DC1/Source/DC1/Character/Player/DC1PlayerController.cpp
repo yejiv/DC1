@@ -188,7 +188,25 @@ void ADC1PlayerController::SetPawn(APawn* InPawn)
 {
 	Super::SetPawn(InPawn);
 
-	ControlObject = Cast<ADC1Player>(InPawn);
+	if (ADC1Player* PossessedPlayer = Cast<ADC1Player>(InPawn))
+	{
+		ControlObject = PossessedPlayer;
+		return;
+	}
+
+	// 탄 팰
+	if (nullptr != InPawn)
+	{
+		return;
+	}
+
+	// Possess 직전 UnPossess 의 null. 탑승·하차 중이면 무시
+	if (IsValid(ControlObject) && nullptr != ControlObject->GetRiddenPawn())
+	{
+		return;
+	}
+
+	ControlObject = nullptr;
 }
 
 bool ADC1PlayerController::InputKey(const FInputKeyEventArgs& Params)
@@ -232,8 +250,10 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 	const FVector Forward = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
 	const FVector Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
 
-	ControlObject->AddMovementInput(Forward * MoveVector.X);
-	ControlObject->AddMovementInput(Right * MoveVector.Y);
+	// 탑승 중이면 팰
+	APawn* MovePawn = GetPawn();
+	MovePawn->AddMovementInput(Forward * MoveVector.X);
+	MovePawn->AddMovementInput(Right * MoveVector.Y);
 }
 
 void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
@@ -393,7 +413,14 @@ void ADC1PlayerController::OnInteractionPressed(const FInputActionValue& Value)
 		}
 		else
 		{
-			// TODO Ride
+			// 탑승/하차
+			if (const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>())
+			{
+				if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+				{
+					Party->Server_ToggleRide();
+				}
+			}
 		}
 	}
 }

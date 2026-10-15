@@ -83,11 +83,16 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
 {
-	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+	const ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+
+	// 탑승 중엔 PlayerState 가 탄 팰에 있다
+	const APawn* RiddenPawn = GetRiddenPawn();
+	if (nullptr == PS && nullptr != RiddenPawn)
 	{
-		return PS->GetAbilitySystemComponent();
+		PS = RiddenPawn->GetPlayerState<ADC1PlayerState>();
 	}
-	return nullptr;
+
+	return (nullptr != PS) ? PS->GetAbilitySystemComponent() : nullptr;
 }
 
 void ADC1Player::SetAttackCollision(bool OnCollision)
@@ -190,14 +195,42 @@ void ADC1Player::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ADC1Player::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	// 하차는 재초기화 안 함
+	if (nullptr != GetRiddenPawn())
+	{
+		return;
+	}
+
 	InitializeAbilitySystem();
 	InitializeEquip();
 	InitializeAppearance();
 }
 
+APawn* ADC1Player::GetRiddenPawn() const
+{
+	return Cast<APawn>(GetAttachParentActor());
+}
+
+FRotator ADC1Player::GetViewRotation() const
+{
+	const APawn* RiddenPawn = GetRiddenPawn();
+	if (nullptr != RiddenPawn && nullptr != RiddenPawn->GetController())
+	{
+		return RiddenPawn->GetController()->GetControlRotation();
+	}
+
+	return Super::GetViewRotation();
+}
+
 void ADC1Player::UnPossessed()
 {
-	Clear_Resource();
+	// 탑승은 정리 안 함
+	if (nullptr == GetRiddenPawn())
+	{
+		Clear_Resource();
+	}
+
 	Super::UnPossessed();
 }
 

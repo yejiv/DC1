@@ -59,6 +59,13 @@ private:
 	virtual void NotifyControllerChanged() override;
 
 public:
+	// 탑승 = 폰에 붙어 있음. 아니면 null
+	APawn*				GetRiddenPawn() const;
+
+	// 탑승 중엔 팰 컨트롤러 시점
+	virtual FRotator GetViewRotation() const override;
+
+public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HeadMesh = { nullptr };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

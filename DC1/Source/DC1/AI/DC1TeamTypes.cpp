@@ -2,6 +2,7 @@
 
 #include "AI/DC1TeamTypes.h"
 
+#include "Character/Player/DC1Player.h"
 #include "GameFramework/Pawn.h"
 
 ETeamAttitude::Type DC1Team::GetAttitude(EDC1Team InSelfTeam, EDC1Team InOtherTeam)
@@ -32,6 +33,13 @@ EDC1Team DC1Team::ResolveTeam(const AActor& InActor)
 		if (Pawn->IsPlayerControlled())
 		{
 			return EDC1Team::Player;
+		}
+
+		// 탑승 중이면 탄 팰의 진영
+		const ADC1Player* Player = Cast<ADC1Player>(Pawn);
+		if (const APawn* RiddenPawn = (nullptr != Player) ? Player->GetRiddenPawn() : nullptr)
+		{
+			return ResolveTeam(*RiddenPawn);
 		}
 	}
 

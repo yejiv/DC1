@@ -3,6 +3,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Controller/DC1PalAIController.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
@@ -12,11 +13,28 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "AbilitySystemComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+
+namespace DC1PalParty
+{
+	// Possess 가 바꾼 시점을 되돌린다
+	static void PossessKeepingView(APlayerController& InPC, APawn& InPawn)
+	{
+		const FRotator View = InPC.GetControlRotation();
+
+		InPC.Possess(&InPawn);
+		InPC.SetControlRotation(View);
+		InPC.ClientSetRotation(View);
+	}
+}
 
 UDC1PalPartyComponent::UDC1PalPartyComponent()
 {
@@ -619,6 +637,13 @@ void UDC1PalPartyComponent::RetrieveDeployed()
 {
 	GetWorld()->GetTimerManager().ClearTimer(DeathRetrieveTimer);
 
+	// 접기 전에 하차
+	if (ADC1PalAIController* PalController = GetDeployedPalController())
+	{
+		PalController->CancelRideApproach();
+	}
+	EndRide(false);
+
 	ADC1PalCharacter* Deployed = DeployedPal;
 	DeployedPal = nullptr;
 
@@ -637,10 +662,169 @@ void UDC1PalPartyComponent::HandleDeployedPalDied()
 		return;
 	}
 
+	// 래그돌에서 하차
+	if (ADC1PalAIController* PalController = GetDeployedPalController())
+	{
+		PalController->CancelRideApproach();
+	}
+	EndRide(false);
+
 	// UI 는 죽는 즉시 반응
 	OnPalSlotChanged.Broadcast();
 
 	GetWorld()->GetTimerManager().SetTimer(DeathRetrieveTimer, this, &ThisClass::RetrieveDeployed, DeathRetrieveDelay, false);
+}
+
+void UDC1PalPartyComponent::Server_ToggleRide_Implementation()
+{
+	if (::IsValid(Rider))
+	{
+		EndRide(true);
+		return;
+	}
+
+	const ADC1PalAIController* PalController = GetDeployedPalController();
+	if (nullptr != PalController && true == PalController->IsRideApproaching())
+	{
+		return;
+	}
+
+	BeginRideApproach();
+}
+
+void UDC1PalPartyComponent::BeginRideApproach()
+{
+	ADC1PalCharacter* Pal = DeployedPal;
+	const UDC1PalData* PalData = ::IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData || false == PalData->bRideable || Pal->GetHealthRatio() <= 0.f)
+	{
+		return;
+	}
+
+	if (false == Pal->GetMesh()->DoesSocketExist(PalData->RideSocketName))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] Ride: %s has no socket [%s]. Add it to the skeleton."),
+			*GetNameSafe(Pal), *PalData->RideSocketName.ToString());
+		return;
+	}
+
+	ADC1PalAIController* PalController = GetDeployedPalController();
+	const APlayerController* PC = GetOwnerController();
+	APawn* Player = (nullptr != PC) ? PC->GetPawn() : nullptr;
+	if (nullptr == PalController || false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	PalController->RequestRideApproach(Player, RideAcceptanceRadius,
+		FDC1OnRideApproachFinished::CreateUObject(this, &ThisClass::HandleRideApproachFinished));
+}
+
+void UDC1PalPartyComponent::HandleRideApproachFinished(bool InArrived)
+{
+	// 실패 시 컨트롤러가 트리 복구
+	if (true == InArrived)
+	{
+		Ride();
+	}
+}
+
+void UDC1PalPartyComponent::Ride()
+{
+	ADC1PalCharacter* Pal = DeployedPal;
+	const UDC1PalData* PalData = ::IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	APlayerController* PC = GetOwnerController();
+	ACharacter* Player = (nullptr != PC) ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+	if (nullptr == PalData || false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	// 내릴 때 다시 Possess
+	RiddenPalController = Pal->GetController();
+
+	Pal->SetActorRotation(FRotator(0.f, PC->GetControlRotation().Yaw, 0.f));
+
+	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->DisableMovement();
+	}
+
+	// 콜리전 유지 (탑승 중 피격)
+
+	// 붙인 뒤 Possess (순서 중요: GetRiddenPawn)
+	Player->AttachToComponent(Pal->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, PalData->RideSocketName);
+	Rider = Player;
+
+	DC1PalParty::PossessKeepingView(*PC, *Pal);
+}
+
+void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
+{
+	ACharacter* Player = Rider;
+	AController* PalController = RiddenPalController;
+	Rider = nullptr;
+	RiddenPalController = nullptr;
+
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	// Possess 뒤 떼기 (순서 중요: GetRiddenPawn)
+	if (APlayerController* PC = GetOwnerController())
+	{
+		DC1PalParty::PossessKeepingView(*PC, *Player);
+	}
+
+	// 못 찾으면 제자리
+	FTransform DismountTransform;
+	const bool HasSpot = FindDeployTransform(DismountTransform);
+
+	Player->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
+	{
+		Movement->SetDefaultMovementMode();
+	}
+
+	const FRotator Upright(0.f, Player->GetActorRotation().Yaw, 0.f);
+	if (true == HasSpot)
+	{
+		Player->TeleportTo(DismountTransform.GetLocation(), Upright);
+	}
+	else
+	{
+		Player->SetActorRotation(Upright);
+	}
+
+	if (false == ::IsValid(PalController))
+	{
+		return;
+	}
+
+	// 비켜 둔 AI 는 엔진이 정리 안 함
+	ADC1PalCharacter* Pal = DeployedPal;
+	if (true == InReturnPalToAI && ::IsValid(Pal))
+	{
+		PalController->Possess(Pal);
+	}
+	else
+	{
+		PalController->Destroy();
+	}
+}
+
+APlayerController* UDC1PalPartyComponent::GetOwnerController() const
+{
+	const APlayerState* OwnerState = Cast<APlayerState>(GetOwner());
+	return (nullptr != OwnerState) ? OwnerState->GetPlayerController() : nullptr;
+}
+
+ADC1PalAIController* UDC1PalPartyComponent::GetDeployedPalController() const
+{
+	return ::IsValid(DeployedPal) ? Cast<ADC1PalAIController>(DeployedPal->GetController()) : nullptr;
 }
 
 void UDC1PalPartyComponent::UpdatePal(const FDC1PalInstance& InPal)

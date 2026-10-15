@@ -9,6 +9,10 @@
 
 class ADC1PalCharacter;
 class ADC1PalBoxActor;
+class ADC1PalAIController;
+class ACharacter;
+class AController;
+class APlayerController;
 
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotTranslated);
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotChanged);
@@ -38,6 +42,10 @@ public:
 	// 소환/회수 토글. 입력은 클라에서 들어오므로 서버로 넘긴다
 	UFUNCTION(Server, Reliable)
 	void					Server_ToggleDeploy();
+
+	// 탑승/하차
+	UFUNCTION(Server, Reliable)
+	void					Server_ToggleRide();
 
 	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
 	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
@@ -144,6 +152,18 @@ protected:
 	// 꺼내둔 팰의 OnPalDied 진입점. 래그돌을 잠깐 보여주고 회수한다
 	void					HandleDeployedPalDied();
 
+	void					BeginRideApproach();
+
+	void					HandleRideApproachFinished(bool InArrived);
+
+	void					Ride();
+
+	// InReturnPalToAI false 면 AI 컨트롤러 파괴
+	void					EndRide(bool InReturnPalToAI);
+
+	APlayerController*		GetOwnerController() const;
+	ADC1PalAIController*	GetDeployedPalController() const;
+
 	// 회수한 상태를 목록에 반영한다. PalID로 파티·상자·거점에서 찾아 덮어쓴다
 	void					UpdatePal(const FDC1PalInstance& InPal);
 
@@ -164,6 +184,18 @@ protected:
 	// 죽고 나서 회수까지의 유예. 이 시간 동안 래그돌이 보인다.
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.1"))
 	float					DeathRetrieveDelay = { 2.f };
+
+	// 캡슐 표면 간 거리
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Ride", meta = (ClampMin = "0.0"))
+	float					RideAcceptanceRadius = { 30.f };
+
+	// 서버 전용
+	UPROPERTY()
+	TObjectPtr<ACharacter>	Rider = { nullptr };
+
+	// 탑승 중 비켜 둔 AI. 서버 전용
+	UPROPERTY()
+	TObjectPtr<AController>	RiddenPalController = { nullptr };
 
 	// 상자
 	UPROPERTY(ReplicatedUsing = OnRep_BoxPals)
