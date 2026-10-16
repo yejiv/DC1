@@ -772,6 +772,12 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 		return;
 	}
 
+	// 점프 키를 누른 채 내리면 떼는 입력이 팰에 안 와서 AI 가 계속 뛴다
+	if (::IsValid(DeployedPal))
+	{
+		DeployedPal->StopJumping();
+	}
+
 	// Possess 뒤 떼기 (순서 중요: GetRiddenPawn)
 	if (APlayerController* PC = GetOwnerController())
 	{

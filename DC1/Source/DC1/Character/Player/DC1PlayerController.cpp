@@ -293,10 +293,8 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 		Right = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::Y);
 	}
 
-	// 탑승 중이면 팰
-	APawn* MovePawn = GetPawn();
-	MovePawn->AddMovementInput(Forward * MoveVector.X);
-	MovePawn->AddMovementInput(Right * MoveVector.Y);
+	ControlObject->AddMovementInput(Forward * MoveVector.X);
+	ControlObject->AddMovementInput(Right * MoveVector.Y);
 }
 
 void ADC1PlayerController::OnTurn(const FInputActionValue& Value)
@@ -475,6 +473,20 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->Server_ToggleDeploy();
+	}
+}
+
+void ADC1PlayerController::OnRidePressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
+	{
+		Party->Server_ToggleRide();
 	}
 }
 
@@ -856,6 +868,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
 	{
 		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
+	}
+
+	// Ride
+	if (const UInputAction* RideAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Ride))
+	{
+		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Started, this, &ThisClass::OnRidePressed);
 	}
 
 	// Climb
