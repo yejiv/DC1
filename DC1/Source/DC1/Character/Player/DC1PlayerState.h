@@ -15,6 +15,7 @@ class UDC1ValuableInventoryComponent;
 class UDC1PalPartyComponent;
 class UDC1EquipComponent;
 class UDC1AppearanceComponent;
+class UDC1TeleportComponent;
 
 class UDC1PlayerSaveGame;
 /**
@@ -32,10 +33,11 @@ public:
 	virtual UAbilitySystemComponent*		GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
-	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
+	UDC1ValuableInventoryComponent*	GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
+	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
@@ -69,4 +71,7 @@ private:
 	// 폰보다 오래 살아야 함 + 추후 미리보기 액터도 같은 인스턴스를 공유해서 써야 함
 	UPROPERTY(VisibleAnywhere, Category = "Appearance")
 	TObjectPtr<UDC1AppearanceComponent> AppearanceComponent = { nullptr };
+
+	UPROPERTY(VisibleAnywhere, Category = "Teleport")
+	TObjectPtr<UDC1TeleportComponent> TeleportComponent = { nullptr };
 };
