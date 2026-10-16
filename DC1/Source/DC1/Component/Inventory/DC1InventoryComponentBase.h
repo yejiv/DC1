@@ -101,7 +101,7 @@ public:
 	/** 이 인벤토리에 보관할 수 있는 아이템인지 (파생 클래스가 귀중품/일반 아이템 구분 규칙을 정함) */
 	virtual bool CanAcceptItem(FName InItemID) const { return true; }
 
-	/** 아이템 DataTable에서 귀중품(bIsValuable) 여부 조회 (ItemID 필드 기준) */
+	/** 귀중품 DataTable에 있는지 조회 (ItemID 필드 기준) */
 	static bool IsValuableItem(FName InItemID);
 
 	/**

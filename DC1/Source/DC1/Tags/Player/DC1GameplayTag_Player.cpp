@@ -18,5 +18,10 @@ namespace DC1PlayerTags
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Hit, "Event.Player.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Fired, "Event.Player.Fired");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Damaged, "Event.Player.Damaged");
+#pragma endregion
+
+#pragma region Cue
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Player_Hit, "GameplayCue.Player.Hit");
 #pragma endregion
 }

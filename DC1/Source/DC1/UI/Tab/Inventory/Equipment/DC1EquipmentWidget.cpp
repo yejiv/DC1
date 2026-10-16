@@ -6,6 +6,21 @@
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Engine/Texture2D.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/Image.h"
+
+#include "Subsystem/PlayerPreview/DC1PlayerPreviewSubsystem.h"
+#include "Data/DA/UI/DC1UIResourceData.h"
+#include "System/DC1AssetManager.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
+
+namespace
+{
+	// UI 머티리얼(M_UI_CharacterPreview)의 텍스처 파라미터 이름
+	const FName PlayerPreviewTextureParam = TEXT("RenderTarget");
+}
 
 void UDC1EquipmentWidget::NativeOnInitialized()
 {
@@ -38,6 +53,14 @@ void UDC1EquipmentWidget::NativeOnInitialized()
 		const TObjectPtr<UTexture2D>* EmptyIcon = EmptySlotIcons.Find(DC1EquipSlotLayout::GetSlotType(Index));
 		SlotWidget->SetEmptyIcon(nullptr != EmptyIcon ? EmptyIcon->Get() : nullptr);
 	}
+
+	if (::IsValid(InventorySlot_SphereModule))
+	{
+		InventorySlot_SphereModule->InitSlot(INDEX_NONE, SlotSize, EDC1InventorySource::Equipment);
+		InventorySlot_SphereModule->SetWeightVisibility(false);
+		InventorySlot_SphereModule->ClearSlot();
+		InventorySlot_SphereModule->SetLocked(true);
+	}
 }
 
 void UDC1EquipmentWidget::NativeConstruct()
@@ -52,6 +75,13 @@ void UDC1EquipmentWidget::NativeConstruct()
 	}
 
 	RefreshAllSlots();
+
+	// 화면이 열려 있는 동안만 미리보기 촬영
+	SetupPlayerPreview();
+	if (UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr)
+	{
+		PreviewSubsystem->BeginPreview();
+	}
 }
 
 void UDC1EquipmentWidget::NativeDestruct()
@@ -61,7 +91,31 @@ void UDC1EquipmentWidget::NativeDestruct()
 		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
 	}
 
+	if (UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr)
+	{
+		PreviewSubsystem->EndPreview();
+	}
+
 	Super::NativeDestruct();
+}
+
+void UDC1EquipmentWidget::SetupPlayerPreview()
+{
+	if (::IsValid(PlayerPreviewMID) || false == ::IsValid(Image_CharacterPreview))
+	{
+		return;
+	}
+
+	const UDC1UIResourceData* ResourceData = UDC1AssetManager::GetAssetByTag<UDC1UIResourceData>(DC1AssetTags::Asset_UI_Resource_Common);
+	UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr;
+	if (nullptr == ResourceData || nullptr == ResourceData->PlayerPreviewMaterial || nullptr == PreviewSubsystem)
+	{
+		return;
+	}
+
+	PlayerPreviewMID = UMaterialInstanceDynamic::Create(ResourceData->PlayerPreviewMaterial, this);
+	PlayerPreviewMID->SetTextureParameterValue(PlayerPreviewTextureParam, PreviewSubsystem->GetRenderTarget());
+	Image_CharacterPreview->SetBrushFromMaterial(PlayerPreviewMID);
 }
 
 void UDC1EquipmentWidget::SetViewModel(UDC1InventoryViewModel* InViewModel)

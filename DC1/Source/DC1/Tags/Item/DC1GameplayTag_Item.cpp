@@ -18,5 +18,9 @@ namespace DC1ItemTags
 #pragma region Consumption
 	UE_DEFINE_GAMEPLAY_TAG(Item_Valuable, "Item.Valuable");
 #pragma endregion
+
+#pragma region Money
+	UE_DEFINE_GAMEPLAY_TAG(Item_Money, "Item.Money");
+#pragma endregion
 }
 

@@ -126,19 +126,22 @@ struct FDC1ItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxStack = 9999;
 
-	// 귀중품 여부 ( true면 귀중품 탭 전용 - 상자 보관/버리기 불가, 무게 제외, 스택 제한 없음 )
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bIsValuable = false;
-
-	// 먹이 주머니가 여는 음식 칸 수 (0이면 주머니 아님, 여러 개면 가장 큰 값만 적용)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0", ClampMax = "5"))
-	int32 FoodPouchSlotCount = 0;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description = FText::FromString(TEXT("설명 텍스트"));
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> ItemIcon;
+};
+
+// 귀중품 전용 데이터 (DataTable_ValuableItem에 있으면 귀중품 - 상자 보관/버리기 불가, 무게 제외, 스택 제한 없음)
+USTRUCT(BlueprintType)
+struct FDC1ValuableItemRow : public FDC1ItemRow
+{
+	GENERATED_BODY()
+
+	// 먹이 주머니가 여는 음식 칸 수 (0이면 주머니 아님, 여러 개면 가장 큰 값만 적용)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0", ClampMax = "5"))
+	int32 FoodPouchSlotCount = 0;
 };
 
 // 장비 아이템 전용 데이터 (FDC1ItemRow와 ItemID로 연결, 행이 있어야 장착 가능)

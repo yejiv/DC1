@@ -56,11 +56,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Chest")
 	TObjectPtr<UDC1ChestInventoryComponent>	ChestInventoryComp = { nullptr };
-
-private:
-	// 미리 넣을 아이템 종류 수 (DataTable 앞쪽 행부터)
-	static constexpr int32			DefaultItemTypeCount = 2;
-
-	// 종류별로 넣을 개수
-	static constexpr int32			DefaultItemCount = 5;
 };

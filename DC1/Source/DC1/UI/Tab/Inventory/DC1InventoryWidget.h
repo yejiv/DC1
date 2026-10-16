@@ -11,6 +11,7 @@ class UDC1InventoryViewModel;
 class UDC1InventorySlotsWidget;
 class UDC1InventorySlotWidget;
 class UDC1EquipmentWidget;
+class UDC1PlayerStatPanelWidget;
 
 class UBorder;
 class UVerticalBox;
@@ -80,6 +81,8 @@ protected:
 	// 무게 게이지와 텍스트를 갱신하는 함수
 	void UpdateWeightDisplay();
 
+	void HandleEnhanceModeChanged(bool bInEnhanceMode);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UBorder> InventoryBorder;
@@ -117,6 +120,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TextBlock_Weight;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UDC1PlayerStatPanelWidget> PlayerStatPanel_Stats;
+
+	// 스탯 강화 모드 동안 화면을 덮어 다른 입력을 막음 (스탯 패널보다 아래 Z순서)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UBorder> Border_EnhanceBlocker;
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel;

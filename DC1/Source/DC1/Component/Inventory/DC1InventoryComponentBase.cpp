@@ -527,8 +527,7 @@ void UDC1InventoryComponentBase::SortSlots()
 
 bool UDC1InventoryComponentBase::IsValuableItem(FName InItemID)
 {
-	const FDC1ItemRow* ItemRow = DC1ItemHelper::FindItemRow(InItemID);
-	return nullptr != ItemRow && true == ItemRow->bIsValuable;
+	return DC1ItemHelper::IsValuableItem(InItemID);
 }
 
 int32 UDC1InventoryComponentBase::GetStackLimit(const FDC1ItemRow& InItemRow) const

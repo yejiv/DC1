@@ -4,6 +4,7 @@
 #include "UI/Tab/Inventory/Slot/DC1InventorySlotsWidget.h"
 #include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
 #include "UI/Tab/Inventory/Equipment/DC1EquipmentWidget.h"
+#include "UI/Tab/Inventory/Stats/DC1PlayerStatPanelWidget.h"
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
 
@@ -82,6 +83,17 @@ void UDC1InventoryWidget::NativeConstruct()
 
 	// 선택된 탭 버튼 표시 갱신
 	UpdateTabButtonVisual();
+
+	if (::IsValid(PlayerStatPanel_Stats))
+	{
+		PlayerStatPanel_Stats->OnEnhanceModeChanged.RemoveAll(this);
+		PlayerStatPanel_Stats->OnEnhanceModeChanged.AddUObject(this, &ThisClass::HandleEnhanceModeChanged);
+		HandleEnhanceModeChanged(PlayerStatPanel_Stats->IsEnhanceMode());
+	}
+	else
+	{
+		HandleEnhanceModeChanged(false);
+	}
 }
 
 void UDC1InventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -136,7 +148,20 @@ void UDC1InventoryWidget::NativeDestruct()
 		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 	}
 
+	if (::IsValid(PlayerStatPanel_Stats))
+	{
+		PlayerStatPanel_Stats->OnEnhanceModeChanged.RemoveAll(this);
+	}
+
 	Super::NativeDestruct();
+}
+
+void UDC1InventoryWidget::HandleEnhanceModeChanged(bool bInEnhanceMode)
+{
+	if (::IsValid(Border_EnhanceBlocker))
+	{
+		Border_EnhanceBlocker->SetVisibility(bInEnhanceMode ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
 }
 
 void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)

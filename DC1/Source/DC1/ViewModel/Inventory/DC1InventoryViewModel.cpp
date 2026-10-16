@@ -7,6 +7,7 @@
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Define/DC1ItemHelper.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Tags/Item/DC1GameplayTag_Item.h"
 
 void UDC1InventoryViewModel::BindSource(ADC1PlayerState* InPlayerState)
 {
@@ -405,6 +406,31 @@ float UDC1InventoryViewModel::GetCurrentWeight() const
 float UDC1InventoryViewModel::GetMaxWeight() const
 {
 	return ::IsValid(MyInventoryComp) ? MyInventoryComp->GetMaxWeight() : 0.f;
+}
+
+int64 UDC1InventoryViewModel::GetMoneyCount() const
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return 0;
+	}
+
+	int64 MoneyCount = 0;
+	for (const FDC1InventorySlotInfo& Slot : MyInventoryComp->GetSlots())
+	{
+		if (true == Slot.IsEmpty())
+		{
+			continue;
+		}
+
+		const FDC1ItemRow* ItemRow = GetItemData(Slot.ItemID);
+		if (nullptr != ItemRow && ItemRow->CategoryTag.MatchesTag(DC1ItemTags::Item_Money))
+		{
+			MoneyCount += Slot.StackCount;
+		}
+	}
+
+	return MoneyCount;
 }
 
 void UDC1InventoryViewModel::RequestDropDraggedItem()
