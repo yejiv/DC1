@@ -144,7 +144,21 @@ void UDC1InventorySlotWidget::UpdateRarityColor(EDC1ItemRarity Rarity)
 	}
 
 	FLinearColor RarityColor = DC1InventoryRarityColor::GetRarityColor(Rarity);
-	SlotBorder->Background.TintColor = RarityColor;
+
+	if (false == ::IsValid(Image_Rarity))
+	{
+		SlotBorder->Background.TintColor = RarityColor;
+		return;
+	}
+
+	// 원작처럼 바탕은 반투명 검정 고정, 일반 등급은 그라데이션 없음
+	SlotBorder->Background.TintColor = FLinearColor(0.f, 0.f, 0.f, 0.3f);
+
+	const bool bShowRarity = EDC1ItemRarity::Common != Rarity;
+	Image_Rarity->SetVisibility(bShowRarity ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+
+	RarityColor.A = 1.f;
+	Image_Rarity->SetColorAndOpacity(RarityColor);
 }
 
 void UDC1InventorySlotWidget::ShowHoverImage()

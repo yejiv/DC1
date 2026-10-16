@@ -5,6 +5,7 @@
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 
+#include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -49,15 +50,16 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		// (IsPending일 때 nullptr을 넣으면 흰색 사각형으로 표시됨)
 		if (true == ItemData->ItemIcon.IsNull())
 		{
-			// 아이콘이 지정되지 않은 아이템
+			// 아이콘이 지정되지 않은 아이템은 흰 사각형 대신 숨김
 			Image_Icon->SetBrushFromTexture(nullptr);
+			Image_Icon->SetVisibility(ESlateVisibility::Hidden);
 		}
 		else
 		{
 			Image_Icon->SetBrushFromSoftTexture(ItemData->ItemIcon);
+			Image_Icon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+			Image_Icon->SetVisibility(ESlateVisibility::Visible);
 		}
-		Image_Icon->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
-		Image_Icon->SetVisibility(ESlateVisibility::Visible);
 	}
 
 	// 장착된 아이템은 개수/무게를 표시하지 않음
@@ -83,7 +85,7 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 		CurrentItemWeight = ItemData->Weight;
 		float TotalWeight = CurrentItemWeight * InventorySlotInfo.StackCount;
 		Text_Weight->SetText(FText::AsNumber(TotalWeight));
-		Text_Weight->SetVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
+		ApplyWeightVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
 	}
 }
 
@@ -110,7 +112,7 @@ void UDC1InventoryEntryWidget::ClearEntry()
 	if (IsValid(Text_Weight))
 	{
 		Text_Weight->SetText(FText::AsNumber(0));
-		Text_Weight->SetVisibility(ESlateVisibility::Hidden);
+		ApplyWeightVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -132,6 +134,18 @@ void UDC1InventoryEntryWidget::SetWeightVisibility(bool bVisible)
 {
 	if (IsValid(Text_Weight))
 	{
-		Text_Weight->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		ApplyWeightVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
+}
+
+void UDC1InventoryEntryWidget::ApplyWeightVisibility(ESlateVisibility InVisibility)
+{
+	if (::IsValid(Border_Weight))
+	{
+		Text_Weight->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Border_Weight->SetVisibility(InVisibility);
+		return;
+	}
+
+	Text_Weight->SetVisibility(InVisibility);
 }

@@ -10,6 +10,8 @@
 class UDC1InventoryViewModel;
 class UDC1InventorySlotWidget;
 class UTexture2D;
+class UImage;
+class UMaterialInstanceDynamic;
 
 // 팰월드 스타일 장비창 (장비 칸 19개 표시, 입력은 부모 InventoryWidget이 처리)
 UCLASS()
@@ -33,8 +35,12 @@ protected:
 	void RefreshAllSlots();
 
 	void HandleEquipmentUpdated();
+	void SetupPlayerPreview();
 
 private:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage> Image_CharacterPreview;
+
 	// 무기
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_Weapon1;
@@ -96,6 +102,10 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_Food5;
 
+	// 스피어 모듈 (기능 미구현이라 장비 칸 인덱스에 넣지 않고 잠긴 칸으로만 표시)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UDC1InventorySlotWidget> InventorySlot_SphereModule;
+
 	// 빈 칸 실루엣 아이콘 (칸 타입별)
 	UPROPERTY(EditAnywhere, Category = "Equipment")
 	TMap<EDC1EquipSlotType, TObjectPtr<UTexture2D>> EmptySlotIcons;
@@ -109,4 +119,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UDC1InventoryViewModel> CachedViewModel = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> PlayerPreviewMID = { nullptr };
 };

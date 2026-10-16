@@ -141,6 +141,8 @@ private:
 	UFUNCTION()
 	void	HandleOnCharacterMovementUpdated(float DeltaSeconds, FVector OldLocation, FVector OldVelocity);
 
+	void	HandleDamaged(const struct FOnAttributeChangeData& Data);
+
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
@@ -169,6 +171,7 @@ private:
 	FDelegateHandle								AimStateTagHandle;
 	FDelegateHandle								ZoomInStateTagHandle;
 	TMap<FGameplayTag, FDelegateHandle>	PlayerStateTagHandles;
+	FDelegateHandle								DamagedHandle;
 
 	FActiveGameplayEffectHandle				ClimbStaminaCostHandle;
 	FActiveGameplayEffectHandle				GlideStaminaCostHandle;

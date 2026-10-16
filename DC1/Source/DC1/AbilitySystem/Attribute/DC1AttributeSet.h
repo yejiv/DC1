@@ -49,6 +49,11 @@ public:
 	FGameplayAttributeData WorkSpeed;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, WorkSpeed)
 
+	// 이동 속도 배율 (100 = 100%)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MoveSpeed, Category = "Attributes")
+	FGameplayAttributeData MoveSpeed;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, MoveSpeed)
+
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Experience, Category = "Attributes")
 	FGameplayAttributeData Experience;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Experience)
@@ -85,4 +90,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_WorkSpeed(const FGameplayAttributeData& OldWorkSpeed);
+
+	UFUNCTION()
+	void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
 };

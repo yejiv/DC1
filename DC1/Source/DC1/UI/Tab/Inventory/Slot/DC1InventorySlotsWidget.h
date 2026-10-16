@@ -79,7 +79,7 @@ protected:
 private:
 	static constexpr int32 InventoryColumns = 6;
 	static constexpr int32 DefaultSlotCapacity = 45;
-	static constexpr float SlotSize = 100.0f;
+	static constexpr float SlotSize = 76.0f;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UScrollBox> InventoryScrollBox;
@@ -87,8 +87,9 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUniformGridPanel> SlotGrid;
 
+	// 칸 양쪽 여백 (6이면 칸 사이 간격 12)
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
-	FMargin SlotMargin = FMargin(2.0f);
+	FMargin SlotMargin = FMargin(6.0f);
 
 	/** 표시할 인벤토리 출처 (Player / Valuable / Chest) - 배치된 인스턴스별로 설정 */
 	UPROPERTY(EditAnywhere, Category = "Inventory|Settings")
