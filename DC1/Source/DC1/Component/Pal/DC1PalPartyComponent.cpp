@@ -3,6 +3,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1PlayerController.h"
 #include "Controller/DC1PalAIController.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
@@ -11,6 +12,7 @@
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -638,10 +640,7 @@ void UDC1PalPartyComponent::RetrieveDeployed()
 	GetWorld()->GetTimerManager().ClearTimer(DeathRetrieveTimer);
 
 	// 접기 전에 하차
-	if (ADC1PalAIController* PalController = GetDeployedPalController())
-	{
-		PalController->CancelRideApproach();
-	}
+	StopRideApproach(false);
 	EndRide(false);
 
 	ADC1PalCharacter* Deployed = DeployedPal;
@@ -663,10 +662,7 @@ void UDC1PalPartyComponent::HandleDeployedPalDied()
 	}
 
 	// 래그돌에서 하차
-	if (ADC1PalAIController* PalController = GetDeployedPalController())
-	{
-		PalController->CancelRideApproach();
-	}
+	StopRideApproach(false);
 	EndRide(false);
 
 	// UI 는 죽는 즉시 반응
@@ -686,10 +682,37 @@ void UDC1PalPartyComponent::Server_ToggleRide_Implementation()
 	const ADC1PalAIController* PalController = GetDeployedPalController();
 	if (nullptr != PalController && true == PalController->IsRideApproaching())
 	{
+		StopRideApproach(true);
 		return;
 	}
 
 	BeginRideApproach();
+}
+
+void UDC1PalPartyComponent::StopRideApproach(bool InResumeBehavior)
+{
+	ADC1PalAIController* PalController = GetDeployedPalController();
+	if (nullptr == PalController || false == PalController->IsRideApproaching())
+	{
+		return;
+	}
+
+	PalController->CancelRideApproach();
+
+	if (true == InResumeBehavior)
+	{
+		PalController->TryStartBehavior();
+	}
+
+	Client_SetRideApproachInputBlocked(false);
+}
+
+void UDC1PalPartyComponent::Client_SetRideApproachInputBlocked_Implementation(bool InBlocked)
+{
+	if (ADC1PlayerController* PC = Cast<ADC1PlayerController>(GetOwnerController()))
+	{
+		PC->SetIMCEnabled(DC1PalTags::IMC_Ride, InBlocked);
+	}
 }
 
 void UDC1PalPartyComponent::BeginRideApproach()
@@ -716,17 +739,29 @@ void UDC1PalPartyComponent::BeginRideApproach()
 		return;
 	}
 
-	PalController->RequestRideApproach(Player, RideAcceptanceRadius,
-		FDC1OnRideApproachFinished::CreateUObject(this, &ThisClass::HandleRideApproachFinished));
+	Client_SetRideApproachInputBlocked(true);
+
+	if (false == PalController->RequestRideApproach(Player, RideAcceptanceRadius,
+		FDC1OnRideApproachFinished::CreateUObject(this, &ThisClass::HandleRideApproachFinished)))
+	{
+		Client_SetRideApproachInputBlocked(false);
+	}
 }
 
 void UDC1PalPartyComponent::HandleRideApproachFinished(bool InArrived)
 {
-	// 실패 시 컨트롤러가 트리 복구
 	if (true == InArrived)
 	{
 		Ride();
+
+		if (false == ::IsValid(Rider))
+		{
+			Client_SetRideApproachInputBlocked(false);
+		}
+		return;
 	}
+
+	Client_SetRideApproachInputBlocked(false);
 }
 
 void UDC1PalPartyComponent::Ride()
@@ -742,8 +777,6 @@ void UDC1PalPartyComponent::Ride()
 
 	// 내릴 때 다시 Possess
 	RiddenPalController = Pal->GetController();
-
-	Pal->SetActorRotation(FRotator(0.f, PC->GetControlRotation().Yaw, 0.f));
 
 	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
 	{
@@ -784,25 +817,12 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 		DC1PalParty::PossessKeepingView(*PC, *Player);
 	}
 
-	// 못 찾으면 제자리
-	FTransform DismountTransform;
-	const bool HasSpot = FindDeployTransform(DismountTransform);
-
 	Player->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	Player->SetActorRotation(FRotator(0.f, Player->GetActorRotation().Yaw, 0.f));
 
 	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())
 	{
 		Movement->SetDefaultMovementMode();
-	}
-
-	const FRotator Upright(0.f, Player->GetActorRotation().Yaw, 0.f);
-	if (true == HasSpot)
-	{
-		Player->TeleportTo(DismountTransform.GetLocation(), Upright);
-	}
-	else
-	{
-		Player->SetActorRotation(Upright);
 	}
 
 	if (false == ::IsValid(PalController))
@@ -814,6 +834,12 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 	ADC1PalCharacter* Pal = DeployedPal;
 	if (true == InReturnPalToAI && ::IsValid(Pal))
 	{
+		// 카메라 기준 자리로 복귀
+		if (ADC1PalAIController* PalAIController = Cast<ADC1PalAIController>(PalController))
+		{
+			PalAIController->ResetFollowAnchor();
+		}
+
 		PalController->Possess(Pal);
 	}
 	else

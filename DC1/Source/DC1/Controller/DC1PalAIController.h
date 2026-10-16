@@ -74,6 +74,8 @@ public:
 	// 주인 기준 월드 오프셋
 	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
 	bool					UpdateFollowAnchor(float DeltaTime);
+	// 다음 UpdateFollowAnchor 에서 지금 카메라 기준으로 다시 설정
+	void					ResetFollowAnchor();
 
 	// 배회 기준점. 빙의 시점의 위치, 거점 팰은 팰박스 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
