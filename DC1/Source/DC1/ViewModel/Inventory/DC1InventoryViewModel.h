@@ -131,6 +131,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	float GetMaxWeight() const;
 
+	// Item.Money 카테고리 아이템 개수 합계 (칸마다 int 최대까지 쌓이므로 int64)
+	int64 GetMoneyCount() const;
+
 	// 드래그 중인 아이템을 버리는 함수 (플레이어 인벤토리에서 시작한 드래그만)
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Drag")
 	void RequestDropDraggedItem();

@@ -53,16 +53,19 @@ void ADC1ChestActor::AddDefaultItems()
 	TArray<FDC1ItemRow*> AllRows;
 	ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("ChestDefaultItems"), AllRows);
 
-	const int32 AddTypeCount = FMath::Min(DefaultItemTypeCount, AllRows.Num());
-	for (int32 i = 0; i < AddTypeCount; ++i)
+	// 테스트용: 일반 아이템 전부를 1~100개 랜덤 (귀중품은 상자 보관 불가라 제외)
+	for (const FDC1ItemRow* Row : AllRows)
 	{
-		if (nullptr == AllRows[i])
+		if (nullptr == Row)
 		{
 			continue;
 		}
 
+		// AddItem은 MaxStack을 보지 않고 한 칸에 누적하므로 무기처럼 1개짜리는 1개만
+		const int32 MaxCount = FMath::Clamp(Row->MaxStack, 1, 100);
+
 		// 꺼내기 전용 상자(CanStoreItems == false)에는 TryStoreItem이 실패하므로 들어가지 않음
-		ChestInventoryComp->TryStoreItem(AllRows[i]->ItemID, DefaultItemCount);
+		ChestInventoryComp->TryStoreItem(Row->ItemID, FMath::RandRange(1, MaxCount));
 	}
 }
 

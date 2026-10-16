@@ -5,6 +5,9 @@
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
 
 #include "System/DC1AssetManager.h"
 #include "Data/DA/UI/DC1UIData.h"
@@ -23,7 +26,6 @@ UDC1PlayerInventoryComponent::UDC1PlayerInventoryComponent()
 	// 플레이어 기본값
 	TotalCapacity = 42;
 	Columns = 6;
-	MaxWeight = 100.0f;
 }
 
 void UDC1PlayerInventoryComponent::BeginPlay()
@@ -44,6 +46,11 @@ void UDC1PlayerInventoryComponent::BeginPlay()
 
 		RefreshFoodSlotCount();
 	}
+
+	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxWeightAttribute()).AddUObject(this, &ThisClass::HandleMaxWeightChanged);
+	}
 }
 
 void UDC1PlayerInventoryComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -51,6 +58,11 @@ void UDC1PlayerInventoryComponent::EndPlay(const EEndPlayReason::Type EndPlayRea
 	if (UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory())
 	{
 		ValuableInventory->OnInventoryUpdated.RemoveAll(this);
+	}
+
+	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
+	{
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxWeightAttribute()).RemoveAll(this);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -95,34 +107,30 @@ void UDC1PlayerInventoryComponent::InitializeDefaultItems()
 		return;
 	}
 
-	const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(DC1DataTableTags::DataTable_Item);
-	if (false == ::IsValid(ItemDataTable))
+	// 테스트용: 일반/귀중품 테이블의 모든 아이템을 1~100개 랜덤 지급 (귀중품은 AddItem이 귀중품 인벤토리로 넘김)
+	const FGameplayTag TableTags[] = { DC1DataTableTags::DataTable_Item, DC1DataTableTags::DataTable_ValuableItem };
+	for (const FGameplayTag& TableTag : TableTags)
 	{
-		return;
-	}
+		const UDataTable* ItemDataTable = DataTableAsset->GetDataTable(TableTag);
+		if (false == ::IsValid(ItemDataTable))
+		{
+			continue;
+		}
 
+		TArray<FDC1ItemRow*> AllRows;
+		ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("Items"), AllRows);
 
-	TArray<FDC1ItemRow*> AllRows;
-	ItemDataTable->GetAllRows<FDC1ItemRow>(TEXT("Items"), AllRows);
-	if (true == AllRows.IsEmpty())
-	{
-		return;
-	}
+		for (const FDC1ItemRow* Row : AllRows)
+		{
+			if (nullptr == Row)
+			{
+				continue;
+			}
 
-	TMap<int32, TArray<FDC1ItemRow*>> RowsByLevel;
-
-	for (FDC1ItemRow* Row : AllRows)
-	{
-		FName ItemID = Row->ItemID;
-		AddItem(ItemID, 1);
-
-		FText ItemName = Row->ItemName;
-	}
-
-	// 행 이름이 아니라 ItemID 필드 기준 (행 이름은 ItemID와 다를 수 있음)
-	if (AllRows.Num() > 1 && nullptr != AllRows[1])
-	{
-		AddItem(AllRows[1]->ItemID, 1);
+			// AddItem은 MaxStack을 보지 않고 한 칸에 누적하므로 무기처럼 1개짜리는 1개만
+			const int32 MaxCount = FMath::Clamp(Row->MaxStack, 1, 100);
+			AddItem(Row->ItemID, FMath::RandRange(1, MaxCount));
+		}
 	}
 }
 
@@ -140,8 +148,20 @@ void UDC1PlayerInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimePr
 }
 
 
+float UDC1PlayerInventoryComponent::GetMaxWeight() const
+{
+	const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	if (nullptr == ASC)
+	{
+		return 0.0f;
+	}
+
+	return ASC->GetNumericAttribute(UDC1PlayerSet::GetMaxWeightAttribute());
+}
+
 float UDC1PlayerInventoryComponent::GetWeightPercentage() const
 {
+	const float MaxWeight = GetMaxWeight();
 	if (MaxWeight <= 0.0f)
 	{
 		return 1.0f;
@@ -152,7 +172,7 @@ float UDC1PlayerInventoryComponent::GetWeightPercentage() const
 
 float UDC1PlayerInventoryComponent::GetRemainingWeight() const
 {
-	return FMath::Max(0.0f, MaxWeight - CurrentWeight);
+	return FMath::Max(0.0f, GetMaxWeight() - CurrentWeight);
 }
 
 bool UDC1PlayerInventoryComponent::CanAddItem(FName InItemID, int32 InCount) const
@@ -288,9 +308,10 @@ void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()
 				continue;
 			}
 
-			if (const FDC1ItemRow* ItemRow = DC1ItemHelper::FindItemRow(Slot.ItemID))
+			// 먹이 주머니는 귀중품 전용 필드
+			if (const FDC1ValuableItemRow* ValuableRow = DC1ItemHelper::FindValuableItemRow(Slot.ItemID))
 			{
-				MaxPouchSlotCount = FMath::Max(MaxPouchSlotCount, ItemRow->FoodPouchSlotCount);
+				MaxPouchSlotCount = FMath::Max(MaxPouchSlotCount, ValuableRow->FoodPouchSlotCount);
 			}
 		}
 	};
@@ -324,6 +345,18 @@ void UDC1PlayerInventoryComponent::OnRep_UnlockedSlotCounts()
 
 void UDC1PlayerInventoryComponent::OnRep_CurrentWeight()
 {
+	OnInventoryUpdated.Broadcast();
+}
+
+void UDC1PlayerInventoryComponent::HandleMaxWeightChanged(const FOnAttributeChangeData& InData)
+{
+	// CurrentWeight가 한도로 잘려 있으므로 서버는 재계산, 클라는 표시만 갱신 (재계산 결과는 복제로 옴)
+	if (ROLE_Authority == GetOwnerRole())
+	{
+		OnInventoryUpdated_Internal();
+		return;
+	}
+
 	OnInventoryUpdated.Broadcast();
 }
 
@@ -530,7 +563,7 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 	AddSlotsWeight(EquipmentSlots);
 
 	// 최대 무게 초과 방지
-	CurrentWeight = FMath::Min(CurrentWeight, MaxWeight);
+	CurrentWeight = FMath::Min(CurrentWeight, GetMaxWeight());
 }
 
 void UDC1PlayerInventoryComponent::OnRep_EquipmentSlots()

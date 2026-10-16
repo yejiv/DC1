@@ -15,6 +15,7 @@ class UDC1ValuableInventoryComponent;
 class UDC1PalPartyComponent;
 class UDC1EquipComponent;
 class UDC1AppearanceComponent;
+class UDC1PlayerStatComponent;
 
 class UDC1PlayerSaveGame;
 /**
@@ -36,6 +37,7 @@ public:
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
+	UDC1PlayerStatComponent*			GetStatComponent() const { return StatComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
@@ -69,4 +71,7 @@ private:
 	// 폰보다 오래 살아야 함 + 추후 미리보기 액터도 같은 인스턴스를 공유해서 써야 함
 	UPROPERTY(VisibleAnywhere, Category = "Appearance")
 	TObjectPtr<UDC1AppearanceComponent> AppearanceComponent = { nullptr };
+
+	UPROPERTY(VisibleAnywhere, Category = "Stat")
+	TObjectPtr<UDC1PlayerStatComponent> StatComponent = { nullptr };
 };
