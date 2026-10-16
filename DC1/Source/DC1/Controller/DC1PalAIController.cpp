@@ -637,6 +637,12 @@ bool ADC1PalAIController::UpdateFollowAnchor(float DeltaTime)
 	return true;
 }
 
+void ADC1PalAIController::ResetFollowAnchor()
+{
+	FollowAnchor = FVector::ZeroVector;
+	OutOfViewTime = 0.f;
+}
+
 AActor* ADC1PalAIController::GetFollowTarget() const
 {
 	// 포획이 붙으면 팰이 들고 있는 주인 참조로 바꾼다. 지금은 플레이어 하나뿐이다

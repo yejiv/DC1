@@ -402,6 +402,15 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 
 	if (ADC1PalAIController* PalController = Cast<ADC1PalAIController>(GetController()))
 	{
+		// 타러 달려오는 중에 피격
+		if (true == PalController->IsRideApproaching())
+		{
+			if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(this))
+			{
+				Party->StopRideApproach(true);
+			}
+		}
+
 		PalController->ProvokeBy(Causer);
 	}
 

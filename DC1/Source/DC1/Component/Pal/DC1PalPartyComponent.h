@@ -43,9 +43,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void					Server_ToggleDeploy();
 
-	// 탑승/하차
+	// 탑승/하차. 달려오는 중이면 취소
 	UFUNCTION(Server, Reliable)
 	void					Server_ToggleRide();
+
+	// 달려오기 취소. 팰이 맞거나 죽거나 접힐 때. (InResumeBehavior : 트리 활성화 여부)
+	void					StopRideApproach(bool InResumeBehavior);
 
 	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
 	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
@@ -155,6 +158,10 @@ protected:
 	void					BeginRideApproach();
 
 	void					HandleRideApproachFinished(bool InArrived);
+
+	// 플레이어 이동 제한
+	UFUNCTION(Client, Reliable)
+	void					Client_SetRideApproachInputBlocked(bool InBlocked);
 
 	void					Ride();
 
