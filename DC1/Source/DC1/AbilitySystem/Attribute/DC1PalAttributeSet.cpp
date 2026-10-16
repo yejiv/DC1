@@ -75,7 +75,7 @@ void UDC1PalAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity)
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PalAttributeSet, Sanity, OldSanity)
 }
 
-void UDC1PalAttributeSet::OnRep_MaxSanity(const FGameplayAttributeData& OldMaxHealth)
+void UDC1PalAttributeSet::OnRep_MaxSanity(const FGameplayAttributeData& OldMaxSanity)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PalAttributeSet, MaxSanity, OldMaxHealth)
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PalAttributeSet, MaxSanity, OldMaxSanity)
 }

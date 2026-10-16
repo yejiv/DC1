@@ -103,7 +103,7 @@ protected:
 
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();
-	void							ClearPalWokrers();
+	void							ClearPalWorkers();
 
 	void							UpdateInfoState();
 

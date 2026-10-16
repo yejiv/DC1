@@ -30,6 +30,7 @@ class DC1_API UDC1UserWidget : public UUserWidget
 
 protected:
 	virtual void	NativeOnInitialized() override;
+	virtual void	NativeConstruct() override;
 	virtual void	NativeDestruct() override;
 
 public:
@@ -74,4 +75,8 @@ protected:
 	// [ OutroAnim ] Animation 바인딩 (없어도 됨)
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
 	TObjectPtr<UWidgetAnimation> OutroAnim = { nullptr };
+
+private:
+	UPROPERTY()
+	TMap<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo> PendingSnaps;
 };
