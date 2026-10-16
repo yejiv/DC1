@@ -15,6 +15,19 @@ void UDC1UserWidget::NativeOnInitialized()
 	OnAnimationFinishedPlaying().AddUObject(this, &ThisClass::HandleAnimFinished);
 }
 
+void UDC1UserWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	TMap<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo> Snaps = MoveTemp(PendingSnaps);
+	PendingSnaps.Reset();
+
+	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : Snaps)
+	{
+		SnapAnimToEdge(Pair.Key, Pair.Value);
+	}
+}
+
 void UDC1UserWidget::NativeDestruct()
 {
 	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : PlayingAnims)
@@ -103,6 +116,14 @@ void UDC1UserWidget::SnapAnimToEdge(UWidgetAnimation* InAnim, const FDC1AnimPlay
 	{
 		return;
 	}
+
+	if (false == IsConstructed())
+	{
+		PendingSnaps.Add(InAnim, InPlayInfo);
+		return;
+	}
+
+	PendingSnaps.Remove(InAnim);
 
 	StopAnimation(InAnim);
 

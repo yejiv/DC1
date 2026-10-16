@@ -15,9 +15,6 @@
 
 #include "Define/DC1Enums.h"
 
-//DEBUG
-#include "EngineUtils.h"
-
 ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 {
 	// AbilityTag 채우기 - 제작, 채광, 벌목
@@ -60,7 +57,6 @@ void ADC1ProductionBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ThisClass, ProductionProgress);
 	DOREPLIFETIME(ThisClass, StoredCount);
-	DOREPLIFETIME(ThisClass, PalWorkers);
 }
 
 void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
@@ -181,7 +177,7 @@ void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 	{
 		CurrentProductionWork = 0.f;
 		ClearWorkers();
-		ClearPalWokrers();
+		ClearPalWorkers();
 	}
 
 	ProductionProgress = CurrentProductionWork / RequiredWorkPerItem;
@@ -261,7 +257,7 @@ bool ADC1ProductionBuildActor::CanPalWork() const
 
 bool ADC1ProductionBuildActor::HasPalWorkerSlot() const
 {
-	return (true == IsCompleted()) ? PalWorkers.Num() < MaxPalWorekrs : Super::HasPalWorkerSlot();
+	return (true == IsCompleted()) ? PalWorkers.Num() < MaxPalWorkers : Super::HasPalWorkerSlot();
 }
 
 void ADC1ProductionBuildActor::OnRep_ProductionProgress()

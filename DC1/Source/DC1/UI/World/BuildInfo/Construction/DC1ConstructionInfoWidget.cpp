@@ -2,6 +2,55 @@
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
 #include "Components/WidgetSwitcher.h"
+#include "Animation/WidgetAnimation.h"
+
+void UDC1ConstructionInfoWidget::OnAnimFinished(const UWidgetAnimation* InAnim)
+{
+	if (false == ::IsValid(InAnim) || InAnim != PalWorkerExpandAnim)
+	{
+		return;
+	}
+
+	if (false == HasPalWorker)
+	{
+		SetPalWorkerAreaVisible(false);
+	}
+}
+
+void UDC1ConstructionInfoWidget::OnPalWorkerCountChanged(int32 InPrevCount, int32 InNewCount, bool InIsInitial)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Constructed : %d"), IsConstructed());
+
+	FDC1AnimPlayInfo Forward;
+	FDC1AnimPlayInfo Reverse;
+	Reverse.PlayMode = EUMGSequencePlayMode::Reverse;
+
+	HasPalWorker = InNewCount > 0;
+	if (true == HasPalWorker)
+	{
+		SetPalWorkerAreaVisible(true);
+		if (true == InIsInitial)
+		{
+			SnapAnimToEdge(PalWorkerExpandAnim, Forward);
+		}
+		else if (InPrevCount <= 0)
+		{
+			PlayAnim(PalWorkerExpandAnim, Forward);
+		}
+	}
+	else
+	{
+		if (true == InIsInitial)
+		{
+			SnapAnimToEdge(PalWorkerExpandAnim, Reverse);
+			SetPalWorkerAreaVisible(false);
+		}
+		else
+		{
+			PlayAnim(PalWorkerExpandAnim, Reverse);
+		}
+	}
+}
 
 void UDC1ConstructionInfoWidget::Subscribe(ADC1InteractBuildActor* InBuildActor)
 {
@@ -76,5 +125,9 @@ void UDC1ConstructionInfoWidget::SetActivePanel(EDC1ConstructionInfoPanel InPane
 	}
 
 	WorkerStateSwitcher->SetActiveWidgetIndex(*Index);
+}
 
+void UDC1ConstructionInfoWidget::SetPalWorkerAreaVisible(bool InIsVisible)
+{
+	PalWorkerArea->SetVisibility(InIsVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 }

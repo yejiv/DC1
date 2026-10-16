@@ -104,10 +104,10 @@ protected:
 	TObjectPtr<USphereComponent>	InfoRangeSphere = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
-	TSubclassOf<UDC1BuildInfoWidget>		ProductionInfoWidgetClass = { nullptr };
+	TSubclassOf<UDC1BuildInfoWidget>	ProductionInfoWidgetClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
-	int32							MaxPalWorekrs = { 1 };
+	int32							MaxPalWorkers = { 1 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (Categories = "Pal.Work"))
 	FGameplayTag					RequiredWorkTag;
