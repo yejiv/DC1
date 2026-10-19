@@ -84,20 +84,6 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Passive_Conceited, "Pal.Passive.Conceited");
 #pragma endregion
 
-#pragma region Work
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Kindling, "Pal.Work.Kindling");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Watering, "Pal.Work.Watering");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Planting, "Pal.Work.Planting");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Electricity, "Pal.Work.Electricity");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Handiwork, "Pal.Work.Handiwork");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Gathering, "Pal.Work.Gathering");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Lumbering, "Pal.Work.Lumbering");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Mining, "Pal.Work.Mining");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Medicine, "Pal.Work.Medicine");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Cooling, "Pal.Work.Cooling");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Transporting, "Pal.Work.Transporting");
-	UE_DEFINE_GAMEPLAY_TAG(Pal_Work_Farming, "Pal.Work.Farming");
-#pragma endregion
 
 #pragma region Ability
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Idle, "Ability.Pal.Idle");
@@ -105,6 +91,8 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Tossin, "Ability.Pal.Tossin");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_FarSkill, "Ability.Pal.FarSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Encount, "Ability.Pal.Encount");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Work, "Ability.Pal.Work");
 #pragma endregion
 
 #pragma region State
@@ -123,6 +111,20 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_LookAround, "Anim.Pal.Idle.LookAround");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_Eat, "Anim.Pal.Idle.Eat");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_Rest, "Anim.Pal.Idle.Rest");
+
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Building, "Anim.Pal.Work.Building");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Kindling, "Anim.Pal.Work.Kindling");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Watering, "Anim.Pal.Work.Watering");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Planting, "Anim.Pal.Work.Planting");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Electricity, "Anim.Pal.Work.Electricity");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Handiwork, "Anim.Pal.Work.Handiwork");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Gathering, "Anim.Pal.Work.Gathering");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Lumbering, "Anim.Pal.Work.Lumbering");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Mining, "Anim.Pal.Work.Mining");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Medicine, "Anim.Pal.Work.Medicine");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Cooling, "Anim.Pal.Work.Cooling");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Transporting, "Anim.Pal.Work.Transporting");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Work_Farming, "Anim.Pal.Work.Farming");
 #pragma endregion
 
 #pragma region Event

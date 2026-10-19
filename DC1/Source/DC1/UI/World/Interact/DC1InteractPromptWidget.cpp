@@ -4,42 +4,33 @@
 #include "UI/World/Interact/DC1InteractPromptWidget.h"
 
 
-#include "Components/VerticalBox.h"
-#include "Components/VerticalBoxSlot.h"
+#include "Components/DynamicEntryBox.h"
 #include "UI/World/Interact/DC1InteractPromptRowWidget.h"
 
 void UDC1InteractPromptWidget::SetOptions(const TArray<FDC1InteractOption>& InOptions)
 {
-	if (false == ::IsValid(PromptVerticalBox))
+	if (false == ::IsValid(PromptEntryBox))
 	{
 		return;
 	}
 
-	PromptVerticalBox->ClearChildren();
+	// 풀 반납 - 다음 CreateEntry에서 재사용 ( 행 상태는 아래 SetOption / SetFillRatio로 전부 덮어씀 )
+	PromptEntryBox->Reset();
 	RowWidgetByKey.Empty();
-
-	bool HasChild = false;
 
 	for (const FDC1InteractOption& Option : InOptions)
 	{
-		UDC1InteractPromptRowWidget* RowWidget = CreateWidget<UDC1InteractPromptRowWidget>(this, RowWidgetClass);
+		UDC1InteractPromptRowWidget* RowWidget = PromptEntryBox->CreateEntry<UDC1InteractPromptRowWidget>();
 		if (false == ::IsValid(RowWidget))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("UDC1InteractPromptWidget :: Failed Create Row - Check Entry Widget Class"));
 			continue;
 		}
 
 		RowWidget->SetOption(Option);
 		RowWidget->SetFillRatio(0.f);
-		
-		int32 RowIndex = PromptVerticalBox->GetChildrenCount();
-		UVerticalBoxSlot* RowSlot = PromptVerticalBox->AddChildToVerticalBox(RowWidget);
-		if (true == ::IsValid(RowSlot) && RowIndex > 0)
-		{
-			RowSlot->SetPadding(FMargin(0.f, RowSpacing, 0.f, 0.f));
-		}
 
 		RowWidgetByKey.Add(Option.Key, RowWidget);
-
 	}
 }
 

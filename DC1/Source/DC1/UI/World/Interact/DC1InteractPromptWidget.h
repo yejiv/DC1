@@ -7,7 +7,7 @@
 #include "Interface/DC1InteractableInterface.h"
 #include "DC1InteractPromptWidget.generated.h"
 
-class UVerticalBox;
+class UDynamicEntryBox;
 class UDC1InteractPromptRowWidget;
 
 UCLASS()
@@ -21,14 +21,9 @@ public:
 	void		SetHoldRatio(EDC1InteractKey InKey, float InRatio);
 
 private:
+	// 행 클래스 = Entry Widget Class, 행 간격 = Entry Spacing Y ( WBP 디테일 )
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UVerticalBox>				PromptVerticalBox = { nullptr };
-
-	UPROPERTY(EditAnywhere, Category = "RowWidget")
-	TSubclassOf<UDC1InteractPromptRowWidget> RowWidgetClass = { nullptr };
-
-	UPROPERTY(EditAnywhere, Category = "RowWidget")
-	float RowSpacing = { 10.f };
+	TObjectPtr<UDynamicEntryBox>			PromptEntryBox = { nullptr };
 
 	UPROPERTY()
 	TMap<EDC1InteractKey, TObjectPtr<UDC1InteractPromptRowWidget>> RowWidgetByKey;

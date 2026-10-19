@@ -107,7 +107,7 @@ public:
 	float							WorkSpeedStat = { 10.f };
 
 	// 작업 적성. 없는 작업은 넣지 않는다
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (Categories = "Pal.Work"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (Categories = "Work"))
 	TMap<FGameplayTag, int32>		WorkSuitability;
 #pragma endregion
 
