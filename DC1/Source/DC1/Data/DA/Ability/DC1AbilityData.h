@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "GameplayAbilitySpecHandle.h"
 #include "DC1AbilityData.generated.h"
 
 class UDC1AbilitySystemComponent;
@@ -40,6 +41,14 @@ public:
 	void GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC,
 									FDC1AbilitySetGrantedHandles& OutHandles,
 									UObject* SourceObject = nullptr) const;
+
+	// 팰 액티브 스킬마다의 이름 -- 쿨타임때문에 필요
+	FGameplayAbilitySpecHandle GiveVariant(UDC1AbilitySystemComponent* ASC,
+									const FGameplayTag& InActivationTag,
+									const FGameplayTag& InVariantTag,
+									UObject* SourceObject = nullptr) const;
+
+	const FDC1AbilityEntry* FindEntryByTag(const FGameplayTag& InActivationTag) const;
 
 	TSubclassOf<UGameplayEffect> FindEffectByTag(const FGameplayTag& EffectTag) const;
 

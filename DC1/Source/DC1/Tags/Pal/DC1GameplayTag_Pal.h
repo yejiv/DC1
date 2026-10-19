@@ -146,5 +146,15 @@ namespace DC1PalTags
 	// DA_InputData 의 IA 키
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Jump);
+
+	// 탑승 중 스킬. PalData.SkillTags 의 0, 1, 2 번째
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill1);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill2);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill3);
+#pragma endregion
+
+#pragma region Cooldown
+	// 스킬 쿨타임 태그
+	FGameplayTag						FindSkillCooldownTag(const FGameplayTag& InSkillTag);
 #pragma endregion
 }

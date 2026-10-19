@@ -134,5 +134,41 @@ namespace DC1PalTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Move, "Input.Ride.Move");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Jump, "Input.Ride.Jump");
+
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Skill1, "Input.Ride.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Skill2, "Input.Ride.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Skill3, "Input.Ride.Skill3");
+#pragma endregion
+
+#pragma region Cooldown
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_RecklessCharge, "Cooldown.Pal.Skill.RecklessCharge");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_FluffyTackle, "Cooldown.Pal.Skill.FluffyTackle");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_RolyPoly, "Cooldown.Pal.Skill.RolyPoly");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_BullRush, "Cooldown.Pal.Skill.BullRush");
+
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_AirCannon, "Cooldown.Pal.Skill.AirCannon");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_PowerShot, "Cooldown.Pal.Skill.PowerShot");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_SeedMachineGun, "Cooldown.Pal.Skill.SeedMachineGun");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_WindCutter, "Cooldown.Pal.Skill.WindCutter");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_BogBlast, "Cooldown.Pal.Skill.BogBlast");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_StoneBlast, "Cooldown.Pal.Skill.StoneBlast");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_SparkBlast, "Cooldown.Pal.Skill.SparkBlast");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_ElectricBall, "Cooldown.Pal.Skill.ElectricBall");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_AquaGun, "Cooldown.Pal.Skill.AquaGun");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_IgnisBlast, "Cooldown.Pal.Skill.IgnisBlast");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_IceMissile, "Cooldown.Pal.Skill.IceMissile");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DragonCannon, "Cooldown.Pal.Skill.DragonCannon");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DarkBall, "Cooldown.Pal.Skill.DarkBall");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DarkShot, "Cooldown.Pal.Skill.DarkShot");
+
+	FGameplayTag FindSkillCooldownTag(const FGameplayTag& InSkillTag)
+	{
+		if (false == InSkillTag.IsValid())
+		{
+			return FGameplayTag::EmptyTag;
+		}
+
+		return FGameplayTag::RequestGameplayTag(FName(*(TEXT("Cooldown.") + InSkillTag.ToString())), false);
+	}
 #pragma endregion
 }
