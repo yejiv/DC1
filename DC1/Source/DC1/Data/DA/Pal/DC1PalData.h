@@ -186,4 +186,27 @@ public:
 		const TSubclassOf<ADC1PalProjectile>* Found = Projectiles.Find(SkillTag);
 		return (nullptr != Found) ? *Found : nullptr;
 	}
+
+	int32 GetWorkSuitabilityLevel(const FGameplayTag& InWorkType) const
+	{
+		if (false == InWorkType.IsValid())
+		{
+			return 0;
+		}
+
+		for (const TPair<FGameplayTag, int32>& Pair : WorkSuitability)
+		{
+			if (true == InWorkType.MatchesTag(Pair.Key))
+			{
+				return Pair.Value;
+			}
+		}
+
+		return 0;
+	}
+
+	bool CanDoWork(const FGameplayTag& InWorkType) const
+	{
+		return GetWorkSuitabilityLevel(InWorkType) > 0;
+	}
 };

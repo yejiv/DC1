@@ -67,7 +67,7 @@ bool ADC1InteractBuildActor::IsPalWorkerAssigned(const ADC1PalCharacter* InPal) 
 
 FGameplayTag ADC1InteractBuildActor::GetWorkTypeTag() const
 {
-	return IsUnderConstruction() ? DC1WorkTags::Work_Building : FGameplayTag::EmptyTag;
+	return IsUnderConstruction() ? DC1WorkTags::Work_Handiwork_Building : FGameplayTag::EmptyTag;
 }
 
 void ADC1InteractBuildActor::Tick(float DeltaTime)
@@ -526,7 +526,19 @@ float ADC1InteractBuildActor::ComputeTotalWorkSpeed()
 			continue;
 		}
 
-		TotalWorkSpeed += ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+		float WorkSpeed = ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+		
+		const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Worker);
+		if (true == ::IsValid(Pal))
+		{
+			const UDC1PalData* PalData = Pal->GetPalData();
+			if (true == ::IsValid(PalData))
+			{
+				WorkSpeed *= PalData->GetWorkSuitabilityLevel(GetWorkTypeTag());
+			}
+		}
+
+		TotalWorkSpeed += WorkSpeed;
 	}
 
 	return TotalWorkSpeed;
@@ -616,7 +628,7 @@ bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
 	}
 
 	const UDC1PalData* PalData = InPal->GetPalData();
-	if (false == ::IsValid(PalData) || false == PalData->WorkSuitability.Contains(RequiredTag))
+	if (false == ::IsValid(PalData) || false == PalData->CanDoWork(RequiredTag))
 	{
 		return false;
 	}
