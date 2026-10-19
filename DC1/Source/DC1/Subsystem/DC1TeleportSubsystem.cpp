@@ -22,7 +22,7 @@ void UDC1TeleportSubsystem::UnregisterPoint(AActor* InPoint)
 
 void UDC1TeleportSubsystem::GetUsablePoints(const APlayerState* InPlayerState, TArray<AActor*>& OutPoints) const
 {
-	OutPoints.Reset(Points.Num());
+	OutPoints.Reserve(Points.Num());
 
 	for (const auto& Actor : Points)
 	{
@@ -33,6 +33,23 @@ void UDC1TeleportSubsystem::GetUsablePoints(const APlayerState* InPlayerState, T
 		if (true == TeleportActor->CanUse(InPlayerState))
 			OutPoints.Add(Actor.Get());
 	}
+}
+
+int32 UDC1TeleportSubsystem::GetTeleportActorNum()
+{
+	int32 TeleportActorCount = {};
+
+	for (const auto& Actor : Points)
+	{
+		const IDC1TeleportPointInterface* Interface = Cast<const IDC1TeleportPointInterface>(Actor.Get());
+		if (nullptr == Interface)
+			continue;
+
+		if (EDC1TeleportPointType::Teleport == Interface->GetPointType())
+			++TeleportActorCount;
+	}
+
+	return TeleportActorCount;
 }
 
 ADC1TeleportActor* UDC1TeleportSubsystem::FindTeleportActorById(FName InPointId) const
@@ -50,4 +67,9 @@ ADC1TeleportActor* UDC1TeleportSubsystem::FindTeleportActorById(FName InPointId)
 	}
 
 	return nullptr;
+}
+
+void UDC1TeleportSubsystem::NotifyPointsChanged()
+{
+	OnPointsChanged.Broadcast();
 }

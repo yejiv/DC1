@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 
 #include "Define/DC1Macro.h"
+#include "Subsystem/DC1TeleportSubsystem.h"
 
 UDC1TeleportComponent::UDC1TeleportComponent()
 {
@@ -52,14 +53,21 @@ void UDC1TeleportComponent::Server_UnlockPoint_Implementation(AActor* InPoint)
 
 	// PlayerState는 갱신 주기가 낮아서 바로 보낸다
 	GetOwner()->ForceNetUpdate();
+
+	OnRep_UnlockedPointIds();
 }
 
 void UDC1TeleportComponent::Server_RequestTeleport_Implementation(AActor* InSource, AActor* InDest)
 {
+
 }
 
 void UDC1TeleportComponent::OnRep_UnlockedPointIds()
 {
+	if (UDC1TeleportSubsystem* TeleportSubsystem = GetWorld()->GetSubsystem<UDC1TeleportSubsystem>())
+	{
+		TeleportSubsystem->NotifyPointsChanged();
+	}
 }
 
 bool UDC1TeleportComponent::IsInnerInteractRange(AActor* InPoint) const

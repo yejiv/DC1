@@ -34,6 +34,11 @@ namespace DC1UITags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_PalBox);
 #pragma endregion
 
+#pragma region MAIN_TELEPORT
+	// 텔레포트 지점 목록 화면
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Teleport);
+#pragma endregion
+
 #pragma region CHEST_LOOT
 	// 상자 개방 시 플레이어 인벤토리 + 상자 인벤토리를 함께 보여주는 화면
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Chest_Loot);

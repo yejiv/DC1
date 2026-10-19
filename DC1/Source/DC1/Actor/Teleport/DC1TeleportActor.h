@@ -44,6 +44,9 @@ public:
 	virtual bool							CanUse(const APlayerState* InPlayerState)	const override;
 
 private:
+	void	HandlePointsChanged();
+
+private:
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	TObjectPtr<UStaticMeshComponent>	Mesh = { nullptr };
 
