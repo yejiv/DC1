@@ -14,13 +14,14 @@
 #include "Components/SphereComponent.h"
 
 #include "Define/DC1Enums.h"
+#include "Tags/Build/DC1GameplayTag_Build.h"
 
 ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 {
-	// AbilityTag 채우기 - 제작, 채광, 벌목
-	CompletedOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Production", "생산"), EDC1InteractInputType::HoldAbility, FGameplayTag::EmptyTag);
+	// 작업 종류( 벌목 / 채광 / 제작 )는 WorkTypeTag - 옵션은 Interact.Work 하나
+	CompletedOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Production", "생산"), EDC1InteractInputType::HoldAbility, DC1InteractTags::Interact_Work);
 
-	// AbilityTag 비워두기
+	// InteractionTag 비워두기 ( Press )
 	CollectOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Collect", "획득"), EDC1InteractInputType::Press, FGameplayTag::EmptyTag);
 
 	InfoRangeSphere = CreateDefaultSubobject<USphereComponent>("InfoRangeSphere");
@@ -32,9 +33,9 @@ ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 	
 }
 
-FGameplayTag ADC1ProductionBuildActor::GetRequiredWorkTag() const
+FGameplayTag ADC1ProductionBuildActor::GetWorkTypeTag() const
 {
-	return (true == IsCompleted()) ? RequiredWorkTag : Super::GetRequiredWorkTag();
+	return (true == IsCompleted()) ? WorkTypeTag : Super::GetWorkTypeTag();
 }
 
 void ADC1ProductionBuildActor::BeginPlay()

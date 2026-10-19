@@ -39,6 +39,9 @@ public:
 	UDC1ScreenOffsetWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
 	UDC1EquipComponent* GetEquipComponent() const;
 
+	// 상호작용 컴포넌트의 현재 대상 ( 로컬 - Work GA가 IsLocallyControlled에서 호출 )
+	virtual ADC1InteractBuildActor* GetCurrentWorkTarget() const override;
+
 public:
 	UFUNCTION()
 	void OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

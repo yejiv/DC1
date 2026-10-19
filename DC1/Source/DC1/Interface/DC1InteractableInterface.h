@@ -44,8 +44,9 @@ struct FDC1InteractOption
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EDC1InteractInputType	InputType = { EDC1InteractInputType::Press };
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "InputType == EDC1InteractInputType::HoldAbility"))
-	FGameplayTag			AbilityTag;
+	// HoldAbility 활동 종류 ex) Interact.Work - 실행할 Ability는 행위자가 정함 ( UDC1InteractComponent::InteractionToAbility )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Categories = "Interact", EditCondition = "InputType == EDC1InteractInputType::HoldAbility"))
+	FGameplayTag			InteractionTag;
 };
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnInteractOptionsChanged);

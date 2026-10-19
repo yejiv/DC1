@@ -107,7 +107,7 @@ public:
 	float							WorkSpeedStat = { 10.f };
 
 	// 작업 적성. 없는 작업은 넣지 않는다
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (Categories = "Pal.Work"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Work", meta = (Categories = "Work"))
 	TMap<FGameplayTag, int32>		WorkSuitability;
 #pragma endregion
 
@@ -185,5 +185,28 @@ public:
 	{
 		const TSubclassOf<ADC1PalProjectile>* Found = Projectiles.Find(SkillTag);
 		return (nullptr != Found) ? *Found : nullptr;
+	}
+
+	int32 GetWorkSuitabilityLevel(const FGameplayTag& InWorkType) const
+	{
+		if (false == InWorkType.IsValid())
+		{
+			return 0;
+		}
+
+		for (const TPair<FGameplayTag, int32>& Pair : WorkSuitability)
+		{
+			if (true == InWorkType.MatchesTag(Pair.Key))
+			{
+				return Pair.Value;
+			}
+		}
+
+		return 0;
+	}
+
+	bool CanDoWork(const FGameplayTag& InWorkType) const
+	{
+		return GetWorkSuitabilityLevel(InWorkType) > 0;
 	}
 };

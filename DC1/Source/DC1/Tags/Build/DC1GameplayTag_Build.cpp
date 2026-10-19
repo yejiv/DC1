@@ -63,3 +63,8 @@ namespace DC1BuildTags
 	UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere, "Crafting.Sphere");
 #pragma endregion
 }
+
+namespace DC1InteractTags
+{
+	UE_DEFINE_GAMEPLAY_TAG(Interact_Work, "Interact.Work");
+}

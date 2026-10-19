@@ -55,7 +55,7 @@ public:
 	const TArray<TWeakObjectPtr<ADC1PalCharacter>>& GetPalWorkers() const { return PalWorkers; }
 	bool							IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const;
 
-	virtual FGameplayTag			GetRequiredWorkTag() const;
+	virtual FGameplayTag			GetWorkTypeTag() const;
 
 public:
 	virtual void					Tick(float DeltaTime) override;

@@ -9,6 +9,13 @@
 
 #include "DC1GA_Base_Work.generated.h"
 
+/*
+ * 작업 GA 공통 흐름
+ *  로컬( 대상을 아는 쪽 ) : FindWorkTarget → OnLocalWorkTargetFound → BeginWork
+ *  로컬이 아닌 서버       : WaitWorkTarget ( 클라가 보낸 대상 수신 ) → BeginWork
+ *  BeginWork              : WorkTarget 확정 → 서버면 StartWork → OnWorkStarted ( 양쪽 )
+ *  EndAbility             : 서버면 StopWork
+ */
 UCLASS(Abstract)
 class DC1_API UDC1GA_Base_Work : public UDC1GameplayAbility
 {
@@ -22,17 +29,31 @@ protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
+	// 대상 확정 - 서버면 StartWork( 실패 시 End ), 이어서 OnWorkStarted
+	void					BeginWork(ADC1InteractBuildActor* InWorkTarget);
+
+	// 로컬에서 대상을 찾은 직후 - 기본은 바로 BeginWork ( 펠 = 서버 로컬 )
+	virtual void			OnLocalWorkTargetFound(ADC1InteractBuildActor* InWorkTarget) { BeginWork(InWorkTarget); }
+
+	// 로컬이 아닌 인스턴스( 원격 클라의 서버 GA ) - 대상 수신 대기. 기본은 대상을 알 방법이 없으므로 End
+	virtual void			WaitWorkTarget();
+
+private:
+	// Work 대상 - 아바타( ADC1Character )의 GetCurrentWorkTarget
+	ADC1InteractBuildActor*	FindWorkTarget() const;
+
 // PURE_VIRTUAL
 protected:
-	// Work 대상 탐색 기능 구현
-	virtual ADC1InteractBuildActor* FindWorkTarget() const	PURE_VIRTUAL(UDC1GA_Base_Work::FindWorkTarget, return nullptr;);
+	// 서버 - 검증 후 ADC1InteractBuildActor->AddWorker. false면 End
+	virtual bool			StartWork(ADC1InteractBuildActor* InWorkTarget) PURE_VIRTUAL(UDC1GA_Base_Work::StartWork, return false;);
 
-	// ADC1InteractBuildActor->AddWorker를 서버 측에서 호출하는 기능 구현
-	virtual void			StartWork(ADC1InteractBuildActor* InWorkTarget) PURE_VIRTUAL(UDC1GA_Base_Work::StartWork, );
-
-	// ADC1InteractBuildActor->RemoveWorker를 서버 측에서 호출하는 기능 구현
+	// 서버 - ADC1InteractBuildActor->RemoveWorker
 	virtual void			StopWork()	PURE_VIRTUAL(UDC1GA_Base_Work::StopWork, );
 
-	// Work 중 액션 - ex) PlayMontage
+	// 대상 확정 후 액션 ( 양쪽 ) - ex) 도구 / PlayMontage
 	virtual void			OnWorkStarted() {};
+
+protected:
+	// BeginWork에서 확정, EndAbility에서 비움
+	TWeakObjectPtr<ADC1InteractBuildActor>	WorkTarget = { nullptr };
 };

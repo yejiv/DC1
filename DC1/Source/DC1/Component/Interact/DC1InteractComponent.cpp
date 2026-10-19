@@ -12,8 +12,11 @@
 #include "Interface/DC1InteractableInterface.h"
 
 #include "Character/Player/DC1PlayerController.h"
+#include "Component/DC1AbilitySystemComponent.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Build/DC1GameplayTag_Build.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
@@ -36,6 +39,9 @@ UDC1InteractComponent::UDC1InteractComponent()
 	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 
 	SetIsReplicatedByDefault(true);
+
+	// 작업 종류( 건설 / 벌목 / 채광 ... )는 작업 GA가 대상에서 읽음 - 옵션은 Interact.Work 하나
+	InteractionToAbility.Add(DC1InteractTags::Interact_Work, DC1PlayerTags::Ability_Player_Work);
 }
 
 IDC1InteractableInterface* UDC1InteractComponent::GetCurrentInteractable() const
@@ -135,16 +141,6 @@ void UDC1InteractComponent::RequestCancelBuild(ADC1InteractBuildActor* InBuildTa
 	Server_CancelBuild(InBuildTarget);
 }
 
-void UDC1InteractComponent::RequestStartWork(ADC1InteractBuildActor* InBuildTarget)
-{
-	Server_StartWork(InBuildTarget);
-}
-
-void UDC1InteractComponent::RequestStopWork()
-{
-	Server_StopWork();
-}
-
 void UDC1InteractComponent::RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget)
 {
 	Server_CollectProduct(InProductionTarget);
@@ -174,42 +170,6 @@ void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildA
 	{
 		BuildDestroySubsystem->RequestDestroy(InBuildTarget);
 	}
-}
-
-void UDC1InteractComponent::Server_StartWork_Implementation(ADC1InteractBuildActor* InBuildTarget)
-{
-	Server_StopWork_Implementation();
-
-	ADC1Player* Player = GetPlayer();
-	if (false == ::IsValid(Player))
-	{
-		return;
-	}
-
-	if (false == ::IsValid(InBuildTarget) || false == IsInInteractRange(Player, InBuildTarget))
-	{
-		return;
-	}
-
-	InBuildTarget->AddWorker(Player);
-	ServerWorkTarget = InBuildTarget;
-}
-
-void UDC1InteractComponent::Server_StopWork_Implementation()
-{
-	ADC1InteractBuildActor* BuildTarget = ServerWorkTarget.Get();
-	if (true == ::IsValid(BuildTarget))
-	{
-		ADC1Player* Player = GetPlayer();
-		if (false == ::IsValid(Player))
-		{
-			return;
-		}
-
-		BuildTarget->RemoveWorker(Player);
-	}
-
-	ServerWorkTarget = nullptr;
 }
 
 void UDC1InteractComponent::Server_CollectProduct_Implementation(ADC1ProductionBuildActor* InProductionTarget)
@@ -440,8 +400,10 @@ void UDC1InteractComponent::OnInteractKeyPressed(const FInputActionValue& Value,
 
 	case EDC1InteractInputType::HoldAbility :
 	{
-		PC->PressAbilityInput(Option->AbilityTag);
-		HeldAbilityTags.Add(InKey, Option->AbilityTag);
+		// 매핑 존재는 ShowPrompt에서 확인 - Release 짝을 맞추기 위해 변환된 태그를 저장
+		const FGameplayTag AbilityTag = InteractionToAbility.FindRef(Option->InteractionTag);
+		PC->PressAbilityInput(AbilityTag);
+		HeldAbilityTags.Add(InKey, AbilityTag);
 		
 		UDC1InteractPromptWidget* Prompt = PromptWidget.Get();
 		if (true == ::IsValid(Prompt))
@@ -572,12 +534,25 @@ void UDC1InteractComponent::RefreshOptions()
 	TArray<FDC1InteractOption> RawOptions;
 	Interactable->GetInteractOptions(RawOptions);
 
+	const ADC1Player* Player = GetPlayer();
+	UDC1AbilitySystemComponent* ASC = (true == ::IsValid(Player)) ? Cast<UDC1AbilitySystemComponent>(Player->GetAbilitySystemComponent()) : nullptr;
+
 	for (const FDC1InteractOption& Raw : RawOptions)
 	{
-		if (Raw.InputType == EDC1InteractInputType::HoldAbility && false == Raw.AbilityTag.IsValid())
+		if (Raw.InputType == EDC1InteractInputType::HoldAbility)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UDC1InteractComponent :: Not Valid AbilityTag from Key : %s"), *UEnum::GetValueAsString(Raw.Key));
-			continue;
+			const FGameplayTag* AbilityTag = InteractionToAbility.Find(Raw.InteractionTag);
+			if (nullptr == AbilityTag)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("UDC1InteractComponent :: No Ability Mapped - Key : %s, InteractionTag : %s"), *UEnum::GetValueAsString(Raw.Key), *Raw.InteractionTag.ToString());
+				continue;
+			}
+
+			// 플레이어가 할 수 없는 작업( 발전 · 제약 … ) 등 지금 실행 불가 - 경고 없이 숨김 ( 정보 패널은 건축물 상태라 그대로 )
+			if (nullptr == ASC || false == ASC->CanActivateAbilityByTag(*AbilityTag))
+			{
+				continue;
+			}
 		}
 
 		if (true == CurrentOptions.ContainsByPredicate([&Raw](const FDC1InteractOption& Option) {

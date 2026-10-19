@@ -16,8 +16,9 @@ namespace DC1PlayerTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Sprint);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_ClimbAtTop);
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_BuildWork);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_ProductionWork);
+	// 작업 GA 하나 - 작업 종류는 대상에서 ( UDC1GA_Player_Work::WorkSets )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Work);
+
 #pragma endregion
 
 #pragma region Event

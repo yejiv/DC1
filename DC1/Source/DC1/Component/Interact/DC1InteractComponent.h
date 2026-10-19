@@ -38,20 +38,15 @@ public:
 
 public:
 	void						RequestCancelBuild(ADC1InteractBuildActor* InBuildTarget);
-	void						RequestStartWork(ADC1InteractBuildActor* InBuildTarget);
-	void						RequestStopWork();
 	void						RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget);
+
+	// 서버 검증용 - 작업 GA도 사용 ( 클라가 보낸 대상 거리 확인 )
+	bool						IsInInteractRange(const ADC1Player* Player, const AActor* InTarget) const;
 
 private:
 	UFUNCTION(Server, Reliable)
 	void						Server_CancelBuild(ADC1InteractBuildActor* InBuildTarget);
 
-	UFUNCTION(Server, Reliable)
-	void						Server_StartWork(ADC1InteractBuildActor* InBuildTarget);
-	
-	UFUNCTION(Server, Reliable)
-	void						Server_StopWork();
-	
 	UFUNCTION(Server, Reliable)
 	void						Server_CollectProduct(ADC1ProductionBuildActor* InProductionTarget);
 
@@ -63,9 +58,6 @@ private:
 
 	AActor*						FindBestTarget() const;
 	void						SetCurrentTarget(AActor* InNewTarget);
-
-
-	bool						IsInInteractRange(const ADC1Player* Player, const AActor* InTarget) const;
 
 	// IMC / 키
 	void						SetUpInteractInput();
@@ -98,12 +90,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interact|Widget")
 	FVector2D								InteractPromptScreenOffset = { FVector2D::ZeroVector };
 
+	// 옵션 활동 태그( Interact.* ) → 플레이어 Ability 태그. 매핑 없는 HoldAbility 옵션은 표시하지 않음
+	UPROPERTY(EditDefaultsOnly, Category = "Interact|Ability")
+	TMap<FGameplayTag, FGameplayTag>		InteractionToAbility;
+
 private:
 	TWeakObjectPtr<AActor>				CurrentTarget = { nullptr };
 
 	bool								IsTargetLocked = { false };
-
-	TWeakObjectPtr<ADC1InteractBuildActor>	ServerWorkTarget = { nullptr };
 
 	TArray<FDC1InteractOption>			CurrentOptions;
 

@@ -141,7 +141,7 @@ struct FDC1PalWorkDef
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Categories = "Pal.Work"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Categories = "Work"))
 	FGameplayTag				WorkTag;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

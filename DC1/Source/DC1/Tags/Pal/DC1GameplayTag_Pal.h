@@ -92,20 +92,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Passive_Conceited);		// 자만심
 #pragma endregion
 
-#pragma region Work
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Kindling);			// 불 피우기
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Watering);			// 관개
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Planting);			// 파종
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Electricity);		// 발전
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Handiwork);			// 수작업
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Gathering);			// 채집
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Lumbering);			// 벌목
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Mining);			// 채굴
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Medicine);			// 제약
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Cooling);			// 냉각
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Transporting);		// 운반
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Work_Farming);			// 목장
-#pragma endregion
+	// 작업 종류( 구 Pal.Work.* )는 Tags/Work/DC1GameplayTag_Work ( 펠 · 플레이어 공용 )
 
 #pragma region Ability
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Idle);
@@ -113,6 +100,8 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Tossin);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_FarSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Encount);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Work);
+
 #pragma endregion
 
 #pragma region State
@@ -133,6 +122,21 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_LookAround);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_Eat);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_Rest);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Building);		// 건설
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Kindling);		// 불피우기
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Watering);		// 관개
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Planting);		// 파종
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Electricity);	// 발전
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Handiwork);	// 제작
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Gathering);	// 채집
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Lumbering);	// 벌목
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Mining);		// 채굴
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Medicine);		// 제약
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Cooling);		// 냉각
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Transporting);	// 운반
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Work_Farming);		// 목장
+	
 #pragma endregion
 
 #pragma region Event
