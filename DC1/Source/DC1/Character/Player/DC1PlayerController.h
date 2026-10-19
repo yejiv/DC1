@@ -84,6 +84,9 @@ private:
 	void OnPalSlotPrevPressed(const FInputActionValue& Value);
 	void OnPalSlotNextPressed(const FInputActionValue& Value);
 
+	// 팰 탑승/하차 토글
+	void OnRidePressed(const FInputActionValue& Value);
+
 	// Climb
 	void OnClimbReleasePressed(const FInputActionValue& Value);
 

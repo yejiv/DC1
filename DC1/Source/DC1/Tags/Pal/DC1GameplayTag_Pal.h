@@ -142,4 +142,13 @@ namespace DC1PalTags
 #pragma region Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Attack_Hit);
 #pragma endregion
+
+#pragma region Ride
+	// 탑승 중에만 켜는 IMC. DA_InputData 의 IMC 키
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Ride);
+
+	// DA_InputData 의 IA 키
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Move);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Jump);
+#pragma endregion
 }
