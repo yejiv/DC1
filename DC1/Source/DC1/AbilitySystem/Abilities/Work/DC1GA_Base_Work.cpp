@@ -3,6 +3,7 @@
 
 #include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
 #include "Tags/State/DC1GameplayTag_State.h"
+#include "Character/DC1Character.h"
 
 UDC1GA_Base_Work::UDC1GA_Base_Work(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -30,20 +31,54 @@ void UDC1GA_Base_Work::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 			return;
 		}
 
-		StartWork(WorkActor);
+		OnLocalWorkTargetFound(WorkActor);
 	}
-
-	OnWorkStarted();
+	else
+	{
+		WaitWorkTarget();
+	}
 }
 
 void UDC1GA_Base_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	const FGameplayAbilityActorInfo* Info = (nullptr == ActorInfo) ? GetCurrentActorInfo() : ActorInfo;
 
-	if (nullptr != Info && true == Info->IsLocallyControlled())
+	if (nullptr != Info && true == Info->IsNetAuthority())
 	{
 		StopWork();
 	}
 
+	WorkTarget = nullptr;
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UDC1GA_Base_Work::BeginWork(ADC1InteractBuildActor* InWorkTarget)
+{
+	WorkTarget = InWorkTarget;
+
+	const FGameplayAbilityActorInfo* Info = GetCurrentActorInfo();
+	if (nullptr != Info && true == Info->IsNetAuthority() && false == StartWork(InWorkTarget))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+		return;
+	}
+
+	OnWorkStarted();
+}
+
+void UDC1GA_Base_Work::WaitWorkTarget()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}
+
+ADC1InteractBuildActor* UDC1GA_Base_Work::FindWorkTarget() const
+{
+	const ADC1Character* Worker = Cast<ADC1Character>(GetAvatarActorFromActorInfo());
+	if (false == ::IsValid(Worker))
+	{
+		return nullptr;
+	}
+
+	return Worker->GetCurrentWorkTarget();
 }

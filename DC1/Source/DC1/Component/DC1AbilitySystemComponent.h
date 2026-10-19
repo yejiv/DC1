@@ -36,6 +36,8 @@ public:
 	// ----------- Ability 활성화 -------------
 public:
 	bool ActivateAbilityByTag(const FGameplayTag& AbilityTag);
+	// 지금 실행 가능한지만 확인 ( 실행 X ) - ex) 상호작용 프롬프트 옵션 표시 여부
+	bool CanActivateAbilityByTag(const FGameplayTag& AbilityTag) const;
 	void CancelAbilityByTag(const FGameplayTag& AbilityTag);
 
 	virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;

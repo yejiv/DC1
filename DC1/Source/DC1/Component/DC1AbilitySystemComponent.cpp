@@ -98,6 +98,25 @@ bool UDC1AbilitySystemComponent::ActivateAbilityByTag(const FGameplayTag& Abilit
 	return false;
 }
 
+bool UDC1AbilitySystemComponent::CanActivateAbilityByTag(const FGameplayTag& AbilityTag) const
+{
+	TArray<FGameplayAbilitySpecHandle> Handles;
+	AbilityTagCache.MultiFind(AbilityTag, Handles);
+
+	const FGameplayAbilityActorInfo* ActorInfo = AbilityActorInfo.Get();
+
+	for (const FGameplayAbilitySpecHandle& handle : Handles)
+	{
+		const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(handle);
+		if (nullptr != Spec && nullptr != Spec->Ability && true == Spec->Ability->CanActivateAbility(handle, ActorInfo))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UDC1AbilitySystemComponent::CancelAbilityByTag(const FGameplayTag& AbilityTag)
 {
 	TArray<FGameplayAbilitySpecHandle> Handles;
