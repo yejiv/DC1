@@ -10,7 +10,6 @@
  */
 namespace DC1WorkTags
 {
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Building);			// 건설
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Kindling);			// 불 피우기
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Watering);			// 관개
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Planting);			// 파종
@@ -23,4 +22,6 @@ namespace DC1WorkTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Cooling);			// 냉각
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Transporting);		// 운반
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Farming);			// 목장
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Handiwork_Building);// 건설
 }
