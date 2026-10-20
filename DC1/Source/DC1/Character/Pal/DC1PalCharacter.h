@@ -102,6 +102,19 @@ protected:
 	void								OnRideJumpPressed(const FInputActionValue& Value);
 	void								OnRideJumpReleased(const FInputActionValue& Value);
 
+	// 탑승 중 스킬. InSkillIndex 는 PalData.SkillTags 순서.
+	void								OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex);
+	void								TickRideSkillTurn();
+
+	UFUNCTION(Server, Reliable)
+	void								Server_UseRideSkill(const FGameplayTag& InSkillTag);
+
+	// 스킬을 쓰거나 돌아서는 동안 조작 막음ㅁ
+	bool								IsRideActionLocked() const;
+
+	// PalData.SkillTags 마다 그 스킬 스펙을 준다 (서버)
+	void								GrantSkillAbilities();
+
 	virtual void						OnTeamChanged();
 
 	void								ApplyTeamCollisionProfile();
@@ -144,6 +157,16 @@ protected:
 	float HealthWidgetCheckInterval = { 0.2f };
 
 	FTimerHandle HealthWidgetVisibilityTimer;
+
+	// 탑승 중 스킬을 쓰기 전 카메라 방향으로 도는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Ride", meta = (ClampMin = "0.0"))
+	float RideSkillTurnTime = { 0.15f };
+
+	FTimerHandle RideSkillTurnTimer;
+	FRotator RideSkillTurnFrom = { FRotator::ZeroRotator };
+	FRotator RideSkillTurnTo = { FRotator::ZeroRotator };
+	float RideSkillTurnStartTime = { 0.f };
+	FGameplayTag PendingRideSkillTag;
 
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };

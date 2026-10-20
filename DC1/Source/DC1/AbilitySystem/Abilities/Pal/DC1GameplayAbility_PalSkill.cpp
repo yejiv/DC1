@@ -4,8 +4,11 @@
 
 #include "AbilitySystemComponent.h"
 #include "Character/Pal/DC1PalCharacter.h"
-#include "Controller/DC1PalAIController.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_PalSkillCooldown.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "System/DC1AssetManager.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
@@ -36,7 +39,7 @@ void UDC1GameplayAbility_PalSkill::ActivateAbility(const FGameplayAbilitySpecHan
 		return;
 	}
 
-	CacheSkillDef();
+	CacheSkillDef(Handle, ActorInfo);
 
 	// 표가 몽타주 슬롯을 지정하면 그걸 쓴다. 실제 몽타주는 종별 PalData 가 푼다
 	const FGameplayTag& ResolvedMontageTag = (true == bHasSkillDef && true == SkillDef.MontageTag.IsValid())
@@ -76,24 +79,85 @@ void UDC1GameplayAbility_PalSkill::ActivateAbility(const FGameplayAbilitySpecHan
 	MontageTask->ReadyForActivation();
 }
 
-void UDC1GameplayAbility_PalSkill::CacheSkillDef()
+void UDC1GameplayAbility_PalSkill::CacheSkillDef(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo)
 {
 	bHasSkillDef = false;
 
-	const AActor* Avatar = GetAvatarActorFromActorInfo();
-	const APawn* Pal = Cast<APawn>(Avatar);
-	const ADC1PalAIController* AIController = (nullptr != Pal) ? Cast<ADC1PalAIController>(Pal->GetController()) : nullptr;
-	if (nullptr == AIController)
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	const FDC1PalSkillDef* Found = (nullptr != Registry) ? Registry->FindSkillDef(FindSkillTag(Handle, ActorInfo)) : nullptr;
+	if (nullptr == Found)
 	{
 		return;
 	}
 
-	// 컨트롤러가 이번에 고른 줄. 표에 없는 스킬이면 널이고, 그때는 이 BP 값을 쓴다
-	if (const FDC1PalSkillDef* Found = AIController->GetSelectedSkillDef())
+	SkillDef = *Found;
+	bHasSkillDef = true;
+}
+
+FGameplayTag UDC1GameplayAbility_PalSkill::FindSkillTag(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const
+{
+	const UAbilitySystemComponent* ASC = (nullptr != ActorInfo) ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
+	const FGameplayAbilitySpec* Spec = (nullptr != ASC) ? ASC->FindAbilitySpecFromHandle(Handle) : nullptr;
+	if (nullptr == Spec)
 	{
-		SkillDef = *Found;
-		bHasSkillDef = true;
+		return FGameplayTag::EmptyTag;
 	}
+
+	static const FGameplayTag SkillRoot = FGameplayTag::RequestGameplayTag(TEXT("Pal.Skill"));
+
+	for (const FGameplayTag& Tag : Spec->GetDynamicSpecSourceTags())
+	{
+		if (true == Tag.MatchesTag(SkillRoot))
+		{
+			return Tag;
+		}
+	}
+
+	return FGameplayTag::EmptyTag;
+}
+
+bool UDC1GameplayAbility_PalSkill::CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (false == Super::CheckCooldown(Handle, ActorInfo, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(FindSkillTag(Handle, ActorInfo));
+	const UAbilitySystemComponent* ASC = (nullptr != ActorInfo) ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
+
+	return (false == CooldownTag.IsValid() || nullptr == ASC || false == ASC->HasMatchingGameplayTag(CooldownTag));
+}
+
+void UDC1GameplayAbility_PalSkill::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+{
+	const FGameplayTag SkillTag = FindSkillTag(Handle, ActorInfo);
+	const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(SkillTag);
+
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	const FDC1PalSkillDef* Def = (nullptr != Registry) ? Registry->FindSkillDef(SkillTag) : nullptr;
+	if (nullptr == Def || Def->Cooldown <= 0.f)
+	{
+		return;
+	}
+
+	if (false == CooldownTag.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No cooldown tag for [%s]. Add Cooldown.%s in DC1GameplayTag_Pal.cpp."),
+			*GetName(), *SkillTag.ToString(), *SkillTag.ToString());
+		return;
+	}
+
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(Handle, ActorInfo, ActivationInfo, UDC1GameplayEffect_PalSkillCooldown::StaticClass(), GetAbilityLevel(Handle, ActorInfo));
+	if (false == SpecHandle.IsValid())
+	{
+		return;
+	}
+
+	SpecHandle.Data->SetDuration(Def->Cooldown, true);
+	SpecHandle.Data->DynamicGrantedTags.AddTag(CooldownTag);
+
+	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
 }
 
 void UDC1GameplayAbility_PalSkill::OnTriggerEventReceived(FGameplayEventData Payload)

@@ -53,6 +53,40 @@ void UDC1AbilityData::GiveToAbilitySystem(UDC1AbilitySystemComponent* ASC, FDC1A
 	}
 }
 
+FGameplayAbilitySpecHandle UDC1AbilityData::GiveVariant(UDC1AbilitySystemComponent* ASC, const FGameplayTag& InActivationTag, const FGameplayTag& InVariantTag, UObject* SourceObject) const
+{
+	const FDC1AbilityEntry* Entry = FindEntryByTag(InActivationTag);
+	if (nullptr == ASC || nullptr == Entry || nullptr == Entry->AbilityClass || false == InVariantTag.IsValid()) return FGameplayAbilitySpecHandle();
+
+	if (true == ASC->HasAbility(Entry->AbilityClass, InVariantTag)) return FGameplayAbilitySpecHandle();
+
+	FGameplayAbilitySpec AbilitySpec(Entry->AbilityClass, Entry->AbilityLevel);
+	AbilitySpec.SourceObject = SourceObject;
+	AbilitySpec.GetDynamicSpecSourceTags().AddTag(InVariantTag);
+
+	return ASC->GiveAbility(AbilitySpec);
+}
+
+const FDC1AbilityEntry* UDC1AbilityData::FindEntryByTag(const FGameplayTag& InActivationTag) const
+{
+	for (const FDC1AbilityEntry& Entry : Abilities)
+	{
+		if (Entry.ActivationTag == InActivationTag)
+			return &Entry;
+	}
+
+	for (const TObjectPtr<UDC1AbilityData>& Base : BaseAbilityData)
+	{
+		if (IsValid(Base))
+		{
+			if (const FDC1AbilityEntry* Found = Base->FindEntryByTag(InActivationTag))
+				return Found;
+		}
+	}
+
+	return nullptr;
+}
+
 TSubclassOf<UGameplayEffect> UDC1AbilityData::FindEffectByTag(const FGameplayTag& EffectTag) const
 {
 	if (const TSubclassOf<UGameplayEffect>* Found = Effects.Find(EffectTag))

@@ -24,6 +24,7 @@
 
 #include "Character/Player/DC1PlayerController.h"
 #include "Data/DA/Input/DC1InputData.h"
+#include "Data/DA/Ability/DC1AbilityData.h"
 
 #include "Camera/CameraTypes.h"
 #include "EnhancedInputComponent.h"
@@ -223,10 +224,108 @@ void ADC1PalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnRideJumpPressed);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::OnRideJumpReleased);
 	}
+
+	const FGameplayTag SkillInputTags[] = { DC1PalTags::Input_Ride_Skill1, DC1PalTags::Input_Ride_Skill2, DC1PalTags::Input_Ride_Skill3 };
+	for (int32 Index = 0; Index < UE_ARRAY_COUNT(SkillInputTags); ++Index)
+	{
+		if (const UInputAction* SkillAction = InputData->FindInputActionbyTag(SkillInputTags[Index]))
+		{
+			EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ThisClass::OnRideSkillPressed, Index);
+		}
+	}
+}
+
+void ADC1PalCharacter::GrantSkillAbilities()
+{
+	if (false == HasAuthority() || false == IsValid(AbilitySystemComponent) || nullptr == PalData)
+	{
+		return;
+	}
+
+	const UDC1AbilityData* AbilityData = UDC1AssetManager::GetAssetByTag<UDC1AbilityData>(PalData->AbilityDataTag);
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (nullptr == AbilityData || nullptr == Registry)
+	{
+		return;
+	}
+
+	for (const FGameplayTag& SkillTag : PalData->SkillTags)
+	{
+		if (const FDC1PalSkillDef* Def = Registry->FindSkillDef(SkillTag))
+		{
+			AbilityData->GiveVariant(AbilitySystemComponent, Def->ActivationTag, SkillTag, this);
+		}
+	}
+}
+
+bool ADC1PalCharacter::IsRideActionLocked() const
+{
+	return (true == GetWorldTimerManager().IsTimerActive(RideSkillTurnTimer))
+		|| (true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking));
+}
+
+void ADC1PalCharacter::OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex)
+{
+	// 카메라 방향으로 짧게 돈 뒤 서버에 발동을 요청
+
+	if (true == IsRideActionLocked() || nullptr == PalData || false == PalData->SkillTags.IsValidIndex(InSkillIndex))
+	{
+		return;
+	}
+
+	// 쿨타임 중
+	const FGameplayTag SkillTag = PalData->SkillTags[InSkillIndex];
+	const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(SkillTag);
+	if (true == CooldownTag.IsValid() && true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(CooldownTag))
+	{
+		return;
+	}
+
+	PendingRideSkillTag = SkillTag;
+	RideSkillTurnFrom = GetActorRotation();
+	RideSkillTurnTo = FRotator(0.f, GetControlRotation().Yaw, 0.f);
+	RideSkillTurnStartTime = GetWorld()->GetTimeSeconds();
+
+	GetWorldTimerManager().SetTimer(RideSkillTurnTimer, this, &ThisClass::TickRideSkillTurn, 0.01f, true);
+}
+
+void ADC1PalCharacter::TickRideSkillTurn()
+{
+	const float Elapsed = GetWorld()->GetTimeSeconds() - RideSkillTurnStartTime;
+	const float Alpha = (RideSkillTurnTime > 0.f) ? FMath::Clamp(Elapsed / RideSkillTurnTime, 0.f, 1.f) : 1.f;
+
+	// 탄 사람 클라가 돌리면 이동 복제로 서버에 간다
+	SetActorRotation(FQuat::Slerp(RideSkillTurnFrom.Quaternion(), RideSkillTurnTo.Quaternion(), Alpha));
+
+	if (Alpha < 1.f)
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(RideSkillTurnTimer);
+	Server_UseRideSkill(PendingRideSkillTag);
+	PendingRideSkillTag = FGameplayTag::EmptyTag;
+}
+
+void ADC1PalCharacter::Server_UseRideSkill_Implementation(const FGameplayTag& InSkillTag)
+{
+	if (false == IsPlayerControlled() || nullptr == PalData || false == PalData->SkillTags.Contains(InSkillTag)
+		|| false == IsValid(AbilitySystemComponent) || true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking))
+	{
+		return;
+	}
+
+	// 쿨타임은 어빌리티의 CheckCooldown 이 막는다
+	AbilitySystemComponent->ActivateAbilityByTag(InSkillTag);
 }
 
 void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 {
+	if (true == IsRideActionLocked())
+	{
+		return;
+	}
+
 	const FVector2D MoveVector = Value.Get<FVector2D>();
 	const FRotationMatrix YawMatrix(FRotator(0.f, GetControlRotation().Yaw, 0.f));
 
@@ -236,6 +335,11 @@ void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 
 void ADC1PalCharacter::OnRideJumpPressed(const FInputActionValue& Value)
 {
+	if (true == IsRideActionLocked())
+	{
+		return;
+	}
+
 	Jump();
 }
 
@@ -301,6 +405,7 @@ void ADC1PalCharacter::ApplyPalData()
 	if (IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
+		GrantSkillAbilities();
 		BindHealthWatcher();
 
 		// Health는 PostGameplayEffectExecute 가 SetHealth 로 바꾸므로 Damage 를 구독

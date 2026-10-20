@@ -55,7 +55,13 @@ void UDC1PalDamageExecution::Execute_Implementation(const FGameplayEffectCustomE
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 
-	const UDC1GameplayAbility_PalSkill* PalSkill = Cast<UDC1GameplayAbility_PalSkill>(Spec.GetContext().GetAbility());
+	const UGameplayAbility* SourceAbility = Spec.GetContext().GetAbilityInstance_NotReplicated();
+	if (nullptr == SourceAbility)
+	{
+		SourceAbility = Spec.GetContext().GetAbility();
+	}
+
+	const UDC1GameplayAbility_PalSkill* PalSkill = Cast<UDC1GameplayAbility_PalSkill>(SourceAbility);
 
 	// 팰 스킬이 아니면 SetByCaller 로 완성된 데미지를 보낸다. -> 이미 공격력이 적용됨
 	if (nullptr == PalSkill)
@@ -70,7 +76,7 @@ void UDC1PalDamageExecution::Execute_Implementation(const FGameplayEffectCustomE
 		return;
 	}
 
-	const float BasePower = PalSkill->GetSkillPower();
+	const float BasePower = PalSkill->GetHitPower();
 	if (BasePower <= 0.f)
 	{
 		return;

@@ -12,8 +12,6 @@
 struct FGameplayEventData;
 
 /**
- *
- * 몽타주 재생 -> AnimNotify가 보낸 이벤트 -> PerformSkillEffect() 
  * 
  */
 UCLASS(Abstract)
@@ -32,9 +30,17 @@ public:
 	float					GetSkillPower() const { return bHasSkillDef ? SkillDef.Power : SkillPower; }
 	EDC1PalElement			GetSkillElement() const { return bHasSkillDef ? SkillDef.Element : SkillElement; }
 
+	int32					GetShotCount() const { return bHasSkillDef ? FMath::Max(1, SkillDef.ShotCount) : 1; }
+	float					GetHitPower() const { return GetSkillPower() / GetShotCount(); }
+
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void			PerformSkillEffect() PURE_VIRTUAL(UDC1GameplayAbility_PalSkill::PerformSkillEffect, );
+
+	virtual bool			CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
+	virtual void			ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
+
+	FGameplayTag			FindSkillTag(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const;
 
 	UFUNCTION()
 	void					OnMontageFinished();
@@ -45,9 +51,9 @@ protected:
 	UFUNCTION()
 	void					OnTriggerEventReceived(FGameplayEventData Payload);
 
-	// 컨트롤러가 고른 스킬 줄을 가져온다. ActivateAbility 초입에서 한 번만 부른다.
-	// 표에 없거나 컨트롤러가 없으면 bHasSkillDef 가 false 로 남고 이 BP 값을 쓴다
-	void					CacheSkillDef();
+	// 스펙의 스킬 태그로 표 줄을 가져온다. ActivateAbility 초입에서 한 번만 부른다.
+	// 표에 없으면 bHasSkillDef 가 false 로 남고 이 BP 값을 쓴다. AI 가 쏘든 탄 사람이 쏘든 같다
+	void					CacheSkillDef(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo);
 
 protected:
 	// 이번 발동에 쓸 스킬 줄. 발동할 때마다 다시 채운다.

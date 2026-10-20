@@ -39,6 +39,8 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FluffyTackle);		// 폭신 태클      
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_RolyPoly);			// 구르기         
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BullRush);			// 불 러시
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_EmperorSlide);		// 엠퍼러 슬라이드
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_ForcefulCharge);	// 포스풀 차지
 
 	// 투사체
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_AirCannon);		// 에어 캐넌      
@@ -54,7 +56,10 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IceMissile);		// 아이스 미사일  
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DragonCannon);		// 드래곤 캐넌    
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkBall);			// 다크 볼        
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkShot);			// 다크 샷        
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkShot);			// 다크 샷
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IcicleCutter);		// 아이시클 커터
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FlareArrow);		// 플레어 애로우
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SpiritFlame);		// 스피릿 플레임
 #pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.
@@ -150,5 +155,15 @@ namespace DC1PalTags
 	// DA_InputData 의 IA 키
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Jump);
+
+	// 탑승 중 스킬. PalData.SkillTags 의 0, 1, 2 번째
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill1);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill2);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill3);
+#pragma endregion
+
+#pragma region Cooldown
+	// 스킬 쿨타임 태그
+	FGameplayTag						FindSkillCooldownTag(const FGameplayTag& InSkillTag);
 #pragma endregion
 }
