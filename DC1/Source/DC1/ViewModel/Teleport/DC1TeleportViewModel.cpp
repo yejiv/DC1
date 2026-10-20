@@ -5,6 +5,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Teleport/DC1TeleportComponent.h"
 #include "Subsystem/DC1TeleportSubsystem.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
 
 #include "Define/DC1Macro.h"
 
@@ -74,7 +75,24 @@ void UDC1TeleportViewModel::RequestTeleport(int32 InIndex)
 	if (nullptr == TeleportComponent)
 		return;
 
-	TeleportComponent->Server_RequestTeleport(SourcePoint.Get(), Dest);
+	TWeakObjectPtr<AActor> WeakSource = SourcePoint;
+	TWeakObjectPtr<AActor> WeakDest = Dest;
+
+	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		UIManager->FadeIn(1.f, EDC1FadeType::Spinner, FSimpleDelegate::CreateWeakLambda(this, [this, WeakSource, WeakDest, UIManager]()
+			{
+				// 요청을 못 보내면 서버 응답(Client_OnTeleportFinished)도 없으니 여기서 FadeOut
+				if (false == WeakSource.IsValid() || false == WeakDest.IsValid() || nullptr == TeleportComponent)
+				{
+					UIManager->FadeOut(1.f);
+					return;
+				}
+
+				// 결과는 Client_OnTeleportFinished로 돌아온다 ( 성공 / 실패 모두 FadeOut )
+				TeleportComponent->Server_RequestTeleport(WeakSource.Get(), WeakDest.Get());
+			}));
+	}
 }
 
 void UDC1TeleportViewModel::RebuildEntries()

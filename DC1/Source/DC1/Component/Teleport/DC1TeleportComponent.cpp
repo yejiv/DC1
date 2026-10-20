@@ -5,11 +5,14 @@
 #include "Actor/Teleport/DC1TeleportActor.h"
 
 #include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1CharacterMovementComponent.h"
 
+#include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
 
 #include "Define/DC1Macro.h"
 #include "Subsystem/DC1TeleportSubsystem.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
 
 UDC1TeleportComponent::UDC1TeleportComponent()
 {
@@ -59,7 +62,80 @@ void UDC1TeleportComponent::Server_UnlockPoint_Implementation(AActor* InPoint)
 
 void UDC1TeleportComponent::Server_RequestTeleport_Implementation(AActor* InSource, AActor* InDest)
 {
+	const bool bSuccess = TryTeleport(InSource, InDest);
 
+	// 성공이든 실패든 항상 보낸다 ( 클라는 이미 FadeIn 상태 )
+	Client_OnTeleportFinished(bSuccess);
+}
+
+bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
+{
+	if (nullptr == InSource || nullptr == InDest)
+		return false;
+
+	// 1. Source, Dest 다른 객체인지 판단
+	if (InSource == InDest)
+	{
+		LOG(TEXT("[Teleport] Source == Dest"));
+		return false;
+	}
+
+	// 2. Player가 Source 인식 범위 내인지 판단
+	if (false == IsInnerInteractRange(InSource))
+	{
+		LOG(TEXT("[Teleport] Out of Range (Source)"));
+		return false;
+	}
+
+	const ADC1TeleportActor* DestActor = Cast<const ADC1TeleportActor>(InDest);
+	if (nullptr == DestActor)
+		return false;
+
+	const APlayerState* PS = Cast<const APlayerState>(GetOwner());
+	if (nullptr == PS)
+		return false;
+
+	// 3. Dest Actor가 사용 가능한 액터인지 판단 (해금 여부)
+	if (false == DestActor->CanUse(PS))
+	{
+		LOG(TEXT("[Teleport] Cannot Use Dest"));
+		return false;
+	}
+
+	FTransform DestTransform = DestActor->GetArrivalTransform();
+
+	const FVector DestLocation = DestTransform.GetLocation();
+	const FRotator DestRotation = DestTransform.GetRotation().Rotator();
+
+	APawn* Pawn = PS->GetPawn();
+	if (nullptr == Pawn)
+		return false;
+
+	bool bResult = Pawn->TeleportTo(DestLocation, DestRotation);
+	if (false == bResult)
+	{
+		LOG(TEXT("[Teleport] Failed Teleport"));
+		return false;
+	}
+
+	// 회전 동기화는 CMC가 전담 ( 서버 / 본인 클라 / 카메라 )
+	if (const ACharacter* Character = Cast<ACharacter>(Pawn))
+	{
+		if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(Character->GetCharacterMovement()))
+		{
+			CMC->ForceRotation(DestRotation, true);
+		}
+	}
+
+	return true;
+}
+
+void UDC1TeleportComponent::Client_OnTeleportFinished_Implementation(bool bInSuccess)
+{
+	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		UIManager->FadeOut(1.f);
+	}
 }
 
 void UDC1TeleportComponent::OnRep_UnlockedPointIds()

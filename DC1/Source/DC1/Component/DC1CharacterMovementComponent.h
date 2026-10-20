@@ -101,6 +101,17 @@ public:
 	// 무기를 쥘 수 없는 이동 상태인지. 이동 모드 조건이 추가되면 여기만 고친다
 	bool IsWeaponBlockedByMovement() const;
 
+	// 서버에서 호출. 서버 회전을 바꾸고, 다음 보정에 회전을 실어 클라를 맞춘다
+	// InbAlsoControlRotation : 카메라(ControlRotation)도 같은 방향으로
+	void ForceRotation(const FRotator& InRotation, bool InbAlsoControlRotation);
+
+protected:
+	// 보정에 서버 회전을 포함할지 ( 강제 회전 후 클라가 따라잡을 때까지만 true )
+	virtual bool ShouldCorrectRotation() const override;
+
+	// 클라 이동이 정상 판정되면 강제 회전 보정 종료
+	virtual void ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLocation, FMovementBaseInterfaceData* ClientMovementBaseInterfaceData, FName ClientBaseBoneName, uint8 ClientMovementMode) override;
+
 private:
 	void			ConfirmGlideMovement();
 	void			ConfirmClimbMovement();
@@ -123,6 +134,11 @@ public:
 	uint8 Safe_bWantsToWalk : 1;
 	uint8 Safe_bWantsToSprint : 1;
 	uint8 Safe_bWantsToGlide : 1;
+
+// ForceRotation
+private:
+	// 서버 전용. true인 동안 보정에 서버 회전을 실어 보낸다
+	bool	bForceRotationCorrection = { false };
 
 // Move
 private:

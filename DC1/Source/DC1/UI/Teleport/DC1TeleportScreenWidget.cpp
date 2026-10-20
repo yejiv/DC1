@@ -4,6 +4,7 @@
 
 #include "Subsystem/DC1ViewModelSubsystem.h"
 #include "Subsystem/DC1TeleportSubsystem.h"
+
 #include "UI/Teleport/DC1TeleportRowWidget.h"
 #include "ViewModel/Teleport/DC1TeleportViewModel.h"
 
@@ -112,6 +113,7 @@ void UDC1TeleportScreenWidget::HandleRowClicked(int32 InRowIndex)
 		return;
 
 	TeleportViewModel->RequestTeleport(InRowIndex);
+	PopScreen();
 }
 
 void UDC1TeleportScreenWidget::CreateRowWidget()

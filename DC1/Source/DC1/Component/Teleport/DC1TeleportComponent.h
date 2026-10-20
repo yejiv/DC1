@@ -33,11 +33,18 @@ public:
 	UFUNCTION(Server, Reliable)
 	void					Server_RequestTeleport(AActor* InSource, AActor* InDest);
 
+	// Teleport 종료 후 처리 ( 성공 / 실패 모두 호출 -> FadeOut 보장 )
+	UFUNCTION(Client, Reliable)
+	void					Client_OnTeleportFinished(bool bInSuccess);
+
 private:
 	UFUNCTION()
 	void					OnRep_UnlockedPointIds();
 
 private:
+	// 텔레포트 검증 + 이동 ( 서버 )
+	bool					TryTeleport(AActor* InSource, AActor* InDest);
+
 	// 상호작용 허용 거리 내인지 판단
 	bool					IsInnerInteractRange(AActor* InPoint) const;
 
