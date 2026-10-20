@@ -39,6 +39,8 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FluffyTackle);		// 폭신 태클      
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_RolyPoly);			// 구르기         
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BullRush);			// 불 러시
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_EmperorSlide);		// 엠퍼러 슬라이드
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_ForcefulCharge);	// 포스풀 차지
 
 	// 투사체
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_AirCannon);		// 에어 캐넌      

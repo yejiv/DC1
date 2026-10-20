@@ -34,6 +34,8 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_FluffyTackle, "Pal.Skill.FluffyTackle");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_RolyPoly, "Pal.Skill.RolyPoly");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BullRush, "Pal.Skill.BullRush");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_EmperorSlide, "Pal.Skill.EmperorSlide");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_ForcefulCharge, "Pal.Skill.ForcefulCharge");
 
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_AirCannon, "Pal.Skill.AirCannon");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_PowerShot, "Pal.Skill.PowerShot");
@@ -147,6 +149,8 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_FluffyTackle, "Cooldown.Pal.Skill.FluffyTackle");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_RolyPoly, "Cooldown.Pal.Skill.RolyPoly");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_BullRush, "Cooldown.Pal.Skill.BullRush");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_EmperorSlide, "Cooldown.Pal.Skill.EmperorSlide");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_ForcefulCharge, "Cooldown.Pal.Skill.ForcefulCharge");
 
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_AirCannon, "Cooldown.Pal.Skill.AirCannon");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_PowerShot, "Cooldown.Pal.Skill.PowerShot");
