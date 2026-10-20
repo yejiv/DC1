@@ -104,9 +104,21 @@ struct FDC1PalSkillDef
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Range", meta = (ClampMin = "0.0"))
 	float			MinRange = { 400.f };
 
-	// 비면 PalData.Projectiles 
+	// 비면 PalData.Projectiles
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
 	TSubclassOf<ADC1PalProjectile>	ProjectileClass;
+
+	// 몇발
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "1"))
+	int32			ShotCount = { 1 };
+
+	// 연사 간격
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0"))
+	float			ShotInterval = { 0.f };
+
+	// 퍼짐 각도
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0", ClampMax = "180.0"))
+	float			SpreadAngle = { 0.f };
 };
 
 // 패시브

@@ -20,6 +20,12 @@ public:
 
 protected:
 	virtual void			PerformSkillEffect() override;
+	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+
+	void					FireProjectile(float InYawOffset);
+
+	// 연사 타이머가 ShotInterval 마다 호출
+	void					FireNextShot();
 
 protected:
 	// PalData.Projectiles 조회 키
@@ -36,4 +42,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill")
 	float					MuzzleHeightOffset = { 60.f };
+
+private:
+	UPROPERTY()
+	TSubclassOf<ADC1PalProjectile>	ActiveProjectileClass;
+
+	int32					RemainingShots = { 0 };
+	FTimerHandle			ShotTimerHandle;
 };

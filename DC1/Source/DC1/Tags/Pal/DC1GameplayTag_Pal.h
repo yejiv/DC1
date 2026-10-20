@@ -56,7 +56,10 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IceMissile);		// 아이스 미사일  
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DragonCannon);		// 드래곤 캐넌    
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkBall);			// 다크 볼        
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkShot);			// 다크 샷        
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DarkShot);			// 다크 샷
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IcicleCutter);		// 아이시클 커터
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FlareArrow);		// 플레어 애로우
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SpiritFlame);		// 스피릿 플레임
 #pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.

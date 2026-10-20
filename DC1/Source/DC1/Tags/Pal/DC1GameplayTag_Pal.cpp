@@ -51,6 +51,9 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DragonCannon, "Pal.Skill.DragonCannon");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkBall, "Pal.Skill.DarkBall");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DarkShot, "Pal.Skill.DarkShot");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IcicleCutter, "Pal.Skill.IcicleCutter");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_FlareArrow, "Pal.Skill.FlareArrow");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SpiritFlame, "Pal.Skill.SpiritFlame");
 #pragma endregion
 
 #pragma region Passive
@@ -166,6 +169,9 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DragonCannon, "Cooldown.Pal.Skill.DragonCannon");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DarkBall, "Cooldown.Pal.Skill.DarkBall");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DarkShot, "Cooldown.Pal.Skill.DarkShot");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_IcicleCutter, "Cooldown.Pal.Skill.IcicleCutter");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_FlareArrow, "Cooldown.Pal.Skill.FlareArrow");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_SpiritFlame, "Cooldown.Pal.Skill.SpiritFlame");
 
 	FGameplayTag FindSkillCooldownTag(const FGameplayTag& InSkillTag)
 	{
