@@ -10,6 +10,7 @@ namespace DC1CollisionProfile
 	inline constexpr TCHAR Building[] = TEXT("Building");
 	inline constexpr TCHAR BuildCheck[] = TEXT("BuildCheck");
 	inline constexpr TCHAR BuildInteractionInfo[] = TEXT("BuildInteractionInfo");
+	inline constexpr TCHAR Resource[] = TEXT("Resource");
 }
 
 #pragma endregion

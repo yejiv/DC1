@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "DC1BuildDestroyActor.generated.h"
+#include "DC1DestroyActor.generated.h"
 
 class UGeometryCollection;
 class UGeometryCollectionComponent;
@@ -14,12 +14,12 @@ class UGeometryCollectionComponent;
 */
 
 UCLASS()
-class DC1_API ADC1BuildDestroyActor : public AActor
+class DC1_API ADC1DestroyActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	ADC1BuildDestroyActor();
+	ADC1DestroyActor();
 
 protected:
 	virtual void	BeginPlay() override;

@@ -14,7 +14,7 @@
 
 #include "Net/UnrealNetwork.h"
 
-#include "Actor/BuildActor/Destroy/DC1BuildDestroyActor.h"
+#include "Actor/Destroy/DC1DestroyActor.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -375,7 +375,7 @@ void ADC1BuildActor::PlayDestroyFX()
 	if (true == ::IsValid(DestroyClass) && true == ::IsValid(DestroyGeometryCollection))
 	{
 		const FTransform SpawnTransform = BuildMesh->GetComponentTransform();
-		ADC1BuildDestroyActor* DestroyActor = GetWorld()->SpawnActorDeferred<ADC1BuildDestroyActor>(DestroyClass, SpawnTransform);
+		ADC1DestroyActor* DestroyActor = GetWorld()->SpawnActorDeferred<ADC1DestroyActor>(DestroyClass, SpawnTransform);
 		if (true == ::IsValid(DestroyActor))
 		{
 			DestroyActor->InitDestroy(DestroyGeometryCollection);

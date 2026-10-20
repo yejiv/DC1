@@ -20,7 +20,7 @@ class UDC1BuildCheckComponent;
 class UDC1BuildSnapComponent;
 class UDC1BuildLinkComponent;
 
-class ADC1BuildDestroyActor;
+class ADC1DestroyActor;
 class APlayerState;
 class UGeometryCollection;
 class UNiagaraSystem;
@@ -185,7 +185,7 @@ private:
 	int32											RoofSupportSpan = { 2 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
-	TSubclassOf<ADC1BuildDestroyActor>				DestroyClass = { nullptr };
+	TSubclassOf<ADC1DestroyActor>				DestroyClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
 	TObjectPtr<UGeometryCollection>					DestroyGeometryCollection = { nullptr };

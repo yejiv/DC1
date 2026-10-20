@@ -1,12 +1,12 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Actor/BuildActor/Destroy/DC1BuildDestroyActor.h"
+#include "Actor/Destroy/DC1DestroyActor.h"
 
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
 
-ADC1BuildDestroyActor::ADC1BuildDestroyActor()
+ADC1DestroyActor::ADC1DestroyActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -17,7 +17,7 @@ ADC1BuildDestroyActor::ADC1BuildDestroyActor()
 	RootComponent = DestroyComp;
 }
 
-void ADC1BuildDestroyActor::BeginPlay()
+void ADC1DestroyActor::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -31,7 +31,7 @@ void ADC1BuildDestroyActor::BeginPlay()
 	DestroyComp->CrumbleActiveClusters();
 }
 
-void ADC1BuildDestroyActor::InitDestroy(const UGeometryCollection* InCollection)
+void ADC1DestroyActor::InitDestroy(const UGeometryCollection* InCollection)
 {
 	if (false == ::IsValid(DestroyComp) || false == ::IsValid(InCollection))
 	{

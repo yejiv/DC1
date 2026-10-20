@@ -10,7 +10,7 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
 #include "Tags/State/DC1GameplayTag_State.h"
@@ -526,7 +526,7 @@ float ADC1InteractBuildActor::ComputeTotalWorkSpeed()
 			continue;
 		}
 
-		float WorkSpeed = ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+		float WorkSpeed = ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetWorkSpeedAttribute());
 		
 		const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Worker);
 		if (true == ::IsValid(Pal))
