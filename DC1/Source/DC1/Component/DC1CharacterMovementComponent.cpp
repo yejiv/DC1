@@ -4,6 +4,7 @@
 #include "Component/DC1CharacterMovementComponent.h"
 
 #include "GameFramework/Character.h"
+#include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
 
 #include "Character/Player/DC1Player.h"
@@ -334,6 +335,59 @@ void UDC1CharacterMovementComponent::PhysicsRotation(float DeltaTime)
 	}
 
 	Super::PhysicsRotation(DeltaTime);
+}
+
+void UDC1CharacterMovementComponent::ForceRotation(const FRotator& InRotation, bool InbAlsoControlRotation)
+{
+	if (nullptr == CharacterOwner || false == CharacterOwner->HasAuthority())
+		return;
+
+	// 캐릭터는 Yaw만
+	const FRotator YawOnly(0.f, InRotation.Yaw, 0.f);
+
+	// 서버
+	CharacterOwner->SetActorRotation(YawOnly);
+
+	// 카메라
+	if (true == InbAlsoControlRotation)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(CharacterOwner->GetController()))
+		{
+			PC->ClientSetRotation(YawOnly);
+		}
+	}
+
+	// 원격 클라만 보정이 필요하다 ( 리슨 서버 호스트는 위에서 끝 )
+	if (true == CharacterOwner->IsLocallyControlled())
+		return;
+
+	// 다음 보정에 서버 회전 포함 + 오차가 없어도 보정을 보낸다 ( 제자리 회전 대응 )
+	bForceRotationCorrection = true;
+
+	if (FNetworkPredictionData_Server_Character* ServerData = GetPredictionData_Server_Character())
+	{
+		ServerData->bForceClientUpdate = true;
+	}
+}
+
+bool UDC1CharacterMovementComponent::ShouldCorrectRotation() const
+{
+	return true == bForceRotationCorrection || Super::ShouldCorrectRotation();
+}
+
+void UDC1CharacterMovementComponent::ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLocation, FMovementBaseInterfaceData* ClientMovementBaseInterfaceData, FName ClientBaseBoneName, uint8 ClientMovementMode)
+{
+	Super::ServerMoveHandleClientError(ClientTimeStamp, DeltaTime, Accel, RelativeClientLocation, ClientMovementBaseInterfaceData, ClientBaseBoneName, ClientMovementMode);
+
+	if (false == bForceRotationCorrection)
+		return;
+
+	// 클라 이동이 서버와 맞으면 = 클라가 보정을 받고 따라잡음 → 종료
+	const FNetworkPredictionData_Server_Character* ServerData = GetPredictionData_Server_Character();
+	if (nullptr != ServerData && true == ServerData->PendingAdjustment.bAckGoodMove)
+	{
+		bForceRotationCorrection = false;
+	}
 }
 
 bool UDC1CharacterMovementComponent::CanAttemptJump() const

@@ -8,4 +8,5 @@
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Tags/Item/DC1GameplayTag_Item.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
 #include "Tags/Appearance/DC1GameplayTag_Appearance.h"
