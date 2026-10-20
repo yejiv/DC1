@@ -226,24 +226,13 @@ EStateTreeRunStatus FDC1PalActivateSkillTask::EnterState(FStateTreeExecutionCont
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// 고른 스킬과 발동할 어빌리티는 다르다. 표를 안 타면 둘이 같다
-	const FGameplayTag ActivationTag = AIController->GetSelectedActivationTag();
-	if (false == ActivationTag.IsValid())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] ActivateSkillTask: [%s] skill [%s] has no ActivationTag. Check DA_PalRegistry.SkillChart."),
-			*GetNameSafe(Pal), *SkillTag.ToString());
-		return EStateTreeRunStatus::Failed;
-	}
+	// 스킬 태그 발동한다. (쿨타임은 어빌리티가 커밋할 때)
+	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, SkillTag, DC1PalTags::State_Pal_Attacking, Pal);
 
-	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, ActivationTag, DC1PalTags::State_Pal_Attacking, Pal);
-
-	// 성공했으면 ExitState가 취소할 수 있게 기억 (어빌리티 태그다)
+	// 성공했으면 ExitState가 취소할 수 있게 기억
 	if (EStateTreeRunStatus::Failed != Result)
 	{
-		InstanceData.ActivatedSkillTag = ActivationTag;
-
-		// 쿨타임은 어빌리티가 아니라 스킬 단위로 돈다
-		AIController->NotifySkillUsed(SkillTag);
+		InstanceData.ActivatedSkillTag = SkillTag;
 	}
 
 	return Result;

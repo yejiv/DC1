@@ -69,3 +69,9 @@ namespace DC1BuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere);
 #pragma endregion
 }
+
+// 상호작용 옵션의 활동 종류 - 건축물은 "무엇을 할 수 있는지"만, 행위자가 자기 Ability로 변환 ( UDC1InteractComponent )
+namespace DC1InteractTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interact_Work);		// 작업 ( 건설 · 생산 - 종류는 대상 GetWorkTypeTag )
+}

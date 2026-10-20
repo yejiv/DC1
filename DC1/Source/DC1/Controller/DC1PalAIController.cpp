@@ -341,20 +341,11 @@ void ADC1PalAIController::UpdateSelectedSkill()
 		return;
 	}
 
-	const UWorld* World = GetWorld();
-	if (nullptr == World)
-	{
-		return;
-	}
-
-	const float Now = World->GetTimeSeconds();
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 
 	struct FSkillCandidate
 	{
 		FGameplayTag			SkillTag;
-		FGameplayTag			ActivationTag;
-		const FDC1PalSkillDef*	Def;			// 표를 안 타면 널
 		float					MaxRange;
 		float					ApproachRange;
 		float					MinRange;
@@ -368,29 +359,27 @@ void ADC1PalAIController::UpdateSelectedSkill()
 
 		if (nullptr != Def)
 		{
-			// 쿨타임이 안 돌았으면 이번엔 후보가 아니다
-			if (const float* LastUsed = LastSkillUseTime.Find(SkillTag))
-			{
-				if ((Now - *LastUsed) < Def->Cooldown)
-				{
-					continue;
-				}
-			}
-
-			// 발동할 어빌리티가 실제로 부여돼 있어야 한다
-			if (nullptr == DC1PalAIController::FindSkillByTag(*ASC, Def->ActivationTag))
+			// 쿨타임 중이면 이번엔 후보가 아니다. 쿨타임은 스킬이 GE 로 팰 ASC 에 건다
+			const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(SkillTag);
+			if (true == CooldownTag.IsValid() && true == ASC->HasMatchingGameplayTag(CooldownTag))
 			{
 				continue;
 			}
 
-			Candidates.Add({ SkillTag, Def->ActivationTag, Def, Def->MaxRange, Def->ApproachRange, Def->MinRange });
+			// 스킬마다 스펙을 따로 받는다 (스킬 태그로 발동)
+			if (nullptr == DC1PalAIController::FindSkillByTag(*ASC, SkillTag))
+			{
+				continue;
+			}
+
+			Candidates.Add({ SkillTag, Def->MaxRange, Def->ApproachRange, Def->MinRange });
 			continue;
 		}
 
 		// 폴백 - 표에 없으면 옛 경로. 태그가 곧 어빌리티이고 수치는 그 BP가 갖는다
 		if (const UDC1GameplayAbility_PalSkill* Skill = DC1PalAIController::FindSkillByTag(*ASC, SkillTag))
 		{
-			Candidates.Add({ SkillTag, SkillTag, nullptr, Skill->GetMaxRange(), Skill->GetApproachRange(), Skill->GetMinRange() });
+			Candidates.Add({ SkillTag, Skill->GetMaxRange(), Skill->GetApproachRange(), Skill->GetMinRange() });
 		}
 	}
 
@@ -403,29 +392,9 @@ void ADC1PalAIController::UpdateSelectedSkill()
 	const FSkillCandidate& Picked = Candidates[FMath::RandRange(0, Candidates.Num() - 1)];
 
 	SelectedSkillTag = Picked.SkillTag;
-	SelectedActivationTag = Picked.ActivationTag;
 	SelectedMaxRange = Picked.MaxRange;
 	SelectedApproachRange = Picked.ApproachRange;
 	SelectedMinRange = Picked.MinRange;
-
-	bHasSelectedSkillDef = (nullptr != Picked.Def);
-	if (true == bHasSelectedSkillDef)
-	{
-		SelectedSkillDef = *Picked.Def;
-	}
-}
-
-void ADC1PalAIController::NotifySkillUsed(const FGameplayTag& InSkillTag)
-{
-	if (false == InSkillTag.IsValid())
-	{
-		return;
-	}
-
-	if (const UWorld* World = GetWorld())
-	{
-		LastSkillUseTime.Add(InSkillTag, World->GetTimeSeconds());
-	}
 }
 
 bool ADC1PalAIController::CanBackoff() const
@@ -450,8 +419,6 @@ void ADC1PalAIController::NotifyBackoffPerformed()
 void ADC1PalAIController::ClearSelectedSkill()
 {
 	SelectedSkillTag = FGameplayTag::EmptyTag;
-	SelectedActivationTag = FGameplayTag::EmptyTag;
-	bHasSelectedSkillDef = false;
 	SelectedMaxRange = 0.f;
 	SelectedApproachRange = 0.f;
 	SelectedMinRange = 0.f;
@@ -635,6 +602,12 @@ bool ADC1PalAIController::UpdateFollowAnchor(float DeltaTime)
 
 	FollowAnchor = NewAnchor;
 	return true;
+}
+
+void ADC1PalAIController::ResetFollowAnchor()
+{
+	FollowAnchor = FVector::ZeroVector;
+	OutOfViewTime = 0.f;
 }
 
 AActor* ADC1PalAIController::GetFollowTarget() const

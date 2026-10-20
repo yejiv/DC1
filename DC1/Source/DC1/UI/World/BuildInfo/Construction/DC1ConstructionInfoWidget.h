@@ -24,6 +24,9 @@ class DC1_API UDC1ConstructionInfoWidget : public UDC1BuildInfoWidget
 	GENERATED_BODY()
 	
 protected:
+	virtual void			OnAnimFinished(const UWidgetAnimation* InAnim) override;
+	virtual void			OnPalWorkerCountChanged(int32 InPrevCount, int32 InNewCount, bool InIsInitial) override;
+
 	virtual void			Subscribe(ADC1InteractBuildActor* InBuildActor) override;
 	virtual void			Unsubscribe(ADC1InteractBuildActor* InBuildActor) override;
 
@@ -34,6 +37,7 @@ private:
 	static FText			FormatRemainingTime(int32 InSeconds);
 
 	void					SetActivePanel(EDC1ConstructionInfoPanel InPanel);
+	void					SetPalWorkerAreaVisible(bool InIsVisible);
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -53,5 +57,13 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar>				BuildProgressBar;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UWidget>						PalWorkerArea;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation>			PalWorkerExpandAnim;
+
+private:
 	FDelegateHandle							WorkProgressChangedHandle;
+	bool									HasPalWorker = { false };
 };

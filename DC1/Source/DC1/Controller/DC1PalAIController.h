@@ -46,17 +46,8 @@ public:
 	void					UpdateSelectedSkill();
 	void					ClearSelectedSkill();
 
-	// 고른 스킬. SkillChart 의 키다
+	// 고른 스킬. SkillChart 의 키이자 발동 태그다 (스킬마다 스펙을 따로 받는다)
 	const FGameplayTag&		GetSelectedSkillTag() const { return SelectedSkillTag; }
-
-	// 그 스킬을 발동할 어빌리티. 표를 안 타면 SelectedSkillTag 와 같다
-	const FGameplayTag&		GetSelectedActivationTag() const { return SelectedActivationTag; }
-
-	// 고른 스킬의 표 줄. 표에 없으면 널이고, 그때 어빌리티는 자기 BP 값을 쓴다
-	const FDC1PalSkillDef*	GetSelectedSkillDef() const { return bHasSelectedSkillDef ? &SelectedSkillDef : nullptr; }
-
-	// 스킬을 실제로 발동했다. 여기서 그 스킬의 쿨타임이 시작된다
-	void					NotifySkillUsed(const FGameplayTag& InSkillTag);
 
 	float					GetSelectedMaxRange() const { return SelectedMaxRange; }
 	float					GetSelectedApproachRange() const { return SelectedApproachRange; }
@@ -74,6 +65,8 @@ public:
 	// 주인 기준 월드 오프셋
 	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
 	bool					UpdateFollowAnchor(float DeltaTime);
+	// 다음 UpdateFollowAnchor 에서 지금 카메라 기준으로 다시 설정
+	void					ResetFollowAnchor();
 
 	// 배회 기준점. 빙의 시점의 위치, 거점 팰은 팰박스 위치
 	const FVector&			GetHomeLocation() const { return HomeLocation; }
@@ -154,15 +147,6 @@ protected:
 	TArray<TWeakObjectPtr<AActor>>	Aggressors;
 
 	FGameplayTag					SelectedSkillTag;
-	FGameplayTag					SelectedActivationTag;
-
-	// 고른 줄의 복사본. 어빌리티가 발동 시점에 읽어간다.
-	UPROPERTY()
-	FDC1PalSkillDef					SelectedSkillDef;
-	bool							bHasSelectedSkillDef = { false };
-
-	// 스킬별 마지막 사용 시각. (쿨타임 판정)
-	TMap<FGameplayTag, float>		LastSkillUseTime;
 
 	float							SelectedMaxRange = { 0.f };
 	float							SelectedApproachRange = { 0.f };

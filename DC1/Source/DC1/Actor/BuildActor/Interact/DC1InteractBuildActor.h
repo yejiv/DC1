@@ -55,7 +55,7 @@ public:
 	const TArray<TWeakObjectPtr<ADC1PalCharacter>>& GetPalWorkers() const { return PalWorkers; }
 	bool							IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const;
 
-	virtual FGameplayTag			GetRequiredWorkTag() const;
+	virtual FGameplayTag			GetWorkTypeTag() const;
 
 public:
 	virtual void					Tick(float DeltaTime) override;
@@ -103,7 +103,7 @@ protected:
 
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();
-	void							ClearPalWokrers();
+	void							ClearPalWorkers();
 
 	void							UpdateInfoState();
 

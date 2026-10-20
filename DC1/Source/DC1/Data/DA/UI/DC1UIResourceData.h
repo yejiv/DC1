@@ -7,6 +7,8 @@
 #include "DC1UIResourceData.generated.h"
 
 class UTexture2D;
+class UMaterialInterface;
+class ADC1PlayerPreviewActor;
 
 /**
  * 여러 화면이 같이 쓰는 UI 리소스(속성 아이콘 등). 태그로 꺼낸다.
@@ -24,4 +26,16 @@ public:
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (Categories = "UI.Icon"))
 	TMap<FGameplayTag, TObjectPtr<UTexture2D>>	TextureEntries;
+
+	// 인벤토리 플레이어 미리보기 액터 클래스 (비어 있으면 C++ 기본 클래스)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|PlayerPreview")
+	TSubclassOf<ADC1PlayerPreviewActor>			PlayerPreviewActorClass;
+
+	// 미리보기 렌더 타깃을 표시할 UI 머티리얼 (텍스처 파라미터 "RenderTarget")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|PlayerPreview")
+	TObjectPtr<UMaterialInterface>				PlayerPreviewMaterial;
+
+	// 최초 생성 시에만 적용 (변경은 PIE 재시작 후 반영)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|PlayerPreview", meta = (ClampMin = "64", ClampMax = "2048"))
+	FIntPoint									PlayerPreviewRenderTargetSize = { 512, 768 };
 };

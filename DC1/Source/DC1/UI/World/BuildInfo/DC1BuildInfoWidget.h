@@ -7,6 +7,7 @@
 #include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "DC1BuildInfoWidget.generated.h"
 
+class UDynamicEntryBox;
 
 UCLASS(Abstract)
 class DC1_API UDC1BuildInfoWidget : public UDC1UserWidget
@@ -33,13 +34,28 @@ protected:
 	// 자식 구현 상태별 정적 모습 / 애니메이션
 	virtual void			OnInfoStateChanged(EDC1BuildInfoState InPrevState, EDC1BuildInfoState InNewState) {}
 
+	virtual void			OnPalWorkerCountChanged(int32 InPrevCount, int32 InNewCount, bool InIsInitial) {}
+
 private:
 	void					UnsubscribeInternal();
+
+	void					RefreshPalWorkers(bool InIsInitial);
+	void					HandlePalWorkersChanged();
+	void					ClearPalEntries();
 
 protected:
 	TWeakObjectPtr<ADC1InteractBuildActor>	BuildActor = { nullptr };
 	EDC1BuildInfoState						CurrentInfoState = { EDC1BuildInfoState::Hidden };
 
 private:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDynamicEntryBox>			PalListBox;
+
+	UPROPERTY(EditAnywhere, Category = "PalWorker", meta = (ClampMin = "1"))
+	int32 MaxVisiblePalEntries = { 5 };
+
+private:
+	FDelegateHandle							PalWorkersChangedHandle;
+	int32									DisplayedPalCount = { 0 };
 	bool									IsSubscribed = { false };
 };

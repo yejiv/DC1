@@ -20,4 +20,8 @@ namespace DC1ItemTags
 #pragma region Valuable
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Valuable);
 #pragma endregion
+
+#pragma region Money
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Money);
+#pragma endregion
 }

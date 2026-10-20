@@ -16,6 +16,7 @@ class UDC1PalPartyComponent;
 class UDC1EquipComponent;
 class UDC1AppearanceComponent;
 class UDC1TeleportComponent;
+class UDC1PlayerStatComponent;
 
 class UDC1PlayerSaveGame;
 /**
@@ -38,6 +39,7 @@ public:
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
+	UDC1PlayerStatComponent*				GetStatComponent() const { return StatComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
@@ -74,4 +76,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Teleport")
 	TObjectPtr<UDC1TeleportComponent> TeleportComponent = { nullptr };
+
+	UPROPERTY(VisibleAnywhere, Category = "Stat")
+	TObjectPtr<UDC1PlayerStatComponent> StatComponent = { nullptr };
 };

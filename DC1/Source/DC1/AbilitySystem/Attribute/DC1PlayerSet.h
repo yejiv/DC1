@@ -17,7 +17,48 @@ class DC1_API UDC1PlayerSet : public UDC1AttributeSet
 public:
 	UDC1PlayerSet();
 
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxWeight, Category = "Attributes")
+	FGameplayAttributeData MaxWeight;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxWeight)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Satiety, Category = "Attributes")
+	FGameplayAttributeData Satiety;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, Satiety)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxSatiety, Category = "Attributes")
+	FGameplayAttributeData MaxSatiety;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxSatiety)
+
+	// 방패 장비가 주는 보호막 (데미지 흡수는 미구현)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Shield, Category = "Attributes")
+	FGameplayAttributeData Shield;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, Shield)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxShield, Category = "Attributes")
+	FGameplayAttributeData MaxShield;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxShield)
+
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
+
 	// 무적 상태(회피 중)면 데미지 적용 막기
 	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
+
+	UFUNCTION()
+	void OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight);
+
+	UFUNCTION()
+	void OnRep_Satiety(const FGameplayAttributeData& OldSatiety);
+
+	UFUNCTION()
+	void OnRep_MaxSatiety(const FGameplayAttributeData& OldMaxSatiety);
+
+	UFUNCTION()
+	void OnRep_Shield(const FGameplayAttributeData& OldShield);
+
+	UFUNCTION()
+	void OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield);
 };

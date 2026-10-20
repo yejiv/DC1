@@ -29,7 +29,7 @@ public:
 	int32			GetStoredCount() const { return StoredCount; }
 	int32			GetMaxStoredCount() const { return MaxStoredCount; }
 
-	virtual FGameplayTag	GetRequiredWorkTag() const override;
+	virtual FGameplayTag	GetWorkTypeTag() const override;
 
 protected:
 	virtual void	BeginPlay() override;
@@ -104,13 +104,14 @@ protected:
 	TObjectPtr<USphereComponent>	InfoRangeSphere = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
-	TSubclassOf<UDC1BuildInfoWidget>		ProductionInfoWidgetClass = { nullptr };
+	TSubclassOf<UDC1BuildInfoWidget>	ProductionInfoWidgetClass = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
-	int32							MaxPalWorekrs = { 1 };
+	int32							MaxPalWorkers = { 1 };
 
-	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (Categories = "Pal.Work"))
-	FGameplayTag					RequiredWorkTag;
+	// 완성 후 작업 종류 ( 벌목장 = Work.Lumbering ) - 펠 적성 · 플레이어 도구/몽타주 모두 이 값 기준
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Work", meta = (Categories = "Work"))
+	FGameplayTag					WorkTypeTag;
 
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)

@@ -45,11 +45,10 @@ void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandl
 
 	if (UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo()))
 	{
-		// 진행 중인 스킬을 끊기.
-		// 취소는 어빌리티 단위라 스킬 태그가 아니라 발동 태그를 넘긴다
+		// 진행 중인 스킬을 끊기. 스킬마다 스펙이 따로라 스킬 태그로 취소한다
 		if (const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController()))
 		{
-			ASC->CancelAbilityByTag(PalController->GetSelectedActivationTag());
+			ASC->CancelAbilityByTag(PalController->GetSelectedSkillTag());
 		}
 	}
 

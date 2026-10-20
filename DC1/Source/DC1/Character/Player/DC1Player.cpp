@@ -12,6 +12,9 @@
 #include "Camera/CameraComponent.h"
 
 #include "Character/Player/DC1PlayerState.h"
+#include "Character/Player/DC1PlayerController.h"
+#include "Component/Interact/DC1InteractComponent.h"
+#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
@@ -128,6 +131,23 @@ UDC1EquipComponent* ADC1Player::GetEquipComponent() const
 		return nullptr;
 	
 	return PS->GetEquipComponent();
+}
+
+ADC1InteractBuildActor* ADC1Player::GetCurrentWorkTarget() const
+{
+	const ADC1PlayerController* PC = GetController<ADC1PlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return nullptr;
+	}
+
+	const UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
+	if (false == ::IsValid(InteractComp))
+	{
+		return nullptr;
+	}
+
+	return Cast<ADC1InteractBuildActor>(InteractComp->GetCurrentTarget());
 }
 
 void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

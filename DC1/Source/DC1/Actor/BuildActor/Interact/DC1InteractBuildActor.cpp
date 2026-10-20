@@ -11,10 +11,11 @@
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
 #include "Tags/State/DC1GameplayTag_State.h"
-#include "Tags/Player/DC1GameplayTag_Player.h"
-#include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/Build/DC1GameplayTag_Build.h"
+#include "Tags/Work/DC1GameplayTag_Work.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 
@@ -24,6 +25,9 @@
 #include "UI/World/BuildInfo/DC1BuildInfoWidget.h"
 
 #include "Net/UnrealNetwork.h"
+
+// TEMP v6 - DebugAssignNearbyPals ( v7에서 함께 삭제 )
+#include "EngineUtils.h"
 
 ADC1InteractBuildActor::ADC1InteractBuildActor()
 {
@@ -36,7 +40,7 @@ ADC1InteractBuildActor::ADC1InteractBuildActor()
 	InteractCollider->SetupAttachment(BuildMesh);
 	InteractCollider->SetGenerateOverlapEvents(true);
 
-	ConstructionOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Build", "건설"), EDC1InteractInputType::HoldAbility, DC1PlayerTags::Ability_Player_BuildWork);
+	ConstructionOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Build", "건설"), EDC1InteractInputType::HoldAbility, DC1InteractTags::Interact_Work);
 	ConstructionOptions.Emplace(EDC1InteractKey::C, NSLOCTEXT("Interact", "Cancel", "취소"), EDC1InteractInputType::HoldConfirm, FGameplayTag::EmptyTag);
 
 	InfoWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("InfoWidgetComponent");
@@ -61,9 +65,9 @@ bool ADC1InteractBuildActor::IsPalWorkerAssigned(const ADC1PalCharacter* InPal) 
 	return PalWorkers.Contains(InPal);
 }
 
-FGameplayTag ADC1InteractBuildActor::GetRequiredWorkTag() const
+FGameplayTag ADC1InteractBuildActor::GetWorkTypeTag() const
 {
-	return IsUnderConstruction() ? DC1PalTags::Pal_Work_Handiwork : FGameplayTag::EmptyTag;
+	return IsUnderConstruction() ? DC1WorkTags::Work_Handiwork_Building : FGameplayTag::EmptyTag;
 }
 
 void ADC1InteractBuildActor::Tick(float DeltaTime)
@@ -116,6 +120,7 @@ void ADC1InteractBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(ThisClass, BuildProgress);
 	DOREPLIFETIME(ThisClass, CurrentWorkSpeed);
+	DOREPLIFETIME(ThisClass, PalWorkers);
 }
 
 UPrimitiveComponent* ADC1InteractBuildActor::GetInteractCollider() const
@@ -190,7 +195,7 @@ void ADC1InteractBuildActor::BuildDestroy()
 {
 	CancelWorkersAbility();
 	ClearWorkers();
-	ClearPalWokrers();
+	ClearPalWorkers();
 
 	Super::BuildDestroy();
 }
@@ -235,7 +240,7 @@ void ADC1InteractBuildActor::ApplyState()
 		OnBuildCompleted.Broadcast();
 
 		ClearWorkers();
-		ClearPalWokrers();
+		ClearPalWorkers();
 
 		// DEBUG 생산 적성 팰 배정
 		if (true == HasAuthority() && DebugAssignRadius > 0.f)
@@ -399,7 +404,7 @@ void ADC1InteractBuildActor::ClearWorkers()
 	SetCurrentWorkSpeed(0.f);
 }
 
-void ADC1InteractBuildActor::ClearPalWokrers()
+void ADC1InteractBuildActor::ClearPalWorkers()
 {
 	if (false == HasAuthority())
 	{
@@ -521,7 +526,19 @@ float ADC1InteractBuildActor::ComputeTotalWorkSpeed()
 			continue;
 		}
 
-		TotalWorkSpeed += ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+		float WorkSpeed = ASC->GetNumericAttribute(UDC1AttributeSet::GetWorkSpeedAttribute());
+		
+		const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Worker);
+		if (true == ::IsValid(Pal))
+		{
+			const UDC1PalData* PalData = Pal->GetPalData();
+			if (true == ::IsValid(PalData))
+			{
+				WorkSpeed *= PalData->GetWorkSuitabilityLevel(GetWorkTypeTag());
+			}
+		}
+
+		TotalWorkSpeed += WorkSpeed;
 	}
 
 	return TotalWorkSpeed;
@@ -604,14 +621,14 @@ bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
 		return false;
 	}
 
-	FGameplayTag RequiredTag = GetRequiredWorkTag();
+	FGameplayTag RequiredTag = GetWorkTypeTag();
 	if (false == RequiredTag.IsValid())
 	{
 		return false;
 	}
 
 	const UDC1PalData* PalData = InPal->GetPalData();
-	if (false == ::IsValid(PalData) || false == PalData->WorkSuitability.Contains(RequiredTag))
+	if (false == ::IsValid(PalData) || false == PalData->CanDoWork(RequiredTag))
 	{
 		return false;
 	}
@@ -634,9 +651,35 @@ void ADC1InteractBuildActor::ApplyPalWorkers()
 
 void ADC1InteractBuildActor::DebugAssignNearbyPals()
 {
-	//// 첫 성공 팰 AddWorker, 나머지는 배정만
-	//for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
-	//{
+	// TEMP v6 - 첫 성공 팰만 작업(AddWorker), 나머지는 배정만(휴식) + SAN 랜덤으로 복제 확인 ( v7에서 삭제 )
+	const FVector Center = GetActorLocation();
+	const float RadiusSq = FMath::Square(DebugAssignRadius);
+	bool IsWorkerAdded = false;
 
-	//}
+	for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
+	{
+		ADC1PalCharacter* Pal = *It;
+		if (false == ::IsValid(Pal) || FVector::DistSquared(Center, Pal->GetActorLocation()) > RadiusSq)
+		{
+			continue;
+		}
+
+		if (false == AssignPalWorker(Pal))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ADC1InteractBuildActor :: DebugAssign Rejected - [%s] -> [%s]"), *GetNameSafe(Pal), *GetNameSafe(this));
+			continue;
+		}
+
+		if (false == IsWorkerAdded)
+		{
+			AddWorker(Pal);
+			IsWorkerAdded = true;
+		}
+
+		UAbilitySystemComponent* ASC = Pal->GetAbilitySystemComponent();
+		if (true == ::IsValid(ASC))
+		{
+			ASC->SetNumericAttributeBase(UDC1PalAttributeSet::GetSanityAttribute(), FMath::FRandRange(30.f, 100.f));
+		}
+	}
 }
