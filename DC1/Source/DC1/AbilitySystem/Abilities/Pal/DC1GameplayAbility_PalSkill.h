@@ -30,6 +30,9 @@ public:
 	float					GetSkillPower() const { return bHasSkillDef ? SkillDef.Power : SkillPower; }
 	EDC1PalElement			GetSkillElement() const { return bHasSkillDef ? SkillDef.Element : SkillElement; }
 
+	int32					GetShotCount() const { return bHasSkillDef ? FMath::Max(1, SkillDef.ShotCount) : 1; }
+	float					GetHitPower() const { return GetSkillPower() / GetShotCount(); }
+
 protected:
 	virtual void			ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void			PerformSkillEffect() PURE_VIRTUAL(UDC1GameplayAbility_PalSkill::PerformSkillEffect, );
