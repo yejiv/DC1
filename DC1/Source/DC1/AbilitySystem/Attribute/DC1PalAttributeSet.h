@@ -2,12 +2,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include "DC1PalAttributeSet.generated.h"
 
 UCLASS()
-class DC1_API UDC1PalAttributeSet : public UDC1AttributeSet
+class DC1_API UDC1PalAttributeSet : public UDC1CharacterAttributeSet
 {
 	GENERATED_BODY()
 

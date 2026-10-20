@@ -21,6 +21,7 @@
 #include "Component/Appearance/DC1AppearanceComponent.h"
 #include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayEffectExtension.h"
@@ -443,7 +444,7 @@ bool ADC1Player::CheckRemainStamina(float Stamina) const
 	if (nullptr == ASC)
 		return false;
 
-	if (ASC->GetNumericAttribute(UDC1AttributeSet::GetStaminaAttribute()) <= Stamina)
+	if (ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetStaminaAttribute()) <= Stamina)
 		return false;
 
 	return true;

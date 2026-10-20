@@ -6,7 +6,7 @@
 #include "Character/Player/DC1Player.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 
 UDC1GA_Player_Sprint::UDC1GA_Player_Sprint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -45,7 +45,7 @@ bool UDC1GA_Player_Sprint::CanActivateAbility(const FGameplayAbilitySpecHandle H
 	// 스태미나 고갈 시 진입 차단을 여기서 직접 해 준다
 	if (const UAbilitySystemComponent* ASC = Player->GetAbilitySystemComponent())
 	{
-		if (ASC->GetNumericAttribute(UDC1AttributeSet::GetStaminaAttribute()) <= 0.f)
+		if (ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetStaminaAttribute()) <= 0.f)
 			return false;
 	}
 
@@ -78,7 +78,7 @@ void UDC1GA_Player_Sprint::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		return;
 	}
 
-	StaminaChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetStaminaAttribute())
+	StaminaChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetStaminaAttribute())
 		.AddUObject(this, &ThisClass::HandleStaminaChanged);
 
 	// 어트리뷰트 변경은 서버 권한이다
@@ -104,7 +104,7 @@ void UDC1GA_Player_Sprint::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 		{
 			if (true == StaminaChangedHandle.IsValid())
 			{
-				ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetStaminaAttribute()).Remove(StaminaChangedHandle);
+				ASC->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetStaminaAttribute()).Remove(StaminaChangedHandle);
 				StaminaChangedHandle.Reset();
 			}
 

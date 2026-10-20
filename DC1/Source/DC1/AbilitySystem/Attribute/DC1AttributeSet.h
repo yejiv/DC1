@@ -7,16 +7,16 @@
 #include "DC1AttributeSet.generated.h"
 
 /**
- * 
+ * 피격 가능한 대상 공통 ( HP · 방어력 · 데미지 처리 ) - 채집 오브젝트처럼 캐릭터가 아닌 대상도 이것만 가진다
+ * 기존 데미지 GE가 Damage 메타를, 팰 데미지 계산이 대상의 DefensePower를 쓰므로 둘 다 여기 있어야 한다
+ * 캐릭터 전용 스탯은 UDC1CharacterAttributeSet
  */
 UCLASS()
 class DC1_API UDC1AttributeSet : public UAttributeSet
 {
 	GENERATED_BODY()
-	
-public:
-	UDC1AttributeSet();
 
+public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Attributes")
 	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Health)
@@ -25,38 +25,9 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, MaxHealth)
 
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Stamina, Category = "Attributes")
-	FGameplayAttributeData Stamina;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Stamina)
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxStamina, Category = "Attributes")
-	FGameplayAttributeData MaxStamina;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, MaxStamina)
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AttackPower, Category = "Attributes")
-	FGameplayAttributeData AttackPower;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, AttackPower)
-
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_DefensePower, Category = "Attributes")
 	FGameplayAttributeData DefensePower;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, DefensePower)
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Level, Category = "Attributes")
-	FGameplayAttributeData Level;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Level)
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_WorkSpeed, Category = "Attributes")
-	FGameplayAttributeData WorkSpeed;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, WorkSpeed)
-
-	// 이동 속도 배율 (100 = 100%)
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MoveSpeed, Category = "Attributes")
-	FGameplayAttributeData MoveSpeed;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, MoveSpeed)
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Experience, Category = "Attributes")
-	FGameplayAttributeData Experience;
-	ATTRIBUTE_ACCESSORS_BASIC(UDC1AttributeSet, Experience)
 
 	// 메타 어트리뷰트
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes|Meta")
@@ -67,7 +38,6 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 
 protected:
@@ -76,21 +46,5 @@ protected:
 	UFUNCTION()
 	void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
 	UFUNCTION()
-	void OnRep_Stamina(const FGameplayAttributeData& OldStamina);
-	UFUNCTION()
-	void OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina);
-	UFUNCTION()
-	void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
-	UFUNCTION()
 	void OnRep_DefensePower(const FGameplayAttributeData& OldDefensePower);
-	UFUNCTION()
-	void OnRep_Level(const FGameplayAttributeData& OldLevel);
-	UFUNCTION()
-	void OnRep_Experience(const FGameplayAttributeData& OldExperience);
-
-	UFUNCTION()
-	void OnRep_WorkSpeed(const FGameplayAttributeData& OldWorkSpeed);
-
-	UFUNCTION()
-	void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
 };

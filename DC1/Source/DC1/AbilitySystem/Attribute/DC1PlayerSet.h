@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "DC1PlayerSet.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class DC1_API UDC1PlayerSet : public UDC1AttributeSet
+class DC1_API UDC1PlayerSet : public UDC1CharacterAttributeSet
 {
 	GENERATED_BODY()
 

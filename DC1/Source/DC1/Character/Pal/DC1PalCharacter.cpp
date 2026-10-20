@@ -4,6 +4,7 @@
 #include "Controller/DC1PalAIController.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_PalPassive.h"
 #include "Components/CapsuleComponent.h"
@@ -307,7 +308,7 @@ void ADC1PalCharacter::ApplyPalData()
 
 		// HP바용. BindHealthWatcher 가 RemoveAll(this) 를 하므로 반드시 그 뒤에 온다
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChangedForUI);
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetLevelAttribute()).AddUObject(this, &ThisClass::HandleLevelChangedForUI);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetLevelAttribute()).AddUObject(this, &ThisClass::HandleLevelChangedForUI);
 	}
 
 	if (IsValid(PalAttributeSet))
@@ -467,9 +468,9 @@ void ADC1PalCharacter::GainExperience(int32 InAmount)
 	const float NewMaxHealth = Registry->GetMaxHealthFor(*PalData, NewLevel, PalInstance.TalentHealth);
 
 	// Base만 갱신 (패시브 배율 유지)
-	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetLevelAttribute(), static_cast<float>(NewLevel));
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1CharacterAttributeSet::GetLevelAttribute(), static_cast<float>(NewLevel));
 	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetMaxHealthAttribute(), NewMaxHealth);
-	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetAttackPowerAttribute(), Registry->GetAttackPowerFor(*PalData, NewLevel, PalInstance.TalentAttack));
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1CharacterAttributeSet::GetAttackPowerAttribute(), Registry->GetAttackPowerFor(*PalData, NewLevel, PalInstance.TalentAttack));
 	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetDefensePowerAttribute(), Registry->GetDefensePowerFor(*PalData, NewLevel, PalInstance.TalentDefense));
 
 	// 사망 제외

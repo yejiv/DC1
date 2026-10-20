@@ -5,7 +5,7 @@
 
 #include "AbilitySystemGlobals.h"
 #include "GameplayEffect.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "Tags/DC1GamePlayTags.h"
 
 UDC1GameplayAbility::UDC1GameplayAbility(const FObjectInitializer& ObjectInitializer)
@@ -50,7 +50,7 @@ bool UDC1GameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, con
 		return false;
 	}
 
-	if (ASC->GetNumericAttribute(UDC1AttributeSet::GetStaminaAttribute()) >= StaminaCost)
+	if (ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetStaminaAttribute()) >= StaminaCost)
 	{
 		return true;
 	}

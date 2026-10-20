@@ -4,6 +4,7 @@
 
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "System/DC1AssetManager.h"
@@ -21,7 +22,7 @@ struct FDC1PalDamageStatics
 	{
 		// 공격력은 가해자에게서, 발사 시점에 스냅샷한다 (bSnapshot = true)
 		AttackPowerDef = FGameplayEffectAttributeCaptureDefinition(
-			UDC1AttributeSet::GetAttackPowerAttribute(),
+			UDC1CharacterAttributeSet::GetAttackPowerAttribute(),
 			EGameplayEffectAttributeCaptureSource::Source,
 			true);
 

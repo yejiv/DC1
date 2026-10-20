@@ -9,7 +9,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 
 UDC1TechTreeComponent::UDC1TechTreeComponent()
 {
@@ -27,7 +27,7 @@ int32 UDC1TechTreeComponent::GetPlayerLevel() const
 		return 0;
 	}
 
-	int32 NewLevel = FMath::TruncToInt32(ASC->GetNumericAttribute(UDC1AttributeSet::GetLevelAttribute()));
+	int32 NewLevel = FMath::TruncToInt32(ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetLevelAttribute()));
 
 	return NewLevel;
 }
@@ -243,7 +243,7 @@ void UDC1TechTreeComponent::BindLevelChange()
 		return;
 	}
 
-	FOnGameplayAttributeValueChange& LevelChangeDelegate = ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetLevelAttribute());
+	FOnGameplayAttributeValueChange& LevelChangeDelegate = ASC->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetLevelAttribute());
 
 	LevelChangeDelegate.RemoveAll(this);
 	LevelChangeDelegate.AddUObject(this, &ThisClass::HandleLevelChanged);

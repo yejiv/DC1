@@ -94,6 +94,7 @@ void UDC1GameplayAbility_PalTossin::SweepAndApplyDamage()
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Player));
 	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Pal));
+	ObjectParams.AddObjectTypesToQuery(static_cast<ECollisionChannel>(EDC1CollisionLayer::ECC_Resource));
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;

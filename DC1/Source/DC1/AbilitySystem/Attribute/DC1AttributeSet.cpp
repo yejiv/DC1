@@ -6,25 +6,13 @@
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 
-UDC1AttributeSet::UDC1AttributeSet()
-{
-	InitMoveSpeed(100.f);
-}
-
 void UDC1AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Stamina, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, MaxStamina, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, AttackPower, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, DefensePower, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Level, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, WorkSpeed, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, Experience, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UDC1AttributeSet, MoveSpeed, COND_None, REPNOTIFY_Always);
 }
 
 void UDC1AttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -34,28 +22,6 @@ void UDC1AttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	if (GetHealthAttribute() == Attribute)
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
-	}
-
-	if (GetStaminaAttribute() == Attribute)
-	{
-		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxStamina());
-	}
-
-	if (GetWorkSpeedAttribute() == Attribute || GetMoveSpeedAttribute() == Attribute)
-	{
-		NewValue = FMath::Max(NewValue, 0.f);
-	}
-}
-
-void UDC1AttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
-{
-	Super::PreAttributeBaseChange(Attribute, NewValue);
-
-	// PreAttributeChange는 CurrentValue만 막는다. 즉시/주기 GE는 BaseValue를 직접 올리므로
-	// 여기서 막지 않으면 표시값만 Max에 붙어 있고 실제 base가 무한정 쌓인다
-	if (GetStaminaAttribute() == Attribute)
-	{
-		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxStamina());
 	}
 }
 
@@ -107,42 +73,7 @@ void UDC1AttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealt
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, MaxHealth, OldMaxHealth);
 }
 
-void UDC1AttributeSet::OnRep_Stamina(const FGameplayAttributeData& OldStamina)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, Stamina, OldStamina);
-}
-
-void UDC1AttributeSet::OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, MaxStamina, OldMaxStamina);
-}
-
-void UDC1AttributeSet::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, AttackPower, OldAttackPower);
-}
-
 void UDC1AttributeSet::OnRep_DefensePower(const FGameplayAttributeData& OldDefensePower)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, DefensePower, OldDefensePower);
-}
-
-void UDC1AttributeSet::OnRep_Level(const FGameplayAttributeData& OldLevel)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, Level, OldLevel);
-}
-
-void UDC1AttributeSet::OnRep_Experience(const FGameplayAttributeData& OldExperience)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, Experience, OldExperience);
-}
-
-void UDC1AttributeSet::OnRep_WorkSpeed(const FGameplayAttributeData& OldWorkSpeed)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, WorkSpeed, OldWorkSpeed);
-}
-
-void UDC1AttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1AttributeSet, MoveSpeed, OldMoveSpeed);
 }
