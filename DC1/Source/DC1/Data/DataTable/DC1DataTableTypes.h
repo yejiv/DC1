@@ -120,6 +120,10 @@ struct FDC1ItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EDC1ItemRarity ItemRarity = EDC1ItemRarity::Common;
 
+	// 작업대 RankMax 이하만 제작 가능 - 레어도와 별개 ( 메가 스피어 = Common / Rank 2 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1"))
+	int32 Rank = 1;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Weight = 0.f;
 
@@ -161,4 +165,75 @@ struct FDC1EquipItemRow : public FTableRowBase
 	// 장착 시 스폰할 액터 ( 현재는 무기 칸만 사용 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftClassPtr<ADC1Equip> EquipClass;
+};
+
+// 레시피 재료 - 건축 비용( FDC1ItemCost )과 분리해 에디터 표시를 레시피에만 적용
+USTRUCT(BlueprintType)
+struct FDC1RecipeItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1"))
+	int32 Count = 1;
+
+#if WITH_EDITORONLY_DATA
+	// 배열 항목 제목 ( 목재 ×30 )
+	UPROPERTY(VisibleAnywhere, Category = "Editor")
+	FString EditorLabel;
+#endif
+};
+
+// 작업대 제작 레시피 - 제작 가능한 작업대는 완성품의 CategoryTag / Rank로 판정
+USTRUCT(BlueprintType)
+struct FDC1ItemRecipeRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	// FTableRowBase 가상 함수 - 행을 편집하거나 임포트할 때 엔진이 호출
+	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;
+	virtual void OnPostDataImport(const UDataTable* InDataTable, const FName InRowName, TArray<FString>& OutCollectedImportProblems) override;
+
+private:
+	void RefreshEditorLabels();
+
+public:
+	// 행 이름이 아니라 이 값으로 식별
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName RecipeID;
+
+#if WITH_EDITORONLY_DATA
+	// 테이블에서 보는 요약 ( 메가 스피어 ×1 ← 팰지움 파편 ×1, ... )
+	UPROPERTY(VisibleAnywhere, Category = "Editor")
+	FString EditorSummary;
+#endif
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName ProductItemID;
+
+	// 1회 제작 시 나오는 개수 ( 화살 = 10 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1"))
+	int32 ProductCount = 1;
+
+	// 1회 제작에 필요한 재료
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (TitleProperty = "EditorLabel"))
+	TArray<FDC1RecipeItem> RequiredItems;
+
+	// 1회 제작 작업량
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0.01"))
+	float RequiredWork = 1.f;
+
+	// 비어 있으면 해금 조건 없음
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag RequiredTechTag;
+
+	// None이 아니면 이 설계도를 플레이어 인벤토리에 가지고 있어야 표시 ( 소모 X )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetSchematicItemIDOptions"))
+	FName RequiredSchematicItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 SortOrder = 0;
 };
