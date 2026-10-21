@@ -10,6 +10,7 @@ void UDC1TeleportSubsystem::RegisterPoint(AActor* InPoint)
 		return;
 
 	Points.Add(InPoint);
+	NotifyPointsChanged();
 }
 
 void UDC1TeleportSubsystem::UnregisterPoint(AActor* InPoint)
@@ -18,6 +19,7 @@ void UDC1TeleportSubsystem::UnregisterPoint(AActor* InPoint)
 		return;
 
 	Points.Remove(InPoint);
+	NotifyPointsChanged();
 }
 
 void UDC1TeleportSubsystem::GetUsablePoints(const APlayerState* InPlayerState, TArray<AActor*>& OutPoints) const
@@ -35,7 +37,7 @@ void UDC1TeleportSubsystem::GetUsablePoints(const APlayerState* InPlayerState, T
 	}
 }
 
-int32 UDC1TeleportSubsystem::GetTeleportActorNum()
+int32 UDC1TeleportSubsystem::GetTeleportActorNum() const
 {
 	int32 TeleportActorCount = {};
 

@@ -26,13 +26,16 @@ void UDC1TeleportViewModel::BindSource(ADC1PlayerState* InPlayerState)
 
 void UDC1TeleportViewModel::ClearSource()
 {
-	if (nullptr == TeleportComponent || nullptr == TeleportSubsystem)
-		return;
+	if (nullptr != TeleportComponent)
+	{
+		TeleportComponent.Reset();
+	}
 
-	TeleportSubsystem->OnPointsChanged.RemoveAll(this);
-
-	TeleportComponent.Reset();
-	TeleportSubsystem.Reset();
+	if (nullptr != TeleportSubsystem)
+	{
+		TeleportSubsystem->OnPointsChanged.RemoveAll(this);
+		TeleportSubsystem.Reset();
+	}
 }
 
 void UDC1TeleportViewModel::SetSourcePoint(AActor* InSourcePoint)

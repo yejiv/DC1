@@ -9,6 +9,7 @@
 #include "ViewModel/Teleport/DC1TeleportViewModel.h"
 
 #include "Components/ScrollBox.h"
+#include "Components/ScrollBoxSlot.h"
 
 #include "Define/DC1Macro.h"
 
@@ -69,6 +70,9 @@ void UDC1TeleportScreenWidget::UnbindViewModel()
 	if (nullptr == TeleportViewModel)
 		return;
 
+	// Source Point 정리
+	TeleportViewModel->ClearSourcePoint();
+
 	TeleportViewModel->OnEntriesChanged.RemoveAll(this);
 	TeleportViewModel.Reset();
 }
@@ -83,7 +87,7 @@ void UDC1TeleportScreenWidget::RefreshRows()
 		RowWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
-	TArray<FDC1TeleportEntry> Entries = TeleportViewModel->GetEntries();
+	const TArray<FDC1TeleportEntry>& Entries = TeleportViewModel->GetEntries();
 
 	int32 EntriesNum = Entries.Num();
 	int32 RowWidgetsNum = RowWidgets.Num();
@@ -123,6 +127,10 @@ void UDC1TeleportScreenWidget::CreateRowWidget()
 		return;
 
 	RowWidget->OnRowClicked.AddUObject(this, &ThisClass::HandleRowClicked);
-	ScrollBox_Points->AddChild(RowWidget);
+	
+	if (UScrollBoxSlot* RowSlot = Cast<UScrollBoxSlot>(ScrollBox_Points->AddChild(RowWidget)))
+	{
+		RowSlot->SetPadding(FMargin(0.f, 0.f, 0.f, RowSpacing));
+	}
 	RowWidgets.Add(RowWidget);
 }

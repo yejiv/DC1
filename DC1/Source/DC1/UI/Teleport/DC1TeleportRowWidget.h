@@ -10,6 +10,7 @@
 class UButton;
 class UImage;
 class UTextBlock;
+class UTexture2D;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTeleportRowClicked, int32 /*RowIndex*/);
 
@@ -44,6 +45,14 @@ private:
 	// 지점 종류 아이콘 ( 거점 / 텔레포트 )
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
 	TObjectPtr<UImage>			Image_Type = { nullptr };
+
+	// 텔레포트 오브젝트 아이콘
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Icon")
+	TObjectPtr<UTexture2D>		TeleportIcon = { nullptr };
+
+	// 거점 아이콘
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Icon")
+	TObjectPtr<UTexture2D>		BaseIcon = { nullptr };
 
 private:
 	int32						RowIndex = { INDEX_NONE };

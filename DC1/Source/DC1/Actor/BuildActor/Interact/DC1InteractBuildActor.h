@@ -99,7 +99,7 @@ protected:
 	// 팰이 작업할 자리가 남아있는지
 	virtual bool					HasPalWorkerSlot() const { return true; }
 
-	void							BuildCompleted();
+	virtual void					BuildCompleted();
 
 	// 작업자 집합 비우기 ( 서버 - 진행 정지만 Ability 종료는 클라 강제 해제 )
 	void							ClearWorkers();

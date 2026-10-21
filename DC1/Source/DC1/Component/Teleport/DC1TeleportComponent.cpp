@@ -5,6 +5,7 @@
 #include "Actor/Teleport/DC1TeleportActor.h"
 
 #include "Character/Player/DC1PlayerState.h"
+#include "Character/Player/DC1Player.h"
 #include "Component/DC1CharacterMovementComponent.h"
 
 #include "GameFramework/Character.h"
@@ -47,12 +48,19 @@ void UDC1TeleportComponent::Server_UnlockPoint_Implementation(AActor* InPoint)
 	}
 
 	// ID는 클라가 보낸 값이 아니라 액터에서 직접 꺼낸다
-	const FName PointId = TeleportActor->GetPointId();
-	if (true == PointId.IsNone())
+	UnlockPointById(TeleportActor->GetPointId());
+}
+
+void UDC1TeleportComponent::UnlockPointById(FName InPointId)
+{
+	if (false == GetOwner()->HasAuthority())
+		return;
+
+	if (true == InPointId.IsNone())
 		return;
 
 	// 해금된 오브젝트의 ID는 보관한다
-	UnlockedPointIds.AddUnique(PointId);
+	UnlockedPointIds.AddUnique(InPointId);
 
 	// PlayerState는 갱신 주기가 낮아서 바로 보낸다
 	GetOwner()->ForceNetUpdate();
@@ -87,8 +95,8 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 		return false;
 	}
 
-	const ADC1TeleportActor* DestActor = Cast<const ADC1TeleportActor>(InDest);
-	if (nullptr == DestActor)
+	const IDC1TeleportPointInterface* DestInterface = Cast<const IDC1TeleportPointInterface>(InDest);
+	if (nullptr == DestInterface)
 		return false;
 
 	const APlayerState* PS = Cast<const APlayerState>(GetOwner());
@@ -96,22 +104,22 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 		return false;
 
 	// 3. Dest Actor가 사용 가능한 액터인지 판단 (해금 여부)
-	if (false == DestActor->CanUse(PS))
+	if (false == DestInterface->CanUse(PS))
 	{
 		LOG(TEXT("[Teleport] Cannot Use Dest"));
 		return false;
 	}
 
-	FTransform DestTransform = DestActor->GetArrivalTransform();
+	FTransform DestTransform = DestInterface->GetArrivalTransform();
 
 	const FVector DestLocation = DestTransform.GetLocation();
 	const FRotator DestRotation = DestTransform.GetRotation().Rotator();
 
-	APawn* Pawn = PS->GetPawn();
-	if (nullptr == Pawn)
+	ADC1Player* Player = Cast<ADC1Player>(PS->GetPawn());
+	if (nullptr == Player)
 		return false;
 
-	bool bResult = Pawn->TeleportTo(DestLocation, DestRotation);
+	bool bResult = Player->TeleportTo(DestLocation, DestRotation);
 	if (false == bResult)
 	{
 		LOG(TEXT("[Teleport] Failed Teleport"));
@@ -119,12 +127,9 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 	}
 
 	// 회전 동기화는 CMC가 전담 ( 서버 / 본인 클라 / 카메라 )
-	if (const ACharacter* Character = Cast<ACharacter>(Pawn))
+	if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(Player->GetCharacterMovement()))
 	{
-		if (UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(Character->GetCharacterMovement()))
-		{
-			CMC->ForceRotation(DestRotation, true);
-		}
+		CMC->ForceRotation(DestRotation, true);
 	}
 
 	return true;

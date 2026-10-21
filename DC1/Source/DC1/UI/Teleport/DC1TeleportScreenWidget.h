@@ -47,6 +47,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	FKey								CloseKey = EKeys::Escape;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
+	float								RowSpacing = { 8.f };
+
 private:
 	TWeakObjectPtr<UDC1TeleportViewModel>	TeleportViewModel = { nullptr };
 
