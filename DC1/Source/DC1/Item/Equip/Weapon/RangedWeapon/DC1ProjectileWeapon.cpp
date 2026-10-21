@@ -3,14 +3,13 @@
 #include "Item/Equip/Weapon/RangedWeapon/DC1ProjectileWeapon.h"
 
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/SphereComponent.h"
 #include "Projectile/DC1Projectile.h"
 
 ADC1ProjectileWeapon::ADC1ProjectileWeapon()
 	: Super()
 {
 	RangedMesh = CreateDefaultSubobject<USkeletalMeshComponent>("RangedMesh");
-	RangedMesh->SetupAttachment(InteractCollider);
+	RangedMesh->SetupAttachment(ItemMesh);
 	RangedMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 

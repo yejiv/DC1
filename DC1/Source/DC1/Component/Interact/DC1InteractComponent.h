@@ -13,6 +13,7 @@ class ADC1Player;
 class APlayerController;
 class ADC1InteractBuildActor;
 class ADC1ProductionBuildActor;
+class ADC1PickupItem;
 class UDC1InteractPromptWidget;
 class UDC1UIManagerSubsystem;
 class UWidgetComponent;
@@ -39,6 +40,7 @@ public:
 public:
 	void						RequestCancelBuild(ADC1InteractBuildActor* InBuildTarget);
 	void						RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget);
+	void						RequestPickupItem(ADC1PickupItem* InPickup);
 
 	// 서버 검증용 - 작업 GA도 사용 ( 클라가 보낸 대상 거리 확인 )
 	bool						IsInInteractRange(const ADC1Player* Player, const AActor* InTarget) const;
@@ -49,6 +51,9 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void						Server_CollectProduct(ADC1ProductionBuildActor* InProductionTarget);
+
+	UFUNCTION(Server, Reliable)
+	void						Server_PickupItem(ADC1PickupItem* InPickup);
 
 	void						HandleScreenStackChanged();
 
@@ -83,6 +88,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interact")
 	float	CurrentTargetDotBonus = { 0.05f };
 
+	// 거리 가중 점수 = 0이면 시선 점수만
+	UPROPERTY(EditDefaultsOnly, Category = "Interact", meta = (ClampMin = "0"))
+	float	DistanceScoreWeight = { 0.5f };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Interact")
 	float	HoldConfirmDuration = { 2.f };
 
@@ -90,7 +99,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interact|Widget")
 	FVector2D								InteractPromptScreenOffset = { FVector2D::ZeroVector };
 
-	// 옵션 활동 태그( Interact.* ) → 플레이어 Ability 태그. 매핑 없는 HoldAbility 옵션은 표시하지 않음
+	// 옵션 활동 태그( Interact.* ) → Character Ability 태그
 	UPROPERTY(EditDefaultsOnly, Category = "Interact|Ability")
 	TMap<FGameplayTag, FGameplayTag>		InteractionToAbility;
 
