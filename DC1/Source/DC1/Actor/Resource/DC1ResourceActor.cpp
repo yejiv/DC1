@@ -7,15 +7,23 @@
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Define/DC1Enums.h"
+#include "GameplayEffectExtension.h"
 #include "GameFramework/GameStateBase.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
+#include "Item/Pickup/DC1PickupItem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 namespace
 {
-	// 고갈 후 이 시간 안에 받은 상태 변화만 "방금 부서짐"으로 보고 연출한다
+	// 고갈 후 이 시간 안에 받은 상태 변화만 방금 부서짐으로 보고 연출
 	constexpr double RecentDepleteWindow = 1.0;
+
+	// 한 번에 여러 개 스폰할 때 위로 쌓는 간격
+	constexpr float DropStackSpacing = 20.f;
+
+	// 맞은 지점에서 표면 바깥으로 띄우는 거리 - 픽업 크기 정도. 노드 콜리전에 박혀 스폰되지 않게
+	constexpr float DropSurfaceOffset = 15.f;
 }
 
 ADC1ResourceActor::ADC1ResourceActor()
@@ -24,14 +32,13 @@ ADC1ResourceActor::ADC1ResourceActor()
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
-	// 레벨 배치 전제 - 맞기 전까지 복제하지 않는다. 변화는 ForceNetUpdate로 밀어낸다
+	// 레벨 배치 전제 - 맞기 전까지 복제하지 않음
 	NetDormancy = DORM_Initial;
 	SetNetUpdateFrequency(10.f);
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
-	// 근접 공격 콜라이더와 양쪽 다 GenerateOverlapEvents가 켜져 있어야 겹침이 성립한다
 	ResourceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ResourceMesh"));
 	ResourceMesh->SetupAttachment(SceneRoot);
 	ResourceMesh->SetCollisionProfileName(DC1CollisionProfile::Resource);
@@ -41,7 +48,6 @@ ADC1ResourceActor::ADC1ResourceActor()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
-	// Damage 메타 어트리뷰트가 여기 있어서 기존 데미지 GE가 그대로 먹는다
 	AttributeSet = CreateDefaultSubobject<UDC1AttributeSet>(TEXT("AttributeSet"));
 }
 
@@ -56,7 +62,7 @@ void ADC1ResourceActor::PostInitializeComponents()
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-	// BeginPlay가 아니라 여기 - 첫 OnRep이 BeginPlay보다 먼저 올 수 있고, ApplyScale이 이 값을 쓴다
+	// 첫 OnRep이 BeginPlay보다 먼저 올 수 있음
 	InitialMeshScale = ResourceMesh->GetRelativeScale3D();
 }
 
@@ -70,8 +76,13 @@ void ADC1ResourceActor::BeginPlay()
 		AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), MaxHealth);
 	}
 
-	// 클라도 Attribute 복제 시 Broadcast 된다
 	HealthChangedHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChanged);
+
+	// 서버만 - Health 콜백엔 GE 컨텍스트가 없음 ( PostGameplayEffectExecute의 SetHealth라서 GEModData == nullptr )
+	if (true == HasAuthority())
+	{
+		DamageAppliedHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).AddUObject(this, &ThisClass::HandleDamageApplied);
+	}
 
 	ApplyResourceState(false);
 }
@@ -83,8 +94,10 @@ void ADC1ResourceActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (true == ::IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).Remove(HealthChangedHandle);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).Remove(DamageAppliedHandle);
 	}
 	HealthChangedHandle.Reset();
+	DamageAppliedHandle.Reset();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -109,7 +122,11 @@ void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData
 
 	WakeForReplication();
 
-	// TODO : 드랍 누적 += 클램프된 실제 감소량
+	// Damage 콜백이 먼저 계산해 둔 위치 ( 같은 GE 안에서 Damage → PostGameplayEffectExecute → Health 순 )
+	const FVector DropOrigin = (true == HasPendingDropOrigin) ? PendingDropOrigin : GetDropOrigin(InData);
+	HasPendingDropOrigin = false;
+
+	AccumulateDrop(InData.OldValue - InData.NewValue, DropOrigin);
 
 	if (InData.NewValue <= 0.f)
 	{
@@ -143,11 +160,104 @@ void ADC1ResourceActor::SetResourceState(EDC1ResourceActorState InNewState)
 
 void ADC1ResourceActor::Respawn()
 {
+	AccumulatedDropDamage = 0.f;
+
 	const float CurrentMaxHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
 	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), CurrentMaxHealth);
 
 	SetResourceState(EDC1ResourceActorState::Active);
 	SleepForReplication();
+}
+
+void ADC1ResourceActor::HandleDamageApplied(const FOnAttributeChangeData& InData)
+{
+	// PostGameplayEffectExecute - SetDamage(0) 재호출 무시
+	if (InData.NewValue <= 0.f || nullptr == InData.GEModData)
+	{
+		return;
+	}
+
+	PendingDropOrigin = GetDropOrigin(InData);
+	HasPendingDropOrigin = true;
+}
+
+FVector ADC1ResourceActor::GetDropOrigin(const FOnAttributeChangeData& InData) const
+{
+	const FBoxSphereBounds& Bounds = ResourceMesh->Bounds;
+	const FVector Fallback = Bounds.Origin + FVector::UpVector * Bounds.BoxExtent.Z;
+
+	if (nullptr == InData.GEModData)
+	{
+		return Fallback;
+	}
+
+	const FGameplayEffectContextHandle& Context = InData.GEModData->EffectSpec.GetContext();
+
+	// 히트를 싣는 공격이 Resource를 맞힌 히트면 그 자리
+	const FHitResult* HitResult = Context.GetHitResult();
+	if (nullptr != HitResult && this == HitResult->GetActor() && false == HitResult->bStartPenetrating)
+	{
+		return HitResult->ImpactPoint + HitResult->ImpactNormal * DropSurfaceOffset;
+	}
+
+	const AActor* Causer = Context.GetEffectCauser();
+	if (false == ::IsValid(Causer))
+	{
+		Causer = Context.GetInstigator();
+	}
+
+	if (false == ::IsValid(Causer))
+	{
+		return Fallback;
+	}
+
+	// 이 Resource 콜리전만 트레이스 - 공격자를 향한 표면
+	// GetClosestPointOnCollision은 볼록 도형만 지원해 복합 콜리전 노드에서 실패 -> LineTraceComponent로 변경
+	FHitResult SurfaceHit;
+	const FCollisionQueryParams Params(SCENE_QUERY_STAT(DC1ResourceDropOrigin), true);
+
+	// 공격자 높이에서 Resource 중심축으로 수평 -> 나무처럼 높은 Resource Spawn 위치 맞춤
+	// 높이는 Resource 범위 안으로 - 공격자가 더 높거나 낮아도 표면을 지남
+	const FVector CauserLocation = Causer->GetActorLocation();
+	const float TraceZ = FMath::Clamp(CauserLocation.Z, Bounds.Origin.Z - Bounds.BoxExtent.Z, Bounds.Origin.Z + Bounds.BoxExtent.Z);
+	const FVector Start(CauserLocation.X, CauserLocation.Y, TraceZ);
+	const FVector End(Bounds.Origin.X, Bounds.Origin.Y, TraceZ);
+
+	if (true == ResourceMesh->LineTraceComponent(SurfaceHit, Start, End, Params))
+	{
+		return SurfaceHit.ImpactPoint + SurfaceHit.ImpactNormal * DropSurfaceOffset;
+	}
+
+	// 수평으로 빗나가면 ( 중심축이 비어 있는 모양 ) Resource 중심으로 한 번 더
+	if (true == ResourceMesh->LineTraceComponent(SurfaceHit, CauserLocation, Bounds.Origin, Params))
+	{
+		return SurfaceHit.ImpactPoint + SurfaceHit.ImpactNormal * DropSurfaceOffset;
+	}
+
+	return Fallback;
+}
+
+void ADC1ResourceActor::AccumulateDrop(float InDamage, const FVector& InOrigin)
+{
+	// 회복 GE
+	if (InDamage <= 0.f)
+	{
+		return;
+	}
+
+	AccumulatedDropDamage += InDamage;
+
+	const int32 DropTimes = FMath::FloorToInt32(AccumulatedDropDamage / DropDamage);
+	AccumulatedDropDamage -= DropTimes * DropDamage;
+
+	UE_LOG(LogTemp, Log, TEXT("[DC1] %s drop : damage %.1f -> %d drop(s), remain %.1f"), *GetName(), InDamage, DropTimes, AccumulatedDropDamage);
+
+	// 맞은 지점 ( 공격자 쪽 표면 ) 에서 위로 간격만 둠 - 이후 물리로 떨어지며 겹치면 살짝만 밀림
+	for (int32 Index = 0; Index < DropTimes; ++Index)
+	{
+		const FVector Location = InOrigin + FVector::UpVector * (Index * DropStackSpacing);
+		ADC1PickupItem::SpawnDrop(GetWorld(), DropItemID, DropCountPerDrop, Location);
+	}
 }
 
 void ADC1ResourceActor::WakeForReplication()
@@ -254,7 +364,7 @@ float ADC1ResourceActor::GetHealthRatio() const
 {
 	const float CurrentMaxHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
 
-	// 클라 첫 복제 전 ( Dormant 중 ) 은 0 / 0
+	// 클라 첫 복제 전 ( Dormant 중 ) 은 0 나누기
 	if (CurrentMaxHealth <= 0.f)
 	{
 		return 1.f;

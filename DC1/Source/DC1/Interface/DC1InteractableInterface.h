@@ -79,4 +79,7 @@ public:
 
 	// 로컬 플레이어 포커스 변경
 	virtual void							OnLocalFocusChanged(bool InIsFocused) {}
+
+	// 키 입력 프롬프트 ScreenOffset ( 포커스 시 1회 ) - 기본은 InteractCollider 중심
+	virtual FVector2D						GetPromptScreenOffset() const { return FVector2D::ZeroVector; };
 };

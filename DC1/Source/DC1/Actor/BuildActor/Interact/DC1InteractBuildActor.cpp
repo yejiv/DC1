@@ -123,6 +123,20 @@ void ADC1InteractBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ThisClass, PalWorkers);
 }
 
+FVector2D ADC1InteractBuildActor::GetPromptScreenOffset() const
+{
+	if (false == HasPromptOffset)
+	{
+		const FBoxSphereBounds& Bounds = BuildMesh->Bounds;
+
+		FVector2D Offset = FVector2D(Bounds.BoxExtent.X * 2.f, Bounds.BoxExtent.Z);
+
+		return Offset;
+	}
+
+	return PromptScreenOffset;
+}
+
 UPrimitiveComponent* ADC1InteractBuildActor::GetInteractCollider() const
 {
 	if (false == ::IsValid(InteractCollider))

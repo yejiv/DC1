@@ -14,6 +14,7 @@
 #include "Data/DA/DataTable/DC1DataTableData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Define/DC1ItemHelper.h"
+#include "Item/Pickup/DC1PickupItem.h"
 #include "Define/DC1Macro.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
@@ -362,8 +363,32 @@ void UDC1PlayerInventoryComponent::HandleMaxWeightChanged(const FOnAttributeChan
 
 bool UDC1PlayerInventoryComponent::DropItem(int32 InSlotIndex, int32 InCount)
 {
-	// TODO : 월드에 아이템 스폰 (픽업 시스템이 생기면 연결)
-	return RemoveItem(InSlotIndex, InCount);
+	if (false == Slots.IsValidIndex(InSlotIndex) || true == Slots[InSlotIndex].IsEmpty())
+	{
+		return false;
+	}
+
+	const APlayerState* OwnerState = GetOwner<APlayerState>();
+	const APawn* OwnerPawn = (true == ::IsValid(OwnerState)) ? OwnerState->GetPawn() : nullptr;
+	if (false == ::IsValid(OwnerPawn))
+	{
+		return false;
+	}
+
+	const FName DropItemID = Slots[InSlotIndex].ItemID;
+	const int32 DropCount = FMath::Min(InCount, Slots[InSlotIndex].StackCount);
+
+	if (false == RemoveItem(InSlotIndex, DropCount))
+	{
+		return false;
+	}
+
+	const FVector DropLocation = OwnerPawn->GetActorLocation() + OwnerPawn->GetActorForwardVector() * 100.f + FVector::UpVector * 50.f;
+	
+	// 플레이어가 버린 것 -> 누구든 F로만 주울수 있음 -> InInteractOnly = true
+	ADC1PickupItem::SpawnDrop(GetWorld(), DropItemID, DropCount, DropLocation, true);
+
+	return true;
 }
 
 bool UDC1PlayerInventoryComponent::DiscardItem(int32 InSlotIndex, int32 InCount)

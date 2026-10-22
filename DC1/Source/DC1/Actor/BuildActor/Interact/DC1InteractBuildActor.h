@@ -70,6 +70,7 @@ public:
 	virtual FDC1OnInteractOptionsChanged& GetOnInteractOptionsChanged() override { return OnInteractOptionsChanged; }
 	virtual void					Interact(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override final;
 	virtual void					OnLocalFocusChanged(bool InIsFocused) override;
+	virtual FVector2D				GetPromptScreenOffset() const override;
 
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData) override;
@@ -145,6 +146,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UBoxComponent>				InteractCollider = { nullptr };
 
+
 	// 건설 중 옵션 F 건설(HoldAbility), C 취소(HoldConfirm)
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact")
 	TArray<FDC1InteractOption>				ConstructionOptions;
@@ -167,6 +169,14 @@ protected:
 	bool									IsLocalFocused = { false };
 
 private:
+	// 키 입력 프롬프트 위치 갱신
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact|Prompt")
+	bool									HasPromptOffset = { false };
+
+	// 키 입력 프롬프트 Screen Offset
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Interact|Prompt", meta = (EditCondition = "HasPromptOffset"))
+	FVector2D								PromptScreenOffset = { FVector2D::ZeroVector };
+
 	// Completed 시점 Flash 지속시간
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	float									CompleteFlashDuration = { 0.4f };
