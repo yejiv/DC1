@@ -60,6 +60,16 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IcicleCutter);		// 아이시클 커터
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FlareArrow);		// 플레어 애로우
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SpiritFlame);		// 스피릿 플레임
+
+	// 근접
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DoubleFang);		// 더블 팽
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DoubleFangElectric);// 더블 팽 (전기)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_PunchFlurry);		// 펀치 플러리
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_AntlerUppercut);	// 안틀러 어퍼컷
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SpinningRoundhouse);// 스피닝 라운드하우스
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_LightningClaw);	// 라이트닝 클로
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_Bite);				// 물기
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BiteElectric);		// 물기 (전기)
 #pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.
@@ -104,6 +114,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Hit);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Tossin);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_FarSkill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_NearSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Encount);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Work);
 
@@ -122,6 +133,8 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Hit);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Tossin);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_FarSkill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill2);	// 근접 스킬이 둘인 종의 두 번째 몽타주
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Encount);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_LookAround);
