@@ -702,3 +702,64 @@ void FDC1PalFaceOwnerTask::ExitState(FStateTreeExecutionContext& Context, const 
 		Pal->GetCharacterMovement()->RotationRate.Yaw = PalData->RotationRateYaw;
 	}
 }
+
+
+namespace DC1PalTaskHelper
+{
+	// 표적이 정면에서 InAcceptAngle 안인가 (수평)
+	static bool IsFacing(const AActor& Pal, const AActor& Target, float InAcceptAngle)
+	{
+		const FVector ToTarget = (Target.GetActorLocation() - Pal.GetActorLocation()).GetSafeNormal2D();
+		if (true == ToTarget.IsNearlyZero())
+		{
+			return true;
+		}
+
+		const FVector Forward = Pal.GetActorForwardVector().GetSafeNormal2D();
+		return FVector::DotProduct(Forward, ToTarget) >= FMath::Cos(FMath::DegreesToRadians(InAcceptAngle));
+	}
+}
+
+EStateTreeRunStatus FDC1PalFaceTargetTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.ElapsedTime = 0.f;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	AActor* Target = IsValid(AIController) ? AIController->GetCurrentTarget() : nullptr;
+	if (false == IsValid(Pal) || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 회전은 focus가 구동
+	Pal->SetOrientToMovement(false);
+	if (Target != AIController->GetFocusActor())
+	{
+		AIController->SetFocus(Target, EAIFocusPriority::Gameplay);
+	}
+
+	return DC1PalTaskHelper::IsFacing(*Pal, *Target, InstanceData.AcceptAngle) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalFaceTargetTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.ElapsedTime += DeltaTime;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	const APawn* Pal = IsValid(AIController) ? AIController->GetPawn() : nullptr;
+	const AActor* Target = IsValid(AIController) ? AIController->GetCurrentTarget() : nullptr;
+	if (false == IsValid(Pal) || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (InstanceData.ElapsedTime >= InstanceData.GiveUpTime)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return DC1PalTaskHelper::IsFacing(*Pal, *Target, InstanceData.AcceptAngle) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
+}

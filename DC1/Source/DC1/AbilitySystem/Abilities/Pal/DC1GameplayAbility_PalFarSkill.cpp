@@ -9,6 +9,7 @@
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "AbilitySystemComponent.h"
+#include "AIController.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -91,13 +92,27 @@ void UDC1GameplayAbility_PalFarSkill::FireProjectile(float InYawOffset)
 		return;
 	}
 
-	const FVector Direction = Pal->GetActorForwardVector().GetSafeNormal2D().RotateAngleAxis(InYawOffset, FVector::UpVector);
+	const FVector Forward = Pal->GetActorForwardVector().GetSafeNormal2D();
 
 	//발사 위치 찾기
 	const USkeletalMeshComponent* MeshComp = Pal->GetMesh();
 	const FVector MuzzleLocation = (nullptr != MeshComp && true == MeshComp->DoesSocketExist(MuzzleSocketName))
 		? MeshComp->GetSocketLocation(MuzzleSocketName)
-		: Pal->GetActorLocation() + (Direction * MuzzleForwardOffset) + (FVector::UpVector * MuzzleHeightOffset);
+		: Pal->GetActorLocation() + (Forward * MuzzleForwardOffset) + (FVector::UpVector * MuzzleHeightOffset);
+
+	// AI 는 라이라(WeaponTowardsFocus)처럼 발사 위치 → 포커스 지점으로 조준 (상하 포함). 탑승(플레이어 조종)은 팰 정면
+	FVector AimDirection = Forward;
+	if (const AAIController* AIController = Cast<AAIController>(Pal->GetController()))
+	{
+		const FVector FocalPoint = AIController->GetFocalPoint();
+		const FVector ToFocus = (FocalPoint - MuzzleLocation).GetSafeNormal();
+		if (true == FAISystem::IsValidLocation(FocalPoint) && false == ToFocus.IsNearlyZero())
+		{
+			AimDirection = ToFocus;
+		}
+	}
+
+	const FVector Direction = AimDirection.RotateAngleAxis(InYawOffset, FVector::UpVector);
 
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 	EffectContext.SetAbility(this);

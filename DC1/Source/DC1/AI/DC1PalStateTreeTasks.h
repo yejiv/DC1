@@ -234,3 +234,42 @@ struct FDC1PalRetreatTask : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 };
+
+
+USTRUCT()
+struct FDC1PalFaceTargetTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	// 표적이 정면에서 이 각도 안이면 통과
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0", ClampMax = "180.0"))
+	float							AcceptAngle = { 10.f };
+
+	// 이 시간 안에 못 돌면 그 방향 그대로 통과
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							GiveUpTime = { 1.f };
+
+	UPROPERTY()
+	float							ElapsedTime = { 0.f };
+};
+
+
+// 공격 전에 표적 쪽으로 돈다 (BTTask_RotateToFaceBBEntry 와 같은 역할). Failed 는 내지 않는다
+USTRUCT(DisplayName = "Pal Face Target", Category = "Pal")
+struct FDC1PalFaceTargetTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalFaceTargetTaskInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+};
