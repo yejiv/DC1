@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "Interface/DC1InteractableInterface.h"
+#include "Interface/DC1WorkTargetInterface.h"
 #include "DC1InteractBuildActor.generated.h"
 
 class ADC1Character;
@@ -25,10 +26,9 @@ enum class EDC1BuildInfoState : uint8
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnBuildCompleted);
 DECLARE_MULTICAST_DELEGATE(FDC1OnWorkProgressChanged);
-DECLARE_MULTICAST_DELEGATE(FDC1OnPalWorkersChanged);
 
 UCLASS()
-class DC1_API ADC1InteractBuildActor : public ADC1BuildActor, public IDC1InteractableInterface
+class DC1_API ADC1InteractBuildActor : public ADC1BuildActor, public IDC1InteractableInterface, public IDC1WorkTargetInterface
 {
 	GENERATED_BODY()
 
@@ -53,9 +53,6 @@ public:
 	EDC1BuildInfoState				GetInfoState() const { return InfoState; }
 	float							GetRemainingWork() const;
 	const TArray<TWeakObjectPtr<ADC1PalCharacter>>& GetPalWorkers() const { return PalWorkers; }
-	bool							IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const;
-
-	virtual FGameplayTag			GetWorkTypeTag() const;
 
 public:
 	virtual void					Tick(float DeltaTime) override;
@@ -73,14 +70,18 @@ public:
 	virtual FVector2D				GetPromptScreenOffset() const override;
 
 public:
+	// IDC1WorkTargetInterface override
+	virtual FGameplayTag			GetWorkTypeTag() const override;
+	virtual void					AddWorker(const ADC1Character* InWorker) override;
+	virtual void					RemoveWorker(const ADC1Character* InWorker) override;
+	virtual bool					AssignPalWorker(ADC1PalCharacter* InPal) override;
+	virtual void					UnassignPalWorker(ADC1PalCharacter* InPal) override;
+	virtual bool					IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const override;
+	virtual FDC1OnPalWorkersChanged& GetOnPalWorkersChanged() override { return OnPalWorkersChanged; }
+
+public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData) override;
 	virtual void					BuildDestroy() override;
-
-	void							AddWorker(const ADC1Character* InWorker);
-	void							RemoveWorker(const ADC1Character* InWorker);
-
-	bool							AssignPalWorker(ADC1PalCharacter* InPal);
-	void							UnassignPalWorker(ADC1PalCharacter* InPal);
 
 protected:
 	virtual void					ApplyState() override;

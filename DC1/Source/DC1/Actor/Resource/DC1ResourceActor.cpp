@@ -3,6 +3,7 @@
 
 #include "Actor/Resource/DC1ResourceActor.h"
 #include "Actor/Destroy/DC1DestroyActor.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -11,8 +12,15 @@
 #include "GameFramework/GameStateBase.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
 #include "Item/Pickup/DC1PickupItem.h"
+#include "Character/Pal/DC1PalCharacter.h"
+#include "Tags/Effect/DC1GameplayTag_Effect.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
+
+// TEMP v3 - DebugAssignNearbyPals ( ST 완성 후 함께 삭제 )
+#include "EngineUtils.h"
 
 namespace
 {
@@ -56,6 +64,97 @@ UAbilitySystemComponent* ADC1ResourceActor::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
+FGameplayTag ADC1ResourceActor::GetWorkTypeTag() const
+{
+	// Active에서만 작업 가능한 타입 반환
+	return (EDC1ResourceActorState::Active == ResourceState) ? WorkTypeTag : FGameplayTag::EmptyTag;
+}
+
+bool ADC1ResourceActor::AssignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (false == HasAuthority() || false == ::IsValid(InPal))
+	{
+		return false;
+	}
+
+	// 파괴된 펠이 자리를 영구히 먹지 않게 갱신
+	PalWorkers.RemoveAll([](const TWeakObjectPtr<ADC1PalCharacter>& InWorker) { return false == InWorker.IsValid(); });
+
+	if (true == IsPalWorkerAssigned(InPal))
+	{
+		return true;
+	}
+
+	if (EDC1ResourceActorState::Active != ResourceState || false == DC1WorkTarget::CanPalWorkAt(InPal, WorkTypeTag, GetActorLocation()))
+	{
+		return false;
+	}
+
+	PalWorkers.Add(InPal);
+	OnPalWorkersChanged.Broadcast();
+
+	return true;
+}
+
+void ADC1ResourceActor::UnassignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (PalWorkers.Remove(InPal) > 0)
+	{
+		OnPalWorkersChanged.Broadcast();
+	}
+}
+
+bool ADC1ResourceActor::IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const
+{
+	return PalWorkers.Contains(InPal);
+}
+
+void ADC1ResourceActor::ApplyWorkHit(const ADC1Character* InWorker, float InMultiplier)
+{
+	// 고갈된 프레임의 남은 타격 return
+	if (false == HasAuthority() || EDC1ResourceActorState::Active != ResourceState)
+	{
+		return;
+	}
+
+	// 배정된 펠만
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(InWorker);
+	if (false == ::IsValid(Pal) || false == IsPalWorkerAssigned(Pal))
+	{
+		return;
+	}
+
+	const float WorkerSpeed = DC1WorkTarget::GetWorkerSpeed(Pal, WorkTypeTag);
+	const float Damage = WorkerSpeed * InMultiplier;
+	if (Damage <= 0.f)
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* SourceASC = Pal->GetAbilitySystemComponent();
+	if (false == ::IsValid(SourceASC))
+	{
+		return;
+	}
+
+	// GetDropOrigin이 펠 쪽 표면에 드랍
+	const FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+	const FGameplayEffectSpecHandle Spec = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), 1.f, Context);
+	if (false == Spec.IsValid())
+	{
+		return;
+	}
+
+	// 체력 감소는 AttributeSet의 PostGameplayEffectExecute가
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, Damage);
+
+	const float OldHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
+	SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), AbilitySystemComponent);
+	const float NewHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
+
+	UE_LOG(LogTemp, Log, TEXT("[DC1] %s work hit : %s speed %.1f x %.2f = %.1f, HP %.1f -> %.1f"), *GetName(), *GetNameSafe(Pal), WorkerSpeed, InMultiplier, Damage, OldHealth, NewHealth);
+}
+
 void ADC1ResourceActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -85,19 +184,29 @@ void ADC1ResourceActor::BeginPlay()
 	}
 
 	ApplyResourceState(false);
+
+	// TEMP v3 - 3초마다 근처 거점 펠 배정 + GA 실행 ( 리스폰 후 재배정까지 확인 )
+	if (true == HasAuthority() && DebugAssignRadius > 0.f)
+	{
+		GetWorldTimerManager().SetTimer(DebugAssignTimer, this, &ThisClass::DebugAssignNearbyPals, 3.f, true);
+	}
 }
 
 void ADC1ResourceActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorldTimerManager().ClearTimer(RespawnTimer);
+	GetWorldTimerManager().ClearTimer(DebugAssignTimer);
 
 	if (true == ::IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).Remove(HealthChangedHandle);
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).Remove(DamageAppliedHandle);
 	}
+	
 	HealthChangedHandle.Reset();
 	DamageAppliedHandle.Reset();
+
+	ClearPalWorkers();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -150,6 +259,9 @@ void ADC1ResourceActor::SetResourceState(EDC1ResourceActorState InNewState)
 		DepletedServerTime = (true == ::IsValid(GameState)) ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
 
 		GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::Respawn, RespawnTime, false);
+
+		// 배정 전원 해제 → 펠 Work GA 종료
+		ClearPalWorkers();
 	}
 
 	// Standalone 표시
@@ -372,4 +484,56 @@ float ADC1ResourceActor::GetHealthRatio() const
 
 	const float CurrentHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
 	return FMath::Clamp(CurrentHealth / CurrentMaxHealth, 0.f, 1.f);
+}
+
+void ADC1ResourceActor::ClearPalWorkers()
+{
+	if (true == PalWorkers.IsEmpty())
+	{
+		return;
+	}
+
+	PalWorkers.Empty();
+	OnPalWorkersChanged.Broadcast();
+}
+
+void ADC1ResourceActor::DebugAssignNearbyPals()
+{
+	// TEMP v3 - ST 대신 배정 → SetWorkTarget → Work GA. 이미 일하는 펠은 GA 활성 실패로 그냥 지나감 ( ST 완성 후 삭제 )
+	if (EDC1ResourceActorState::Active != ResourceState)
+	{
+		return;
+	}
+
+	const FVector Center = GetActorLocation();
+	const float RadiusSq = FMath::Square(DebugAssignRadius);
+
+	for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
+	{
+		ADC1PalCharacter* Pal = *It;
+		if (false == ::IsValid(Pal) || FVector::DistSquared(Center, Pal->GetActorLocation()) > RadiusSq)
+		{
+			continue;
+		}
+
+		if (false == AssignPalWorker(Pal))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[DC1] %s DebugAssign Rejected - [%s]"), *GetName(), *GetNameSafe(Pal));
+			continue;
+		}
+
+		Pal->SetWorkTarget(this);
+
+		// 프로젝트 규약 - ActivationTag( 스펙 동적 태그 ) 캐시로 실행. 엔진 TryActivateAbilitiesByTag는 GA 에셋 태그만 본다
+		UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(Pal->GetAbilitySystemComponent());
+		if (false == ::IsValid(ASC) || true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
+		{
+			continue;
+		}
+
+		if (false == ASC->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Work))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[DC1] %s DebugAssign GA Failed - [%s] ( DA_Ability_Pal에 Ability.Pal.Work 항목 확인 )"), *GetName(), *GetNameSafe(Pal));
+		}
+	}
 }

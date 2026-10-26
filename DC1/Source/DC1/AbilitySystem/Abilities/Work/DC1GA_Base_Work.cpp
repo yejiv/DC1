@@ -24,8 +24,8 @@ void UDC1GA_Base_Work::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 
 	if (true == ActorInfo->IsLocallyControlled())
 	{
-		ADC1InteractBuildActor* WorkActor = FindWorkTarget();
-		if (false == ::IsValid(WorkActor))
+		IDC1WorkTargetInterface* WorkActor = FindWorkTarget();
+		if (nullptr == WorkActor)
 		{
 			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 			return;
@@ -48,12 +48,12 @@ void UDC1GA_Base_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 		StopWork();
 	}
 
-	WorkTarget = nullptr;
+	WorkTarget.Reset();
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-void UDC1GA_Base_Work::BeginWork(ADC1InteractBuildActor* InWorkTarget)
+void UDC1GA_Base_Work::BeginWork(IDC1WorkTargetInterface* InWorkTarget)
 {
 	WorkTarget = InWorkTarget;
 
@@ -72,7 +72,7 @@ void UDC1GA_Base_Work::WaitWorkTarget()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
-ADC1InteractBuildActor* UDC1GA_Base_Work::FindWorkTarget() const
+IDC1WorkTargetInterface* UDC1GA_Base_Work::FindWorkTarget() const
 {
 	const ADC1Character* Worker = Cast<ADC1Character>(GetAvatarActorFromActorInfo());
 	if (false == ::IsValid(Worker))

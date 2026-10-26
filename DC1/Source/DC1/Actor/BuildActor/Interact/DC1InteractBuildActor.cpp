@@ -10,16 +10,11 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
-#include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Build/DC1GameplayTag_Build.h"
 #include "Tags/Work/DC1GameplayTag_Work.h"
-
-#include "Data/DA/Pal/DC1PalData.h"
-
-#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 
 #include "Components/WidgetComponent.h"
 #include "UI/World/BuildInfo/DC1BuildInfoWidget.h"
@@ -534,25 +529,7 @@ float ADC1InteractBuildActor::ComputeTotalWorkSpeed()
 			continue;
 		}
 
-		const UAbilitySystemComponent* ASC = Worker->GetAbilitySystemComponent();
-		if (false == ::IsValid(ASC) || ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead))
-		{
-			continue;
-		}
-
-		float WorkSpeed = ASC->GetNumericAttribute(UDC1CharacterAttributeSet::GetWorkSpeedAttribute());
-		
-		const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(Worker);
-		if (true == ::IsValid(Pal))
-		{
-			const UDC1PalData* PalData = Pal->GetPalData();
-			if (true == ::IsValid(PalData))
-			{
-				WorkSpeed *= PalData->GetWorkSuitabilityLevel(GetWorkTypeTag());
-			}
-		}
-
-		TotalWorkSpeed += WorkSpeed;
+		TotalWorkSpeed += DC1WorkTarget::GetWorkerSpeed(Worker, GetWorkTypeTag());
 	}
 
 	return TotalWorkSpeed;
@@ -630,32 +607,7 @@ void ADC1InteractBuildActor::ReleaseInfoWidget()
 
 bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
 {
-	if (false == ::IsValid(InPal) || EDC1Team::Player != InPal->GetTeam())
-	{
-		return false;
-	}
-
-	FGameplayTag RequiredTag = GetWorkTypeTag();
-	if (false == RequiredTag.IsValid())
-	{
-		return false;
-	}
-
-	const UDC1PalData* PalData = InPal->GetPalData();
-	if (false == ::IsValid(PalData) || false == PalData->CanDoWork(RequiredTag))
-	{
-		return false;
-	}
-
-	// 거점 배치 팰
-	ADC1PalBoxActor* PalBox = InPal->GetBasePalBox();
-	if (true == ::IsValid(PalBox))
-	{
-		return PalBox->IsInBase(GetActorLocation());
-	}
-
-	// 소환된 팰 , TODO 거리 제한 
-	return true;
+	return DC1WorkTarget::CanPalWorkAt(InPal, GetWorkTypeTag(), GetActorLocation());
 }
 
 void ADC1InteractBuildActor::ApplyPalWorkers()

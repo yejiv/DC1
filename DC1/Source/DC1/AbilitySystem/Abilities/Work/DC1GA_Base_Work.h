@@ -5,7 +5,8 @@
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/DC1GameplayAbility.h"
 
-#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
+#include "Interface/DC1WorkTargetInterface.h"
+#include "UObject/WeakInterfacePtr.h"
 
 #include "DC1GA_Base_Work.generated.h"
 
@@ -30,24 +31,24 @@ protected:
 	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 	// 대상 확정 - 서버면 StartWork( 실패 시 End ), 이어서 OnWorkStarted
-	void					BeginWork(ADC1InteractBuildActor* InWorkTarget);
+	void					BeginWork(IDC1WorkTargetInterface* InWorkTarget);
 
 	// 로컬에서 대상을 찾은 직후 - 기본은 바로 BeginWork ( 펠 = 서버 로컬 )
-	virtual void			OnLocalWorkTargetFound(ADC1InteractBuildActor* InWorkTarget) { BeginWork(InWorkTarget); }
+	virtual void			OnLocalWorkTargetFound(IDC1WorkTargetInterface* InWorkTarget) { BeginWork(InWorkTarget); }
 
 	// 로컬이 아닌 인스턴스( 원격 클라의 서버 GA ) - 대상 수신 대기. 기본은 대상을 알 방법이 없으므로 End
 	virtual void			WaitWorkTarget();
 
 private:
 	// Work 대상 - 아바타( ADC1Character )의 GetCurrentWorkTarget
-	ADC1InteractBuildActor*	FindWorkTarget() const;
+	IDC1WorkTargetInterface*	FindWorkTarget() const;
 
 // PURE_VIRTUAL
 protected:
-	// 서버 - 검증 후 ADC1InteractBuildActor->AddWorker. false면 End
-	virtual bool			StartWork(ADC1InteractBuildActor* InWorkTarget) PURE_VIRTUAL(UDC1GA_Base_Work::StartWork, return false;);
+	// 서버 - 검증 후 대상->AddWorker. false면 End
+	virtual bool			StartWork(IDC1WorkTargetInterface* InWorkTarget) PURE_VIRTUAL(UDC1GA_Base_Work::StartWork, return false;);
 
-	// 서버 - ADC1InteractBuildActor->RemoveWorker
+	// 서버 - 대상->RemoveWorker
 	virtual void			StopWork()	PURE_VIRTUAL(UDC1GA_Base_Work::StopWork, );
 
 	// 대상 확정 후 액션 ( 양쪽 ) - ex) 도구 / PlayMontage
@@ -55,5 +56,5 @@ protected:
 
 protected:
 	// BeginWork에서 확정, EndAbility에서 비움
-	TWeakObjectPtr<ADC1InteractBuildActor>	WorkTarget = { nullptr };
+	TWeakInterfacePtr<IDC1WorkTargetInterface>	WorkTarget = { nullptr };
 };
