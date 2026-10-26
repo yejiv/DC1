@@ -10,6 +10,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AIController.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -52,29 +53,20 @@ void UDC1GameplayAbility_PalFarSkill::PerformSkillEffect()
 
 	const int32 ShotCount = GetShotCount();
 	const float ShotInterval = bHasSkillDef ? SkillDef.ShotInterval : 0.f;
-	const float SpreadAngle = bHasSkillDef ? SkillDef.SpreadAngle : 0.f;
 
-	// 연사 -- 첫 발은 지금, 나머지는 타이머
-	if (1 < ShotCount && 0.f < ShotInterval)
+	// 첫 발은 지금, 나머지는 ShotInterval 마다. 여러 발이면 간격이 있어야 한다
+	FireProjectile();
+
+	RemainingShots = ShotCount - 1;
+	if (0 < RemainingShots && 0.f < ShotInterval)
 	{
-		RemainingShots = ShotCount - 1;
-		FireProjectile(FMath::FRandRange(-0.5f, 0.5f) * SpreadAngle);
 		GetWorld()->GetTimerManager().SetTimer(ShotTimerHandle, this, &ThisClass::FireNextShot, ShotInterval, true);
-		return;
-	}
-
-	// 한꺼번에 -- 부채꼴로 고르게
-	for (int32 Index = 0; Index < ShotCount; ++Index)
-	{
-		const float Alpha = (1 < ShotCount) ? static_cast<float>(Index) / (ShotCount - 1) : 0.5f;
-		FireProjectile((Alpha - 0.5f) * SpreadAngle);
 	}
 }
 
 void UDC1GameplayAbility_PalFarSkill::FireNextShot()
 {
-	const float SpreadAngle = bHasSkillDef ? SkillDef.SpreadAngle : 0.f;
-	FireProjectile(FMath::FRandRange(-0.5f, 0.5f) * SpreadAngle);
+	FireProjectile();
 
 	--RemainingShots;
 	if (RemainingShots <= 0)
@@ -83,7 +75,7 @@ void UDC1GameplayAbility_PalFarSkill::FireNextShot()
 	}
 }
 
-void UDC1GameplayAbility_PalFarSkill::FireProjectile(float InYawOffset)
+void UDC1GameplayAbility_PalFarSkill::FireProjectile()
 {
 	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetAvatarActorFromActorInfo());
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
@@ -94,11 +86,17 @@ void UDC1GameplayAbility_PalFarSkill::FireProjectile(float InYawOffset)
 
 	const FVector Forward = Pal->GetActorForwardVector().GetSafeNormal2D();
 
-	//발사 위치 찾기
+	//발사 위치
 	const USkeletalMeshComponent* MeshComp = Pal->GetMesh();
-	const FVector MuzzleLocation = (nullptr != MeshComp && true == MeshComp->DoesSocketExist(MuzzleSocketName))
+	const UCapsuleComponent* Capsule = Pal->GetCapsuleComponent();
+	FVector MuzzleLocation = (nullptr != MeshComp && true == MeshComp->DoesSocketExist(MuzzleSocketName))
 		? MeshComp->GetSocketLocation(MuzzleSocketName)
 		: Pal->GetActorLocation() + (Forward * MuzzleForwardOffset) + (FVector::UpVector * MuzzleHeightOffset);
+
+	if (true == bHasSkillDef && true == SkillDef.bFireFromAboveHead && nullptr != Capsule)
+	{
+		MuzzleLocation = Pal->GetActorLocation() + (FVector::UpVector * (Capsule->GetScaledCapsuleHalfHeight() + AboveHeadOffset));
+	}
 
 	// AI 는 라이라(WeaponTowardsFocus)처럼 발사 위치 → 포커스 지점으로 조준 (상하 포함). 탑승(플레이어 조종)은 팰 정면
 	FVector AimDirection = Forward;
@@ -112,7 +110,10 @@ void UDC1GameplayAbility_PalFarSkill::FireProjectile(float InYawOffset)
 		}
 	}
 
-	const FVector Direction = AimDirection.RotateAngleAxis(InYawOffset, FVector::UpVector);
+	const float SpreadAngle = bHasSkillDef ? SkillDef.SpreadAngle : 0.f;
+	const FVector Direction = (0.f < SpreadAngle)
+		? FMath::VRandCone(AimDirection, FMath::DegreesToRadians(SpreadAngle * 0.5f))
+		: AimDirection;
 
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 	EffectContext.SetAbility(this);

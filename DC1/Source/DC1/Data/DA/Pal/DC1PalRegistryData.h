@@ -112,11 +112,15 @@ struct FDC1PalSkillDef
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "1"))
 	int32			ShotCount = { 1 };
 
-	// 연사 간격
+	// 연사 간격. 여러 발이면 0보다 커야 한다 (동시 발사 없음)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0"))
 	float			ShotInterval = { 0.f };
 
-	// 퍼짐 각도
+	// 팰 머리 위에서 발사
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi")
+	bool			bFireFromAboveHead = { false };
+
+	// 원뿔 폭
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0", ClampMax = "180.0"))
 	float			SpreadAngle = { 0.f };
 
