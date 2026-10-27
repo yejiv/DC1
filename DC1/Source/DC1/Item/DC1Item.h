@@ -7,7 +7,6 @@
 #include "DC1Item.generated.h"
 
 class UStaticMeshComponent;
-class USphereComponent;
 
 UCLASS()
 class DC1_API ADC1Item : public AActor
@@ -18,9 +17,6 @@ public:
 	ADC1Item();
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<USphereComponent>		InteractCollider = { nullptr };
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent>	ItemMesh = { nullptr };
 };

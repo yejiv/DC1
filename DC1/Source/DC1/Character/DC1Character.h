@@ -8,7 +8,7 @@
 #include "DC1Character.generated.h"
 
 struct FOnAttributeChangeData;
-class ADC1InteractBuildActor;
+class IDC1WorkTargetInterface;
 
 UCLASS()
 class DC1_API ADC1Character : public ACharacter, public IAbilitySystemInterface
@@ -25,7 +25,7 @@ public:
 	virtual void SetAttackCollision(bool OnCollision) {}
 
 	// Work GA 대상 ( 플레이어 = 상호작용 대상, 펠 = 배정된 대상 ) - 일하지 않는 캐릭터는 nullptr
-	virtual ADC1InteractBuildActor* GetCurrentWorkTarget() const { return nullptr; }
+	virtual IDC1WorkTargetInterface* GetCurrentWorkTarget() const { return nullptr; }
 
 protected:
 	// ASC가 준비된 뒤 자식 클래스가 호출 (펠 = 스폰 시, 플레이어 = PlayerState 확보 시)

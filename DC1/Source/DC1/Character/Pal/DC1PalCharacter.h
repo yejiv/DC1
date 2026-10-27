@@ -8,6 +8,8 @@
 #include "GameplayTagContainer.h"
 #include "AI/DC1TeamTypes.h"
 #include "Data/Pal/DC1PalTypes.h"
+#include "Interface/DC1WorkTargetInterface.h"
+#include "UObject/WeakInterfacePtr.h"
 #include "DC1PalCharacter.generated.h"
 
 class ADC1PalBoxActor;
@@ -66,8 +68,12 @@ public:
 	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
 	const FGuid&						GetInstanceID() const { return InstanceID; }
 
-	// 거점 팰이면 소속 팰박스. 파트너·야생은 널. 서버 전용
+	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 서버 전용
 	ADC1PalBoxActor*					GetBasePalBox() const { return BasePalBox.Get(); }
+
+	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> Work GA가 GetCurrentWorkTarget으로 읽음. 서버 전용
+	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget) { WorkTarget = InWorkTarget; }
+	virtual IDC1WorkTargetInterface*	GetCurrentWorkTarget() const override { return WorkTarget.Get(); }
 
 #pragma region Capture
 	float								GetHealthRatio() const;
@@ -181,6 +187,8 @@ protected:
 	FGuid InstanceID;
 
 	TWeakObjectPtr<ADC1PalBoxActor> BasePalBox;
+
+	TWeakInterfacePtr<IDC1WorkTargetInterface> WorkTarget;
 
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)

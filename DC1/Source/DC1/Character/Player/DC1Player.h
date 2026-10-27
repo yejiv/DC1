@@ -40,7 +40,7 @@ public:
 	UDC1EquipComponent* GetEquipComponent() const;
 
 	// 상호작용 컴포넌트의 현재 대상 ( 로컬 - Work GA가 IsLocallyControlled에서 호출 )
-	virtual ADC1InteractBuildActor* GetCurrentWorkTarget() const override;
+	virtual IDC1WorkTargetInterface* GetCurrentWorkTarget() const override;
 
 public:
 	UFUNCTION()

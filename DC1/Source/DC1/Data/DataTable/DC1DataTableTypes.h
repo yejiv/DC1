@@ -71,8 +71,8 @@ struct FDC1BuildRow : public FTableRowBase
 	FGameplayTag RequiredTechTag;
 
 	//	4단계 고정 - ex) Build_Crafting_CraftAndRepair_WorkBench00
-	//	Page = Build.Crafing 
-	//	Row = BuildCrafting.CraftAndRepair
+	//	Page = Build_Crafing 
+	//	Row = Build_Crafting_CraftAndRepair
 	//	Slot = Build_Crafting_CraftAndRepair_WorkBench00
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag BuildTag;
@@ -135,6 +135,10 @@ struct FDC1ItemRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> ItemIcon;
+
+	// PickupItem이 사용할 Mesh ( World에 Spawn 되었을 때 Mesh, 비워두면 기본 메쉬 사용(주머니) ) 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UStaticMesh> WorldMesh;
 };
 
 // 귀중품 전용 데이터 (DataTable_ValuableItem에 있으면 귀중품 - 상자 보관/버리기 불가, 무게 제외, 스택 제한 없음)

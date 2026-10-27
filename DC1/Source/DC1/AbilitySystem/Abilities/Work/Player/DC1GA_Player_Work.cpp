@@ -8,6 +8,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "AbilitySystemComponent.h"
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
@@ -38,14 +39,14 @@ bool UDC1GA_Player_Work::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 	}
 
 	const ADC1Character* Worker = Cast<ADC1Character>(ActorInfo->AvatarActor.Get());
-	const ADC1InteractBuildActor* Target = (true == ::IsValid(Worker)) ? Worker->GetCurrentWorkTarget() : nullptr;
+	const IDC1WorkTargetInterface* Target = (true == ::IsValid(Worker)) ? Worker->GetCurrentWorkTarget() : nullptr;
 
-	return (true == ::IsValid(Target)) && (true == WorkSets.Contains(Target->GetWorkTypeTag()));
+	return (nullptr != Target) && (true == WorkSets.Contains(Target->GetWorkTypeTag()));
 }
 
 void UDC1GA_Player_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	// 착용하지 않은 도구는 UnequipTool이 태그 비교로 무시한다 - 착용 전에 끝나는 경로( 대상 없음, Commit 실패 )도 그대로 통과
+	// 도구 Unequip
 	if (true == CurrentToolTag.IsValid())
 	{
 		if (UDC1EquipComponent* EquipComp = GetEquipComponent())
@@ -66,7 +67,7 @@ void UDC1GA_Player_Work::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	TargetDataDelegateHandle.Reset();
 
 	// 로컬 - 완성 구독 / 대상 잠금 해제
-	ADC1InteractBuildActor* Target = WorkTarget.Get();
+	ADC1InteractBuildActor* Target = Cast<ADC1InteractBuildActor>(WorkTarget.GetObject());
 	if (true == ::IsValid(Target))
 	{
 		Target->OnBuildCompleted.Remove(BuildCompletedDelegateHandle);
@@ -98,7 +99,7 @@ void UDC1GA_Player_Work::OnMontageAborted()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
-void UDC1GA_Player_Work::OnLocalWorkTargetFound(ADC1InteractBuildActor* InWorkTarget)
+void UDC1GA_Player_Work::OnLocalWorkTargetFound(IDC1WorkTargetInterface* InWorkTarget)
 {
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	const FGameplayAbilityActorInfo* Info = GetCurrentActorInfo();
@@ -109,13 +110,18 @@ void UDC1GA_Player_Work::OnLocalWorkTargetFound(ADC1InteractBuildActor* InWorkTa
 		FScopedPredictionWindow ScopedPrediction(ASC);
 
 		FGameplayAbilityTargetData_ActorArray* ActorData = new FGameplayAbilityTargetData_ActorArray();
-		ActorData->TargetActorArray.Add(InWorkTarget);
+		ActorData->TargetActorArray.Add(Cast<AActor>(InWorkTarget));
 
 		FGameplayAbilityTargetDataHandle DataHandle(ActorData);
 		ASC->CallServerSetReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey(), DataHandle, FGameplayTag(), ASC->ScopedPredictionKey);
 	}
 
-	BuildCompletedDelegateHandle = InWorkTarget->OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
+	// 완성 통지는 건축물만 - 플레이어 작업 대상은 상호작용 건축물뿐
+	ADC1InteractBuildActor* BuildTarget = Cast<ADC1InteractBuildActor>(InWorkTarget);
+	if (true == ::IsValid(BuildTarget))
+	{
+		BuildCompletedDelegateHandle = BuildTarget->OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
+	}
 
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
 	if (true == ::IsValid(InteractComp))
@@ -156,17 +162,17 @@ void UDC1GA_Player_Work::OnWorkTargetDataReceived(const FGameplayAbilityTargetDa
 
 	TargetDataDelegateHandle.Reset();
 
-	ADC1InteractBuildActor* Target = nullptr;
+	IDC1WorkTargetInterface* Target = nullptr;
 	if (true == InData.IsValid(0))
 	{
 		const TArray<TWeakObjectPtr<AActor>> Actors = InData.Get(0)->GetActors();
 		if (Actors.Num() > 0)
 		{
-			Target = Cast<ADC1InteractBuildActor>(Actors[0].Get());
+			Target = Cast<IDC1WorkTargetInterface>(Actors[0].Get());
 		}
 	}
 
-	if (false == ::IsValid(Target))
+	if (nullptr == Target)
 	{
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 		return;
@@ -176,7 +182,7 @@ void UDC1GA_Player_Work::OnWorkTargetDataReceived(const FGameplayAbilityTargetDa
 	BeginWork(Target);
 }
 
-bool UDC1GA_Player_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
+bool UDC1GA_Player_Work::StartWork(IDC1WorkTargetInterface* InWorkTarget)
 {
 	ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
 	UDC1InteractComponent* InteractComp = GetInteractComponent();
@@ -186,7 +192,7 @@ bool UDC1GA_Player_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
 	}
 
 	// 클라가 보낸 대상 - 서버 기준 거리 검증
-	if (false == InteractComp->IsInInteractRange(Player, InWorkTarget))
+	if (false == InteractComp->IsInInteractRange(Player, Cast<AActor>(InWorkTarget)))
 	{
 		return false;
 	}
@@ -198,8 +204,8 @@ bool UDC1GA_Player_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
 
 void UDC1GA_Player_Work::StopWork()
 {
-	ADC1InteractBuildActor* Target = WorkTarget.Get();
-	if (true == ::IsValid(Target))
+	IDC1WorkTargetInterface* Target = WorkTarget.Get();
+	if (nullptr != Target)
 	{
 		Target->RemoveWorker(Cast<ADC1Player>(GetAvatarActorFromActorInfo()));
 	}
@@ -210,17 +216,17 @@ void UDC1GA_Player_Work::OnWorkStarted()
 	IsSectionEnd = false;
 	IsPlayingMontage = false;
 
-	ADC1InteractBuildActor* Target = WorkTarget.Get();
-	const FDC1PlayerWorkSet* WorkSet = (true == ::IsValid(Target)) ? WorkSets.Find(Target->GetWorkTypeTag()) : nullptr;
+	IDC1WorkTargetInterface* Target = WorkTarget.Get();
+	const FDC1PlayerWorkSet* WorkSet = (nullptr != Target) ? WorkSets.Find(Target->GetWorkTypeTag()) : nullptr;
 	if (nullptr == WorkSet)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDC1GA_Player_Work :: No WorkSet for [%s] - Check WorkSets"), (true == ::IsValid(Target)) ? *Target->GetWorkTypeTag().ToString() : TEXT("None"));
+		UE_LOG(LogTemp, Warning, TEXT("UDC1GA_Player_Work :: No WorkSet for [%s] - Check WorkSets"), (nullptr != Target) ? *Target->GetWorkTypeTag().ToString() : TEXT("None"));
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 		return;
 	}
 
 	// 도구를 쓰지 않는 Work도 있으므로 태그가 비어 있으면 무기를 그대로 둔다
-	// 착용/해제는 EquipComponent가 서버 권한을 확인한다
+	// 착용/해제는 EquipComponent가 서버 권한을 확인
 	CurrentToolTag = WorkSet->ToolTag;
 	if (true == CurrentToolTag.IsValid())
 	{

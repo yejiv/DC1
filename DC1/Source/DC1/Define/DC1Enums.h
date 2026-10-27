@@ -11,6 +11,7 @@ namespace DC1CollisionProfile
 	inline constexpr TCHAR BuildCheck[] = TEXT("BuildCheck");
 	inline constexpr TCHAR BuildInteractionInfo[] = TEXT("BuildInteractionInfo");
 	inline constexpr TCHAR Resource[] = TEXT("Resource");
+	inline constexpr TCHAR Item[] = TEXT("Item");
 }
 
 #pragma endregion
@@ -202,4 +203,5 @@ enum class EDC1CollisionLayer : uint8
 	ECC_Projectile = ECC_GameTraceChannel7,
 	ECC_BuildSurface = ECC_GameTraceChannel8,		// Trace, 건설 가능여부 판단
 	ECC_Building = ECC_GameTraceChannel9,			// Object, Build
+	ECC_Item = ECC_GameTraceChannel10,				// Object, PickupItem
 };

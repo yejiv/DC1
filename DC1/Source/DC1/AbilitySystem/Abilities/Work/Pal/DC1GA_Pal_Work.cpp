@@ -6,8 +6,10 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/State/DC1GameplayTag_State.h"
+#include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Animation/AnimMontage.h"
 
 UDC1GA_Pal_Work::UDC1GA_Pal_Work(const FObjectInitializer& ObjectInitializer)
@@ -15,7 +17,7 @@ UDC1GA_Pal_Work::UDC1GA_Pal_Work(const FObjectInitializer& ObjectInitializer)
 {
 }
 
-bool UDC1GA_Pal_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
+bool UDC1GA_Pal_Work::StartWork(IDC1WorkTargetInterface* InWorkTarget)
 {
 	ADC1PalCharacter* Pal = GetPal();
 	if (false == ::IsValid(Pal) || false == InWorkTarget->IsPalWorkerAssigned(Pal))
@@ -23,7 +25,7 @@ bool UDC1GA_Pal_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
 		return false;
 	}
 
-	PalWorkersChangedHandle = InWorkTarget->OnPalWorkersChanged.AddUObject(this, &ThisClass::HandlePalWorkersChanged);
+	PalWorkersChangedHandle = InWorkTarget->GetOnPalWorkersChanged().AddUObject(this, &ThisClass::HandlePalWorkersChanged);
 	InWorkTarget->AddWorker(Pal);
 
 	return true;
@@ -31,10 +33,10 @@ bool UDC1GA_Pal_Work::StartWork(ADC1InteractBuildActor* InWorkTarget)
 
 void UDC1GA_Pal_Work::StopWork()
 {
-	ADC1InteractBuildActor* Target = WorkTarget.Get();
-	if (true == ::IsValid(Target))
+	IDC1WorkTargetInterface* Target = WorkTarget.Get();
+	if (nullptr != Target)
 	{
-		Target->OnPalWorkersChanged.Remove(PalWorkersChangedHandle);
+		Target->GetOnPalWorkersChanged().Remove(PalWorkersChangedHandle);
 		Target->RemoveWorker(GetPal());
 	}
 
@@ -43,6 +45,14 @@ void UDC1GA_Pal_Work::StopWork()
 
 void UDC1GA_Pal_Work::OnWorkStarted()
 {
+	// 타격 이벤트 대기 ( 반복 ) - 몽타주와 같은 수명, GA가 끝나면 태스크도 정리
+	UAbilityTask_WaitGameplayEvent* WaitHitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, DC1PalTags::Event_Pal_Work_Hit, nullptr, false, true);
+	if (true == ::IsValid(WaitHitTask))
+	{
+		WaitHitTask->EventReceived.AddDynamic(this, &ThisClass::HandleWorkHit);
+		WaitHitTask->ReadyForActivation();
+	}
+
 	UAnimMontage* Montage = FindWorkMontage();
 
 	UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f);
@@ -65,6 +75,23 @@ void UDC1GA_Pal_Work::HandlePalWorkersChanged()
 	}
 }
 
+void UDC1GA_Pal_Work::HandleWorkHit(FGameplayEventData InPayload)
+{
+	const FGameplayAbilityActorInfo* Info = GetCurrentActorInfo();
+	if (nullptr == Info || false == Info->IsNetAuthority())
+	{
+		return;
+	}
+
+	IDC1WorkTargetInterface* Target = WorkTarget.Get();
+	if (nullptr == Target)
+	{
+		return;
+	}
+
+	Target->ApplyWorkHit(GetPal(), InPayload.EventMagnitude);
+}
+
 void UDC1GA_Pal_Work::OnMontageFinished()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
@@ -77,8 +104,8 @@ void UDC1GA_Pal_Work::OnMontageAborted()
 
 UAnimMontage* UDC1GA_Pal_Work::FindWorkMontage() const
 {
-	ADC1InteractBuildActor* Target = WorkTarget.Get();
-	if (false == ::IsValid(Target))
+	IDC1WorkTargetInterface* Target = WorkTarget.Get();
+	if (nullptr == Target)
 	{
 		return nullptr;
 	}

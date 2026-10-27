@@ -4,6 +4,7 @@
 #include "Component/Interact/DC1InteractComponent.h"
 #include "Define/DC1Enums.h"
 #include "Actor/BuildActor/Interact/Production/DC1ProductionBuildActor.h"
+#include "Item/Pickup/DC1PickupItem.h"
 #include "Character/Player/DC1Player.h"
 
 #include "Components/SphereComponent.h"
@@ -40,7 +41,7 @@ UDC1InteractComponent::UDC1InteractComponent()
 
 	SetIsReplicatedByDefault(true);
 
-	// 작업 종류( 건설 / 벌목 / 채광 ... )는 작업 GA가 대상에서 읽음 - 옵션은 Interact.Work 하나
+	// 작업 종류( 건설 / 벌목 / 채광 등 )는 작업 GA가 대상에서 읽음 - 옵션은 Interact.Work 하나
 	InteractionToAbility.Add(DC1InteractTags::Interact_Work, DC1PlayerTags::Ability_Player_Work);
 }
 
@@ -146,6 +147,11 @@ void UDC1InteractComponent::RequestCollectProduct(ADC1ProductionBuildActor* InPr
 	Server_CollectProduct(InProductionTarget);
 }
 
+void UDC1InteractComponent::RequestPickupItem(ADC1PickupItem* InPickup)
+{
+	Server_PickupItem(InPickup);
+}
+
 void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildActor* InBuildTarget)
 {
 	ADC1Player* Player = GetPlayer();
@@ -188,6 +194,22 @@ void UDC1InteractComponent::Server_CollectProduct_Implementation(ADC1ProductionB
 	InProductionTarget->CollectProduct(Player);
 }
 
+void UDC1InteractComponent::Server_PickupItem_Implementation(ADC1PickupItem* InPickup)
+{
+	ADC1Player* Player = GetPlayer();
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	if (false == ::IsValid(InPickup) || false == IsInInteractRange(Player, InPickup))
+	{
+		return;
+	}
+
+	// F 입력 Pickup -> InByInteract = true
+	InPickup->TryPickup(Player, true);
+}
 
 void UDC1InteractComponent::HandleScreenStackChanged()
 {
@@ -239,7 +261,11 @@ AActor* UDC1InteractComponent::FindBestTarget() const
 
 	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
-	float BestDot = (FLT_MAX * -1.f);
+	// 거리는 감지 반경으로 나눠 내적과 같은 크기(0 ~ 1)로 맞춤
+	const FVector PlayerLocation = Player->GetActorLocation();
+	const float DetectRadius = FMath::Max(InteractDetectCollider->GetScaledSphereRadius(), 1.f);
+
+	float BestScore = (FLT_MAX * -1.f);
 	AActor* BestTarget = nullptr;
 
 	for (AActor* OverlapActor : OverlapBuffer)
@@ -258,17 +284,21 @@ AActor* UDC1InteractComponent::FindBestTarget() const
 
 		FVector OverlapLocation = InteractCollider->GetComponentLocation();
 
-		float Dot = FVector::DotProduct(ViewRotation.Vector(), (OverlapLocation - ViewLocation).GetSafeNormal());
+		const float Dot = FVector::DotProduct(ViewRotation.Vector(), (OverlapLocation - ViewLocation).GetSafeNormal());
+		const float DistanceRatio = FVector::Dist(PlayerLocation, OverlapLocation) / DetectRadius;
+
+		// 바닥에 모인 픽업처럼 시선 각도가 비슷하면 가까운 쪽
+		float Score = Dot - (DistanceRatio * DistanceScoreWeight);
 
 		if (OverlapActor == CurrentTarget.Get())
 		{
-			Dot += CurrentTargetDotBonus;
+			Score += CurrentTargetDotBonus;
 		}
 
-		if (Dot > BestDot)
+		if (Score > BestScore)
 		{
 			BestTarget = OverlapActor;
-			BestDot = Dot;
+			BestScore = Score;
 		}
 	}
 
@@ -277,7 +307,8 @@ AActor* UDC1InteractComponent::FindBestTarget() const
 
 void UDC1InteractComponent::SetCurrentTarget(AActor* InNewTarget)
 {
-	if (InNewTarget == CurrentTarget.Get())
+	// 대상이 파괴되면 Get()이 nullptr -> stale이면 정리를 위해 통과시킨다
+	if (InNewTarget == CurrentTarget.Get() && false == CurrentTarget.IsStale())
 	{
 		return;
 	}
@@ -482,9 +513,13 @@ void UDC1InteractComponent::ShowPrompt()
 
 	if (true == ::IsValid(PromptComp))
 	{
-		FVector PromptLocation = InteractCollider->Bounds.Origin;
+		// 대상마다 다르게, 기본은 InteractCollider 중심
+		const FVector PromptLocation = InteractCollider->Bounds.Origin;
+		
+		const FVector2D PromptScreenOffset = Interactable->GetPromptScreenOffset();
+
 		PromptComp->SetWorldLocation(PromptLocation);
-		PromptComp->SetScreenOffset(InteractPromptScreenOffset);
+		PromptComp->SetScreenOffset(PromptScreenOffset);
 		// 이미 초기화된 경우에도 호출 가능한 함수
 		PromptComp->InitWidget();
 
