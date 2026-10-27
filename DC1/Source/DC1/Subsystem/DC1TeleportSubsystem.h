@@ -25,10 +25,10 @@ public:
 	void					GetUsablePoints(const APlayerState* InPlayerState, TArray<AActor*>& OutPoints) const;
 
 	// Teleport Actor 개수 반환
-	int32					GetTeleportActorNum();
+	int32					GetTeleportActorNum() const;
 
 	// MaxBaseNum 반환
-	int32					GetMaxBaseNum() { return MaxBaseNum; }
+	int32					GetMaxBaseNum() const { return MaxBaseNum; }
 
 	// 해금 ID로 텔레포트 오브젝트 찾기
 	ADC1TeleportActor*		FindTeleportActorById(FName InPointId) const;

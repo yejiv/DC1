@@ -97,6 +97,12 @@ void ADC1PickupItem::TryPickup(ADC1Player* InPlayer, bool InByInteract)
 		return;
 	}
 
+	// 플레이어가 기절 / 죽어있는 경우
+	if (true == InPlayer->IsDownOrDead())
+	{
+		return;
+	}
+
 	const ADC1PlayerState* PlayerState = InPlayer->GetPlayerState<ADC1PlayerState>();
 	if (false == ::IsValid(PlayerState))
 	{

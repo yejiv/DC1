@@ -29,6 +29,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void					Server_UnlockPoint(AActor* InPoint);
 
+	// ID로 해금. 서버 전용 ( 검증은 호출하는 쪽 책임 - Server_UnlockPoint, 거점 완성 등 )
+	void					UnlockPointById(FName InPointId);
+
 	// InSource 지점에서 InDest 지점으로 순간이동
 	UFUNCTION(Server, Reliable)
 	void					Server_RequestTeleport(AActor* InSource, AActor* InDest);

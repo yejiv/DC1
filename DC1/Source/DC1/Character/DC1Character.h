@@ -19,7 +19,8 @@ public:
 	ADC1Character(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	bool								IsDownOrDead() const;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
 	virtual void SetAttackCollision(bool OnCollision) {}
@@ -32,6 +33,12 @@ protected:
 	void BindHealthWatcher();
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
+
+	// HP가 0이 됐을 때. 기본은 바로 사망 ( 플레이어는 기절로 바꿀 수 있게 열어둔다 )
+	virtual void OnHealthDepleted();
+
+	// 사망 확정. bDead, State_Dead, OnDeath
+	void Die();
 
 	// 사망 반응은 자식이 정하기
 	virtual void OnDeath() {}

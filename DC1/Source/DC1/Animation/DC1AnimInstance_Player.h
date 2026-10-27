@@ -32,6 +32,8 @@ public:
 	bool				IsGliding = { false };
 	UPROPERTY(BlueprintReadOnly)
 	bool				IsOnGround = { false };
+	UPROPERTY(BlueprintReadOnly)
+	bool				IsDown = { false };
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector2D		MoveXY = {};

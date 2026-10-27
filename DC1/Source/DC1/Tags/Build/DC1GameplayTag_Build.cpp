@@ -34,19 +34,37 @@ namespace DC1BuildTags
 	
 	#pragma region CRAFTING_DEFOREST_AND_MINING
 		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_DeforestAndMining_LoggingCamp, "Build.Crafting.DeforestAndMining.LoggingCamp");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_DeforestAndMining_StonePit, "Build.Crafting.DeforestAndMining.StonePit");
+	#pragma endregion
+
+	#pragma region CRAFTING_SMELTING
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_Smelting_BlastFurnace, "Build.Crafting.Smelting.BlastFurnace");
+	#pragma endregion
+
+	#pragma region CRAFTING_MILLING_AND_GRINDING
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_MillingAndGrinding_FlourMill, "Build.Crafting.MillingAndGrinding.FlourMill");
 	#pragma endregion
 
 	#pragma region PAL_PALMANAGEMENT
 		UE_DEFINE_GAMEPLAY_TAG(Build_Pal_PalManagement_PalBox, "Build.Pal.PalManagement.PalBox");
 	#pragma endregion
+
+	#pragma region STORAGE_BOX
+		UE_DEFINE_GAMEPLAY_TAG(Build_Storage_Box_Chest, "Build.Storage.Box.Chest");
+	#pragma endregion
 	
 	#pragma region FOOD_COOK
+		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Cook_CampFire, "Build.Food.Cook.CampFire");							
 	#pragma endregion
 	
 	#pragma region FOOD_FARM
 		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Farm_Fruit, "Build.Food.Farm.Fruit");
 	#pragma endregion
-	
+
+	#pragma region INFRA_BEDDING
+		UE_DEFINE_GAMEPLAY_TAG(Build_Infra_Bedding_LowGradeBed, "Build.Infra.Bedding.LowGradeBed");	
+	#pragma endregion
+
 	#pragma region BUILDING
 		UE_DEFINE_GAMEPLAY_TAG(Build_Building_Wood_Floor, "Build.Building.Wood.Floor");
 		UE_DEFINE_GAMEPLAY_TAG(Build_Building_Wood_Wall, "Build.Building.Wood.Wall");

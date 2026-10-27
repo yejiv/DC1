@@ -30,7 +30,6 @@
 
 #include "Subsystem/DC1BuildDestroySubsystem.h"
 
-
 // Sets default values for this component's properties
 UDC1InteractComponent::UDC1InteractComponent()
 {
@@ -91,7 +90,16 @@ void UDC1InteractComponent::SetInteractEnabled(bool InEnabled)
 		return;
 	}
 
-	SetComponentTickEnabled(InEnabled);
+	bool IsEnabled = InEnabled;
+
+	// Player Down / Dead 이벤트 이후 다른 이유로 인한 변경 예외처리 (ex.BuildMode 변경, Down → Dead 전환 시 Down 해제)
+	ADC1Character* Owner = PC->GetPawn<ADC1Character>();
+	if (true == InEnabled && true == ::IsValid(Owner) && true == Owner->IsDownOrDead())
+	{
+		IsEnabled = false;
+	}
+
+	SetComponentTickEnabled(IsEnabled);
 
 	SetCurrentTarget(nullptr);
 }
@@ -160,6 +168,11 @@ void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildA
 		return;
 	}
 
+	if (true == Player->IsDownOrDead())
+	{
+		return;
+	}
+
 	if (false == ::IsValid(InBuildTarget) || false == InBuildTarget->IsUnderConstruction() || false == IsInInteractRange(Player, InBuildTarget))
 	{
 		return;
@@ -186,6 +199,11 @@ void UDC1InteractComponent::Server_CollectProduct_Implementation(ADC1ProductionB
 		return;
 	}
 
+	if (true == Player->IsDownOrDead())
+	{
+		return;
+	}
+
 	if (false == ::IsValid(InProductionTarget) || false == IsInInteractRange(Player, InProductionTarget))
 	{
 		return;
@@ -198,6 +216,11 @@ void UDC1InteractComponent::Server_PickupItem_Implementation(ADC1PickupItem* InP
 {
 	ADC1Player* Player = GetPlayer();
 	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	if (true == Player->IsDownOrDead())
 	{
 		return;
 	}

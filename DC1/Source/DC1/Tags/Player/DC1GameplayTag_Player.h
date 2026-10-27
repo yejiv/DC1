@@ -19,6 +19,9 @@ namespace DC1PlayerTags
 	// 작업 GA 하나 - 작업 종류는 대상에서 ( UDC1GA_Player_Work::WorkSets )
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Work);
 
+	// 기절 ( HP 0 → 사망 전 단계 ). 서버가 활성화
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Downed);
+
 #pragma endregion
 
 #pragma region Event

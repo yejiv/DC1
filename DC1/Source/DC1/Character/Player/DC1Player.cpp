@@ -14,11 +14,15 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
+
 #include "Interface/DC1WorkTargetInterface.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/Appearance/DC1AppearanceComponent.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
@@ -369,6 +373,107 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 	}
 }
 
+void ADC1Player::OnHealthDepleted()
+{
+	// 이미 사망했으면 무시 ( 기절 중 추가 피격은 기절 게이지가 처리 )
+	if (true == bDead)
+		return;
+
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+
+	if (true == HasAuthority())
+	{
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		{
+			// 이미 기절 중이면 무시
+			if (true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Downed))
+				return;
+
+			// 진행 중인 Ability 취소 ( 벽타기, 활공, 작업, 조준 등 )
+			ASC->CancelAllAbilities();
+
+			// Down Ability 실행
+			PlayAbility(DC1PlayerTags::Ability_Player_Downed);
+		}
+
+		// 하차만 ( 팰 회수는 사망 시 )
+		if (nullptr != PS)
+		{
+			if (UDC1PalPartyComponent* PalParty = PS->GetPalPartyComponent())
+			{
+				PalParty->HandleOwnerDowned();
+			}
+		}
+	}
+
+	// 본인 클라만 UI 처리. 탑승 중엔 팰을 조종하고 있어 IsLocallyControlled가 false라 PC로 판단한다
+	const APlayerController* PC = (nullptr != PS) ? PS->GetPlayerController() : nullptr;
+	if (nullptr == PC || false == PC->IsLocalController())
+		return;
+
+	if (UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		// 열려 있는 화면 정리 ( 텔레포트, 인벤토리 등 )
+		while (true == UIManager->HasActiveScreen())
+		{
+			UIManager->PopScreen();
+		}
+	}
+}
+
+void ADC1Player::OnDeath()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+
+	if (true == HasAuthority())
+	{
+		DeathTime = GetWorld()->GetTimeSeconds();
+
+		// 기절 → 사망. 기절 태그는 사망으로 대체한다
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		{
+			CancelAbility(DC1PlayerTags::Ability_Player_Downed);
+		}
+
+		// 소환 팰 회수 ( 하차는 기절 때 이미 처리 )
+		if (nullptr != PS)
+		{
+			if (UDC1PalPartyComponent* PalParty = PS->GetPalPartyComponent())
+			{
+				PalParty->HandleOwnerDied();
+			}
+		}
+	}
+
+	// 사망 몽타주 ( 서버 / 본인 / 다른 클라 각자 재생 - HP가 모두에게 복제되어 OnDeath가 각자 불린다 )
+	if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
+	{
+		UAnimMontage* DeathMontage = AnimData->FindMontageByTag(DC1AnimTags::Anim_Action_Death);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (true == IsValid(DeathMontage) && nullptr != AnimInstance)
+		{
+			AnimInstance->Montage_Play(DeathMontage);
+		}
+	}
+
+	// 이동 정지 ( 서버 + 본인 클라 예측 ). 기절 중엔 이동이 가능하므로 사망에서 막는다
+	if (UCharacterMovementComponent* CMC = GetCharacterMovement())
+	{
+		CMC->StopMovementImmediately();
+		CMC->DisableMovement();
+	}
+
+	// 본인 클라만 UI 처리. 탑승 중엔 팰을 조종하고 있어 IsLocallyControlled가 false라 PC로 판단한다
+	const APlayerController* PC = (nullptr != PS) ? PS->GetPlayerController() : nullptr;
+	if (nullptr == PC || false == PC->IsLocalController())
+		return;
+
+	if (UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		// 사망 화면은 UI 제작 후 여기서 Push ( 열린 화면 정리는 기절 때 처리 )
+	}
+}
+
 void ADC1Player::ApplyClimbState(bool IsApply)
 {
 	// 보정 후 리플레이로 여러 번 호출될 수 있어 Add/Remove(카운트 누적) 대신 값을 직접 설정한다
@@ -559,6 +664,9 @@ void ADC1Player::InitializeAbilitySystem()
 	UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(PS->GetAbilitySystemComponent());
 	ASC->InitAbilitySystem(PS, this, DC1AssetTags::Asset_Ability_Player);
 
+	// Health Delegate Bind
+	BindHealthWatcher();
+
 	// Weapon State Change Delegate Register
 	if (WeaponStateTagHandles.Num() == 0)
 	{
@@ -579,6 +687,12 @@ void ADC1Player::InitializeAbilitySystem()
 
 	// ZoomIn State Delegate Register
 	RegisterStateHandle(DC1StateTags::State_ZoomIn, &ThisClass::OnZoomStateChanged, ASC);
+
+	// Down State Delegate Register
+	RegisterStateHandle(DC1StateTags::State_Downed, &ThisClass::OnDownStateChanged, ASC);
+
+	// Dead State Delegate Register
+	RegisterStateHandle(DC1StateTags::State_Dead, &ThisClass::OnDeadStateChanged, ASC);
 
 	// CharacterMovement Delegate Register
 	OnCharacterMovementUpdated.AddUniqueDynamic(this, &ThisClass::HandleOnCharacterMovementUpdated);
@@ -629,6 +743,7 @@ void ADC1Player::Clear_Resource()
 		}
 
 		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).RemoveAll(this);
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).RemoveAll(this);
 	}
 }
 
@@ -699,6 +814,46 @@ void ADC1Player::OnAimStateChanged(const FGameplayTag Tag, int32 NewCount)
 void ADC1Player::OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	CurrentTargetArmLength = NewCount > 0 ? FixedTargetArmLength - ZoomInLength : FixedTargetArmLength;
+}
+
+void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	IsDown = NewCount > 0;
+
+	// BuildMode, InteractEnable 관리
+	RefreshIncapacitated();
+}
+
+void ADC1Player::OnDeadStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	// 클라는 Down 해제가 Dead보다 먼저 올 수 있어 Dead에서도 한 번 더 갱신
+	RefreshIncapacitated();
+}
+
+void ADC1Player::RefreshIncapacitated()
+{
+	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == PS)
+		return;
+
+	ADC1PlayerController* PC = Cast<ADC1PlayerController>(PS->GetPlayerController());
+	if (false == ::IsValid(PC) || false == PC->IsLocalController())
+		return;
+
+	const bool IsDead = IsDownOrDead();
+
+	// 빌드 취소가 먼저 -> SetBuildMode(false)가 SetInteractEnabled(true) 호출
+	UDC1BuildPlacementComponent* BuildComp = PC->GetBuildPlacementComponent();
+	if (true == IsDead && true == ::IsValid(BuildComp))
+	{
+		BuildComp->CancelBuildMode();
+	}
+
+	UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
+	if (true == ::IsValid(InteractComp))
+	{
+		InteractComp->SetInteractEnabled(false == IsDead);
+	}
 }
 
 void ADC1Player::RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC)
