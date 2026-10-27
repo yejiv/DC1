@@ -34,6 +34,7 @@ public:
 public:
 	bool				StartPlacement(const FGameplayTag& InBuildTag);
 	bool				StartDismantle();
+	void				CancelBuildMode();
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -83,6 +84,9 @@ private:
 	ADC1BuildActor*		TraceBuildActorByView(FVector& OutRayStart, FVector& OutRayEnd, FHitResult& OutHit) const;
 
 	float				ComputePillarHeightOffset() const;
+
+	bool				IsOwnerDownOrDead() const;
+
 
 private:
 	// 배치 거리

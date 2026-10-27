@@ -19,7 +19,8 @@ public:
 	ADC1Character(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	bool								IsDownOrDead() const;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
 	virtual void SetAttackCollision(bool OnCollision) {}

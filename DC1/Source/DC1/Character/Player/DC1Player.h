@@ -133,6 +133,10 @@ private:
 	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnDownStateChanged(const FGameplayTag Tag, int32 NewCount);
+	void	OnDeadStateChanged(const FGameplayTag Tag, int32 NewCount);
+
+	// 기절 + 사망 공통 처리 - 현재 태그 상태로 판단 ( Down → Dead 전환 시 태그 도착 순서 무관 )
+	void	RefreshIncapacitated();
 
 	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
 

@@ -14,6 +14,8 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
+
 #include "Interface/DC1WorkTargetInterface.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
@@ -693,6 +695,9 @@ void ADC1Player::InitializeAbilitySystem()
 	// Down State Delegate Register
 	RegisterStateHandle(DC1StateTags::State_Downed, &ThisClass::OnDownStateChanged, ASC);
 
+	// Dead State Delegate Register
+	RegisterStateHandle(DC1StateTags::State_Dead, &ThisClass::OnDeadStateChanged, ASC);
+
 	// CharacterMovement Delegate Register
 	OnCharacterMovementUpdated.AddUniqueDynamic(this, &ThisClass::HandleOnCharacterMovementUpdated);
 
@@ -742,6 +747,7 @@ void ADC1Player::Clear_Resource()
 		}
 
 		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).RemoveAll(this);
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).RemoveAll(this);
 	}
 }
 
@@ -847,18 +853,41 @@ void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	IsDown = NewCount > 0;
 
+	// BuildMode, InteractEnable 관리
+	RefreshIncapacitated();
+}
+
+void ADC1Player::OnDeadStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	// 클라는 Down 해제가 Dead보다 먼저 올 수 있어 Dead에서도 한 번 더 갱신
+	RefreshIncapacitated();
+}
+
+void ADC1Player::RefreshIncapacitated()
+{
 	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
 	if (nullptr == PS)
 		return;
 
-	if (ADC1PlayerController* PC = Cast<ADC1PlayerController>(PS->GetPlayerController()))
+	ADC1PlayerController* PC = Cast<ADC1PlayerController>(PS->GetPlayerController());
+	if (false == ::IsValid(PC) || false == PC->IsLocalController())
+		return;
+
+	const bool IsDead = IsDownOrDead();
+
+	// 빌드 취소가 먼저 -> SetBuildMode(false)가 SetInteractEnabled(true) 호출
+	UDC1BuildPlacementComponent* BuildComp = PC->GetBuildPlacementComponent();
+	if (true == IsDead && true == ::IsValid(BuildComp))
 	{
-		if (UDC1InteractComponent* Component = PC->GetInteractComponent())
-		{
-			Component->SetInteractEnabled(false == IsDown && false == bDead);
-			// IMC 교체 [TODO]
-			// PC->SetIMCEnabled()
-		}
+		BuildComp->CancelBuildMode();
+	}
+
+	UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
+	if (true == ::IsValid(InteractComp))
+	{
+		InteractComp->SetInteractEnabled(false == IsDead);
+		// IMC 교체 [TODO]
+		// PC->SetIMCEnabled()
 	}
 }
 

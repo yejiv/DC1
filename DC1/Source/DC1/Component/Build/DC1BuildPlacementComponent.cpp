@@ -21,6 +21,7 @@
 #include "DrawDebugHelpers.h"
 
 #include "Subsystem/DC1BuildDestroySubsystem.h"
+#include "Character/DC1Character.h"
 
 UDC1BuildPlacementComponent::UDC1BuildPlacementComponent()
 {
@@ -92,6 +93,11 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 {
+	if (true == IsOwnerDownOrDead())
+	{
+		return false;
+	}
+
 	CancelDismantle();
 
 	if (true == ::IsValid(PreviewActor))
@@ -127,6 +133,11 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 
 bool UDC1BuildPlacementComponent::StartDismantle()
 {
+	if (true == IsOwnerDownOrDead())
+	{
+		return false;
+	}
+
 	CancelPlacement();
 
 	IsDismantling = true;
@@ -135,6 +146,12 @@ bool UDC1BuildPlacementComponent::StartDismantle()
 	SetBuildMode(true);
 
 	return true;
+}
+
+void UDC1BuildPlacementComponent::CancelBuildMode()
+{
+	CancelPlacement();
+	CancelDismantle();
 }
 
 void UDC1BuildPlacementComponent::CancelPlacement()
@@ -205,6 +222,11 @@ void UDC1BuildPlacementComponent::ConfirmDismantle()
 
 void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGameplayTag& InBuildTag, const FTransform& InTransform)
 {
+	if (true == IsOwnerDownOrDead())
+	{
+		return;
+	}
+
 	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
 	if (nullptr == BuildRow)
 	{
@@ -239,6 +261,11 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 
 void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1BuildActor* InTarget)
 {
+	if (true == IsOwnerDownOrDead())
+	{
+		return;
+	}
+
 	if (false == ::IsValid(InTarget) || true == InTarget->IsPreview())
 	{
 		return;
@@ -740,4 +767,22 @@ float UDC1BuildPlacementComponent::ComputePillarHeightOffset() const
 	}
 
 	return PlaceDistance * FMath::Tan(FMath::DegreesToRadians(Pitch));
+}
+
+bool UDC1BuildPlacementComponent::IsOwnerDownOrDead() const
+{
+	APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return false;
+	}
+	
+	ADC1Character* Owner = PC->GetPawn<ADC1Character>();
+	
+	if (true == ::IsValid(Owner) && true == Owner->IsDownOrDead())
+	{
+		return true;
+	}
+
+	return false;
 }

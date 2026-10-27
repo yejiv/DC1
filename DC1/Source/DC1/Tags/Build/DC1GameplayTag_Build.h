@@ -23,40 +23,56 @@ namespace DC1BuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build);
 
 	#pragma region CRAFTING_CRAFTANDREAPIR
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair_WorkBench00);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair_WorkBench00);			// 원시적인 작업대
 	#pragma endregion
 	
 	
 	#pragma region CRAFTING_SPHERE
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Sphere_SphereBench00);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Sphere_SphereBench00);				// 팰 스피어 제작대
 	#pragma endregion
-	
 	
 	#pragma region CRAFTING_WEAPON
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Weapon_WeaponBench00);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Weapon_WeaponBench00);				// 무기 제작대
 	#pragma endregion
 	
-#pragma region CRAFTING_DEFOREST_AND_MINING
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_DeforestAndMining_LoggingCamp);
-#pragma endregion
+	#pragma region CRAFTING_DEFOREST_AND_MINING
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_DeforestAndMining_LoggingCamp);		// 벌목장
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_DeforestAndMining_StonePit);			// 채굴장
+	#pragma endregion
 	
+	#pragma region CRAFTING_SMELTING
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Smelting_BlastFurnace);				// 원시적인 화로
+	#pragma endregion
+		
+	#pragma region CRAFTING_MILLING_AND_GRINDING
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_MillingAndGrinding_FlourMill);		// 제분기
+	#pragma endregion
+
 	#pragma region PAL_PALMANAGEMENT
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Pal_PalManagement_PalBox);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Pal_PalManagement_PalBox);						// 팰박스
 	#pragma endregion
 	
-	
+	#pragma region STORAGE_BOX
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Storage_Box_Chest);							// 상자
+	#pragma endregion
+
 	#pragma region FOOD_COOK
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Food_Cook_CampFire);							// 모닥불
 	#pragma endregion
 	
 	
 	#pragma region FOOD_FARM
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Food_Farm_Fruit);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Food_Farm_Fruit);								// 열매 농원
 	#pragma endregion
 	
-	#pragma region BUILDING
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Floor);
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Wall);
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Roof);
+	#pragma region INFRA_BEDDING
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Infra_Bedding_LowGradeBed);					// 하급 침대
+	#pragma endregion
+
+	#pragma region BUILDING_WOOD
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Floor);							// 나무 바닥
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Wall);							// 나무 벽
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Building_Wood_Roof);							// 나무 지붕
 	#pragma endregion
 
 #pragma endregion
