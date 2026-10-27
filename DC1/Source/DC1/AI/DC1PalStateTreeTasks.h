@@ -273,3 +273,39 @@ struct FDC1PalFaceTargetTask : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
 };
+
+
+USTRUCT()
+struct FDC1PalWorkTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	// 작업 대상 표면에서 이만큼 안이면 도착
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							AcceptanceRadius = { 50.f };
+
+	UPROPERTY()
+	bool							bArrived = { false };
+};
+
+
+// 거점 작업
+USTRUCT(DisplayName = "Pal Work", Category = "Pal")
+struct FDC1PalWorkTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalWorkTaskInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};

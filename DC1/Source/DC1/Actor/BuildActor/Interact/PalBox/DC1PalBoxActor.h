@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
+#include "UObject/WeakInterfacePtr.h"
 #include "DC1PalBoxActor.generated.h"
 
 /**
@@ -21,6 +22,10 @@ public:
 	// 거점 범위 판단
 	bool							IsInBase(const FVector& InLocation) const;
 
+	// 거점 안 작업 대상 (서버 전용)
+	const TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>& GetWorkTargets() const { return WorkTargets; }
+	void							RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget);
+
 protected:
 	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
 
@@ -31,8 +36,14 @@ private:
 	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const override;
 	virtual void					OnPlaced(const APlayerState* InBuilder) override;
 
+	// 반경 안의 기존 노드를 등록
+	void							CollectWorkTargets();
+
 protected:
 	// 거점 범위 반경
 	UPROPERTY(EditDefaultsOnly, Category = "PalBox", meta = (ClampMin = "0.0"))
 	float							BaseRadius = { 3000.f };
+
+private:
+	TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>	WorkTargets;
 };

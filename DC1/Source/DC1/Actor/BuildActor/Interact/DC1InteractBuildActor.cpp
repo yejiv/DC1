@@ -9,7 +9,10 @@
 #include "Define/DC1Enums.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
 #include "Tags/State/DC1GameplayTag_State.h"
@@ -207,6 +210,21 @@ void ADC1InteractBuildActor::BuildDestroy()
 	ClearPalWorkers();
 
 	Super::BuildDestroy();
+}
+
+void ADC1InteractBuildActor::OnPlaced(const APlayerState* InBuilder)
+{
+	Super::OnPlaced(InBuilder);
+
+	const ADC1PlayerState* PlayerState = Cast<ADC1PlayerState>(InBuilder);
+	const UDC1PalPartyComponent* Party = (nullptr != PlayerState) ? PlayerState->GetPalPartyComponent() : nullptr;
+	ADC1PalBoxActor* PalBox = (nullptr != Party) ? Party->GetBasePalBox() : nullptr;
+	if (false == ::IsValid(PalBox) || false == PalBox->IsInBase(GetActorLocation()))
+	{
+		return;
+	}
+
+	PalBox->RegisterWorkTarget(this);
 }
 
 void ADC1InteractBuildActor::ApplyState()

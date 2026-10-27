@@ -222,9 +222,9 @@ bool UDC1PalPartyComponent::HasBase() const
 	return ::IsValid(BasePalBox);
 }
 
-void UDC1PalPartyComponent::Server_SetBase_Implementation(ADC1PalBoxActor* InPalBox)
+void UDC1PalPartyComponent::SetBase(ADC1PalBoxActor* InPalBox)
 {
-	if (true == HasBase() || false == ::IsValid(InPalBox))
+	if (ROLE_Authority != GetOwnerRole() || true == HasBase() || false == ::IsValid(InPalBox))
 	{
 		return;
 	}
