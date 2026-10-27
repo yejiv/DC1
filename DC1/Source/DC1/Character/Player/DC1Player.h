@@ -48,6 +48,10 @@ public:
 
 public:
 	bool GetAimingState() const { return IsAiming; }
+	bool GetDownState() const { return IsDown; }
+
+	// 사망 시각 ( 서버 ). 부활 대기 시간 검증용
+	float GetDeathTime() const { return DeathTime; }
 
 	bool CanClimb() const;
 	bool CanGlide() const;
@@ -81,6 +85,9 @@ private:
 	virtual void NotifyControllerChanged() override;
 
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+
+	virtual void OnHealthDepleted() override;
+	virtual void OnDeath() override;
 
 public:
 	// 탑승 = 폰에 붙어 있음. 아니면 null
@@ -125,6 +132,7 @@ private:
 	void	OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnAimStateChanged(const FGameplayTag Tag, int32 NewCount);
 	void	OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount);
+	void	OnDownStateChanged(const FGameplayTag Tag, int32 NewCount);
 
 	void	RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC);
 
@@ -181,6 +189,9 @@ private:
 
 private:
 	bool	IsAiming = {};
+	bool	IsDown = {};
+
+	float	DeathTime = { 0.f };
 
 	float	FixedTargetArmLength = {};
 	float	CurrentTargetArmLength = {};

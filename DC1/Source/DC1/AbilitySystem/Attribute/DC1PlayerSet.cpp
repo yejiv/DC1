@@ -23,6 +23,9 @@ UDC1PlayerSet::UDC1PlayerSet()
 	InitMaxSatiety(100.f);
 	InitShield(0.f);
 	InitMaxShield(0.f);
+	// 기절 진입 시 Max로 채운다
+	InitDownedGauge(0.f);
+	InitMaxDownedGauge(100.f);
 }
 
 void UDC1PlayerSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -34,6 +37,8 @@ void UDC1PlayerSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxSatiety, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, Shield, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxShield, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, DownedGauge, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UDC1PlayerSet, MaxDownedGauge, COND_None, REPNOTIFY_Always);
 }
 
 void UDC1PlayerSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -50,7 +55,12 @@ void UDC1PlayerSet::PreAttributeChange(const FGameplayAttribute& Attribute, floa
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxShield());
 	}
 
-	if (GetMaxWeightAttribute() == Attribute || GetMaxShieldAttribute() == Attribute)
+	if (GetDownedGaugeAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxDownedGauge());
+	}
+
+	if (GetMaxWeightAttribute() == Attribute || GetMaxShieldAttribute() == Attribute || GetMaxDownedGaugeAttribute() == Attribute)
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
 	}
@@ -70,6 +80,12 @@ void UDC1PlayerSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, 
 	if (GetShieldAttribute() == Attribute)
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxShield());
+	}
+
+	// 기절 게이지는 주기 GE가 Base를 깎는다
+	if (GetDownedGaugeAttribute() == Attribute)
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxDownedGauge());
 	}
 }
 
@@ -116,4 +132,14 @@ void UDC1PlayerSet::OnRep_Shield(const FGameplayAttributeData& OldShield)
 void UDC1PlayerSet::OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, MaxShield, OldMaxShield);
+}
+
+void UDC1PlayerSet::OnRep_DownedGauge(const FGameplayAttributeData& OldDownedGauge)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, DownedGauge, OldDownedGauge);
+}
+
+void UDC1PlayerSet::OnRep_MaxDownedGauge(const FGameplayAttributeData& OldMaxDownedGauge)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, MaxDownedGauge, OldMaxDownedGauge);
 }

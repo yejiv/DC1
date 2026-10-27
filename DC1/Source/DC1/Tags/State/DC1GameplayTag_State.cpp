@@ -22,6 +22,8 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Build_Placement, "State.Build.Placement");
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Working, "State.Working");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Downed, "State.Downed");
 #pragma endregion
 
 #pragma region Common

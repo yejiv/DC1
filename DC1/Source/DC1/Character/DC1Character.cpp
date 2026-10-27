@@ -36,6 +36,16 @@ void ADC1Character::HandleHealthChanged(const FOnAttributeChangeData& Data)
 		return;
 	}
 
+	OnHealthDepleted();
+}
+
+void ADC1Character::OnHealthDepleted()
+{
+	Die();
+}
+
+void ADC1Character::Die()
+{
 	if (true == bDead)
 	{
 		return;
@@ -45,7 +55,10 @@ void ADC1Character::HandleHealthChanged(const FOnAttributeChangeData& Data)
 
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
-		ASC->SetLooseGameplayTagCount(DC1StateTags::State_Dead, 1);
+		if (true == HasAuthority())
+		{
+			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Dead, 1, EGameplayTagReplicationState::TagOnly);
+		}
 	}
 
 	OnDeath();

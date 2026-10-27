@@ -671,6 +671,29 @@ void UDC1PalPartyComponent::HandleDeployedPalDied()
 	GetWorld()->GetTimerManager().SetTimer(DeathRetrieveTimer, this, &ThisClass::RetrieveDeployed, DeathRetrieveDelay, false);
 }
 
+void UDC1PalPartyComponent::HandleOwnerDowned()
+{
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	// 팰은 남겨두고 AI 로 돌려보낸다
+	StopRideApproach(true);
+	EndRide(true);
+}
+
+void UDC1PalPartyComponent::HandleOwnerDied()
+{
+	if (ROLE_Authority != GetOwnerRole())
+	{
+		return;
+	}
+
+	// 달려오기 취소, 하차, 액터 정리까지 회수가 전부 처리한다
+	RetrieveDeployed();
+}
+
 void UDC1PalPartyComponent::Server_ToggleRide_Implementation()
 {
 	if (::IsValid(Rider))

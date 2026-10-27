@@ -67,6 +67,12 @@ public:
 
 	bool					HasBase() const;
 
+	// 주인 기절. 하차만 ( 달려오기 취소 포함 ), 팰은 그대로 둔다. 서버 전용
+	void					HandleOwnerDowned();
+
+	// 주인 사망. 탑승 해제 + 소환 팰 회수. 서버 전용
+	void					HandleOwnerDied();
+
 public:
 	// 위치 지정 조회
 	const FDC1PalInstance*	GetPalInfo(EDC1PalContainer InContainer, int32 InSlotIndex) const;

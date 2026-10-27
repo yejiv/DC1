@@ -23,6 +23,9 @@ namespace DC1StateTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Build_Placement);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Working);
+
+	// 기절 ( HP 0 → 사망 전 단계, 이동만 가능 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Downed);
 #pragma endregion
 
 #pragma region Common

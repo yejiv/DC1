@@ -38,6 +38,16 @@ public:
 	FGameplayAttributeData MaxShield;
 	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxShield)
 
+	// 기절 게이지. 기절 중 시간 / 피격으로 감소, 0이면 사망 ( 모두가 감시하므로 COND_None 복제 )
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_DownedGauge, Category = "Attributes")
+	FGameplayAttributeData DownedGauge;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, DownedGauge)
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxDownedGauge, Category = "Attributes")
+	FGameplayAttributeData MaxDownedGauge;
+	ATTRIBUTE_ACCESSORS_BASIC(UDC1PlayerSet, MaxDownedGauge)
+
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -61,4 +71,10 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield);
+
+	UFUNCTION()
+	void OnRep_DownedGauge(const FGameplayAttributeData& OldDownedGauge);
+
+	UFUNCTION()
+	void OnRep_MaxDownedGauge(const FGameplayAttributeData& OldMaxDownedGauge);
 };
