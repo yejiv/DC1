@@ -19,7 +19,7 @@ public:
 
 protected:
 	// 작업 배정 확인 -> 해제 감지 구독 -> Add Worker
-	virtual bool		StartWork(ADC1InteractBuildActor* InWorkTarget) override;
+	virtual bool		StartWork(IDC1WorkTargetInterface* InWorkTarget) override;
 	// 구독 해제 -> RemoveWorker
 	virtual void		StopWork() override;
 	// 작업 몽타주
@@ -28,6 +28,10 @@ protected:
 private:
 	// 빌드 액터가 작업 배정을 풀었는지 ( 완성 / 아이템 꽉 참 / 해제 / Unassign )
 	void				HandlePalWorkersChanged();
+
+	// 서버 - 작업 몽타주 노티파이 타격 → 대상에 1회 ( 진행도형 대상은 무시 )
+	UFUNCTION()
+	void				HandleWorkHit(FGameplayEventData InPayload);
 
 	UFUNCTION()
 	void				OnMontageFinished();

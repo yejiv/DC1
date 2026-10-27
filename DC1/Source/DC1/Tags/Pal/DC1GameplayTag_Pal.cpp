@@ -146,6 +146,7 @@ namespace DC1PalTags
 
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Attack_Hit, "Event.Pal.Attack.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Work_Hit, "Event.Pal.Work.Hit");
 #pragma endregion
 
 #pragma region Ride

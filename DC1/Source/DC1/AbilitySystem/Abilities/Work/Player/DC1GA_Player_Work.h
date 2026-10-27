@@ -64,13 +64,13 @@ public:
 
 protected:
 	// 클라 : 서버에 대상 전송 + 대상 잠금 / 완성 구독 → BeginWork
-	virtual void			OnLocalWorkTargetFound(ADC1InteractBuildActor* InWorkTarget) override;
+	virtual void			OnLocalWorkTargetFound(IDC1WorkTargetInterface* InWorkTarget) override;
 
 	// 서버( 원격 클라 ) : TargetData 수신 대기
 	virtual void			WaitWorkTarget() override;
 
 	// 서버 : 거리 검증 → AddWorker
-	virtual bool			StartWork(ADC1InteractBuildActor* InWorkTarget) override;
+	virtual bool			StartWork(IDC1WorkTargetInterface* InWorkTarget) override;
 
 	// 서버 : RemoveWorker
 	virtual void			StopWork()	override;

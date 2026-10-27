@@ -159,6 +159,7 @@ namespace DC1PalTags
 
 #pragma region Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Attack_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Work_Hit);		// 작업 타격 ( EventMagnitude = 배율 )
 #pragma endregion
 
 #pragma region Ride
