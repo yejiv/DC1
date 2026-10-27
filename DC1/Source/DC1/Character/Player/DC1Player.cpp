@@ -24,6 +24,7 @@
 #include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayEffectExtension.h"
@@ -665,6 +666,9 @@ void ADC1Player::InitializeAbilitySystem()
 	// Health Delegate Bind
 	BindHealthWatcher();
 
+	// Downed Gauge Delegate Bind
+	BindDownedGaugeWatcher();
+
 	// Weapon State Change Delegate Register
 	if (WeaponStateTagHandles.Num() == 0)
 	{
@@ -810,6 +814,35 @@ void ADC1Player::OnZoomStateChanged(const FGameplayTag Tag, int32 NewCount)
 	CurrentTargetArmLength = NewCount > 0 ? FixedTargetArmLength - ZoomInLength : FixedTargetArmLength;
 }
 
+void ADC1Player::BindDownedGaugeWatcher()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (nullptr == ASC)
+		return;
+
+	FOnGameplayAttributeValueChange& Delegate =
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetDownedGaugeAttribute());
+
+	// ASC가 바뀌어 다시 불려도 중복 등록되지 않게
+	Delegate.RemoveAll(this);
+	Delegate.AddUObject(this, &ThisClass::HandleDownedGaugeChanged);
+}
+
+void ADC1Player::HandleDownedGaugeChanged(const FOnAttributeChangeData& Data)
+{
+	// [Debug] 기절 게이지 확인 ( UI 대신 )
+	LOG(TEXT("[Downed] %s ( %s ) Gauge : %.1f -> %.1f"),
+		*GetName(), true == HasAuthority() ? TEXT("Server") : (true == IsLocallyControlled() ? TEXT("Owner") : TEXT("Other")),
+		Data.OldValue, Data.NewValue);
+
+	// 게이지가 남아 있다가 0이 된 순간 = 기절 중 사망
+	// 기절 태그로 판단하지 않는다 ( 클라에선 게이지 0과 태그 제거의 도착 순서가 보장되지 않음 )
+	if (Data.OldValue > 0.f && Data.NewValue <= 0.f)
+	{
+		Die();
+	}
+}
+
 void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	IsDown = NewCount > 0;
@@ -822,7 +855,7 @@ void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 	{
 		if (UDC1InteractComponent* Component = PC->GetInteractComponent())
 		{
-			Component->SetInteractEnabled(false == IsDown);
+			Component->SetInteractEnabled(false == IsDown && false == bDead);
 			// IMC 교체 [TODO]
 			// PC->SetIMCEnabled()
 		}

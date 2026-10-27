@@ -154,6 +154,10 @@ private:
 
 	void	HandleDamaged(const struct FOnAttributeChangeData& Data);
 
+	// 기절 게이지 감시 ( 서버 / 본인 / 다른 클라 모두 ). 0이 되면 사망
+	void	BindDownedGaugeWatcher();
+	void	HandleDownedGaugeChanged(const struct FOnAttributeChangeData& Data);
+
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };

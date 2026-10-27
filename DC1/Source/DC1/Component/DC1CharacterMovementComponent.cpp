@@ -93,6 +93,15 @@ float UDC1CharacterMovementComponent::GetMaxSpeed() const
 		return ClimbSpeed;
 	}
 
+	// 기절 상태일 땐 WalkSpeed 고정
+	if (ADC1Player* Player = Cast<ADC1Player>(PawnOwner))
+	{
+		if (true == Player->GetDownState())
+		{
+			return WalkSpeed;
+		}
+	}
+
 	if (MOVE_Walking != MovementMode && MOVE_NavWalking != MovementMode && MOVE_Falling != MovementMode)
 	{
 		return Super::GetMaxSpeed();
