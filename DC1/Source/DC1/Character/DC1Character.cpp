@@ -64,6 +64,16 @@ void ADC1Character::Die()
 	OnDeath();
 }
 
+bool ADC1Character::IsDownOrDead() const
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		return ASC->HasMatchingGameplayTag(DC1StateTags::State_Downed) || ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
+	}
+
+	return false;
+}
+
 UAbilitySystemComponent* ADC1Character::GetAbilitySystemComponent() const
 {
 	return nullptr;

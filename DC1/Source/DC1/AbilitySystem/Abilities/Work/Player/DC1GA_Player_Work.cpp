@@ -21,6 +21,7 @@
 UDC1GA_Player_Work::UDC1GA_Player_Work(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Downed);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Build_Placement);
 }
