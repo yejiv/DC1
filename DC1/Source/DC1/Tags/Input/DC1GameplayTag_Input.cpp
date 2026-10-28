@@ -8,6 +8,7 @@ namespace DC1IMCTags
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Default, "IMC.Default");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_UI, "IMC.UI");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Build, "IMC.Build");
+	UE_DEFINE_GAMEPLAY_TAG(IMC_Downed, "IMC.Downed");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_F, "IMC.Interact.F");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_V, "IMC.Interact.V");
 	UE_DEFINE_GAMEPLAY_TAG(IMC_Interact_C, "IMC.Interact.C");
@@ -45,6 +46,10 @@ namespace DC1InputTags
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Build, "Input.UI.Build");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_PalBox, "Input.UI.PalBox");
+#pragma endregion
+
+#pragma region Downed
+	UE_DEFINE_GAMEPLAY_TAG(Input_Downed_GiveUp, "Input.Downed.GiveUp");
 #pragma endregion
 }
 

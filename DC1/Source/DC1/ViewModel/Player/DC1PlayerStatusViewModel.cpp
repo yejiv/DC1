@@ -9,6 +9,7 @@
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 void UDC1PlayerStatusViewModel::BindSource(ADC1PlayerState* InPlayerState)
 {
@@ -32,6 +33,12 @@ void UDC1PlayerStatusViewModel::BindSource(ADC1PlayerState* InPlayerState)
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxShieldAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleShieldChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetLevelAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleLevelChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetExperienceAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleLevelChanged);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetDownedGaugeAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleDownGaugeChanged);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxDownedGaugeAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleDownGaugeChanged);
+
+	// 기절 여부는 태그로 ( 서버가 붙인 State.Downed가 복제된다 )
+	DownStateHandle = AbilitySystemComponent->RegisterGameplayTagEvent(DC1StateTags::State_Downed, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &UDC1PlayerStatusViewModel::HandleDownStateChanged);
 
 	BroadcastAll();
 }
@@ -51,6 +58,14 @@ void UDC1PlayerStatusViewModel::ClearSource()
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxShieldAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetLevelAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetExperienceAttribute()).RemoveAll(this);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetDownedGaugeAttribute()).RemoveAll(this);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxDownedGaugeAttribute()).RemoveAll(this);
+
+	if (true == DownStateHandle.IsValid())
+	{
+		AbilitySystemComponent->UnregisterGameplayTagEvent(DownStateHandle, DC1StateTags::State_Downed, EGameplayTagEventType::NewOrRemoved);
+		DownStateHandle.Reset();
+	}
 
 	AbilitySystemComponent.Reset();
 }
@@ -117,6 +132,35 @@ float UDC1PlayerStatusViewModel::GetMaxShield() const
 	return GetAttributeValue(UDC1PlayerSet::GetMaxShieldAttribute());
 }
 
+float UDC1PlayerStatusViewModel::GetDownGauge() const
+{
+	return GetAttributeValue(UDC1PlayerSet::GetDownedGaugeAttribute());
+}
+
+float UDC1PlayerStatusViewModel::GetMaxDownGauge() const
+{
+	return GetAttributeValue(UDC1PlayerSet::GetMaxDownedGaugeAttribute());
+}
+
+float UDC1PlayerStatusViewModel::GetDownGaugePercent() const
+{
+	const float MaxDownGauge = GetMaxDownGauge();
+	if (MaxDownGauge <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetDownGauge() / MaxDownGauge;
+}
+
+bool UDC1PlayerStatusViewModel::IsDowned() const
+{
+	if (false == AbilitySystemComponent.IsValid())
+		return false;
+
+	return AbilitySystemComponent->HasMatchingGameplayTag(DC1StateTags::State_Downed);
+}
+
 int32 UDC1PlayerStatusViewModel::GetLevel() const
 {
 	return FMath::TruncToInt32(GetAttributeValue(UDC1PlayerSet::GetLevelAttribute()));
@@ -169,6 +213,16 @@ void UDC1PlayerStatusViewModel::HandleShieldChanged(const FOnAttributeChangeData
 	OnShieldChanged.Broadcast(GetShield(), GetMaxShield());
 }
 
+void UDC1PlayerStatusViewModel::HandleDownGaugeChanged(const FOnAttributeChangeData& Data)
+{
+	OnDownGaugeChanged.Broadcast(GetDownGauge(), GetMaxDownGauge());
+}
+
+void UDC1PlayerStatusViewModel::HandleDownStateChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	OnDownStateChanged.Broadcast(NewCount > 0);
+}
+
 void UDC1PlayerStatusViewModel::HandleLevelChanged(const FOnAttributeChangeData& Data)
 {
 	BroadcastLevel();
@@ -185,6 +239,8 @@ void UDC1PlayerStatusViewModel::BroadcastAll()
 	OnStaminaChanged.Broadcast(GetStamina(), GetMaxStamina());
 	OnSatietyChanged.Broadcast(GetSatiety(), GetMaxSatiety());
 	OnShieldChanged.Broadcast(GetShield(), GetMaxShield());
+	OnDownGaugeChanged.Broadcast(GetDownGauge(), GetMaxDownGauge());
+	OnDownStateChanged.Broadcast(IsDowned());
 	BroadcastLevel();
 }
 

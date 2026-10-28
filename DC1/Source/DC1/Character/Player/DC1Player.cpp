@@ -23,6 +23,8 @@
 #include "Component/Appearance/DC1AppearanceComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Subsystem/DC1ViewModelSubsystem.h"
+#include "ViewModel/Teleport/DC1TeleportViewModel.h"
 #include "Component/Widget/DC1ScreenOffsetWidgetComponent.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
@@ -463,16 +465,6 @@ void ADC1Player::OnDeath()
 		CMC->StopMovementImmediately();
 		CMC->DisableMovement();
 	}
-
-	// 본인 클라만 UI 처리. 탑승 중엔 팰을 조종하고 있어 IsLocallyControlled가 false라 PC로 판단한다
-	const APlayerController* PC = (nullptr != PS) ? PS->GetPlayerController() : nullptr;
-	if (nullptr == PC || false == PC->IsLocalController())
-		return;
-
-	if (UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
-	{
-		// 사망 화면은 UI 제작 후 여기서 Push ( 열린 화면 정리는 기절 때 처리 )
-	}
 }
 
 void ADC1Player::ApplyClimbState(bool IsApply)
@@ -869,26 +861,57 @@ void ADC1Player::RefreshIncapacitated()
 	if (nullptr == PS)
 		return;
 
+	// 본인 클라만 UI 처리. 탑승 중엔 팰을 조종하고 있어 IsLocallyControlled가 false라 PC로 판단한다
 	ADC1PlayerController* PC = Cast<ADC1PlayerController>(PS->GetPlayerController());
 	if (false == ::IsValid(PC) || false == PC->IsLocalController())
 		return;
 
 	const bool IsDead = IsDownOrDead();
 
-	// 빌드 취소가 먼저 -> SetBuildMode(false)가 SetInteractEnabled(true) 호출
-	UDC1BuildPlacementComponent* BuildComp = PC->GetBuildPlacementComponent();
-	if (true == IsDead && true == ::IsValid(BuildComp))
+	if (true == IsDead)
 	{
-		BuildComp->CancelBuildMode();
+		// 빌드 취소가 먼저 -> SetBuildMode(false)가 SetInteractEnabled(true) 호출
+		UDC1BuildPlacementComponent* BuildComp = PC->GetBuildPlacementComponent();
+		if (true == ::IsValid(BuildComp))
+		{
+			BuildComp->CancelBuildMode();
+		}
+
+		// Down or Dead -> UI Pop -> 기절 UI
+		UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+		if (false == ::IsValid(UIManager))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+			return;
+		}
+		while (UIManager->HasActiveScreen())
+		{
+			UIManager->PopScreen();
+		}
+
+		if(true == bDead)
+		{
+			// 화면이 열리면서 목록을 만들기 때문에 PushScreen 전에 부활 모드로 연다
+			if (UDC1ViewModelSubsystem* VMSubsystem = PC->GetLocalPlayer() ? PC->GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>() : nullptr)
+			{
+				if (UDC1TeleportViewModel* TeleportViewModel = VMSubsystem->GetViewModel<UDC1TeleportViewModel>())
+				{
+					TeleportViewModel->SetListMode(EDC1TeleportListMode::Respawn);
+				}
+			}
+
+			UIManager->PushScreen(DC1UITags::UI_Main_Teleport);
+		}
 	}
 
 	UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
 	if (true == ::IsValid(InteractComp))
 	{
 		InteractComp->SetInteractEnabled(false == IsDead);
-		// IMC 교체 [TODO]
-		// PC->SetIMCEnabled()
+
 	}
+
+	PC->SetGameplayBaseIMC(IsDead ? DC1IMCTags::IMC_Downed : DC1IMCTags::IMC_Default);
 }
 
 void ADC1Player::RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC)

@@ -35,3 +35,34 @@ void ADC1GameMode::PostLogin(APlayerController* NewPlayer)
 		LOG_WARNING(TEXT("[Load] Load Failed"));
 	}
 }
+
+bool ADC1GameMode::RespawnPlayer(AController* InController, const FTransform* InSpawnTransform)
+{
+	if (nullptr == InController)
+		return false;
+
+	ADC1PlayerState* PS = InController->GetPlayerState<ADC1PlayerState>();
+	if (nullptr == PS)
+		return false;
+
+	// 기존 Pawn 정리 ( 남아 있으면 RestartPlayer가 새로 만들지 않고 그대로 재사용한다 )
+	if (APawn* OldPawn = InController->GetPawn())
+	{
+		InController->UnPossess();
+		OldPawn->Destroy();
+	}
+
+	// 새 Pawn이 상태 태그를 읽기 전에 초기화
+	PS->ResetForRespawn(RespawnHealthRatio);
+
+	if (nullptr != InSpawnTransform)
+	{
+		RestartPlayerAtTransform(InController, *InSpawnTransform);
+	}
+	else
+	{
+		RestartPlayer(InController);
+	}
+
+	return nullptr != InController->GetPawn();
+}

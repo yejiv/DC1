@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ViewModel/DC1ViewModelBase.h"
+#include "GameplayTagContainer.h"
 #include "DC1PlayerStatusViewModel.generated.h"
 
 class UAbilitySystemComponent;
@@ -16,6 +17,10 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float /*Current*/, float 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStaminaChanged, float /*Current*/, float /*Max*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSatietyChanged, float /*Current*/, float /*Max*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnShieldChanged, float /*Current*/, float /*Max*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnDownGaugeChanged, float /*Current*/, float /*Max*/);
+
+// 기절 진입 / 해제 ( State.Downed 태그 )
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDownStateChanged, bool /*IsDowned*/);
 
 // 레벨과 경험치는 NEXT 표시와 EXP 바가 같이 쓰므로 하나로 묶는다
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnLevelChanged, int32 /*Level*/, int32 /*RemainingExp*/, float /*ExpPercent*/);
@@ -30,11 +35,14 @@ class DC1_API UDC1PlayerStatusViewModel : public UDC1ViewModelBase
 	GENERATED_BODY()
 
 public:
-	FOnHealthChanged	OnHealthChanged;
-	FOnStaminaChanged	OnStaminaChanged;
-	FOnSatietyChanged	OnSatietyChanged;
-	FOnShieldChanged	OnShieldChanged;
-	FOnLevelChanged		OnLevelChanged;
+	FOnHealthChanged			OnHealthChanged;
+	FOnStaminaChanged			OnStaminaChanged;
+	FOnSatietyChanged			OnSatietyChanged;
+	FOnShieldChanged				OnShieldChanged;
+	FOnDownGaugeChanged		OnDownGaugeChanged;
+	FOnDownStateChanged		OnDownStateChanged;
+
+	FOnLevelChanged				OnLevelChanged;
 
 public:
 	virtual void BindSource(ADC1PlayerState* InPlayerState) override;
@@ -73,6 +81,18 @@ public:
 	float GetMaxShield() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetDownGauge() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetMaxDownGauge() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetDownGaugePercent() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	bool IsDowned() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	int32 GetLevel() const;
 
 	// 다음 레벨까지 남은 경험치 (최대 레벨이면 0)
@@ -89,6 +109,9 @@ private:
 	void HandleMaxStaminaChanged(const FOnAttributeChangeData& Data);
 	void HandleSatietyChanged(const FOnAttributeChangeData& Data);
 	void HandleShieldChanged(const FOnAttributeChangeData& Data);
+	void HandleDownGaugeChanged(const FOnAttributeChangeData& Data);
+	void HandleDownStateChanged(const FGameplayTag Tag, int32 NewCount);
+
 	void HandleLevelChanged(const FOnAttributeChangeData& Data);
 
 	void BroadcastLevel();
@@ -103,4 +126,7 @@ private:
 
 private:
 	TWeakObjectPtr<UAbilitySystemComponent>	AbilitySystemComponent = { nullptr };
+
+	// State.Downed 태그 이벤트 해제용
+	FDelegateHandle							DownStateHandle;
 };

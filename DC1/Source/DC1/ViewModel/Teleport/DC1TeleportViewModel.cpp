@@ -38,25 +38,28 @@ void UDC1TeleportViewModel::ClearSource()
 	}
 }
 
-void UDC1TeleportViewModel::SetSourcePoint(AActor* InSourcePoint)
+void UDC1TeleportViewModel::SetListMode(EDC1TeleportListMode InMode, AActor* InSourcePoint)
 {
-	ClearSourcePoint();
+	ClearListMode();
 
-	if (nullptr == InSourcePoint)
+	// 텔레포트는 출발 지점이 있어야 한다
+	if (EDC1TeleportListMode::Teleport == InMode && nullptr == InSourcePoint)
 		return;
 
+	ListMode = InMode;
 	SourcePoint = InSourcePoint;
 	RebuildEntries();
 }
 
-void UDC1TeleportViewModel::ClearSourcePoint()
+void UDC1TeleportViewModel::ClearListMode()
 {
 	SourcePoint.Reset();
+	ListMode = EDC1TeleportListMode::None;
 }
 
 void UDC1TeleportViewModel::RequestTeleport(int32 InIndex)
 {
-	if (nullptr == SourcePoint)
+	if (EDC1TeleportListMode::Teleport == ListMode && nullptr == SourcePoint)
 	{
 		LOG_WARNING(TEXT("[Teleport] Source is not Valid"));
 		return;
@@ -78,22 +81,38 @@ void UDC1TeleportViewModel::RequestTeleport(int32 InIndex)
 	if (nullptr == TeleportComponent)
 		return;
 
+	// 화면이 닫히면서 모드 / 출발 지점이 정리되므로 요청 시점 값을 들고 간다
+	const EDC1TeleportListMode RequestMode = ListMode;
 	TWeakObjectPtr<AActor> WeakSource = SourcePoint;
 	TWeakObjectPtr<AActor> WeakDest = Dest;
 
 	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 	{
-		UIManager->FadeIn(1.f, EDC1FadeType::Spinner, FSimpleDelegate::CreateWeakLambda(this, [this, WeakSource, WeakDest, UIManager]()
+		UIManager->FadeIn(1.f, EDC1FadeType::Spinner, FSimpleDelegate::CreateWeakLambda(this, [this, RequestMode, WeakSource, WeakDest, UIManager]()
 			{
 				// 요청을 못 보내면 서버 응답(Client_OnTeleportFinished)도 없으니 여기서 FadeOut
-				if (false == WeakSource.IsValid() || false == WeakDest.IsValid() || nullptr == TeleportComponent)
+				if (false == WeakDest.IsValid() || nullptr == TeleportComponent)
 				{
 					UIManager->FadeOut(1.f);
 					return;
 				}
 
-				// 결과는 Client_OnTeleportFinished로 돌아온다 ( 성공 / 실패 모두 FadeOut )
-				TeleportComponent->Server_RequestTeleport(WeakSource.Get(), WeakDest.Get());
+				// Respawn
+				if (EDC1TeleportListMode::Respawn == RequestMode)
+				{
+					TeleportComponent->RequestRespawn(WeakDest.Get());
+				}
+				// Teleport
+				else
+				{
+					if (false == WeakSource.IsValid())
+					{
+						UIManager->FadeOut(1.f);
+						return;
+					}
+					// 결과는 Client_OnTeleportFinished로 돌아온다 ( 성공 / 실패 모두 FadeOut )
+					TeleportComponent->Server_RequestTeleport(WeakSource.Get(), WeakDest.Get());
+				}
 			}));
 	}
 }
@@ -103,7 +122,11 @@ void UDC1TeleportViewModel::RebuildEntries()
 	if (nullptr == TeleportSubsystem || nullptr == TeleportComponent)
 		return;
 
-	if (nullptr == SourcePoint)
+	// 열리지 않은 상태 / 텔레포트인데 출발 지점이 없으면 목록을 만들지 않는다
+	if (EDC1TeleportListMode::None == ListMode)
+		return;
+
+	if (EDC1TeleportListMode::Teleport == ListMode && nullptr == SourcePoint)
 		return;
 
 	const APlayerState* PS = TeleportComponent->GetOwner<APlayerState>();
@@ -119,8 +142,8 @@ void UDC1TeleportViewModel::RebuildEntries()
 
 	for (const auto& Point : Points)
 	{
-		// Source Actor 제외
-		if (Point == SourcePoint.Get())
+		// Source Actor 제외 ( 부활은 Source가 없어 전부 포함 )
+		if (nullptr != SourcePoint && Point == SourcePoint.Get())
 			continue;
 
 		FDC1TeleportEntry Entry = {};

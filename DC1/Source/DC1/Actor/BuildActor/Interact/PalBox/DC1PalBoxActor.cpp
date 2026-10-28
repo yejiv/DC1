@@ -136,7 +136,7 @@ void ADC1PalBoxActor::InteractV(ADC1Character* InInteractOwner)
 	{
 		if (UDC1TeleportViewModel* TeleportViewModel = VMSubsystem->GetViewModel<UDC1TeleportViewModel>())
 		{
-			TeleportViewModel->SetSourcePoint(this);
+			TeleportViewModel->SetListMode(EDC1TeleportListMode::Teleport, this);
 		}
 	}
 

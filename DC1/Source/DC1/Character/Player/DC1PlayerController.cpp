@@ -40,11 +40,28 @@
 
 
 ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer), GameplayBaseIMCTag(DC1IMCTags::IMC_Default)
 {
 	BuildPlacementComponent = CreateDefaultSubobject<UDC1BuildPlacementComponent>("BuildPlacementComponent");
 
 	InteractComponent = CreateDefaultSubobject<UDC1InteractComponent>("InteractComponent");
+}
+
+void ADC1PlayerController::SetGameplayBaseIMC(const FGameplayTag& IMCTag)
+{
+	GameplayBaseIMCTag = IMCTag;
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+
+	if (false == UIManager->HasActiveScreen())
+	{
+		SetBaseIMC(GameplayBaseIMCTag);
+	}
 }
 
 void ADC1PlayerController::SetCursorMode(bool OnTurn)
@@ -734,7 +751,7 @@ void ADC1PlayerController::OnUIChange()
 	}
 	else
 	{
-		SetBaseIMC(DC1IMCTags::IMC_Default);
+		SetBaseIMC(GameplayBaseIMCTag);
 	}
 
 	IsActiveScreen = IsActiveNow;
