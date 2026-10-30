@@ -328,12 +328,14 @@ FVector ADC1ResourceActor::GetDropOrigin(const FOnAttributeChangeData& InData) c
 	FHitResult SurfaceHit;
 	const FCollisionQueryParams Params(SCENE_QUERY_STAT(DC1ResourceDropOrigin), true);
 
-	// 공격자 높이에서 Resource 중심축으로 수평 -> 나무처럼 높은 Resource Spawn 위치 맞춤
+	// 공격자 높이에서 Resource 피벗 축으로 수평 -> 나무처럼 높은 Resource Spawn 위치 맞춤
+	// 범위 중심이 아니라 피벗 - 가지가 한쪽으로 쏠린 나무는 범위 중심이 줄기 밖이라 빗나간다
 	// 높이는 Resource 범위 안으로 - 공격자가 더 높거나 낮아도 표면을 지남
 	const FVector CauserLocation = Causer->GetActorLocation();
+	const FVector Pivot = ResourceMesh->GetComponentLocation();
 	const float TraceZ = FMath::Clamp(CauserLocation.Z, Bounds.Origin.Z - Bounds.BoxExtent.Z, Bounds.Origin.Z + Bounds.BoxExtent.Z);
 	const FVector Start(CauserLocation.X, CauserLocation.Y, TraceZ);
-	const FVector End(Bounds.Origin.X, Bounds.Origin.Y, TraceZ);
+	const FVector End(Pivot.X, Pivot.Y, TraceZ);
 
 	if (true == ResourceMesh->LineTraceComponent(SurfaceHit, Start, End, Params))
 	{

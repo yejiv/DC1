@@ -98,18 +98,6 @@ void ADC1PalBoxActor::InteractF(ADC1Character* InInteractOwner)
 		return;
 	}
 
-	// 처음 연 팰박스가 내 거점이 된다. 이미 있으면 서버가 무시한다
-	if (::IsValid(InInteractOwner))
-	{
-		if (const ADC1PlayerState* PlayerState = InInteractOwner->GetPlayerState<ADC1PlayerState>())
-		{
-			if (UDC1PalPartyComponent* Party = PlayerState->GetPalPartyComponent(); nullptr != Party && false == Party->HasBase())
-			{
-				Party->Server_SetBase(this);
-			}
-		}
-	}
-
 	UIManager->PushScreen(DC1UITags::UI_Main_PalBox);
 }
 
@@ -176,9 +164,51 @@ bool ADC1PalBoxActor::CanPlaceAt(const APlayerState* InBuilder) const
 	return true;
 }
 
+void ADC1PalBoxActor::RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget)
+{
+	if (nullptr == InWorkTarget)
+	{
+		return;
+	}
+
+	WorkTargets.AddUnique(TWeakInterfacePtr<IDC1WorkTargetInterface>(InWorkTarget));
+}
+
 void ADC1PalBoxActor::OnPlaced(const APlayerState* InBuilder)
 {
+	Super::OnPlaced(InBuilder);
 
+	if (const ADC1PlayerState* PlayerState = Cast<ADC1PlayerState>(InBuilder))
+	{
+		if (UDC1PalPartyComponent* Party = PlayerState->GetPalPartyComponent())
+		{
+			Party->SetBase(this);
+		}
+	}
+
+	CollectWorkTargets();
+}
+
+void ADC1PalBoxActor::CollectWorkTargets()
+{
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		AActor* Actor = *It;
+
+		const ADC1BuildActor* Build = Cast<ADC1BuildActor>(Actor);
+		if (nullptr != Build && true == Build->IsPreview())
+		{
+			continue;
+		}
+
+		IDC1WorkTargetInterface* WorkTarget = Cast<IDC1WorkTargetInterface>(Actor);
+		if (nullptr == WorkTarget || false == IsInBase(Actor->GetActorLocation()))
+		{
+			continue;
+		}
+
+		RegisterWorkTarget(WorkTarget);
+	}
 }
 
 void ADC1PalBoxActor::BuildCompleted()

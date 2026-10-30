@@ -17,6 +17,7 @@ class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
 class UDC1PalRegistryData;
+class UCapsuleComponent;
 class UWidgetComponent;
 struct FInputActionValue;
 
@@ -151,6 +152,10 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
+
+	// 피격 판정
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Collision")
+	TObjectPtr<UCapsuleComponent> HitboxComponent = { nullptr };
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };

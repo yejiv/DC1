@@ -2,11 +2,14 @@
 
 #include "AI/DC1PalStateTreeTasks.h"
 
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Controller/DC1PalAIController.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Interface/DC1WorkTargetInterface.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "AbilitySystemGlobals.h"
 #include "GameFramework/Actor.h"
@@ -701,4 +704,227 @@ void FDC1PalFaceOwnerTask::ExitState(FStateTreeExecutionContext& Context, const 
 	{
 		Pal->GetCharacterMovement()->RotationRate.Yaw = PalData->RotationRateYaw;
 	}
+}
+
+
+namespace DC1PalTaskHelper
+{
+	// 표적이 정면에서 InAcceptAngle 안인가 (수평)
+	static bool IsFacing(const AActor& Pal, const AActor& Target, float InAcceptAngle)
+	{
+		const FVector ToTarget = (Target.GetActorLocation() - Pal.GetActorLocation()).GetSafeNormal2D();
+		if (true == ToTarget.IsNearlyZero())
+		{
+			return true;
+		}
+
+		const FVector Forward = Pal.GetActorForwardVector().GetSafeNormal2D();
+		return FVector::DotProduct(Forward, ToTarget) >= FMath::Cos(FMath::DegreesToRadians(InAcceptAngle));
+	}
+}
+
+EStateTreeRunStatus FDC1PalFaceTargetTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.ElapsedTime = 0.f;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	AActor* Target = IsValid(AIController) ? AIController->GetCurrentTarget() : nullptr;
+	if (false == IsValid(Pal) || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 회전은 focus가 구동
+	Pal->SetOrientToMovement(false);
+	if (Target != AIController->GetFocusActor())
+	{
+		AIController->SetFocus(Target, EAIFocusPriority::Gameplay);
+	}
+
+	return DC1PalTaskHelper::IsFacing(*Pal, *Target, InstanceData.AcceptAngle) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalFaceTargetTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.ElapsedTime += DeltaTime;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	const APawn* Pal = IsValid(AIController) ? AIController->GetPawn() : nullptr;
+	const AActor* Target = IsValid(AIController) ? AIController->GetCurrentTarget() : nullptr;
+	if (false == IsValid(Pal) || false == IsValid(Target))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (InstanceData.ElapsedTime >= InstanceData.GiveUpTime)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return DC1PalTaskHelper::IsFacing(*Pal, *Target, InstanceData.AcceptAngle) ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
+}
+
+
+namespace DC1PalTaskHelper
+{
+	static IDC1WorkTargetInterface* AssignNearestWorkTarget(ADC1PalCharacter& Pal, const ADC1PalBoxActor& PalBox)
+	{
+		TArray<TPair<float, IDC1WorkTargetInterface*>> Candidates;
+
+		for (const TWeakInterfacePtr<IDC1WorkTargetInterface>& Weak : PalBox.GetWorkTargets())
+		{
+			IDC1WorkTargetInterface* Target = Weak.Get();
+			const AActor* TargetActor = Cast<AActor>(Weak.GetObject());
+			if (nullptr == Target || nullptr == TargetActor)
+			{
+				continue;
+			}
+
+			if (false == DC1WorkTarget::CanPalWorkAt(&Pal, Target->GetWorkTypeTag(), TargetActor->GetActorLocation()))
+			{
+				continue;
+			}
+
+			Candidates.Add({ FVector::DistSquared2D(Pal.GetActorLocation(), TargetActor->GetActorLocation()), Target });
+		}
+
+		Candidates.Sort([](const TPair<float, IDC1WorkTargetInterface*>& A, const TPair<float, IDC1WorkTargetInterface*>& B)
+			{
+				return A.Key < B.Key;
+			});
+
+		for (const TPair<float, IDC1WorkTargetInterface*>& Candidate : Candidates)
+		{
+			if (true == Candidate.Value->AssignPalWorker(&Pal))
+			{
+				return Candidate.Value;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static bool IsNearWorkTarget(const AActor& Pal, const AActor& TargetActor, float InAcceptanceRadius)
+	{
+		const float SurfaceDistance = FVector::Dist2D(Pal.GetActorLocation(), TargetActor.GetActorLocation())
+			- Pal.GetSimpleCollisionRadius() - TargetActor.GetSimpleCollisionRadius();
+
+		return SurfaceDistance <= InAcceptanceRadius;
+	}
+}
+
+EStateTreeRunStatus FDC1PalWorkTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.bArrived = false;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	const ADC1PalBoxActor* PalBox = IsValid(Pal) ? Pal->GetBasePalBox() : nullptr;
+	if (nullptr == PalBox)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 할 일이 없음
+	IDC1WorkTargetInterface* Target = DC1PalTaskHelper::AssignNearestWorkTarget(*Pal, *PalBox);
+	AActor* TargetActor = Cast<AActor>(Target);
+	if (nullptr == TargetActor)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	Pal->SetWorkTarget(Target);
+	Pal->SetOrientToMovement(true);
+
+	if (EPathFollowingRequestResult::Failed == AIController->MoveToActor(TargetActor, InstanceData.AcceptanceRadius))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalWorkTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	if (false == IsValid(Pal))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 배정이 풀림. 다시 고름
+	IDC1WorkTargetInterface* Target = Pal->GetCurrentWorkTarget();
+	AActor* TargetActor = Cast<AActor>(Target);
+	if (nullptr == TargetActor || false == Target->IsPalWorkerAssigned(Pal))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (false == InstanceData.bArrived)
+	{
+		if (EPathFollowingStatus::Idle != AIController->GetMoveStatus())
+		{
+			return EStateTreeRunStatus::Running;
+		}
+
+		// 이동 끝, 도착X
+		if (false == DC1PalTaskHelper::IsNearWorkTarget(*Pal, *TargetActor, InstanceData.AcceptanceRadius))
+		{
+			return EStateTreeRunStatus::Succeeded;
+		}
+
+		InstanceData.bArrived = true;
+		Pal->SetOrientToMovement(false);
+		AIController->SetFocus(TargetActor, EAIFocusPriority::Gameplay);
+	}
+
+	UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(Pal);
+	if (nullptr == ASC)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	const EStateTreeRunStatus Result = DC1PalTaskHelper::ActivateAbility(*ASC, DC1PalTags::Ability_Pal_Work, DC1StateTags::State_Working, Pal);
+	return (EStateTreeRunStatus::Running == Result) ? EStateTreeRunStatus::Running : EStateTreeRunStatus::Succeeded;
+}
+
+void FDC1PalWorkTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	if (false == IsValid(Pal))
+	{
+		return;
+	}
+
+	AIController->StopMovement();
+	AIController->ClearFocus(EAIFocusPriority::Gameplay);
+	Pal->SetOrientToMovement(false);
+
+	if (UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(Pal))
+	{
+		ASC->CancelAbilityByTag(DC1PalTags::Ability_Pal_Work);
+	}
+
+	IDC1WorkTargetInterface* Target = Pal->GetCurrentWorkTarget();
+	if (nullptr != Target && true == Target->IsPalWorkerAssigned(Pal))
+	{
+		Target->UnassignPalWorker(Pal);
+	}
+
+	Pal->SetWorkTarget(nullptr);
 }

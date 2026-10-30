@@ -61,11 +61,11 @@ public:
 	// 파티·상자에 빈칸이 있나
 	bool					CanAcceptPal() const;
 
-	// 거점 연결. 이미 있으면 무시한다 (플레이어당 1개)
-	UFUNCTION(Server, Reliable)
-	void					Server_SetBase(ADC1PalBoxActor* InPalBox);
+	// 거점 연결 (서버)- 플레이어당 1개
+	void					SetBase(ADC1PalBoxActor* InPalBox);
 
 	bool					HasBase() const;
+	ADC1PalBoxActor*		GetBasePalBox() const { return BasePalBox; }
 
 	// 주인 기절. 하차만 ( 달려오기 취소 포함 ), 팰은 그대로 둔다. 서버 전용
 	void					HandleOwnerDowned();

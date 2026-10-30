@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Actor/BuildActor/Interact/DC1InteractBuildActor.h"
 #include "Interface/DC1TeleportPointInterface.h"
+#include "UObject/WeakInterfacePtr.h"
 #include "DC1PalBoxActor.generated.h"
 
 class UArrowComponent;
@@ -29,6 +30,9 @@ public:
 	virtual FText							GetPointName()										const override;
 	virtual FTransform					GetArrivalTransform()								const override;
 	virtual bool							CanUse(const APlayerState* InPlayerState)	const override;
+	// 거점 안 작업 대상 (서버 전용)
+	const TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>& GetWorkTargets() const { return WorkTargets; }
+	void							RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget);
 
 protected:
 	virtual void					BeginPlay() override;
@@ -45,6 +49,8 @@ private:
 	virtual void					OnPlaced(const APlayerState* InBuilder) override;
 
 	virtual void					BuildCompleted() override;
+	// 반경 안의 기존 노드를 등록
+	void							CollectWorkTargets();
 
 protected:
 	// 거점 범위 반경
@@ -55,4 +61,5 @@ private:
 	// 도착 위치 / 방향
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	TObjectPtr<UArrowComponent>		ArrivalPoint = { nullptr };
+	TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>	WorkTargets;
 };

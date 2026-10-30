@@ -82,6 +82,8 @@ public:
 public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData) override;
 	virtual void					BuildDestroy() override;
+	// 지은 사람의 거점 안이면 그 거점의 작업 대상으로 등록 ( 서버 )
+	virtual void					OnPlaced(const APlayerState* InBuilder) override;
 
 protected:
 	virtual void					ApplyState() override;

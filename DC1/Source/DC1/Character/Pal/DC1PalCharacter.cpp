@@ -88,6 +88,13 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 
 	PalAttributeSet = CreateDefaultSubobject<UDC1PalAttributeSet>(TEXT("PalAttributeSet"));
 
+	// 피격 판정.
+	HitboxComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Hitbox"));
+	HitboxComponent->SetupAttachment(RootComponent);
+	HitboxComponent->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	HitboxComponent->SetCanEverAffectNavigation(false);
+	HitboxComponent->SetCollisionProfileName(TEXT("EnemyPalHitbox"));
+
 	// 머리 위 HP바. 위젯 클래스와 높이는 BP_Pal_* 에서 종마다 지정한다
 	HealthWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthWidget"));
 	HealthWidgetComponent->SetupAttachment(RootComponent);
@@ -782,6 +789,11 @@ void ADC1PalCharacter::OnDeath()
 		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
+	if (IsValid(HitboxComponent))
+	{
+		HitboxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
 		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
@@ -838,6 +850,11 @@ void ADC1PalCharacter::ApplyTeamCollisionProfile()
 	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
 		Capsule->SetCollisionProfileName((EDC1Team::Player == Team) ? TEXT("AllyPal") : TEXT("EnemyPal"));
+	}
+
+	if (IsValid(HitboxComponent))
+	{
+		HitboxComponent->SetCollisionProfileName((EDC1Team::Player == Team) ? TEXT("AllyPalHitbox") : TEXT("EnemyPalHitbox"));
 	}
 }
 

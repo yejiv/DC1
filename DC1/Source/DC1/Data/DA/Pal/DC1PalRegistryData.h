@@ -108,17 +108,29 @@ struct FDC1PalSkillDef
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
 	TSubclassOf<ADC1PalProjectile>	ProjectileClass;
 
-	// 몇발
+	// 몇발 (근접은 타수 = 몽타주 노티파이 수)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "1"))
 	int32			ShotCount = { 1 };
 
-	// 연사 간격
+	// 연사 간격. 여러 발이면 0보다 커야 한다 (동시 발사 없음)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0"))
 	float			ShotInterval = { 0.f };
 
-	// 퍼짐 각도
+	// 팰 머리 위에서 발사
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi")
+	bool			bFireFromAboveHead = { false };
+
+	// 원뿔 폭
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Multi", meta = (ClampMin = "0.0", ClampMax = "180.0"))
 	float			SpreadAngle = { 0.f };
+
+	// 근접 판정 구체 반지름
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Near", meta = (ClampMin = "0.0"))
+	float			HitRadius = { 80.f };
+
+	// 캡슐 앞에서 판정 중심까지 거리
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Near", meta = (ClampMin = "0.0"))
+	float			HitReach = { 80.f };
 };
 
 // 패시브

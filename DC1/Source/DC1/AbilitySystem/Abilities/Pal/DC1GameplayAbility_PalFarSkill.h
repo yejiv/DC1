@@ -22,7 +22,7 @@ protected:
 	virtual void			PerformSkillEffect() override;
 	virtual void			EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
-	void					FireProjectile(float InYawOffset);
+	void					FireProjectile();
 
 	// 연사 타이머가 ShotInterval 마다 호출
 	void					FireNextShot();
@@ -42,6 +42,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill")
 	float					MuzzleHeightOffset = { 60.f };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|FarSkill", meta = (ClampMin = "0.0"))
+	float					AboveHeadOffset = { 50.f };
 
 private:
 	UPROPERTY()
