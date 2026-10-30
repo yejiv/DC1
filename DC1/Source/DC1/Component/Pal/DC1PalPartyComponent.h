@@ -169,9 +169,14 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void					Client_SetRideApproachInputBlocked(bool InBlocked);
 
+	// 옆에서 올라타기 시작. 다 오르면 FinishMount
 	void					Ride();
+	void					FinishMount();
 
-	// InReturnPalToAI false 면 AI 컨트롤러 파괴
+	// F 로 내리기. 다 내리면 EndRide
+	void					BeginDismount();
+
+	// 즉시 하차. (InReturnPalToAI false 면 AI 컨트롤러 파괴)
 	void					EndRide(bool InReturnPalToAI);
 
 	APlayerController*		GetOwnerController() const;
@@ -244,6 +249,9 @@ private:
 	TObjectPtr<ADC1PalCharacter>		DeployedPal = { nullptr };
 
 	FTimerHandle						DeathRetrieveTimer;
+
+	// 올라타기·내리기가 끝나는 시점
+	FTimerHandle						RideStepTimer;
 
 	// 선택된 슬롯. 클라는 입력으로, 서버는 Server_SetSelectedSlot으로 각자 갱신한다
 	int32								SelectedSlot = { 0 };

@@ -201,4 +201,12 @@ private:
 	float	CurrentTargetArmLength = {};
 	float	ZoomInLength = { 70.f };
 	float	ZoomInSpeed = {5.f};
+
+	// 스프링 암 기본 높이
+	float	FixedSpringArmHeight = {};
+	float	CurrentSpringArmHeight = {};
+
+	// 팰 탑승 중 스프링 암 높이
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float	RideSpringArmHeight = { 50.f };
 };

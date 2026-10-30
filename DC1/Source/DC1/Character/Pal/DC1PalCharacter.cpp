@@ -13,6 +13,7 @@
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -88,6 +89,8 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 
 	PalAttributeSet = CreateDefaultSubobject<UDC1PalAttributeSet>(TEXT("PalAttributeSet"));
 
+	RideComponent = CreateDefaultSubobject<UDC1PalRideComponent>(TEXT("RideComponent"));
+
 	// 피격 판정.
 	HitboxComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Hitbox"));
 	HitboxComponent->SetupAttachment(RootComponent);
@@ -126,16 +129,10 @@ void ADC1PalCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& Out
 
 void ADC1PalCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
 {
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
-
-	for (AActor* Attached : AttachedActors)
+	if (APawn* Rider = RideComponent->GetRider())
 	{
-		if (APawn* Rider = Cast<APawn>(Attached))
-		{
-			Rider->CalcCamera(DeltaTime, OutResult);
-			return;
-		}
+		Rider->CalcCamera(DeltaTime, OutResult);
+		return;
 	}
 
 	Super::CalcCamera(DeltaTime, OutResult);
@@ -265,70 +262,15 @@ void ADC1PalCharacter::GrantSkillAbilities()
 	}
 }
 
-bool ADC1PalCharacter::IsRideActionLocked() const
-{
-	return (true == GetWorldTimerManager().IsTimerActive(RideSkillTurnTimer))
-		|| (true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking));
-}
-
 void ADC1PalCharacter::OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex)
 {
 	// 카메라 방향으로 짧게 돈 뒤 서버에 발동을 요청
-
-	if (true == IsRideActionLocked() || nullptr == PalData || false == PalData->SkillTags.IsValidIndex(InSkillIndex))
-	{
-		return;
-	}
-
-	// 쿨타임 중
-	const FGameplayTag SkillTag = PalData->SkillTags[InSkillIndex];
-	const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(SkillTag);
-	if (true == CooldownTag.IsValid() && true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(CooldownTag))
-	{
-		return;
-	}
-
-	PendingRideSkillTag = SkillTag;
-	RideSkillTurnFrom = GetActorRotation();
-	RideSkillTurnTo = FRotator(0.f, GetControlRotation().Yaw, 0.f);
-	RideSkillTurnStartTime = GetWorld()->GetTimeSeconds();
-
-	GetWorldTimerManager().SetTimer(RideSkillTurnTimer, this, &ThisClass::TickRideSkillTurn, 0.01f, true);
-}
-
-void ADC1PalCharacter::TickRideSkillTurn()
-{
-	const float Elapsed = GetWorld()->GetTimeSeconds() - RideSkillTurnStartTime;
-	const float Alpha = (RideSkillTurnTime > 0.f) ? FMath::Clamp(Elapsed / RideSkillTurnTime, 0.f, 1.f) : 1.f;
-
-	// 탄 사람 클라가 돌리면 이동 복제로 서버에 간다
-	SetActorRotation(FQuat::Slerp(RideSkillTurnFrom.Quaternion(), RideSkillTurnTo.Quaternion(), Alpha));
-
-	if (Alpha < 1.f)
-	{
-		return;
-	}
-
-	GetWorldTimerManager().ClearTimer(RideSkillTurnTimer);
-	Server_UseRideSkill(PendingRideSkillTag);
-	PendingRideSkillTag = FGameplayTag::EmptyTag;
-}
-
-void ADC1PalCharacter::Server_UseRideSkill_Implementation(const FGameplayTag& InSkillTag)
-{
-	if (false == IsPlayerControlled() || nullptr == PalData || false == PalData->SkillTags.Contains(InSkillTag)
-		|| false == IsValid(AbilitySystemComponent) || true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking))
-	{
-		return;
-	}
-
-	// 쿨타임은 어빌리티의 CheckCooldown 이 막는다
-	AbilitySystemComponent->ActivateAbilityByTag(InSkillTag);
+	RideComponent->RequestRideSkill(InSkillIndex);
 }
 
 void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 {
-	if (true == IsRideActionLocked())
+	if (true == RideComponent->IsRideActionLocked())
 	{
 		return;
 	}
@@ -342,7 +284,7 @@ void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 
 void ADC1PalCharacter::OnRideJumpPressed(const FInputActionValue& Value)
 {
-	if (true == IsRideActionLocked())
+	if (true == RideComponent->IsRideActionLocked())
 	{
 		return;
 	}
