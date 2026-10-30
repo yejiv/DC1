@@ -35,6 +35,10 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Teleport, "UI.Main.Teleport");
 #pragma endregion
 
+#pragma region MAIN_DEATH
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Death, "UI.Main.Death");
+#pragma endregion
+
 #pragma region CHEST_LOOT
 	UE_DEFINE_GAMEPLAY_TAG(UI_Chest_Loot, "UI.Chest.Loot");
 #pragma endregion

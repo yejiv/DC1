@@ -52,6 +52,9 @@ public:
 	// 목록 InIndex 지점으로 이동 요청
 	void							RequestTeleport(int32 InIndex);
 
+	// 시작 지점 리스폰 요청
+	void							RequestRespawnAtStart();
+
 public:
 	FOnTeleportEntriesChanged		OnEntriesChanged;
 

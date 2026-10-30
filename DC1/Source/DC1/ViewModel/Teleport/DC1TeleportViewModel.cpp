@@ -117,6 +117,26 @@ void UDC1TeleportViewModel::RequestTeleport(int32 InIndex)
 	}
 }
 
+void UDC1TeleportViewModel::RequestRespawnAtStart()
+{
+	if (nullptr == TeleportComponent)
+		return;
+
+	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		UIManager->FadeIn(1.f, EDC1FadeType::Spinner, FSimpleDelegate::CreateWeakLambda(this, [this, UIManager]()
+			{
+				if (nullptr == TeleportComponent)
+				{
+					UIManager->FadeOut(1.f);
+					return;
+				}
+				TeleportComponent->RequestRespawn(nullptr);
+			}
+		));
+	}
+}
+
 void UDC1TeleportViewModel::RebuildEntries()
 {
 	if (nullptr == TeleportSubsystem || nullptr == TeleportComponent)

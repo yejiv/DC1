@@ -62,6 +62,8 @@ void UDC1TeleportComponent::HandlePawnSet(APlayerState* InPlayerState, APawn* In
 
 	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 	{
+		UIManager->SetHUDVisibility(true);
+		UIManager->PopAllScreen();
 		UIManager->FadeOut(1.f);
 	}
 }

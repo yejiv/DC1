@@ -32,6 +32,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayEffectExtension.h"
+#include "Net/UnrealNetwork.h"
 
 #include "Tags/DC1GamePlayTags.h"
 #include "System/DC1AssetManager.h"
@@ -273,6 +274,14 @@ void ADC1Player::PostInitializeComponents()
 	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
 }
 
+void ADC1Player::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// 사망 화면 카운트다운용 - 본인만
+	DOREPLIFETIME_CONDITION(ADC1Player, RespawnAvailableTime, COND_OwnerOnly);
+}
+
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
@@ -383,6 +392,8 @@ void ADC1Player::OnHealthDepleted()
 		return;
 
 	ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
+	if (false == IsValid(PS))
+		return;
 
 	if (true == HasAuthority())
 	{
@@ -417,10 +428,7 @@ void ADC1Player::OnHealthDepleted()
 	if (UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 	{
 		// 열려 있는 화면 정리 ( 텔레포트, 인벤토리 등 )
-		while (true == UIManager->HasActiveScreen())
-		{
-			UIManager->PopScreen();
-		}
+		UIManager->PopAllScreen();
 	}
 }
 
@@ -430,13 +438,13 @@ void ADC1Player::OnDeath()
 
 	if (true == HasAuthority())
 	{
-		DeathTime = GetWorld()->GetTimeSeconds();
-
-		// 기절 → 사망. 기절 태그는 사망으로 대체한다
 		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 		{
 			CancelAbility(DC1PlayerTags::Ability_Player_Downed);
 		}
+
+		// 부활 대기 시간 시작점 설정
+		RespawnAvailableTime = GetWorld()->GetTimeSeconds() + DeathScreenDelay + RespawnDelay;
 
 		// 소환 팰 회수 ( 하차는 기절 때 이미 처리 )
 		if (nullptr != PS)
@@ -464,6 +472,19 @@ void ADC1Player::OnDeath()
 	{
 		CMC->StopMovementImmediately();
 		CMC->DisableMovement();
+	}
+
+	// 본인 클라만 Timer 설정
+	if (false == IsValid(PS))
+		return;
+	ADC1PlayerController* PC = Cast<ADC1PlayerController>(PS->GetPlayerController());
+	if (true == ::IsValid(PC) && true == PC->IsLocalController())
+	{
+		GetWorldTimerManager().SetTimer(DeathScreenTimerHandle, this, &ThisClass::ShowDeathScreen, DeathScreenDelay, false);
+		if (UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+		{
+			UIManager->SetHUDVisibility(false);
+		}
 	}
 }
 
@@ -689,6 +710,7 @@ void ADC1Player::InitializeAbilitySystem()
 
 	// Dead State Delegate Register
 	RegisterStateHandle(DC1StateTags::State_Dead, &ThisClass::OnDeadStateChanged, ASC);
+	RefreshIncapacitated();
 
 	// CharacterMovement Delegate Register
 	OnCharacterMovementUpdated.AddUniqueDynamic(this, &ThisClass::HandleOnCharacterMovementUpdated);
@@ -741,6 +763,9 @@ void ADC1Player::Clear_Resource()
 		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).RemoveAll(this);
 		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).RemoveAll(this);
 	}
+
+	if(true == DeathScreenTimerHandle.IsValid())
+		GetWorldTimerManager().ClearTimer(DeathScreenTimerHandle);
 }
 
 void ADC1Player::OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount)
@@ -841,6 +866,17 @@ void ADC1Player::HandleDownedGaugeChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+void ADC1Player::ShowDeathScreen()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
+		return;
+	}
+	UIManager->PushScreen(DC1UITags::UI_Main_Death);
+}
+
 void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	IsDown = NewCount > 0;
@@ -866,9 +902,10 @@ void ADC1Player::RefreshIncapacitated()
 	if (false == ::IsValid(PC) || false == PC->IsLocalController())
 		return;
 
-	const bool IsDead = IsDownOrDead();
-
-	if (true == IsDead)
+	const bool bWasIncapacitated = IsIncapacitated;
+	IsIncapacitated = IsDownOrDead();
+	
+	if (true == IsIncapacitated && false == bWasIncapacitated)
 	{
 		// 빌드 취소가 먼저 -> SetBuildMode(false)가 SetInteractEnabled(true) 호출
 		UDC1BuildPlacementComponent* BuildComp = PC->GetBuildPlacementComponent();
@@ -884,34 +921,17 @@ void ADC1Player::RefreshIncapacitated()
 			UE_LOG(LogTemp, Warning, TEXT("Failed to Find UIManager"));
 			return;
 		}
-		while (UIManager->HasActiveScreen())
-		{
-			UIManager->PopScreen();
-		}
-
-		if(true == bDead)
-		{
-			// 화면이 열리면서 목록을 만들기 때문에 PushScreen 전에 부활 모드로 연다
-			if (UDC1ViewModelSubsystem* VMSubsystem = PC->GetLocalPlayer() ? PC->GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>() : nullptr)
-			{
-				if (UDC1TeleportViewModel* TeleportViewModel = VMSubsystem->GetViewModel<UDC1TeleportViewModel>())
-				{
-					TeleportViewModel->SetListMode(EDC1TeleportListMode::Respawn);
-				}
-			}
-
-			UIManager->PushScreen(DC1UITags::UI_Main_Teleport);
-		}
+		UIManager->PopAllScreen();
 	}
 
 	UDC1InteractComponent* InteractComp = PC->GetInteractComponent();
 	if (true == ::IsValid(InteractComp))
 	{
-		InteractComp->SetInteractEnabled(false == IsDead);
+		InteractComp->SetInteractEnabled(false == IsIncapacitated);
 
 	}
 
-	PC->SetGameplayBaseIMC(IsDead ? DC1IMCTags::IMC_Downed : DC1IMCTags::IMC_Default);
+	PC->SetGameplayBaseIMC(IsIncapacitated ? DC1IMCTags::IMC_Downed : DC1IMCTags::IMC_Default);
 }
 
 void ADC1Player::RegisterStateHandle(const FGameplayTag& Tag, void (ADC1Player::*InFunc)(FGameplayTag, int32), UDC1AbilitySystemComponent* ASC)
