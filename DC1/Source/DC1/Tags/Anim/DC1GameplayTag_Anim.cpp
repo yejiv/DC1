@@ -20,7 +20,6 @@ namespace DC1AnimTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Dodge_Step, "Anim.Action.Dodge.Step");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_ClimbAtTop, "Anim.Action.ClimbAtTop");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Death, "Anim.Action.Death");
-	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Downed, "Anim.Action.Downed");
 
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Build, "Anim.Action.Working.Build");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Deforest, "Anim.Action.Working.Deforest");

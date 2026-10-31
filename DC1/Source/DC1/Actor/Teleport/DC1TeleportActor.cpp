@@ -109,7 +109,7 @@ void ADC1TeleportActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey
 		{
 			if (UDC1TeleportViewModel* TeleportViewModel = VMSubsystem->GetViewModel<UDC1TeleportViewModel>())
 			{
-				TeleportViewModel->SetSourcePoint(this);
+				TeleportViewModel->SetListMode(EDC1TeleportListMode::Teleport, this);
 			}
 		}
 

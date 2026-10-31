@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "GameplayTagContainer.h"
 #include "InputActionValue.h"
-#include "GameplayTagContainer.h"
 #include "Data/Appearance/DC1AppearanceTypes.h"	// Debug : 외형 테스트용. Debug region 제거 시 같이 제거
 #include "DC1PlayerController.generated.h"
 
@@ -28,6 +27,9 @@ public:
 	ADC1PlayerController(const FObjectInitializer& ObjectInitializer);
 
 public:
+	// Base IMC Tag 변경
+	void SetGameplayBaseIMC(const FGameplayTag& IMCTag);
+
 	void SetCursorMode(bool OnTurn);
 	// Priority 0 초과인 IMC들을 추가/삭제 - Priority 0은 Add / Remove 예외처리 후 return
 	void SetIMCEnabled(const FGameplayTag& IMCTag, bool Enabled);
@@ -157,4 +159,6 @@ private:
 private:
 	bool			IsTurn = { true };
 	bool			IsActiveScreen = { false };
+
+	FGameplayTag	GameplayBaseIMCTag = { };
 };

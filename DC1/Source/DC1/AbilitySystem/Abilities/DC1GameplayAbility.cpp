@@ -13,6 +13,9 @@ UDC1GameplayAbility::UDC1GameplayAbility(const FObjectInitializer& ObjectInitial
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::LocalPredicted;
+
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Downed);
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
 }
 
 bool UDC1GameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const

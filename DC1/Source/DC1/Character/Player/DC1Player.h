@@ -34,6 +34,7 @@ public:
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual void SetAttackCollision(bool OnCollision) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	USphereComponent* GetInteractDetectCollider() const { return InteractDetectCollider; }
 	UDC1ScreenOffsetWidgetComponent* GetInteractPromptWidgetComponent() const { return InteractPromptWidgetComponent; }
@@ -50,8 +51,8 @@ public:
 	bool GetAimingState() const { return IsAiming; }
 	bool GetDownState() const { return IsDown; }
 
-	// 사망 시각 ( 서버 ). 부활 대기 시간 검증용
-	float GetDeathTime() const { return DeathTime; }
+	// 부활 가능 시각 ( 서버 월드 시간 기준 ). 클라는 GetServerWorldTimeSeconds와 비교
+	float GetRespawnAvailableTime() const { return RespawnAvailableTime; }
 
 	bool CanClimb() const;
 	bool CanGlide() const;
@@ -158,6 +159,13 @@ private:
 
 	void	HandleDamaged(const struct FOnAttributeChangeData& Data);
 
+	// 기절 게이지 감시 ( 서버 / 본인 / 다른 클라 모두 ). 0이 되면 사망
+	void	BindDownedGaugeWatcher();
+	void	HandleDownedGaugeChanged(const struct FOnAttributeChangeData& Data);
+
+private:
+	void	ShowDeathScreen();
+
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
@@ -191,11 +199,17 @@ private:
 	FActiveGameplayEffectHandle				ClimbStaminaCostHandle;
 	FActiveGameplayEffectHandle				GlideStaminaCostHandle;
 
+	FTimerHandle									DeathScreenTimerHandle;
+
 private:
 	bool	IsAiming = {};
 	bool	IsDown = {};
+	bool	IsIncapacitated = {};
 
-	float	DeathTime = { 0.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	float	DeathScreenDelay = { 2.f };
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	float	RespawnDelay = { 5.f };
 
 	float	FixedTargetArmLength = {};
 	float	CurrentTargetArmLength = {};
@@ -209,4 +223,8 @@ private:
 	// 팰 탑승 중 스프링 암 높이
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	float	RideSpringArmHeight = { 50.f };
+
+private:
+	UPROPERTY(Replicated)
+	float	RespawnAvailableTime = { };
 };

@@ -36,17 +36,35 @@ public:
 	UFUNCTION(Server, Reliable)
 	void					Server_RequestTeleport(AActor* InSource, AActor* InDest);
 
-	// Teleport 종료 후 처리 ( 성공 / 실패 모두 호출 -> FadeOut 보장 )
+	// InDest 지점에서 부활 요청 ( 클라 ) - 새 Pawn 도착 시 FadeOut 하도록 표시 후 서버로 전달
+	void					RequestRespawn(AActor* InDest);
+
+	// Teleport 종료 후 처리 ( 성공 / 실패 모두 호출 -> FadeOut 보장 ), 부활은 실패 시에만
 	UFUNCTION(Client, Reliable)
 	void					Client_OnTeleportFinished(bool bInSuccess);
 
+protected:
+	virtual void			BeginPlay() override;
+	virtual void			EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:
+	// InDest 지점에서 부활. 사용 불가 지점이면 시작 지점
+	UFUNCTION(Server, Reliable)
+	void					Server_RequestRespawn(AActor* InDest);
+
 	UFUNCTION()
 	void					OnRep_UnlockedPointIds();
+
+	// 부활 FadeOut 시점 ( 새 Pawn이 PlayerState를 받은 순간 )
+	UFUNCTION()
+	void					HandlePawnSet(APlayerState* InPlayerState, APawn* InNewPawn, APawn* InOldPawn);
 
 private:
 	// 텔레포트 검증 + 이동 ( 서버 )
 	bool					TryTeleport(AActor* InSource, AActor* InDest);
+
+	// InDest 사용 가능 여부 판단 + 도착 Transform 반환 ( 서버 )
+	bool					ResolveDest(AActor* InDest, FTransform& OutTransform) const;
 
 	// 상호작용 허용 거리 내인지 판단
 	bool					IsInnerInteractRange(AActor* InPoint) const;
@@ -59,4 +77,7 @@ private:
 	// 서버 검증용 지점 상호작용 허용 거리 ( 네트워크 지연을 감안해 상호작용 범위보다 넉넉하게 )
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport", meta = (ClampMin = "0.0"))
 	float					InteractAllowDistance = { 500.f };
+
+	// 부활 요청 후 새 Pawn 대기 중 ( 본인 클라 )
+	bool					bPendingRespawnFade = { false };
 };

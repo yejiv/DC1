@@ -84,6 +84,17 @@ void UDC1UIManagerSubsystem::PopScreen()
 	UpdateInputMode(LocalPC);
 }
 
+void UDC1UIManagerSubsystem::PopAllScreen()
+{
+	if (false == IsValid(GetLocalPC()))
+		return;
+
+	while (HasActiveScreen())
+	{
+		PopScreen();
+	}
+}
+
 UDC1UserWidget* UDC1UIManagerSubsystem::CreateWidgetWithTag(const FGameplayTag& InUITag)
 {
 	// Server 확인
@@ -183,6 +194,14 @@ void UDC1UIManagerSubsystem::ShowHUD()
 
 	HUDWidget = CreateOverlay(DC1UITags::UI_Main_HUD, HUDZOrder);
 	NotificationWidget = CreateOverlay(DC1UITags::UI_Main_Notification, NotificationZOrder);
+}
+
+void UDC1UIManagerSubsystem::SetHUDVisibility(bool IsVisible)
+{
+	if (false == IsValid(HUDWidget))
+		return;
+
+	HUDWidget->SetVisibility(IsVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 }
 
 void UDC1UIManagerSubsystem::RouteInputKey(const FKey& InKey)

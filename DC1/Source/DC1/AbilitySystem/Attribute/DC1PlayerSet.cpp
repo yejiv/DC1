@@ -109,6 +109,27 @@ bool UDC1PlayerSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Dat
 	return true;
 }
 
+void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+	// 기절이 아니면 기존대로 HP 처리
+	if (GetDamageAttribute() != Data.EvaluatedData.Attribute || false == Data.Target.HasMatchingGameplayTag(DC1StateTags::State_Downed))
+	{
+		Super::PostGameplayEffectExecute(Data);
+		return;
+	}
+
+	// 메타 어트리뷰트는 즉시 비운다. 남겨두면 다음 GE에 누적된다.
+	const float LocalDamage = GetDamage();
+	SetDamage(0.f);
+
+	if (LocalDamage <= 0.f)
+	{
+		return;
+	}
+
+	SetDownedGauge(FMath::Clamp(GetDownedGauge() - LocalDamage, 0.f, GetMaxDownedGauge()));
+}
+
 void UDC1PlayerSet::OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UDC1PlayerSet, MaxWeight, OldMaxWeight);
