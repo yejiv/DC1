@@ -14,6 +14,9 @@ namespace DC1UITags
 
 #pragma region HUD
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_HUD);
+
+	// 알림 층 (포획 성공 등). HUD 처럼 오버레이로 항상 떠 있다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Notification);
 #pragma endregion
 
 #pragma region MAIN_TAB

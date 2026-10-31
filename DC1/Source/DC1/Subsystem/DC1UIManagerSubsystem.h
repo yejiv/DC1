@@ -72,6 +72,9 @@ private:
 	TObjectPtr<UDC1UserWidget>			HUDWidget = { nullptr };
 
 	UPROPERTY()
+	TObjectPtr<UDC1UserWidget>			NotificationWidget = { nullptr };
+
+	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UDC1UserWidget>> CreatedWidget;
 
 private:
@@ -81,5 +84,8 @@ private:
 	bool								IsTraveling = { false };
 
 	static constexpr int32				HUDZOrder = { 0 };
+
+	// 화면(Screen)은 0 부터 쌓인다. 같은 ZOrder 면 나중에 붙은 게 위라 HUD 바로 뒤에 붙이면 HUD 위, 화면 아래
+	static constexpr int32				NotificationZOrder = { 0 };
 	static constexpr int32				FadeZOrder = { 100 };
 };

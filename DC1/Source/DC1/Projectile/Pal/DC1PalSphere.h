@@ -25,6 +25,10 @@ struct FDC1CaptureDisplay
 
 	UPROPERTY()
 	bool					bSuccess = { false };
+
+	// 성공했을 때 잡은 팰. 던진 사람 클라가 포획 알림에 쓴다
+	UPROPERTY()
+	FDC1PalInstance			CapturedPal;
 };
 
 /**
@@ -72,6 +76,9 @@ protected:
 
 	// 던진 사람 화면에만 띄운다
 	void					RefreshCaptureWidget();
+
+	// 성공을 처음 받았을 때 던진 사람 클라에 포획 알림을 한 번 요청한다
+	void					TryRequestCaptureNotice();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1.0"))
@@ -121,6 +128,8 @@ private:
 	float					RiseAlpha = { 0.f };
 
 	bool					bCaptureStarted = { false };	//재진입 방지
+
+	bool					bCaptureNoticeRequested = { false };
 
 	TWeakObjectPtr<class ADC1PalCharacter>	TargetPal;
 
