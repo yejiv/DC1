@@ -11,6 +11,8 @@
 class ADC1PalCharacter;
 class UDC1PalData;
 
+DECLARE_MULTICAST_DELEGATE(FOnRideStateChanged);
+
 /**
  *
  * 팰 탑승 상태. ADC1PalCharacter 에 붙는다.
@@ -56,6 +58,10 @@ public:
 
 	// 탑승 중 스킬 (탄 사람 클라). 카메라 방향으로 짧게 돈 뒤 서버에 발동을 요청. InSkillIndex 는 PalData.SkillTags 순서
 	void							RequestRideSkill(int32 InSkillIndex);
+
+public:
+	// 탑승 단계가 바뀜 (각 기계). 라이딩 HUD 가 구독한다
+	FOnRideStateChanged				OnRideStateChanged;
 
 protected:
 	UFUNCTION()

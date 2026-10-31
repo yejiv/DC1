@@ -162,6 +162,8 @@ void UDC1PalRideComponent::OnRep_RideState()
 {
 	GetWorld()->GetTimerManager().ClearTimer(RideMoveTimer);
 
+	OnRideStateChanged.Broadcast();
+
 	ACharacter* Rider = Cast<ACharacter>(GetRider());
 	const UDC1PalData* PalData = GetPalData();
 	if (nullptr == Rider || nullptr == PalData)

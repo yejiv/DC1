@@ -100,6 +100,9 @@ public:
 	// 지금 월드에 나와 있나. 이건 데이터가 아니라 액터와 대조해야 안다
 	bool					IsDeployed(int32 InSlotIndex) const;
 
+	// 소환 중인 팰. 없으면 nullptr
+	ADC1PalCharacter*		GetDeployedPal() const { return DeployedPal; }
+
 public:
 	void ExportSaveData(TArray<FDC1PalInstance>& Out) const;
 	void ImportSaveData(const TArray<FDC1PalInstance>& In);
