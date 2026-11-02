@@ -18,6 +18,8 @@ class UDC1TabWidget;
 class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
 
+struct FInputActionInstance;
+
 UCLASS()
 class DC1_API ADC1PlayerController : public APlayerController
 {
@@ -25,6 +27,9 @@ class DC1_API ADC1PlayerController : public APlayerController
 	
 public:
 	ADC1PlayerController(const FObjectInitializer& ObjectInitializer);
+
+public:
+	float GetReviveDuration() const { return GiveUpHoldDuration; }
 
 public:
 	// Base IMC Tag 변경
@@ -61,6 +66,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SavePlayerData();
 
+	UFUNCTION(Server, Reliable)
+	void Server_GiveUpDowned();
+
 private:
 	void OnMove(const FInputActionValue& Value);
 	void OnTurn(const FInputActionValue& Value);
@@ -91,6 +99,15 @@ private:
 
 	// Climb
 	void OnClimbReleasePressed(const FInputActionValue& Value);
+
+	// Downed GiveUp
+	void OnGiveUpPressed(const FInputActionValue& Value);
+	void OnGiveUpOngoing(const FInputActionInstance& Instance);
+	void OnGiveUpCanceled();
+
+private:
+	void ResetGiveUpGauge();
+	void SetGiveUpGauge(float Ratio);
 
 private:
 	void InitPlayerStateBindings();
@@ -128,6 +145,7 @@ private:
 private:
 	void SetUpDefaultInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 	void SetUpUIInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
+	void SetUpDownInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData);
 
 private:
 	// InputMappingContext Set MappingContext Priority 0
@@ -158,4 +176,6 @@ private:
 	bool			IsActiveScreen = { false };
 
 	FGameplayTag	GameplayBaseIMCTag = { };
+
+	float			GiveUpHoldDuration = { 5.f };
 };

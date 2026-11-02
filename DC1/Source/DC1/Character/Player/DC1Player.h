@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/DC1Character.h"
+#include "Interface/DC1InteractableInterface.h"
 #include "GameplayTagContainer.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "DC1Player.generated.h"
@@ -24,12 +25,15 @@ class UDC1EquipComponent;
  * 
  */
 UCLASS()
-class DC1_API ADC1Player : public ADC1Character
+class DC1_API ADC1Player : public ADC1Character, public IDC1InteractableInterface
 {
 	GENERATED_BODY()
 
 public:
 	ADC1Player(const FObjectInitializer& ObjectInitializer);
+
+public:
+	FDC1OnInteractOptionsChanged	OnInteractOptionsChanged;
 
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
@@ -42,6 +46,17 @@ public:
 
 	// 상호작용 컴포넌트의 현재 대상 ( 로컬 - Work GA가 IsLocallyControlled에서 호출 )
 	virtual IDC1WorkTargetInterface* GetCurrentWorkTarget() const override;
+
+// IDC1InteractableInterface override
+public:
+	// 시선 판정 기준점을 위한 InteractCollider 가져오기
+	virtual UPrimitiveComponent*	GetInteractCollider() const override;
+
+	// 치료 상호작용 옵션
+	virtual void							GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
+
+	// 옵션 목록이 바뀔 때 Broadcast - 포커스 중 UI/키 판정 갱신용
+	virtual FDC1OnInteractOptionsChanged& GetOnInteractOptionsChanged() override { return OnInteractOptionsChanged; }
 
 public:
 	UFUNCTION()
@@ -56,6 +71,12 @@ public:
 
 	bool CanClimb() const;
 	bool CanGlide() const;
+
+	// 치료 Interact
+	bool	CanBeRevived() const;
+	void	StartBeingRevived();
+	void	StopBeingRevived();
+	void	CompleteRevived();
 
 public:
 	UFUNCTION(Server, Reliable)
@@ -121,6 +142,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UDC1ScreenOffsetWidgetComponent>		InteractPromptWidgetComponent = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USphereComponent>		InteractCollider = { nullptr };
+
+
 private:
 	void	InitializeAbilitySystem();
 	// 장착 컴포넌트는 PlayerState 소유다. 폰이 준비됐음을 알려 스폰/부착을 트리거한다
@@ -168,7 +193,7 @@ private:
 
 private:
 	UPROPERTY()
-	TObjectPtr<UPrimitiveComponent>		ActiveCollider = { nullptr };
+	TObjectPtr<UPrimitiveComponent>	ActiveCollider = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Glide")
 	TSubclassOf<UGameplayEffect>			GlideStaminaCostClass = { nullptr };
@@ -185,6 +210,11 @@ private:
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;
+
+private:
+	// 치료 상호작용 옵션
+	UPROPERTY(EditDefaultsOnly, Category = "Interact")
+	TArray<FDC1InteractOption>			InteractOptions;
 
 private:
 	FGameplayTag								OldWeaponTag = {};

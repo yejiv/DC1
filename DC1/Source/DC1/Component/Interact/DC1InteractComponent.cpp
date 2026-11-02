@@ -42,6 +42,7 @@ UDC1InteractComponent::UDC1InteractComponent()
 
 	// 작업 종류( 건설 / 벌목 / 채광 등 )는 작업 GA가 대상에서 읽음 - 옵션은 Interact.Work 하나
 	InteractionToAbility.Add(DC1InteractTags::Interact_Work, DC1PlayerTags::Ability_Player_Work);
+	InteractionToAbility.Add(DC1InteractTags::Interact_Revive, DC1PlayerTags::Ability_Player_Revive);
 }
 
 IDC1InteractableInterface* UDC1InteractComponent::GetCurrentInteractable() const

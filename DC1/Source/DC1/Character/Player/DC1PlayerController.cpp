@@ -12,6 +12,7 @@
 #include "Data/DA/Input/DC1InputData.h"
 
 #include "Tags/DC1GamePlayTags.h"
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "UI/Tab/DC1TabWidget.h"
@@ -31,6 +32,7 @@
 #include "Interface/DC1InteractableInterface.h"
 
 #include "Subsystem/DC1ViewModelSubsystem.h"
+#include "ViewModel/Player/DC1PlayerStatusViewModel.h"
 
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 
@@ -215,6 +217,7 @@ void ADC1PlayerController::SetupInputComponent()
 
 		SetUpDefaultInput(EnhancedInputComponent, InputData);
 		SetUpUIInput(EnhancedInputComponent, InputData);
+		SetUpDownInput(EnhancedInputComponent, InputData);
 	}
 
 	SetUp_DebugInput();
@@ -270,6 +273,22 @@ void ADC1PlayerController::Server_SavePlayerData_Implementation()
 {
 	const bool bSaved = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>()->SavePlayerData(GetPlayerState<ADC1PlayerState>());
 	LOG(TEXT("[Save] SavePlayerData Result=%d"), bSaved);
+}
+
+void ADC1PlayerController::Server_GiveUpDowned_Implementation()
+{
+	if (nullptr == ControlObject)
+		return;
+
+	if (UAbilitySystemComponent* ASC = ControlObject->GetAbilitySystemComponent())
+	{
+		if (false == ASC->HasMatchingGameplayTag(DC1StateTags::State_Downed))
+		{
+			return;
+		}
+
+		ASC->SetNumericAttributeBase(UDC1PlayerSet::GetDownedGaugeAttribute(), 0.f);
+	}
 }
 
 void ADC1PlayerController::OnMove(const FInputActionValue& Value)
@@ -543,6 +562,38 @@ void ADC1PlayerController::OnClimbReleasePressed(const FInputActionValue& Value)
 
 	CMC->ReleaseClimb();
 	ControlObject->Server_ReleaseClimb();
+}
+
+void ADC1PlayerController::OnGiveUpPressed(const FInputActionValue& Value)
+{
+	Server_GiveUpDowned();
+	ResetGiveUpGauge();
+}
+
+void ADC1PlayerController::OnGiveUpOngoing(const FInputActionInstance& Instance)
+{
+	SetGiveUpGauge(Instance.GetElapsedTime() / GiveUpHoldDuration);
+}
+
+void ADC1PlayerController::OnGiveUpCanceled()
+{
+	ResetGiveUpGauge();
+}
+
+void ADC1PlayerController::ResetGiveUpGauge()
+{
+	SetGiveUpGauge(0.f);
+}
+
+void ADC1PlayerController::SetGiveUpGauge(float Ratio)
+{
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		if (UDC1PlayerStatusViewModel* StatusViewModel = ViewModelSubsystem->GetViewModel<UDC1PlayerStatusViewModel>())
+		{
+			StatusViewModel->SetGiveUpHoldRatio(Ratio);
+		}
+	}
 }
 
 void ADC1PlayerController::InitPlayerStateBindings()
@@ -930,5 +981,16 @@ void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputCo
 	if (const UInputAction* OpenPalBox = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_PalBox))
 	{
 		EnhancedInputComponent->BindAction(OpenPalBox, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_PalBox.GetTag(), FGameplayTag::EmptyTag);
+	}
+}
+
+void ADC1PlayerController::SetUpDownInput(UEnhancedInputComponent* EnhancedInputComponent, const UDC1InputData* InputData)
+{
+	// GiveUp
+	if (const UInputAction* GiveUpAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Downed_GiveUp))
+	{
+		EnhancedInputComponent->BindAction(GiveUpAction, ETriggerEvent::Triggered, this, &ThisClass::OnGiveUpPressed);
+		EnhancedInputComponent->BindAction(GiveUpAction, ETriggerEvent::Ongoing, this, &ThisClass::OnGiveUpOngoing);
+		EnhancedInputComponent->BindAction(GiveUpAction, ETriggerEvent::Canceled, this, &ThisClass::OnGiveUpCanceled);
 	}
 }

@@ -25,6 +25,9 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnDownStateChanged, bool /*IsDowned*/);
 // 레벨과 경험치는 NEXT 표시와 EXP 바가 같이 쓰므로 하나로 묶는다
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnLevelChanged, int32 /*Level*/, int32 /*RemainingExp*/, float /*ExpPercent*/);
 
+// Downed Give Up Hold Ratio Changed
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGiveUpHoldRatioChanged, float /*Ratio*/);
+
 /**
  * 플레이어 HUD용 ViewModel.
  * PlayerState의 ASC 어트리뷰트 변경을 구독해 표시용 값으로 가공한 뒤 위젯에 전달한다.
@@ -44,9 +47,14 @@ public:
 
 	FOnLevelChanged				OnLevelChanged;
 
+	FOnGiveUpHoldRatioChanged	OnGiveUpHoldRatioChanged;
+
 public:
 	virtual void BindSource(ADC1PlayerState* InPlayerState) override;
 	virtual void ClearSource() override;
+
+public:
+	void SetGiveUpHoldRatio(float Ratio);
 
 public:
 	// 위젯이 BindSource보다 늦게 붙는 경우가 있으므로, 구독과 별개로 현재 값을 읽어갈 수 있어야 한다
@@ -129,4 +137,7 @@ private:
 
 	// State.Downed 태그 이벤트 해제용
 	FDelegateHandle							DownStateHandle;
+
+private:
+	float GiveUpHoldRatio = {};
 };

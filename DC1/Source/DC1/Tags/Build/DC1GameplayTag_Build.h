@@ -90,4 +90,5 @@ namespace DC1BuildTags
 namespace DC1InteractTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interact_Work);		// 작업 ( 건설 · 생산 - 종류는 대상 GetWorkTypeTag )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Interact_Revive);	// 기절한 팀원 치료
 }

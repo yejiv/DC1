@@ -31,6 +31,7 @@ private:
 private:
 	void HandleDownedStateChanged(bool InIsDowned);
 	void HandleDownedGaugeChanged(float Current, float Max);
+	void HandleGiveUpHoldRatioChanged(float Ratio);
 
 private:
 	UPROPERTY(Transient, meta = (BindWidget))
