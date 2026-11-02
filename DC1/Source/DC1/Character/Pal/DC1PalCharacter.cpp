@@ -52,17 +52,9 @@ namespace DC1PalCharacter
 				return nullptr;
 			}
 
-			// 탑승 중이면 팰의 PlayerState 가 주인 것
-			if (false == Pal->IsPlayerControlled())
-			{
-				const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController());
-				if (nullptr == PalController)
-				{
-					return nullptr;
-				}
-
-				Pawn = Cast<APawn>(PalController->GetFollowTarget());
-			}
+			// 내 팰이면 주인 파티. 탑승 중이든 아니든 같다
+			const ADC1PlayerState* OwnerState = Pal->GetOwnerPlayerState();
+			return (nullptr != OwnerState) ? OwnerState->GetPalPartyComponent() : nullptr;
 		}
 
 		const ADC1PlayerState* PlayerState = (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
@@ -658,7 +650,7 @@ void ADC1PalCharacter::CancelCapture()
 	}
 }
 
-ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox)
+ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox)
 {
 	if (nullptr == InWorld || false == InInstance.IsValidPal())
 	{
@@ -697,6 +689,7 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	Pal->SpeciesTag = InInstance.SpeciesTag;
 	Pal->InstanceID = InInstance.PalID;
 	Pal->Team = EDC1Team::Player;
+	Pal->OwnerPlayerState = InOwner;
 
 	// OnPossess 가 이걸 보고 트리를 고르므로 FinishSpawning 전에
 	Pal->BasePalBox = InBasePalBox;
@@ -770,6 +763,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADC1PalCharacter, Team);
+	DOREPLIFETIME(ADC1PalCharacter, OwnerPlayerState);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const

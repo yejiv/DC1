@@ -5,6 +5,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Controller/DC1PalAIController.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
@@ -297,7 +298,7 @@ void UDC1PalPartyComponent::RefreshBasePals()
 			return;
 		}
 
-		if (ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pal, FTransform(SpawnLocation.Location), BasePalBox))
+		if (ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pal, FTransform(SpawnLocation.Location), Cast<ADC1PlayerState>(GetOwner()), BasePalBox))
 		{
 			BaseSpawnedPals.Add(Spawned);
 		}
@@ -539,12 +540,12 @@ void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
 	OnPalSlotChanged.Broadcast();
 }
 
-void UDC1PalPartyComponent::Server_ToggleDeploy_Implementation()
+void UDC1PalPartyComponent::Server_ToggleDeploy_Implementation(int32 InSlotIndex)
 {
-	ToggleDeploy();
+	ToggleDeploy(InSlotIndex);
 }
 
-void UDC1PalPartyComponent::ToggleDeploy()
+void UDC1PalPartyComponent::ToggleDeploy(int32 InSlotIndex)
 {
 	if (ROLE_Authority != GetOwnerRole())
 	{
@@ -558,12 +559,13 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	if (false == HasPalAt(SelectedSlot))
+	// 클라가 보낸 번호라 범위 밖일 수 있다. HasPalAt 이 IsValidIndex 로 걸러 준다
+	if (false == HasPalAt(InSlotIndex))
 	{
 		return;
 	}
 
-	if (false == Pals[SelectedSlot].IsDeployable())
+	if (false == Pals[InSlotIndex].IsDeployable())
 	{
 		return;
 	}
@@ -575,7 +577,7 @@ void UDC1PalPartyComponent::ToggleDeploy()
 		return;
 	}
 
-	ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[SelectedSlot], SpawnTransform);
+	ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pals[InSlotIndex], SpawnTransform, Cast<ADC1PlayerState>(GetOwner()));
 	if (false == ::IsValid(Spawned))
 	{
 		return;
@@ -596,7 +598,6 @@ void UDC1PalPartyComponent::CycleSlot(int32 InDelta)
 
 	SelectedSlot = (SelectedSlot + InDelta + Capacity) % Capacity;
 
-	Server_SetSelectedSlot(SelectedSlot);
 	OnPalSlotTranslated.Broadcast();
 }
 
@@ -629,11 +630,6 @@ float UDC1PalPartyComponent::GetPalHealth(int32 InSlotIndex) const
 	}
 
 	return Pals[InSlotIndex].CurrentHealth;
-}
-
-void UDC1PalPartyComponent::Server_SetSelectedSlot_Implementation(int32 InSlotIndex)
-{
-	SelectedSlot = FMath::Clamp(InSlotIndex, 0, Capacity - 1);
 }
 
 void UDC1PalPartyComponent::RetrieveDeployed()

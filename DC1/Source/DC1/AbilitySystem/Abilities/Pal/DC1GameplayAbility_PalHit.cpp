@@ -23,6 +23,28 @@ UDC1GameplayAbility_PalHit::UDC1GameplayAbility_PalHit(const FObjectInitializer&
 	// 연타로 다시 맞으면 진행 중인 리액션을 끊고 처음부터 다시 재생한다.
 	// 자기 태그를 ActivationBlockedTags 에 두면 몽타주가 도는 동안 들어온 피격이 통째로 무시된다
 	bRetriggerInstancedAbility = true;
+
+	// 슈퍼아머(돌진 중)엔 경직 없음
+	ActivationBlockedTags.AddTag(DC1PalTags::State_Pal_SuperArmor);
+}
+
+bool UDC1GameplayAbility_PalHit::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (false == Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	// 탑승 중(플레이어 조종) 스킬을 쓰는 동안엔 경직 없음.
+	// 경직 몽타주가 같은 슬롯의 스킬 몽타주를 끊어 버리기 때문
+	const APawn* Pal = (nullptr != ActorInfo) ? Cast<APawn>(ActorInfo->AvatarActor.Get()) : nullptr;
+	const UAbilitySystemComponent* ASC = (nullptr != ActorInfo) ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
+	if (nullptr != Pal && nullptr != ASC && true == Pal->IsPlayerControlled() && true == ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 void UDC1GameplayAbility_PalHit::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

@@ -490,7 +490,7 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
-		Party->Server_ToggleDeploy();
+		Party->Server_ToggleDeploy(Party->GetSelectedSlot());
 	}
 }
 
@@ -959,11 +959,5 @@ void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputCo
 	if (const UInputAction* OpenBuild = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_Build))
 	{
 		EnhancedInputComponent->BindAction(OpenBuild, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Build.GetTag(), FGameplayTag::EmptyTag);
-	}
-
-	// Open PalBox Widget
-	if (const UInputAction* OpenPalBox = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_PalBox))
-	{
-		EnhancedInputComponent->BindAction(OpenPalBox, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_PalBox.GetTag(), FGameplayTag::EmptyTag);
 	}
 }

@@ -39,9 +39,9 @@ public:
 	// 처치·포획 경험치. 파티 전원 전액. 서버 전용
 	void					GrantExperienceFor(int32 InDefeatedLevel);
 
-	// 소환/회수 토글. 입력은 클라에서 들어오므로 서버로 넘긴다
+	// 소환/회수 토글. 입력은 클라에서 들어오므로 서버로 넘긴다. 소환할 칸은 클라가 고른 번호를 같이 보낸다
 	UFUNCTION(Server, Reliable)
-	void					Server_ToggleDeploy();
+	void					Server_ToggleDeploy(int32 InSlotIndex);
 
 	// 탑승/하차. 달려오는 중이면 취소
 	UFUNCTION(Server, Reliable)
@@ -51,7 +51,7 @@ public:
 	void					StopRideApproach(bool InResumeBehavior);
 
 	// 선택 슬롯을 한 칸 옮긴다. 정원 전체를 돌고 끝에서 감싼다.
-	// 입력이 클라에서 들어오므로 로그도 클라에서 찍고, 서버에는 인덱스만 보낸다
+	// 클라 전용 값이다. 서버는 소환 요청(Server_ToggleDeploy)에 실려 온 번호를 쓴다
 	void					CycleSlot(int32 InDelta);
 
 	// 두 칸 교환. 소환 중인 팰이 상자로 가면 먼저 회수
@@ -151,11 +151,7 @@ protected:
 
 	void					BroadcastChanged(EDC1PalContainer InContainer);
 
-	void					ToggleDeploy();
-
-	// 소환은 서버가 하므로 선택 슬롯도 서버가 알아야 한다
-	UFUNCTION(Server, Reliable)
-	void					Server_SetSelectedSlot(int32 InSlotIndex);
+	void					ToggleDeploy(int32 InSlotIndex);
 
 	// 회수 한 번. 목록 반영 + 액터 파괴 + 예약된 타이머 정리.
 	// E 회수와 사망 회수가 같은 일을 하므로 공유한다
@@ -256,6 +252,6 @@ private:
 	// 올라타기·내리기가 끝나는 시점
 	FTimerHandle						RideStepTimer;
 
-	// 선택된 슬롯. 클라는 입력으로, 서버는 Server_SetSelectedSlot으로 각자 갱신한다
+	// 선택된 슬롯. 클라 입력(CycleSlot)으로만 바뀐다. 복제·서버 동기화 없음
 	int32								SelectedSlot = { 0 };
 };

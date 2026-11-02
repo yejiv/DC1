@@ -38,6 +38,9 @@ namespace DC1PalTaskHelper
 	// 이보다 느리면 주인이 서 있는 것으로 봄
 	static constexpr float FollowOwnerMoveThreshold = 10.f;
 
+	// 거점 팰 배회 지점이 거점 밖으로 나오면 다시 뽑는 횟수. 다 실패하면 배회 중심으로
+	static constexpr int32 BaseWanderMaxAttempts = 8;
+
 	// 주인이 향하는 쪽. 서 있으면 보는 쪽
 	static FVector GetOwnerHeading(const AActor& Owner)
 	{
@@ -309,6 +312,30 @@ EStateTreeRunStatus FDC1PalWanderTask::EnterState(FStateTreeExecutionContext& Co
 	if (false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), AIController->GetWanderRadius(), Destination))
 	{
 		return EStateTreeRunStatus::Failed;
+	}
+
+	// 거점 팰은 거점 범위 안에서만 움직인다.
+	// 배회 중심(HomeLocation)은 팰박스 근처 내비메시 점이라 팰박스와 어긋난 만큼 반경이 범위 밖으로 밀린다
+	if (const ADC1PalBoxActor* PalBox = Pal->GetBasePalBox())
+	{
+		if (false == PalBox->IsInBase(Pal->GetActorLocation()))
+		{
+			// 이미 밖이면 배회 대신 중심으로 돌아온다
+			Destination.Location = AIController->GetHomeLocation();
+		}
+		else
+		{
+			int32 Attempt = 0;
+			while (false == PalBox->IsInBase(Destination.Location))
+			{
+				if (++Attempt >= DC1PalTaskHelper::BaseWanderMaxAttempts
+					|| false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), AIController->GetWanderRadius(), Destination))
+				{
+					Destination.Location = AIController->GetHomeLocation();
+					break;
+				}
+			}
+		}
 	}
 
 	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->WalkSpeed;

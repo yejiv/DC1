@@ -115,6 +115,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Idling, "State.Pal.Idling");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_HitReacting, "State.Pal.HitReacting");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Encounting, "State.Pal.Encounting");
+	UE_DEFINE_GAMEPLAY_TAG(State_Pal_SuperArmor, "State.Pal.SuperArmor");
 #pragma endregion
 
 #pragma region Anim

@@ -13,6 +13,7 @@
 #include "DC1PalCharacter.generated.h"
 
 class ADC1PalBoxActor;
+class ADC1PlayerState;
 class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
@@ -70,6 +71,9 @@ public:
 	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
 	const FGuid&						GetInstanceID() const { return InstanceID; }
 
+	// 주인(내 팰의 플레이어). 야생은 널. 폰은 탑승·리스폰 때 바뀌므로 PlayerState 를 든다
+	ADC1PlayerState*					GetOwnerPlayerState() const { return OwnerPlayerState; }
+
 	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 서버 전용
 	ADC1PalBoxActor*					GetBasePalBox() const { return BasePalBox.Get(); }
 
@@ -88,7 +92,7 @@ public:
 	void								CancelCapture();// BeginCapture 되돌리기
 
 	// InBasePalBox 가 있으면 거점 팰로 나온다
-	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox = nullptr);
+	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox = nullptr);
 #pragma endregion
 
 	// 탑승 상태
@@ -182,6 +186,9 @@ protected:
 	FGuid InstanceID;
 
 	TWeakObjectPtr<ADC1PalBoxActor> BasePalBox;
+
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<ADC1PlayerState> OwnerPlayerState = { nullptr };
 
 	TWeakInterfacePtr<IDC1WorkTargetInterface> WorkTarget;
 

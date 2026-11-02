@@ -126,6 +126,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Idling);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_HitReacting);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Encounting);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_SuperArmor);
 #pragma endregion
 
 #pragma region Anim

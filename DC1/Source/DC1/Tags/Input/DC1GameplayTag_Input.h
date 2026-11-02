@@ -51,8 +51,6 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_TechTree);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Build);
-
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_PalBox);
 #pragma endregion
 
 #pragma region Downed

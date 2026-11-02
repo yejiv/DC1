@@ -5,6 +5,7 @@
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AI/DC1TeamTypes.h"
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "AbilitySystem/Abilities/Pal/DC1GameplayAbility_PalSkill.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "System/DC1AssetManager.h"
@@ -612,8 +613,10 @@ void ADC1PalAIController::ResetFollowAnchor()
 
 AActor* ADC1PalAIController::GetFollowTarget() const
 {
-	// 포획이 붙으면 팰이 들고 있는 주인 참조로 바꾼다. 지금은 플레이어 하나뿐이다
-	return UGameplayStatics::GetPlayerPawn(this, 0);
+	// 주인 PlayerState 의 폰. 야생은 주인이 없다
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	const APlayerState* OwnerState = IsValid(Pal) ? Pal->GetOwnerPlayerState() : nullptr;
+	return (nullptr != OwnerState) ? OwnerState->GetPawn() : nullptr;
 }
 
 AActor* ADC1PalAIController::GetFollowTargetEnemy() const
