@@ -354,6 +354,7 @@ void ADC1PalCharacter::ApplyPalData()
 
 		// HP바용. BindHealthWatcher 가 RemoveAll(this) 를 하므로 반드시 그 뒤에 온다
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChangedForUI);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PalAttributeSet::GetSanityAttribute()).AddUObject(this, &ThisClass::HandleSanityChangedForUI);
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetLevelAttribute()).AddUObject(this, &ThisClass::HandleLevelChangedForUI);
 	}
 
@@ -477,6 +478,21 @@ void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Da
 	UpdateHealthWidgetVisibility();
 
 	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
+}
+
+void ADC1PalCharacter::HandleSanityChangedForUI(const FOnAttributeChangeData& Data)
+{
+	OnPalSanityChanged.Broadcast(Data.NewValue, GetMaxSanity());
+}
+
+float ADC1PalCharacter::GetSanity() const
+{
+	return IsValid(PalAttributeSet) ? PalAttributeSet->GetSanity() : 0.f;
+}
+
+float ADC1PalCharacter::GetMaxSanity() const
+{
+	return IsValid(PalAttributeSet) ? PalAttributeSet->GetMaxSanity() : 0.f;
 }
 
 void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Data)
@@ -770,6 +786,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(ADC1PalCharacter, Team);
 	DOREPLIFETIME(ADC1PalCharacter, OwnerPlayerState);
+	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const

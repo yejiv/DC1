@@ -395,14 +395,21 @@ void UDC1PalPartyComponent::HealStoredPals()
 				bChanged = true;
 			}
 
-			// 나와서 일하는 거점 팰은 액터가 SAN 을 쓴다. 칸 값은 건드리지 않는다. -1 은 이미 가득
-			const bool bSpawned = BaseSpawnedPals.ContainsByPredicate([&Pal](const ADC1PalCharacter* Other)
+			// 나와서 일하는 거점 팰은 액터가 SAN 을 쓴다
+			const TObjectPtr<ADC1PalCharacter>* Spawned = BaseSpawnedPals.FindByPredicate([&Pal](const ADC1PalCharacter* Other)
 				{
 					return (::IsValid(Other) && Other->GetInstanceID() == Pal.PalID);
 				});
 
-			if (true == bSpawned)
+			if (nullptr != Spawned)
 			{
+				const float ActorSanity = (*Spawned)->GetSanity();
+				if (false == FMath::IsNearlyEqual(Pal.CurrentSanity, ActorSanity))
+				{
+					Pal.CurrentSanity = ActorSanity;
+					bChanged = true;
+				}
+
 				continue;
 			}
 

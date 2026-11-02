@@ -50,6 +50,11 @@ void UDC1PalBoxDetailWidget::SetDetailInfo(const FDC1PalBoxDetailInfo& InDetailI
 	HealthBar->SnapToPercent((Summary.MaxHealth > 0.f) ? (Summary.Health / Summary.MaxHealth) : 0.f);
 	Text_Health->SetText(DC1PalBoxDetail::ToText(Summary.Health));
 	Text_MaxHealth->SetText(DC1PalBoxDetail::ToText(Summary.MaxHealth));
+
+	// SAN
+	const FNumberFormattingOptions NoGrouping = FNumberFormattingOptions::DefaultNoGrouping();
+	Text_Sanity->SetText(FText::AsNumber(FMath::FloorToInt(InDetailInfo.Sanity), &NoGrouping));
+	Text_MaxSanity->SetText(FText::AsNumber(FMath::FloorToInt(InDetailInfo.MaxSanity), &NoGrouping));
 	Text_Attack->SetText(DC1PalBoxDetail::ToText(InDetailInfo.Attack));
 	Text_Defense->SetText(DC1PalBoxDetail::ToText(InDetailInfo.Defense));
 	Text_WorkSpeed->SetText(DC1PalBoxDetail::ToText(InDetailInfo.WorkSpeed));

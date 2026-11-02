@@ -12,7 +12,14 @@
 
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+
+namespace DC1PalHealth
+{
+	// 링 머티리얼(M_PalCaptureRing 계열)의 채움 파라미터
+	static const FName SanityRingPercentParam = FName("Percent");
+}
 
 void UDC1PalHealthWidget::InitForPal(ADC1PalCharacter* InPal)
 {
@@ -40,9 +47,14 @@ void UDC1PalHealthWidget::BindToPal()
 	OwnerPal->OnPalHealthChanged.RemoveAll(this);
 	OwnerPal->OnPalHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
 
+	OwnerPal->OnPalSanityChanged.RemoveAll(this);
+	OwnerPal->OnPalSanityChanged.AddUObject(this, &ThisClass::HandleSanityChanged);
+
 	RefreshTeamColor();
 
 	RefreshBar();
+
+	RefreshSanity();
 }
 
 void UDC1PalHealthWidget::RefreshTeamColor()
@@ -152,6 +164,7 @@ void UDC1PalHealthWidget::UnbindPal()
 	if (true == OwnerPal.IsValid())
 	{
 		OwnerPal->OnPalHealthChanged.RemoveAll(this);
+		OwnerPal->OnPalSanityChanged.RemoveAll(this);
 	}
 }
 
@@ -176,4 +189,42 @@ void UDC1PalHealthWidget::RefreshBar()
 	}
 
 	HealthBar->SetPercent(OwnerPal->GetHealthRatio());
+}
+
+void UDC1PalHealthWidget::HandleSanityChanged(float Current, float Max)
+{
+	RefreshSanity();
+}
+
+void UDC1PalHealthWidget::RefreshSanity()
+{
+	if (nullptr == Panel_Sanity || false == OwnerPal.IsValid())
+	{
+		return;
+	}
+
+	// 거점 팰만
+	if (nullptr == OwnerPal->GetBasePalBox())
+	{
+		Panel_Sanity->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	Panel_Sanity->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	const float Sanity = OwnerPal->GetSanity();
+	const float MaxSanity = OwnerPal->GetMaxSanity();
+
+	if (nullptr != Text_Sanity)
+	{
+		Text_Sanity->SetText(FText::AsNumber(FMath::FloorToInt(Sanity)));
+	}
+
+	if (nullptr != Image_SanityRing)
+	{
+		if (UMaterialInstanceDynamic* RingMaterial = Image_SanityRing->GetDynamicMaterial())
+		{
+			RingMaterial->SetScalarParameterValue(DC1PalHealth::SanityRingPercentParam, (MaxSanity > 0.f) ? (Sanity / MaxSanity) : 0.f);
+		}
+	}
 }

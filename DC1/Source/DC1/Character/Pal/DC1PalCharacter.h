@@ -25,6 +25,7 @@ struct FInputActionValue;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalSanityChanged, float /*Current*/, float /*Max*/);
 
 /**
  *
@@ -74,8 +75,12 @@ public:
 	// 주인(내 팰의 플레이어). 야생은 널. 폰은 탑승·리스폰 때 바뀌므로 PlayerState 를 든다
 	ADC1PlayerState*					GetOwnerPlayerState() const { return OwnerPlayerState; }
 
-	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 서버 전용
+	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 복제된다 (클라 HP바가 거점 팰인지 본다)
 	ADC1PalBoxActor*					GetBasePalBox() const { return BasePalBox.Get(); }
+
+	// SAN 현재값 / 최대값
+	float								GetSanity() const;
+	float								GetMaxSanity() const;
 
 	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> Work GA가 GetCurrentWorkTarget으로 읽음. 서버 전용
 	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget) { WorkTarget = InWorkTarget; }
@@ -103,6 +108,9 @@ public:
 
 	// 체력이 변했다. 머리 위 HP바가 구독한다
 	FDC1OnPalHealthChanged				OnPalHealthChanged;
+
+	// SAN 이 변했다. 머리 위 SAN 배지가 구독한다
+	FDC1OnPalSanityChanged				OnPalSanityChanged;
 
 protected:
 	virtual void						PostInitializeComponents() override;
@@ -141,6 +149,8 @@ protected:
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
+
+	void								HandleSanityChangedForUI(const struct FOnAttributeChangeData& Data);
 
 	// 레벨 변경 → HP바 갱신
 	void								HandleLevelChangedForUI(const struct FOnAttributeChangeData& Data);
@@ -185,7 +195,8 @@ protected:
 	UPROPERTY(Transient)
 	FGuid InstanceID;
 
-	TWeakObjectPtr<ADC1PalBoxActor> BasePalBox;
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<ADC1PalBoxActor> BasePalBox = { nullptr };
 
 	UPROPERTY(Transient, Replicated)
 	TObjectPtr<ADC1PlayerState> OwnerPlayerState = { nullptr };
