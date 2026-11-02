@@ -15,6 +15,7 @@
 #include "Component/Player/DC1PlayerStatComponent.h"
 
 #include "Save/DC1PlayerSaveGame.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -72,4 +73,19 @@ void ADC1PlayerState::ReadSaveData(const UDC1PlayerSaveGame* In)
 		return;
 
 	PalPartyComponent->ImportSaveData(In->PartyPals);
+}
+
+void ADC1PlayerState::ResetForRespawn(float InHealthRatio)
+{
+	if (false == HasAuthority() || nullptr == AbilitySystemComponent)
+		return;
+
+	// Die()에서 TagOnly로 붙였으니 같은 옵션으로 제거
+	AbilitySystemComponent->SetLooseGameplayTagCount(DC1StateTags::State_Dead, 0, EGameplayTagReplicationState::TagOnly);
+
+	const float MaxHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), MaxHealth * InHealthRatio);
+
+	const float MaxStamina = AbilitySystemComponent->GetNumericAttribute(UDC1CharacterAttributeSet::GetMaxStaminaAttribute());
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1CharacterAttributeSet::GetStaminaAttribute(), MaxStamina);
 }

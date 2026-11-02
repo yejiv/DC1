@@ -70,8 +70,8 @@ void UDC1TeleportScreenWidget::UnbindViewModel()
 	if (nullptr == TeleportViewModel)
 		return;
 
-	// Source Point 정리
-	TeleportViewModel->ClearSourcePoint();
+	// 목록 모드 / 출발 지점 정리
+	TeleportViewModel->ClearListMode();
 
 	TeleportViewModel->OnEntriesChanged.RemoveAll(this);
 	TeleportViewModel.Reset();

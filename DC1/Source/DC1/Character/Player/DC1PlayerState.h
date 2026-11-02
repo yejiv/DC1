@@ -45,6 +45,10 @@ public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
 	void ReadSaveData(const UDC1PlayerSaveGame* In);
 
+public:
+	// 부활 전 상태 초기화 ( 서버 ) - 사망 태그 제거, 체력 InHealthRatio, 스태미나 최대
+	void ResetForRespawn(float InHealthRatio);
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };

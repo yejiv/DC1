@@ -7,6 +7,10 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Character/Player/DC1Player.h"
 #include "Component/DC1CharacterMovementComponent.h"
+#include "GameMode/DC1GameMode.h"
+#include "Tags/State/DC1GameplayTag_State.h"
+
+#include "AbilitySystemComponent.h"
 
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
@@ -26,6 +30,42 @@ void UDC1TeleportComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(UDC1TeleportComponent, UnlockedPointIds, COND_OwnerOnly);
+}
+
+void UDC1TeleportComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (APlayerState* PS = GetOwner<APlayerState>())
+	{
+		PS->OnPawnSet.AddDynamic(this, &ThisClass::HandlePawnSet);
+	}
+}
+
+void UDC1TeleportComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (APlayerState* PS = GetOwner<APlayerState>())
+	{
+		PS->OnPawnSet.RemoveDynamic(this, &ThisClass::HandlePawnSet);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UDC1TeleportComponent::HandlePawnSet(APlayerState* InPlayerState, APawn* InNewPawn, APawn* InOldPawn)
+{
+	// 부활 대기 중 + 새 플레이어 Pawn ( UnPossess의 null / 탑승 팰 제외 )
+	if (false == bPendingRespawnFade || nullptr == Cast<ADC1Player>(InNewPawn))
+		return;
+
+	bPendingRespawnFade = false;
+
+	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
+	{
+		UIManager->SetHUDVisibility(true);
+		UIManager->PopAllScreen();
+		UIManager->FadeOut(1.f);
+	}
 }
 
 bool UDC1TeleportComponent::IsPointUnlocked(FName InPointId) const
@@ -68,6 +108,49 @@ void UDC1TeleportComponent::UnlockPointById(FName InPointId)
 	OnRep_UnlockedPointIds();
 }
 
+void UDC1TeleportComponent::RequestRespawn(AActor* InDest)
+{
+	// 리슨 서버 호스트는 RPC가 바로 실행되어 새 Pawn이 즉시 붙으므로 먼저 표시
+	bPendingRespawnFade = true;
+
+	Server_RequestRespawn(InDest);
+}
+
+void UDC1TeleportComponent::Server_RequestRespawn_Implementation(AActor* InDest)
+{
+	ADC1PlayerState* PS = GetOwner<ADC1PlayerState>();
+	AController* Controller = (nullptr != PS) ? PS->GetOwningController() : nullptr;
+	UAbilitySystemComponent* ASC = (nullptr != PS) ? PS->GetAbilitySystemComponent() : nullptr;
+
+	// 사망 상태에서만 부활
+	if (nullptr == Controller || nullptr == ASC || false == ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead))
+	{
+		LOG(TEXT("[Teleport] Respawn Denied"));
+		Client_OnTeleportFinished(false);
+		return;
+	}
+
+	ADC1GameMode* GameMode = GetWorld()->GetAuthGameMode<ADC1GameMode>();
+	if (nullptr == GameMode)
+	{
+		Client_OnTeleportFinished(false);
+		return;
+	}
+
+	// 사용 가능한 지점이면 그 위치, 아니면 시작 지점에서 부활
+	FTransform SpawnTransform;
+	const bool bHasDest = ResolveDest(InDest, SpawnTransform);
+
+	const bool bSuccess = GameMode->RespawnPlayer(Controller, true == bHasDest ? &SpawnTransform : nullptr);
+
+	// 성공 시 FadeOut은 새 Pawn이 도착한 클라에서 ( HandlePawnSet )
+	if (false == bSuccess)
+	{
+		LOG_WARNING(TEXT("[Teleport] Respawn Failed"));
+		Client_OnTeleportFinished(false);
+	}
+}
+
 void UDC1TeleportComponent::Server_RequestTeleport_Implementation(AActor* InSource, AActor* InDest)
 {
 	const bool bSuccess = TryTeleport(InSource, InDest);
@@ -95,25 +178,17 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 		return false;
 	}
 
-	const IDC1TeleportPointInterface* DestInterface = Cast<const IDC1TeleportPointInterface>(InDest);
-	if (nullptr == DestInterface)
+	// 3. Dest Actor가 사용 가능한 액터인지 판단 (해금 여부)
+	FTransform DestTransform;
+	if (false == ResolveDest(InDest, DestTransform))
 		return false;
+
+	const FVector DestLocation = DestTransform.GetLocation();
+	const FRotator DestRotation = DestTransform.GetRotation().Rotator();
 
 	const APlayerState* PS = Cast<const APlayerState>(GetOwner());
 	if (nullptr == PS)
 		return false;
-
-	// 3. Dest Actor가 사용 가능한 액터인지 판단 (해금 여부)
-	if (false == DestInterface->CanUse(PS))
-	{
-		LOG(TEXT("[Teleport] Cannot Use Dest"));
-		return false;
-	}
-
-	FTransform DestTransform = DestInterface->GetArrivalTransform();
-
-	const FVector DestLocation = DestTransform.GetLocation();
-	const FRotator DestRotation = DestTransform.GetRotation().Rotator();
 
 	ADC1Player* Player = Cast<ADC1Player>(PS->GetPawn());
 	if (nullptr == Player)
@@ -135,8 +210,31 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 	return true;
 }
 
+bool UDC1TeleportComponent::ResolveDest(AActor* InDest, FTransform& OutTransform) const
+{
+	const IDC1TeleportPointInterface* DestInterface = Cast<const IDC1TeleportPointInterface>(InDest);
+	if (nullptr == DestInterface)
+		return false;
+
+	const APlayerState* PS = Cast<const APlayerState>(GetOwner());
+	if (nullptr == PS)
+		return false;
+
+	if (false == DestInterface->CanUse(PS))
+	{
+		LOG(TEXT("[Teleport] Cannot Use Dest"));
+		return false;
+	}
+
+	OutTransform = DestInterface->GetArrivalTransform();
+	return true;
+}
+
 void UDC1TeleportComponent::Client_OnTeleportFinished_Implementation(bool bInSuccess)
 {
+	// 부활 실패면 새 Pawn 대기 해제
+	bPendingRespawnFade = false;
+
 	if (UDC1UIManagerSubsystem* UIManager = GetWorld()->GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 	{
 		UIManager->FadeOut(1.f);

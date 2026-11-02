@@ -39,6 +39,11 @@ namespace DC1UITags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Teleport);
 #pragma endregion
 
+#pragma region MAIN_DEATH
+	// 사망 화면 ( 부활 대기 카운트다운 → 부활 버튼 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Death);
+#pragma endregion
+
 #pragma region CHEST_LOOT
 	// 상자 개방 시 플레이어 인벤토리 + 상자 인벤토리를 함께 보여주는 화면
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Chest_Loot);

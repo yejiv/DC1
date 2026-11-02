@@ -57,6 +57,9 @@ protected:
 	// 무적 상태(회피 중)면 데미지 적용 막기
 	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
 
+	// 기절 중 데미지는 HP 대신 기절 게이지를 깎는다
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+
 	UFUNCTION()
 	void OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight);
 

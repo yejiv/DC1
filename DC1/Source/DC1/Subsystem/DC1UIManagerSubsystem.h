@@ -33,13 +33,15 @@ public:
 public:
 	// InIsPop == 최상위 UI를 Pop하고 Push 할 것인가
 	UDC1UserWidget*				PushScreen(const FGameplayTag& InUITag, bool InIsPop = false);
-	void						PopScreen();
+	void								PopScreen();
+	void								PopAllScreen();
 	UDC1UserWidget*				CreateWidgetWithTag(const FGameplayTag& InUITag);
 
 	void						FadeIn(float InDuration, EDC1FadeType InFadeType = EDC1FadeType::Default, FSimpleDelegate InOnComplete = FSimpleDelegate());
 	void						FadeOut(float InDuration, FSimpleDelegate InOnComplete = FSimpleDelegate());
 
 	void						ShowHUD();
+	void						SetHUDVisibility(bool IsVisible);
 
 	void						RouteInputKey(const FKey& InKey);
 	void						BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel);

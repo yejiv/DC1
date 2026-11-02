@@ -12,6 +12,8 @@ namespace DC1IMCTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Default);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_UI);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Build);
+	// 기절 중 기본 IMC ( 이동 / 시점 / 포기 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Downed);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Interact_F);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(IMC_Interact_V);
@@ -51,6 +53,11 @@ namespace DC1InputTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_Build);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_PalBox);
+#pragma endregion
+
+#pragma region Downed
+	// 기절 중 포기 ( 즉시 사망 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Downed_GiveUp);
 #pragma endregion
 }
 
