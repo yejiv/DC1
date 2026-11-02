@@ -1,6 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
@@ -696,9 +697,10 @@ void UDC1PalPartyComponent::HandleOwnerDied()
 
 void UDC1PalPartyComponent::Server_ToggleRide_Implementation()
 {
+	// 올라타거나 내리는 중엔 무시
 	if (::IsValid(Rider))
 	{
-		EndRide(true);
+		BeginDismount();
 		return;
 	}
 
@@ -809,15 +811,57 @@ void UDC1PalPartyComponent::Ride()
 
 	// 콜리전 유지 (탑승 중 피격)
 
-	// 붙인 뒤 Possess (순서 중요: GetRiddenPawn)
+	const EDC1RideDirection Direction = Pal->GetRideComponent()->FindRideDirection(Player->GetActorLocation());
+
 	Player->AttachToComponent(Pal->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, PalData->RideSocketName);
 	Rider = Player;
 
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Mounting, Direction);
+
+	// 붙인 뒤 바로 Possess
 	DC1PalParty::PossessKeepingView(*PC, *Pal);
+
+	GetWorld()->GetTimerManager().SetTimer(RideStepTimer, this, &ThisClass::FinishMount, PalData->RideMountDuration, false);
+}
+
+void UDC1PalPartyComponent::FinishMount()
+{
+	ADC1PalCharacter* Pal = DeployedPal;
+	if (false == ::IsValid(Pal) || false == ::IsValid(Rider))
+	{
+		return;
+	}
+
+	// Riding 이 되면 팰이 앉는 자리에 고정
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Riding, Pal->GetRideComponent()->GetRideDirection());
+}
+
+void UDC1PalPartyComponent::BeginDismount()
+{
+	ADC1PalCharacter* Pal = DeployedPal;
+	const UDC1PalData* PalData = ::IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	APlayerController* PC = GetOwnerController();
+	if (nullptr == PalData || nullptr == PC || false == ::IsValid(Rider) || EDC1RideState::Riding != Pal->GetRideComponent()->GetRideState())
+	{
+		return;
+	}
+
+	Pal->StopJumping();
+
+	DC1PalParty::PossessKeepingView(*PC, *Rider);
+
+	Client_SetRideApproachInputBlocked(true);
+
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Dismounting, PalData->RideDismountDirection);
+
+	FTimerDelegate Finish = FTimerDelegate::CreateUObject(this, &ThisClass::EndRide, true);
+	GetWorld()->GetTimerManager().SetTimer(RideStepTimer, Finish, PalData->RideDismountDuration, false);
 }
 
 void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 {
+	GetWorld()->GetTimerManager().ClearTimer(RideStepTimer);
+
 	ACharacter* Player = Rider;
 	AController* PalController = RiddenPalController;
 	Rider = nullptr;
@@ -832,13 +876,24 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 	if (::IsValid(DeployedPal))
 	{
 		DeployedPal->StopJumping();
+
+		// 다 내렸으면 옆 자리
+		if (EDC1RideState::Dismounting == DeployedPal->GetRideComponent()->GetRideState())
+		{
+			Player->SetActorLocation(DeployedPal->GetRideComponent()->GetRideSideLocation());
+		}
+
+		DeployedPal->GetRideComponent()->SetRideState(EDC1RideState::None, DeployedPal->GetRideComponent()->GetRideDirection());
 	}
 
-	// Possess 뒤 떼기 (순서 중요: GetRiddenPawn)
-	if (APlayerController* PC = GetOwnerController())
+	// Possess 뒤 떼기
+	APlayerController* PC = GetOwnerController();
+	if (nullptr != PC && Player != PC->GetPawn())
 	{
 		DC1PalParty::PossessKeepingView(*PC, *Player);
 	}
+
+	Client_SetRideApproachInputBlocked(false);
 
 	Player->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	Player->SetActorRotation(FRotator(0.f, Player->GetActorRotation().Yaw, 0.f));

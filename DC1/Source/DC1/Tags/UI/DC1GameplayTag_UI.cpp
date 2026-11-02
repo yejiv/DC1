@@ -12,6 +12,7 @@ namespace DC1UITags
 
 #pragma region HUD
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_HUD, "UI.Main.HUD");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Notification, "UI.Main.Notification");
 #pragma endregion
 
 #pragma region MAIN TAB

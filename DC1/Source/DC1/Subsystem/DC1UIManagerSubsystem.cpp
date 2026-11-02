@@ -193,6 +193,7 @@ void UDC1UIManagerSubsystem::ShowHUD()
 	}
 
 	HUDWidget = CreateOverlay(DC1UITags::UI_Main_HUD, HUDZOrder);
+	NotificationWidget = CreateOverlay(DC1UITags::UI_Main_Notification, NotificationZOrder);
 }
 
 void UDC1UIManagerSubsystem::SetHUDVisibility(bool IsVisible)
@@ -419,6 +420,7 @@ void UDC1UIManagerSubsystem::OnPreLoadMap(const FString& InMapName)
 	ScreenStack.Empty();
 	FadeWidget = nullptr;
 	HUDWidget = nullptr;
+	NotificationWidget = nullptr;
 
 	CreatedWidget.Empty();
 }
