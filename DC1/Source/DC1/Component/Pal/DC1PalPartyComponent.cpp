@@ -9,6 +9,7 @@
 #include "Controller/DC1PalAIController.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -369,10 +370,12 @@ bool UDC1PalPartyComponent::CanAcceptPal() const
 void UDC1PalPartyComponent::HealStoredPals()
 {
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-	if (false == ::IsValid(Registry) || Registry->BoxHealRatePerSecond <= 0.f)
+	if (false == ::IsValid(Registry))
 	{
 		return;
 	}
+
+	const float MaxSanity = GetDefault<UDC1PalAttributeSet>()->GetMaxSanity();
 
 	bool bChanged = false;
 
@@ -386,13 +389,28 @@ void UDC1PalPartyComponent::HealStoredPals()
 			}
 
 			const float MaxHealth = GetMaxHealthOf(Pal);
-			if (Pal.CurrentHealth >= MaxHealth)
+			if (Pal.CurrentHealth < MaxHealth && Registry->BoxHealRatePerSecond > 0.f)
+			{
+				Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
+				bChanged = true;
+			}
+
+			// 나와서 일하는 거점 팰은 액터가 SAN 을 쓴다. 칸 값은 건드리지 않는다. -1 은 이미 가득
+			const bool bSpawned = BaseSpawnedPals.ContainsByPredicate([&Pal](const ADC1PalCharacter* Other)
+				{
+					return (::IsValid(Other) && Other->GetInstanceID() == Pal.PalID);
+				});
+
+			if (true == bSpawned)
 			{
 				continue;
 			}
 
-			Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
-			bChanged = true;
+			if (0.f <= Pal.CurrentSanity && Pal.CurrentSanity < MaxSanity && Registry->BoxSanityHealPerSecond > 0.f)
+			{
+				Pal.CurrentSanity = FMath::Min(MaxSanity, Pal.CurrentSanity + (Registry->BoxSanityHealPerSecond * BoxHealInterval));
+				bChanged = true;
+			}
 		}
 	}
 

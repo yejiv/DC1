@@ -596,6 +596,7 @@ FDC1PalInstance ADC1PalCharacter::Fold()
 	if (IsValid(PalAttributeSet))
 	{
 		Instance.CurrentHealth = PalAttributeSet->GetHealth();
+		Instance.CurrentSanity = PalAttributeSet->GetSanity();
 		Instance.Level = GetLevel();
 	}
 
@@ -704,6 +705,11 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	if (IsValid(Pal->PalAttributeSet))
 	{
 		Pal->PalAttributeSet->SetHealth(InInstance.CurrentHealth);
+
+		if (0.f <= InInstance.CurrentSanity)
+		{
+			Pal->PalAttributeSet->SetSanity(InInstance.CurrentSanity);
+		}
 	}
 
 	return Pal;

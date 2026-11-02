@@ -61,6 +61,10 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	float					CurrentHealth = { 0.f };
 
+	// 현재 SAN. -1 = 아직 안 정함(가득)
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	float					CurrentSanity = { -1.f };
+
 	// 개체가 태어날 때 굴려서 붙는다. 같은 종도 개체마다 다르게 만드는 값
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	TArray<FGameplayTag>	PassiveTags;

@@ -108,6 +108,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Encount, "Ability.Pal.Encount");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Work, "Ability.Pal.Work");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Sleep, "Ability.Pal.Sleep");
 #pragma endregion
 
 #pragma region State
@@ -116,6 +117,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_HitReacting, "State.Pal.HitReacting");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Encounting, "State.Pal.Encounting");
 	UE_DEFINE_GAMEPLAY_TAG(State_Pal_SuperArmor, "State.Pal.SuperArmor");
+	UE_DEFINE_GAMEPLAY_TAG(State_Pal_Sleeping, "State.Pal.Sleeping");
 #pragma endregion
 
 #pragma region Anim
@@ -125,6 +127,9 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_NearSkill, "Anim.Pal.NearSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_NearSkill2, "Anim.Pal.NearSkill2");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Encount, "Anim.Pal.Encount");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Sleep_Start, "Anim.Pal.Sleep.Start");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Sleep_Loop, "Anim.Pal.Sleep.Loop");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Sleep_End, "Anim.Pal.Sleep.End");
 
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_LookAround, "Anim.Pal.Idle.LookAround");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Idle_Eat, "Anim.Pal.Idle.Eat");
@@ -148,6 +153,7 @@ namespace DC1PalTags
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Attack_Hit, "Event.Pal.Attack.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Work_Hit, "Event.Pal.Work.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Pal_Wake, "Event.Pal.Wake");
 #pragma endregion
 
 #pragma region Ride

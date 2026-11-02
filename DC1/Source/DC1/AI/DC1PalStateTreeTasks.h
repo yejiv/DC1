@@ -3,6 +3,7 @@
 #pragma once
 
 #include "StateTreeTaskBase.h"
+#include "StateTreeConditionBase.h"
 #include "GameplayTagContainer.h"
 #include "DC1PalStateTreeTasks.generated.h"
 
@@ -308,4 +309,72 @@ struct FDC1PalWorkTask : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
+
+USTRUCT()
+struct FDC1PalSleepTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	// 잠자리에 이만큼 붙으면 도착
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							AcceptanceRadius = { 60.f };
+
+	UPROPERTY()
+	bool							bSleeping = { false };
+
+	UPROPERTY()
+	bool							bWakeSent = { false };
+};
+
+
+// 거점 팰 잠
+USTRUCT(DisplayName = "Pal Sleep", Category = "Pal")
+struct FDC1PalSleepTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalSleepTaskInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
+
+USTRUCT()
+struct FDC1PalSanityDepletedConditionInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = Parameter)
+	bool							bInvert = { false };
+};
+
+
+USTRUCT(DisplayName = "Pal Sanity Depleted", Category = "Pal")
+struct FDC1PalSanityDepletedCondition : public FStateTreeConditionCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalSanityDepletedConditionInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual bool TestCondition(FStateTreeExecutionContext& Context) const override;
 };
