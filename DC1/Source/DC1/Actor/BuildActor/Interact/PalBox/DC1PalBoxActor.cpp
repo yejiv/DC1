@@ -11,20 +11,22 @@
 
 #include "Character/DC1Character.h"
 #include "Character/Player/DC1PlayerState.h"
-#include "Component/Pal/DC1PalPartyComponent.h"
-#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Component/Pal/DC1PalBaseComponent.h"
+#include "Component/Base/DC1BaseRegistryComponent.h"
+#include "GameMode/DC1GameState.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
 #include "Components/ArrowComponent.h"
 #include "Component/Teleport/DC1TeleportComponent.h"
-
-#include "EngineUtils.h"
 
 ADC1PalBoxActor::ADC1PalBoxActor()
 	: Super()
 {
 	ArrivalPoint = CreateDefaultSubobject<UArrowComponent>("ArrivalPoint");
 	ArrivalPoint->SetupAttachment(RootComponent);
+
+	PalBaseComponent = CreateDefaultSubobject<UDC1PalBaseComponent>("PalBaseComponent");
+	RegistryComponent = CreateDefaultSubobject<UDC1BaseRegistryComponent>("RegistryComponent");
 }
 
 bool ADC1PalBoxActor::IsInBase(const FVector& InLocation) const
@@ -70,6 +72,19 @@ void ADC1PalBoxActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (UDC1TeleportSubsystem* TeleportSubsystem = GetWorld()->GetSubsystem<UDC1TeleportSubsystem>())
 	{
 		TeleportSubsystem->UnregisterPoint(this);
+	}
+
+	if (EEndPlayReason::Destroyed == EndPlayReason && true == HasAuthority())
+	{
+		if (true == ::IsValid(RegistryComponent))
+		{
+			RegistryComponent->DestroyBaseRequiredBuilds(GetDestroyInstigator());
+		}
+
+		if (true == ::IsValid(PalBaseComponent))
+		{
+			PalBaseComponent->ReleaseBase(GetDestroyInstigator());
+		}
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -136,79 +151,49 @@ void ADC1PalBoxActor::InteractV(ADC1Character* InInteractOwner)
 
 bool ADC1PalBoxActor::CanPlaceAt(const APlayerState* InBuilder) const
 {
-	// 플레이어당 거점 1개
-	if (const ADC1PlayerState* PlayerState = Cast<ADC1PlayerState>(InBuilder))
+	// 서버당 거점 1개
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	// 거점 개수가 충분한지 = HasBase ( 현재 1개가 Max라 따로 범위 검사 X )
+	if (true == ::IsValid(GS) && true == GS->HasBase())
 	{
-		const UDC1PalPartyComponent* Party = PlayerState->GetPalPartyComponent();
-		if (nullptr != Party && true == Party->HasBase())
-		{
-			return false;
-		}
-	}
-
-	// 다른 거점과 범위가 겹치면 안 된다. 미리보기는 거점이 아니다 (리슨 서버에선 호스트 미리보기도 서버 월드에 있다)
-	for (TActorIterator<ADC1PalBoxActor> It(GetWorld()); It; ++It)
-	{
-		const ADC1PalBoxActor* Other = *It;
-		if (this == Other || true == Other->IsPreview())
-		{
-			continue;
-		}
-
-		if (FVector::DistSquared2D(GetActorLocation(), Other->GetActorLocation()) < FMath::Square(BaseRadius + Other->BaseRadius))
-		{
-			return false;
-		}
+		return false;
 	}
 
 	return true;
 }
 
+const TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>& ADC1PalBoxActor::GetWorkTargets() const
+{
+	return RegistryComponent->GetWorkTargets();
+}
+
 void ADC1PalBoxActor::RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget)
 {
-	if (nullptr == InWorkTarget)
-	{
-		return;
-	}
-
-	WorkTargets.AddUnique(TWeakInterfacePtr<IDC1WorkTargetInterface>(InWorkTarget));
+	RegistryComponent->RegisterWorkTarget(InWorkTarget);
 }
 
 void ADC1PalBoxActor::OnPlaced(const APlayerState* InBuilder)
 {
 	Super::OnPlaced(InBuilder);
 
-	if (const ADC1PlayerState* PlayerState = Cast<ADC1PlayerState>(InBuilder))
+	ADC1GameState* GS = ADC1GameState::Get(this);
+	if (false == ::IsValid(GS))
 	{
-		if (UDC1PalPartyComponent* Party = PlayerState->GetPalPartyComponent())
-		{
-			Party->SetBase(this);
-		}
+		return;
 	}
 
-	CollectWorkTargets();
-}
+	GS->SetBase(this);
 
-void ADC1PalBoxActor::CollectWorkTargets()
-{
-	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	if (this != GS->GetBasePalBox())
 	{
-		AActor* Actor = *It;
-
-		const ADC1BuildActor* Build = Cast<ADC1BuildActor>(Actor);
-		if (nullptr != Build && true == Build->IsPreview())
-		{
-			continue;
-		}
-
-		IDC1WorkTargetInterface* WorkTarget = Cast<IDC1WorkTargetInterface>(Actor);
-		if (nullptr == WorkTarget || false == IsInBase(Actor->GetActorLocation()))
-		{
-			continue;
-		}
-
-		RegisterWorkTarget(WorkTarget);
+		return;
 	}
+
+	// 거점이 GS에 Set 되었을경우에만
+	PalBaseComponent->InitBase();
+	RegistryComponent->CollectWorkTargets();
+
+	GS->NotifyBaseChanged();
 }
 
 void ADC1PalBoxActor::BuildCompleted()

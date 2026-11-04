@@ -9,6 +9,8 @@
 #include "DC1PalBoxActor.generated.h"
 
 class UArrowComponent;
+class UDC1PalBaseComponent;
+class UDC1BaseRegistryComponent;
 
 UCLASS()
 class DC1_API ADC1PalBoxActor : public ADC1InteractBuildActor, public IDC1TeleportPointInterface
@@ -21,17 +23,19 @@ public:
 public:
 	float							GetBaseRadius() const { return BaseRadius; }
 
+	UDC1PalBaseComponent*			GetPalBaseComponent() const { return PalBaseComponent; }
+	UDC1BaseRegistryComponent*		GetRegistryComponent() const { return RegistryComponent; }
+
 	// 거점 범위 판단
 	bool							IsInBase(const FVector& InLocation) const;
 
-public:
 	// IDC1TeleportPointInterface override
-	virtual EDC1TeleportPointType	GetPointType()										const override { return EDC1TeleportPointType::Base; }
-	virtual FText							GetPointName()										const override;
-	virtual FTransform					GetArrivalTransform()								const override;
-	virtual bool							CanUse(const APlayerState* InPlayerState)	const override;
+	virtual EDC1TeleportPointType	GetPointType()								const override { return EDC1TeleportPointType::Base; }
+	virtual FText					GetPointName()								const override;
+	virtual FTransform				GetArrivalTransform()						const override;
+	virtual bool					CanUse(const APlayerState* InPlayerState)	const override;
 	// 거점 안 작업 대상 (서버 전용)
-	const TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>& GetWorkTargets() const { return WorkTargets; }
+	const TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>& GetWorkTargets() const;
 	void							RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget);
 
 protected:
@@ -49,8 +53,6 @@ private:
 	virtual void					OnPlaced(const APlayerState* InBuilder) override;
 
 	virtual void					BuildCompleted() override;
-	// 반경 안의 기존 노드를 등록
-	void							CollectWorkTargets();
 
 protected:
 	// 거점 범위 반경
@@ -61,5 +63,10 @@ private:
 	// 도착 위치 / 방향
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	TObjectPtr<UArrowComponent>		ArrivalPoint = { nullptr };
-	TArray<TWeakInterfacePtr<IDC1WorkTargetInterface>>	WorkTargets;
+	// 거점 팰 관리
+	UPROPERTY(VisibleAnywhere, Category = "PalBox")
+	TObjectPtr<UDC1PalBaseComponent>		PalBaseComponent = { nullptr };
+	// 거점에 등록된 WorkTarget, BaseRequiredBuilds 관리 ( Chest 추가 예정 )
+	UPROPERTY(VisibleAnywhere, Category = "PalBox")
+	TObjectPtr<UDC1BaseRegistryComponent>	RegistryComponent = { nullptr };
 };

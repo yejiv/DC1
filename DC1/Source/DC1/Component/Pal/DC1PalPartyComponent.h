@@ -10,6 +10,7 @@
 class ADC1PalCharacter;
 class ADC1PalBoxActor;
 class ADC1PalAIController;
+class UDC1PalBaseComponent;
 class ACharacter;
 class AController;
 class APlayerController;
@@ -61,12 +62,6 @@ public:
 	// 파티·상자에 빈칸이 있나
 	bool					CanAcceptPal() const;
 
-	// 거점 연결 (서버)- 플레이어당 1개
-	void					SetBase(ADC1PalBoxActor* InPalBox);
-
-	bool					HasBase() const;
-	ADC1PalBoxActor*		GetBasePalBox() const { return BasePalBox; }
-
 	// 주인 기절. 하차만 ( 달려오기 취소 포함 ), 팰은 그대로 둔다. 서버 전용
 	void					HandleOwnerDowned();
 
@@ -79,7 +74,11 @@ public:
 	float					GetPalHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const;
 	float					GetPalMaxHealth(EDC1PalContainer InContainer, int32 InSlotIndex) const;
 	int32					GetBoxCapacity() const { return BoxCapacity; }
-	int32					GetBaseCapacity() const { return BaseCapacity; }
+	// 거점 칸은 서버 공용 ( GS )
+	int32					GetBaseCapacity() const;
+
+	// 최대 체력. PalBaseComponent도 사용
+	static float			GetMaxHealthOf(const FDC1PalInstance& InPal);
 
 public:
 	int32					GetCapacity() const { return Capacity; }
@@ -102,6 +101,17 @@ public:
 
 	// 소환 중인 팰. 없으면 nullptr
 	ADC1PalCharacter*		GetDeployedPal() const { return DeployedPal; }
+
+	// 거점 조회 ( GS )
+	bool					HasBase() const;
+
+	ADC1PalBoxActor*		GetBasePalBox() const;
+
+	// 거점 칸이 바뀐 시점 ( 서버 직접 / 클라 OnRep )
+	void					HandleBaseChanged();
+
+	// 거점에서 돌아온 팰 받기 - [ 우선순위 : 팰 상자 -> 파티 빈칸 ] ( 서버 ), 둘 다 가득이면 false
+	bool					ReceivePal(const FDC1PalInstance& InPal);
 
 public:
 	void ExportSaveData(TArray<FDC1PalInstance>& Out) const;
@@ -131,23 +141,14 @@ protected:
 	UFUNCTION()
 	void					OnRep_BoxPals();
 
-	UFUNCTION()
-	void					OnRep_BasePals();
-
-	// 상자·거점 회복 타이머
+	// 상자 회복 타이머 ( 거점 회복은 UDC1PalBaseComponent )
 	void					HealStoredPals();
 
-	// 거점 칸과 월드의 거점 팰을 맞춘다. 없는 건 꺼내고, 칸에 없는 건 접는다
-	void					RefreshBasePals();
-
-	// 팰박스가 사라지면 거점 팰을 상자 → 파티로 옮긴다
-	UFUNCTION()
-	void					HandleBaseEndPlay(AActor* InActor, EEndPlayReason::Type InEndPlayReason);
-
+	// Base는 거점 PalBox의 공용 배열
 	TArray<FDC1PalInstance>&	GetContainer(EDC1PalContainer InContainer);
 	const TArray<FDC1PalInstance>&	GetContainer(EDC1PalContainer InContainer) const;
 
-	float					GetMaxHealthOf(const FDC1PalInstance& InPal) const;
+	UDC1PalBaseComponent*	GetBasePalComponent() const;
 
 	void					BroadcastChanged(EDC1PalContainer InContainer);
 
@@ -226,21 +227,6 @@ protected:
 	float					BoxHealInterval = { 1.f };
 
 	FTimerHandle			BoxHealTimer;
-
-	// 거점
-	UPROPERTY(ReplicatedUsing = OnRep_BasePals)
-	TArray<FDC1PalInstance>	BasePals;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Pal|Base", meta = (ClampMin = "1"))
-	int32					BaseCapacity = { 5 };
-
-	// 처음 연 팰박스. UI 가 ③ 을 켤지 알아야 해서 복제한다
-	UPROPERTY(ReplicatedUsing = OnRep_BasePals)
-	TObjectPtr<ADC1PalBoxActor>	BasePalBox = { nullptr };
-
-	// 월드에 나와 있는 거점 팰. 서버 전용
-	UPROPERTY()
-	TArray<TObjectPtr<ADC1PalCharacter>>	BaseSpawnedPals;
 
 private:
 	// 꺼내둔 팰. 회수하려면 액터를 붙들고 있어야 한다.

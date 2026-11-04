@@ -28,6 +28,9 @@
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 
+#include "Component/Pal/DC1PalBaseComponent.h"
+#include "GameMode/DC1GameState.h"
+
 namespace DC1PalParty
 {
 	// Possess 가 바꾼 시점을 되돌린다
@@ -54,8 +57,6 @@ void UDC1PalPartyComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UDC1PalPartyComponent, Pals);
 	DOREPLIFETIME(UDC1PalPartyComponent, DeployedPal);
 	DOREPLIFETIME(UDC1PalPartyComponent, BoxPals);
-	DOREPLIFETIME(UDC1PalPartyComponent, BasePals);
-	DOREPLIFETIME(UDC1PalPartyComponent, BasePalBox);
 }
 
 void UDC1PalPartyComponent::BeginPlay()
@@ -77,11 +78,6 @@ void UDC1PalPartyComponent::BeginPlay()
 		BoxPals.SetNum(BoxCapacity);
 	}
 
-	if (BasePals.Num() < BaseCapacity)
-	{
-		BasePals.SetNum(BaseCapacity);
-	}
-
 	GetWorld()->GetTimerManager().SetTimer(BoxHealTimer, this, &ThisClass::HealStoredPals, BoxHealInterval, true);
 }
 
@@ -96,11 +92,6 @@ void UDC1PalPartyComponent::OnRep_DeployedPal()
 }
 
 void UDC1PalPartyComponent::OnRep_BoxPals()
-{
-	OnPalBoxChanged.Broadcast();
-}
-
-void UDC1PalPartyComponent::OnRep_BasePals()
 {
 	OnPalBoxChanged.Broadcast();
 }
@@ -125,6 +116,87 @@ bool UDC1PalPartyComponent::IsDeployed(int32 InSlotIndex) const
 	// 슬롯을 따로 들고 있지 않는다. 액터의 InstanceID 로 목록에서 찾는다.
 	// 값이 둘이면 복제 도착 순서에 따라 어긋날 수 있다
 	return (Pals[InSlotIndex].PalID == DeployedPal->GetInstanceID());
+}
+
+bool UDC1PalPartyComponent::HasBase() const
+{
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	if (false == ::IsValid(GS))
+	{
+		return false;
+	}
+
+	return GS->HasBase();
+}
+
+ADC1PalBoxActor* UDC1PalPartyComponent::GetBasePalBox() const
+{
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	if (false == ::IsValid(GS))
+	{
+		return nullptr;
+	}
+
+	return GS->GetBasePalBox();
+}
+
+int32 UDC1PalPartyComponent::GetBaseCapacity() const
+{
+	UDC1PalBaseComponent* PalBase = GetBasePalComponent();
+	if (false == ::IsValid(PalBase))
+	{
+		return 0;
+	}
+
+	return PalBase->GetBaseCapacity();
+}
+
+UDC1PalBaseComponent* UDC1PalPartyComponent::GetBasePalComponent() const
+{
+	ADC1PalBoxActor* PalBox = GetBasePalBox();
+	if (false == ::IsValid(PalBox))
+	{
+		return nullptr;
+	}
+
+	return PalBox->GetPalBaseComponent();
+}
+
+void UDC1PalPartyComponent::HandleBaseChanged()
+{
+	// 스폰은 거점 컴포넌트가 직접 한다. 여기서는 화면만
+	BroadcastChanged(EDC1PalContainer::Base);
+}
+
+bool UDC1PalPartyComponent::ReceivePal(const FDC1PalInstance& InPal)
+{
+	if (ROLE_Authority != GetOwnerRole() || false == InPal.IsValidPal())
+	{
+		return false;
+	}
+
+	// 팰 상자 -> 파티 순서로 빈칸
+	for (const EDC1PalContainer Container : { EDC1PalContainer::Box, EDC1PalContainer::Party })
+	{
+		TArray<FDC1PalInstance>& Target = GetContainer(Container);
+
+		const int32 EmptyIndex = Target.IndexOfByPredicate([](const FDC1PalInstance& Other)
+			{
+				return (false == Other.IsValidPal());
+			});
+
+		if (INDEX_NONE == EmptyIndex)
+		{
+			continue;
+		}
+
+		Target[EmptyIndex] = InPal;
+
+		BroadcastChanged(Container);
+		return true;
+	}
+
+	return false;
 }
 
 void UDC1PalPartyComponent::ExportSaveData(TArray<FDC1PalInstance>& Out) const
@@ -191,10 +263,28 @@ void UDC1PalPartyComponent::Server_MovePal_Implementation(EDC1PalContainer InFro
 		return;
 	}
 
+	const bool bBaseMove = (EDC1PalContainer::Base == InFrom || EDC1PalContainer::Base == InTo);
+
 	// 거점이 없으면 거점 칸에 못 넣는다
-	if ((EDC1PalContainer::Base == InFrom || EDC1PalContainer::Base == InTo) && false == HasBase())
+	if (true == bBaseMove && false == HasBase())
 	{
 		return;
+	}
+
+	// 거점 칸끼리 정렬은 접기, 주인 변경 없음
+	const bool bCrossBase = (true == bBaseMove && InFrom != InTo); // 거점과 다른 칸의 교환인가
+	const int32 BaseIndex = (EDC1PalContainer::Base == InFrom) ? InFromIndex : InToIndex;
+
+	UDC1PalBaseComponent* PalBase = GetBasePalComponent();
+
+	// 거점 떠나는 팰은 Swap 전에 접음 -> 먼저 Swap하면 남의 칸으로 간 뒤라 체력이 기록되지 않음
+	if (true == bCrossBase)
+	{
+		const FGuid LeavingID = PalBase->GetBasePals()[BaseIndex].PalID;
+		if (true == LeavingID.IsValid())
+		{
+			PalBase->FoldBasePal(LeavingID);
+		}
 	}
 
 	// 소환 중인 팰이 파티를 떠나면 회수
@@ -208,153 +298,38 @@ void UDC1PalPartyComponent::Server_MovePal_Implementation(EDC1PalContainer InFro
 
 	Swap(GetContainer(InFrom)[InFromIndex], GetContainer(InTo)[InToIndex]);
 
-	if (EDC1PalContainer::Base == InFrom || EDC1PalContainer::Base == InTo)
+	if (true == bCrossBase)
 	{
-		RefreshBasePals();
+		FDC1PalInstance& Entered = PalBase->GetBasePals()[BaseIndex];
+		const APlayerState* OwnerState = Cast<APlayerState>(GetOwner());
+		if (true == Entered.IsValidPal() && nullptr != OwnerState)
+		{
+			// 거점 칸 팰의 주인 == 옮긴 사람
+			Entered.OwnerPlayerID = OwnerState->GetPlayerId();
+		}
 	}
 
-	BroadcastChanged(InFrom);
-	if (InFrom != InTo)
+	// 거점 칸 교환은 전원 화면 갱신
+	if (true == bBaseMove)
+	{
+		PalBase->RefreshBasePals();
+
+		ADC1GameState* GS = ADC1GameState::Get(this);
+		if (true == ::IsValid(GS))
+		{
+			GS->NotifyBaseChanged();
+		}
+	}
+
+	if (EDC1PalContainer::Base != InFrom)
+	{
+		BroadcastChanged(InFrom);
+	}
+
+	if (EDC1PalContainer::Base != InTo && InFrom != InTo)
 	{
 		BroadcastChanged(InTo);
 	}
-}
-
-bool UDC1PalPartyComponent::HasBase() const
-{
-	return ::IsValid(BasePalBox);
-}
-
-void UDC1PalPartyComponent::SetBase(ADC1PalBoxActor* InPalBox)
-{
-	if (ROLE_Authority != GetOwnerRole() || true == HasBase() || false == ::IsValid(InPalBox))
-	{
-		return;
-	}
-
-	BasePalBox = InPalBox;
-	BasePalBox->OnEndPlay.AddDynamic(this, &ThisClass::HandleBaseEndPlay);
-
-	RefreshBasePals();
-	BroadcastChanged(EDC1PalContainer::Base);
-}
-
-void UDC1PalPartyComponent::RefreshBasePals()
-{
-	// 칸에서 빠졌거나 거점이 없어진 팰은 접는다. 체력은 옮겨간 칸에 반영된다
-	for (int32 Index = BaseSpawnedPals.Num() - 1; Index >= 0; --Index)
-	{
-		ADC1PalCharacter* Spawned = BaseSpawnedPals[Index];
-		if (false == ::IsValid(Spawned))
-		{
-			BaseSpawnedPals.RemoveAt(Index);
-			continue;
-		}
-
-		const bool bStillInBase = HasBase() && BasePals.ContainsByPredicate([Spawned](const FDC1PalInstance& Pal)
-			{
-				return (Pal.PalID == Spawned->GetInstanceID());
-			});
-
-		if (false == bStillInBase)
-		{
-			BaseSpawnedPals.RemoveAt(Index);
-			UpdatePal(Spawned->Fold());
-		}
-	}
-
-	if (false == HasBase())
-	{
-		return;
-	}
-
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
-	if (nullptr == NavSystem)
-	{
-		return;
-	}
-
-	// 칸에 있는데 안 나온 팰을 꺼낸다. 기절한 팰은 회복될 때까지 안 나온다
-	for (const FDC1PalInstance& Pal : BasePals)
-	{
-		if (false == Pal.IsDeployable())
-		{
-			continue;
-		}
-
-		const bool bSpawned = BaseSpawnedPals.ContainsByPredicate([&Pal](const ADC1PalCharacter* Spawned)
-			{
-				return (Spawned->GetInstanceID() == Pal.PalID);
-			});
-
-		if (true == bSpawned)
-		{
-			continue;
-		}
-
-		FNavLocation SpawnLocation;
-		if (false == NavSystem->GetRandomPointInNavigableRadius(BasePalBox->GetActorLocation(), BasePalBox->GetBaseRadius(), SpawnLocation))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Pal] Base: no navigable spot near the pal box."));
-			return;
-		}
-
-		if (ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pal, FTransform(SpawnLocation.Location), Cast<ADC1PlayerState>(GetOwner()), BasePalBox))
-		{
-			BaseSpawnedPals.Add(Spawned);
-		}
-	}
-}
-
-void UDC1PalPartyComponent::HandleBaseEndPlay(AActor* InActor, EEndPlayReason::Type InEndPlayReason)
-{
-	if (ROLE_Authority != GetOwnerRole())
-	{
-		return;
-	}
-
-	BasePalBox = nullptr;
-
-	// 월드의 거점 팰을 접어 칸에 반영한 뒤 옮긴다
-	RefreshBasePals();
-
-	for (FDC1PalInstance& Pal : BasePals)
-	{
-		if (false == Pal.IsValidPal())
-		{
-			continue;
-		}
-
-		bool bMoved = false;
-
-		// 상자 → 파티 순서로 빈칸
-		for (const EDC1PalContainer Container : { EDC1PalContainer::Box, EDC1PalContainer::Party })
-		{
-			TArray<FDC1PalInstance>& Target = GetContainer(Container);
-
-			const int32 EmptyIndex = Target.IndexOfByPredicate([](const FDC1PalInstance& Other)
-				{
-					return (false == Other.IsValidPal());
-				});
-
-			if (INDEX_NONE != EmptyIndex)
-			{
-				Target[EmptyIndex] = Pal;
-				bMoved = true;
-				break;
-			}
-		}
-
-		if (false == bMoved)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Pal] Base removed: box and party are full. Base pal %s was dropped."), *Pal.PalID.ToString(EGuidFormats::Digits));
-		}
-
-		Pal = FDC1PalInstance();
-	}
-
-	BroadcastChanged(EDC1PalContainer::Party);
-	BroadcastChanged(EDC1PalContainer::Base);
 }
 
 bool UDC1PalPartyComponent::CanAcceptPal() const
@@ -379,74 +354,27 @@ void UDC1PalPartyComponent::HealStoredPals()
 
 	bool bChanged = false;
 
-	for (const EDC1PalContainer Container : { EDC1PalContainer::Box, EDC1PalContainer::Base })
+	for (FDC1PalInstance& Pal : BoxPals)
 	{
-		for (FDC1PalInstance& Pal : GetContainer(Container))
+		if (false == Pal.IsValidPal())
 		{
-			if (false == Pal.IsValidPal())
-			{
-				continue;
-			}
-
-			const float MaxHealth = GetMaxHealthOf(Pal);
-			if (Pal.CurrentHealth < MaxHealth && Registry->BoxHealRatePerSecond > 0.f)
-			{
-				Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
-				bChanged = true;
-			}
-
-			// 나와서 일하는 거점 팰은 액터가 SAN 을 쓴다
-			const TObjectPtr<ADC1PalCharacter>* Spawned = BaseSpawnedPals.FindByPredicate([&Pal](const ADC1PalCharacter* Other)
-				{
-					return (::IsValid(Other) && Other->GetInstanceID() == Pal.PalID);
-				});
-
-			if (nullptr != Spawned)
-			{
-				const float ActorSanity = (*Spawned)->GetSanity();
-				if (false == FMath::IsNearlyEqual(Pal.CurrentSanity, ActorSanity))
-				{
-					Pal.CurrentSanity = ActorSanity;
-					bChanged = true;
-				}
-
-				continue;
-			}
-
-			if (0.f <= Pal.CurrentSanity && Pal.CurrentSanity < MaxSanity && Registry->BoxSanityHealPerSecond > 0.f)
-			{
-				Pal.CurrentSanity = FMath::Min(MaxSanity, Pal.CurrentSanity + (Registry->BoxSanityHealPerSecond * BoxHealInterval));
-				bChanged = true;
-			}
+			continue;
 		}
+
+		const float MaxHealth = GetMaxHealthOf(Pal);
+		if (Pal.CurrentHealth >= MaxHealth)
+		{
+			continue;
+		}
+
+		Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
+		bChanged = true;
 	}
 
 	if (false == bChanged)
 	{
 		return;
 	}
-
-	// 나와 있는 거점 팰은 칸 값을 따른다. 거점 팰은 싸우지 않아 액터 체력이 따로 변하지 않는다
-	for (ADC1PalCharacter* Spawned : BaseSpawnedPals)
-	{
-		const FDC1PalInstance* Pal = BasePals.FindByPredicate([Spawned](const FDC1PalInstance& Other)
-			{
-				return (::IsValid(Spawned) && Other.PalID == Spawned->GetInstanceID());
-			});
-
-		if (nullptr == Pal)
-		{
-			continue;
-		}
-
-		if (UAbilitySystemComponent* ASC = Spawned->GetAbilitySystemComponent())
-		{
-			ASC->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), Pal->CurrentHealth);
-		}
-	}
-
-	// 기절에서 회복된 거점 팰을 꺼낸다
-	RefreshBasePals();
 
 	BroadcastChanged(EDC1PalContainer::Box);
 }
@@ -456,7 +384,18 @@ TArray<FDC1PalInstance>& UDC1PalPartyComponent::GetContainer(EDC1PalContainer In
 	switch (InContainer)
 	{
 	case EDC1PalContainer::Box:		return BoxPals;
-	case EDC1PalContainer::Base:	return BasePals;
+	case EDC1PalContainer::Base:
+	{
+		UDC1PalBaseComponent* PalBase = GetBasePalComponent();
+		if (true == ::IsValid(PalBase))
+		{
+			return PalBase->GetBasePals();
+		}
+
+		static TArray<FDC1PalInstance> EmptyBasePals;
+		EmptyBasePals.Reset();
+		return EmptyBasePals;
+	}
 	default:						return Pals;
 	}
 }
@@ -506,7 +445,7 @@ float UDC1PalPartyComponent::GetPalMaxHealth(EDC1PalContainer InContainer, int32
 	return (nullptr != Pal) ? GetMaxHealthOf(*Pal) : 0.f;
 }
 
-float UDC1PalPartyComponent::GetMaxHealthOf(const FDC1PalInstance& InPal) const
+float UDC1PalPartyComponent::GetMaxHealthOf(const FDC1PalInstance& InPal)
 {
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 	if (false == ::IsValid(Registry))
@@ -960,7 +899,8 @@ ADC1PalAIController* UDC1PalPartyComponent::GetDeployedPalController() const
 
 void UDC1PalPartyComponent::UpdatePal(const FDC1PalInstance& InPal)
 {
-	for (const EDC1PalContainer Container : { EDC1PalContainer::Party, EDC1PalContainer::Box, EDC1PalContainer::Base })
+	// 거점 팰 접기는 거점 컴포넌트가
+	for (const EDC1PalContainer Container : { EDC1PalContainer::Party, EDC1PalContainer::Box })
 	{
 		TArray<FDC1PalInstance>& Target = GetContainer(Container);
 

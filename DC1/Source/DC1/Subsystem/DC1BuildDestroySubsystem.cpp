@@ -4,7 +4,9 @@
 #include "Actor/BuildActor/DC1BuildActor.h"
 #include "Define/DC1BuildSupportHelper.h"
 
-void UDC1BuildDestroySubsystem::RequestDestroy(ADC1BuildActor* InTarget)
+#include "GameFramework/PlayerState.h"
+
+void UDC1BuildDestroySubsystem::RequestDestroy(ADC1BuildActor* InTarget, APlayerState* InInstigator)
 {
 	if (false == ::IsValid(InTarget) || false == InTarget->HasAuthority() || true == ClaimedActors.Contains(InTarget))
 	{
@@ -12,7 +14,8 @@ void UDC1BuildDestroySubsystem::RequestDestroy(ADC1BuildActor* InTarget)
 	}
 
 	const int32 CascadeID = NextCascadeID++;
-	Cascades.Add(CascadeID);
+	FDC1DestroyCascade& NewCascade = Cascades.Add(CascadeID);
+	NewCascade.Instigator = InInstigator;
 
 	StartDestroyWave({ InTarget }, CascadeID);
 }
@@ -36,6 +39,9 @@ void UDC1BuildDestroySubsystem::StartDestroyWave(const TArray<ADC1BuildActor*>& 
 		}
 
 		ClaimedActors.Add(Actor);
+
+		Actor->SetDestroyInstigator(Cascade->Instigator.Get());
+
 		Cascade->Claimed.Add(Actor);
 
 		TArray<ADC1BuildActor*> Neighbors;

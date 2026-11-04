@@ -58,6 +58,11 @@ public:
 	int32 FindEmptySlot() const;
 
 	bool FindItemInSlot(FName InItemID, OUT int32* SlotIndex) const;
+	bool FindItemInSlot(FName InItemID, OUT TArray<int32>& SlotIndices) const;
+
+	int32	GetItemCount(FName InItemID);
+
+	bool	RemoveItemByID(FName InItemID, int32 InCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SwapSlots(int32 InIndex1, int32 InIndex2);
@@ -89,7 +94,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetCapacityAndColumns(int32 InTotalCapacity, int32 InColumns);
-
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")

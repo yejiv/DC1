@@ -73,6 +73,10 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	bool					bPassivesRolled = { false };
 
+	// 거점에 배치한 플레이어 ID ( APlayerState::GetPlayerId ) - 거점 배치 전용
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	int32					OwnerPlayerID = { INDEX_NONE };
+
 	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }
 
 	bool IsDeployable() const { return IsValidPal() && (CurrentHealth > 0.f); }
