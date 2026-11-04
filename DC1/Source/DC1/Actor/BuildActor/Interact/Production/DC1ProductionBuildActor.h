@@ -63,7 +63,6 @@ protected:
 
 
 private:
-	bool			IsCompleted() const { return BuildState == EDC1BuildState::Completed; }
 	APawn*			GetLocalPawn() const;
 
 

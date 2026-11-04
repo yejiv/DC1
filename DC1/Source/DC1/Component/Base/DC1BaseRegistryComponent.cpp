@@ -3,15 +3,44 @@
 
 #include "Component/Base/DC1BaseRegistryComponent.h"
 
-#include "Actor/BuildActor/DC1BuildActor.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
+#include "Actor/BuildActor/Interact/Chest/DC1ChestActor.h"
+#include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
+
 #include "Subsystem/DC1BuildDestroySubsystem.h"
 
+#include "Net/UnrealNetwork.h"
 #include "EngineUtils.h"
 
 UDC1BaseRegistryComponent::UDC1BaseRegistryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	SetIsReplicatedByDefault(true);
+}
+
+void UDC1BaseRegistryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, BaseChests);
+}
+
+void UDC1BaseRegistryComponent::GetChestInventories(TArray<UDC1InventoryComponentBase*>& OutInventories) const
+{
+	for (const TWeakObjectPtr<ADC1ChestActor>& WeakChest : BaseChests)
+	{
+		ADC1ChestActor* Chest = WeakChest.Get();
+		if (false == ::IsValid(Chest))
+		{
+			continue;
+		}
+
+		UDC1InventoryComponentBase* ChestInventoryComp = Chest->GetChestInventoryComponent();
+		if (true == ::IsValid(ChestInventoryComp))
+		{
+			OutInventories.Add(ChestInventoryComp);
+		}
+	}
 }
 
 void UDC1BaseRegistryComponent::RegisterWorkTarget(IDC1WorkTargetInterface* InWorkTarget)
@@ -90,5 +119,57 @@ void UDC1BaseRegistryComponent::DestroyBaseRequiredBuilds(APlayerState* InDestro
 		}
 
 		BuildDestroySubsystem->RequestDestroy(BuildActor, InDestroyer);
+	}
+}
+
+void UDC1BaseRegistryComponent::RegisterChest(ADC1ChestActor* InChest)
+{
+	if (ROLE_Authority != GetOwnerRole() || false == ::IsValid(InChest))
+	{
+		return;
+	}
+
+	// 건설 완성 전
+	if (false == InChest->IsCompleted())
+	{
+		return;
+	}
+
+	UDC1ChestInventoryComponent* Temp = InChest->GetChestInventoryComponent();
+	if (false == ::IsValid(Temp) || false == Temp->CanStoreItems())
+	{
+		return;
+	}
+
+	BaseChests.RemoveAll([](const TWeakObjectPtr<ADC1ChestActor>& Chest)
+		{
+			return (false == Chest.IsValid());
+		});
+
+	BaseChests.AddUnique(InChest);
+}
+
+void UDC1BaseRegistryComponent::CollectChest()
+{
+	const ADC1PalBoxActor* PalBox = GetOwner<ADC1PalBoxActor>();
+	if (false == ::IsValid(PalBox))
+	{
+		return;
+	}
+
+	for (TActorIterator<ADC1ChestActor> It(GetWorld()); It; ++It)
+	{
+		ADC1ChestActor* Chest = *It;
+		if (false == ::IsValid(Chest))
+		{
+			continue;
+		}
+
+		if (false == PalBox->IsInBase(Chest->GetActorLocation()))
+		{
+			continue;
+		}
+
+		RegisterChest(Chest);
 	}
 }

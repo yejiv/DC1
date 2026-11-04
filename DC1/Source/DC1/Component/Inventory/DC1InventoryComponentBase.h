@@ -58,10 +58,10 @@ public:
 	int32 FindEmptySlot() const;
 
 	bool FindItemInSlot(FName InItemID, OUT int32* SlotIndex) const;
-	bool FindItemInSlot(FName InItemID, OUT TArray<int32>& SlotIndices) const;
 
-	int32	GetItemCount(FName InItemID);
-
+	// 모든 슬롯 합계
+	int32	GetItemCount(FName InItemID) const;
+	// 슬롯별 Count 차감, 부족하면 false ( 차감 X )
 	bool	RemoveItemByID(FName InItemID, int32 InCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")

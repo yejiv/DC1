@@ -73,6 +73,7 @@ public:
 	const int32						GetRoofSupportSpan() const { return RoofSupportSpan; }
 	
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
+	const bool						IsCompleted() const { return EDC1BuildState::Completed == BuildState; }
 
 	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
 

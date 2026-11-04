@@ -17,6 +17,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "Data/Pal/DC1PalTypes.h"
+#include "Define/DC1CraftHelper.h"
 #include "Define/DC1ItemHelper.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -176,6 +177,60 @@ namespace DC1DebugCommands
 		Ar.Logf(TEXT("[DC1Debug] Added pal [%s] Lv.1 x%d / %d (box first, then party)."), *TagName, Added, Count);
 	}
 
+	void CraftCount(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
+	{
+		if (InArgs.Num() < 1)
+		{
+			Ar.Logf(TEXT("Usage: DC1.CraftCount <ItemID>   ex) DC1.CraftCount 6101"));
+			return;
+		}
+
+		const FName ItemID(*InArgs[0]);
+
+		const UGameInstance* GameInstance = (true == ::IsValid(InWorld)) ? InWorld->GetGameInstance() : nullptr;
+		const APlayerController* LocalPC = (nullptr != GameInstance) ? GameInstance->GetFirstLocalPlayerController() : nullptr;
+		const ADC1PlayerState* LocalPS = (nullptr != LocalPC) ? LocalPC->GetPlayerState<ADC1PlayerState>() : nullptr;
+		const ADC1PlayerState* ServerPS = FindAuthorityPlayerState(InWorld, Ar);
+		if (false == ::IsValid(LocalPS) || nullptr == ServerPS)
+		{
+			return;
+		}
+
+		const UDC1PlayerInventoryComponent* ServerInventory = ServerPS->GetInventoryComponent();
+		const int32 ServerTotal = DC1CraftHelper::GetCraftItemCount(ServerPS, ItemID);
+		const int32 ServerPlayer = (true == ::IsValid(ServerInventory)) ? ServerInventory->GetItemCount(ItemID) : 0;
+
+		Ar.Logf(TEXT("[DC1Debug] CraftCount [%s] local %d / server %d (player %d + base chest %d)."),
+			*ItemID.ToString(), DC1CraftHelper::GetCraftItemCount(LocalPS, ItemID), ServerTotal, ServerPlayer, ServerTotal - ServerPlayer);
+	}
+
+	void RemoveCraft(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
+	{
+		if (InArgs.Num() < 2)
+		{
+			Ar.Logf(TEXT("Usage: DC1.RemoveCraft <ItemID> <Count>   ex) DC1.RemoveCraft 6101 5"));
+			return;
+		}
+
+		const FName ItemID(*InArgs[0]);
+		const int32 Count = FCString::Atoi(*InArgs[1]);
+
+		ADC1PlayerState* PS = FindAuthorityPlayerState(InWorld, Ar);
+		if (nullptr == PS)
+		{
+			return;
+		}
+
+		const bool IsRemoved = DC1CraftHelper::RemoveCraftItem(PS, ItemID, Count);
+
+		const UDC1PlayerInventoryComponent* Inventory = PS->GetInventoryComponent();
+		const int32 Total = DC1CraftHelper::GetCraftItemCount(PS, ItemID);
+		const int32 Player = (true == ::IsValid(Inventory)) ? Inventory->GetItemCount(ItemID) : 0;
+
+		Ar.Logf(TEXT("[DC1Debug] RemoveCraft [%s] x%d %s -> player %d + base chest %d."),
+			*ItemID.ToString(), Count, (true == IsRemoved) ? TEXT("OK") : TEXT("FAILED"), Player, Total - Player);
+	}
+
 	FAutoConsoleCommand AddItemCommand(
 		TEXT("DC1.AddItem"),
 		TEXT("DC1.AddItem <ItemID> [Count=1] - add item to local player's inventory"),
@@ -185,6 +240,16 @@ namespace DC1DebugCommands
 		TEXT("DC1.AddPal"),
 		TEXT("DC1.AddPal <Species> [Count=1] - add Lv.1 pals to local player's box (or party)"),
 		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&AddPal));
+
+	FAutoConsoleCommand CraftCountCommand(
+		TEXT("DC1.CraftCount"),
+		TEXT("DC1.CraftCount <ItemID> - craft material count (player + base chests), local and server"),
+		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&CraftCount));
+
+	FAutoConsoleCommand RemoveCraftCommand(
+		TEXT("DC1.RemoveCraft"),
+		TEXT("DC1.RemoveCraft <ItemID> <Count> - remove craft material (player first, then base chests)"),
+		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&RemoveCraft));
 }
 
 #endif

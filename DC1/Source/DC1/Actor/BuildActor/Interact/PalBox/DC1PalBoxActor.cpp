@@ -192,6 +192,7 @@ void ADC1PalBoxActor::OnPlaced(const APlayerState* InBuilder)
 	// 거점이 GS에 Set 되었을경우에만
 	PalBaseComponent->InitBase();
 	RegistryComponent->CollectWorkTargets();
+	RegistryComponent->CollectChest();
 
 	GS->NotifyBaseChanged();
 }
