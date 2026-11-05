@@ -362,13 +362,18 @@ void UDC1PalPartyComponent::HealStoredPals()
 		}
 
 		const float MaxHealth = GetMaxHealthOf(Pal);
-		if (Pal.CurrentHealth >= MaxHealth)
+		if (Pal.CurrentHealth < MaxHealth && Registry->BoxHealRatePerSecond > 0.f)
 		{
-			continue;
+			Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
+			bChanged = true;
 		}
 
-		Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
-		bChanged = true;
+		// -1 = 아직 안 정함(가득)이라 건너뛴다
+		if (0.f <= Pal.CurrentSanity && Pal.CurrentSanity < MaxSanity && Registry->BoxSanityHealPerSecond > 0.f)
+		{
+			Pal.CurrentSanity = FMath::Min(MaxSanity, Pal.CurrentSanity + (Registry->BoxSanityHealPerSecond * BoxHealInterval));
+			bChanged = true;
+		}
 	}
 
 	if (false == bChanged)
