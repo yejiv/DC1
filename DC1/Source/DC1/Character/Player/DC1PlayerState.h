@@ -19,6 +19,7 @@ class UDC1TeleportComponent;
 class UDC1PlayerStatComponent;
 
 class UDC1PlayerSaveGame;
+
 /**
  * 
  */
@@ -31,15 +32,15 @@ public:
 	ADC1PlayerState(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent*		GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
-	UDC1ValuableInventoryComponent*	GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
+	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
-	UDC1PlayerStatComponent*				GetStatComponent() const { return StatComponent; }
+	UDC1PlayerStatComponent*			GetStatComponent() const { return StatComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;

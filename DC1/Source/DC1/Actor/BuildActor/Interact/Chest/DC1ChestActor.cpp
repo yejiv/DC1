@@ -14,6 +14,10 @@
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
+#include "GameMode/DC1GameState.h"
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
+#include "Component/Base/DC1BaseRegistryComponent.h"
+
 ADC1ChestActor::ADC1ChestActor()
 {
 	ChestInventoryComp = CreateDefaultSubobject<UDC1ChestInventoryComponent>("ChestInventoryComp");
@@ -100,6 +104,25 @@ void ADC1ChestActor::OnCompletedInteract(ADC1Character* InInteractOwner, EDC1Int
 	}
 
 	LootScreen->OpenChest(ChestInventoryComp);
+}
+
+void ADC1ChestActor::OnPlaced(const APlayerState* InBuilder)
+{
+	Super::OnPlaced(InBuilder);
+
+	OnBuildCompleted.AddUObject(this, &ThisClass::HandleBuildCompleted);
+}
+
+void ADC1ChestActor::HandleBuildCompleted()
+{
+	ADC1GameState* GS = ADC1GameState::Get(this);
+	ADC1PalBoxActor* PalBox = (true == ::IsValid(GS)) ? GS->FindBaseAt(GetActorLocation()) : nullptr;
+	UDC1BaseRegistryComponent* BaseRegistryComp = (true == ::IsValid(PalBox)) ? PalBox->GetRegistryComponent() : nullptr;
+	
+	if (true == ::IsValid(BaseRegistryComp))
+	{
+		BaseRegistryComp->RegisterChest(this);
+	}
 }
 
 bool ADC1ChestActor::StoreItem(FName InItemID, int32 InCount)

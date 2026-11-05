@@ -9,9 +9,8 @@
 #include "Define/DC1Enums.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
-#include "Character/Player/DC1PlayerState.h"
 #include "Component/Interact/DC1InteractComponent.h"
-#include "Component/Pal/DC1PalPartyComponent.h"
+#include "GameMode/DC1GameState.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
@@ -216,10 +215,9 @@ void ADC1InteractBuildActor::OnPlaced(const APlayerState* InBuilder)
 {
 	Super::OnPlaced(InBuilder);
 
-	const ADC1PlayerState* PlayerState = Cast<ADC1PlayerState>(InBuilder);
-	const UDC1PalPartyComponent* Party = (nullptr != PlayerState) ? PlayerState->GetPalPartyComponent() : nullptr;
-	ADC1PalBoxActor* PalBox = (nullptr != Party) ? Party->GetBasePalBox() : nullptr;
-	if (false == ::IsValid(PalBox) || false == PalBox->IsInBase(GetActorLocation()))
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	ADC1PalBoxActor* PalBox = (nullptr != GS) ? GS->FindBaseAt(GetActorLocation()) : nullptr;
+	if (false == ::IsValid(PalBox))
 	{
 		return;
 	}

@@ -9,6 +9,11 @@
 #include "Component/Build/DC1BuildCheckComponent.h"
 #include "Component/Build/DC1BuildSnapComponent.h"
 #include "Component/Build/DC1BuildLinkComponent.h"
+#include "Component/Base/DC1BaseRegistryComponent.h"
+#include "GameMode/DC1GameState.h"
+
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
+#include "GameFramework/PlayerState.h"
 
 #include "Define/DC1BuildSupportHelper.h"
 
@@ -43,6 +48,16 @@ ADC1BuildActor::ADC1BuildActor()
 	BuildLinkComp = CreateDefaultSubobject<UDC1BuildLinkComponent>("BuildLinkComp");
 
 	SetRootComponent(BuildMesh);
+}
+
+void ADC1BuildActor::SetDestroyInstigator(APlayerState* InInstigator)
+{
+	if (false == HasAuthority() || true == DestroyInstigator.IsValid())
+	{
+		return;
+	}
+
+	DestroyInstigator = InInstigator;
 }
 
 const EDC1BuildProbeDirection ADC1BuildActor::GetProbeDirection() const
@@ -191,6 +206,37 @@ void ADC1BuildActor::InitBuild(const FDC1BuildActorData& InBuildActorData)
 void ADC1BuildActor::BuildDestroy()
 {
 	Destroy();
+}
+
+bool ADC1BuildActor::CanPlaceAt(const APlayerState* InBuilder) const
+{
+	if (false == IsBaseRequired)
+	{
+		return true;
+	}
+
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	if (true == ::IsValid(GS) && nullptr != GS->FindBaseAt(GetActorLocation()))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void ADC1BuildActor::OnPlaced(const APlayerState* InBuilder)
+{
+	if (false == IsBaseRequired)
+	{
+		return;
+	}
+
+	const ADC1GameState* GS = ADC1GameState::Get(this);
+	ADC1PalBoxActor* PalBox = (true == ::IsValid(GS)) ? GS->FindBaseAt(GetActorLocation()) : nullptr;
+	if (true == ::IsValid(PalBox))
+	{
+		PalBox->GetRegistryComponent()->RegisterBaseRequiredBuild(this);
+	}
 }
 
 void ADC1BuildActor::FinishDestroySequence()
