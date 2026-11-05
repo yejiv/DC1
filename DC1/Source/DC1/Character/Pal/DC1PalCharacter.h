@@ -160,6 +160,8 @@ protected:
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void						OnDeath() override;
 
+	void								SpawnDrops();
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
 	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
@@ -209,6 +211,14 @@ protected:
 
 	// 마지막 가해자
 	TWeakObjectPtr<AActor> LastDamageCauser;
+
+	// 드랍 수평 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Drop", meta = (ClampMin = "0.0"))
+	float DropScatterSpeed = { 250.f };
+
+	// 드랍 위쪽 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Drop", meta = (ClampMin = "0.0"))
+	float DropLaunchSpeed = { 350.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
 	bool bOverrideLevel = { false };

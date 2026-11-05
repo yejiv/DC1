@@ -22,6 +22,7 @@
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
 #include "UI/World/DC1PalHealthWidget.h"
+#include "Item/Pickup/DC1PickupItem.h"
 
 #include "Character/Player/DC1PlayerController.h"
 #include "Data/DA/Input/DC1InputData.h"
@@ -40,6 +41,12 @@
 
 namespace DC1PalCharacter
 {
+	// 드랍 방향을 줄 수만큼 나눈 칸 안에서 흔드는 폭(도). 두 줄이 같은 쪽으로 겹쳐 날아가지 않게
+	constexpr float DropAngleJitter = 20.f;
+
+	// 시체 중심에서 이만큼 위에서 튀어나온다. 래그돌 안에서 시작하지 않게
+	constexpr float DropSpawnHeight = 30.f;
+
 	// 가해자 파티 (파트너면 주인)
 	static UDC1PalPartyComponent* FindPartyOf(const AActor* InCauser)
 	{
@@ -763,16 +770,68 @@ void ADC1PalCharacter::OnDeath()
 		MeshComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 
-	// 처치 경험치
+	// 처치 경험치, 드랍
 	if (true == HasAuthority() && EDC1Team::Wild == Team)
 	{
 		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(LastDamageCauser.Get()))
 		{
 			Party->GrantExperienceFor(GetLevel());
 		}
+
+		SpawnDrops();
 	}
 
 	OnPalDied.Broadcast();
+}
+
+void ADC1PalCharacter::SpawnDrops()
+{
+	if (nullptr == PalData)
+	{
+		return;
+	}
+
+	const int32 DropNum = PalData->Drops.Num();
+	if (0 == DropNum)
+	{
+		return;
+	}
+
+	const FVector Origin = GetActorLocation() + FVector::UpVector * DC1PalCharacter::DropSpawnHeight;
+
+	const UCapsuleComponent* Capsule = GetCapsuleComponent();
+	const float BodyRadius = (nullptr != Capsule) ? Capsule->GetScaledCapsuleRadius() : 0.f;
+
+	const float AngleStep = 360.f / DropNum;
+	const float StartAngle = FMath::FRandRange(0.f, 360.f);
+
+	for (int32 Index = 0; Index < DropNum; ++Index)
+	{
+		const FDC1PalDropDef& Drop = PalData->Drops[Index];
+
+		if (FMath::FRand() >= Drop.Chance)
+		{
+			continue;
+		}
+
+		const float Yaw = StartAngle + AngleStep * Index + FMath::FRandRange(-DC1PalCharacter::DropAngleJitter, DC1PalCharacter::DropAngleJitter);
+		const FVector Direction = FRotator(0.f, Yaw, 0.f).Vector();
+
+		const int32 Count = FMath::RandRange(Drop.MinCount, Drop.MaxCount);
+		ADC1PickupItem* Pickup = ADC1PickupItem::SpawnDrop(GetWorld(), Drop.ItemID, Count, Origin + Direction * BodyRadius);
+		if (nullptr == Pickup)
+		{
+			continue;
+		}
+
+		UPrimitiveComponent* PickupRoot = Cast<UPrimitiveComponent>(Pickup->GetRootComponent());
+		if (nullptr == PickupRoot)
+		{
+			continue;
+		}
+
+		PickupRoot->SetPhysicsLinearVelocity(Direction * DropScatterSpeed + FVector::UpVector * DropLaunchSpeed);
+	}
 }
 
 UAbilitySystemComponent* ADC1PalCharacter::GetAbilitySystemComponent() const

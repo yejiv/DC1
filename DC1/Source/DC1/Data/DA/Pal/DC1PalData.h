@@ -30,6 +30,27 @@ struct FDC1PalMontageSet
 	}
 };
 
+// 드랍
+USTRUCT(BlueprintType)
+struct FDC1PalDropDef
+{
+	GENERATED_BODY()
+
+	// DT_ItemData 의 ItemID
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName							ItemID;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "1"))
+	int32							MinCount = { 1 };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "1"))
+	int32							MaxCount = { 1 };
+
+	// 0~1
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float							Chance = { 1.f };
+};
+
 UCLASS()
 class DC1_API UDC1PalData : public UDataAsset
 {
@@ -173,6 +194,11 @@ public:
 #pragma region Capture
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Capture", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float							CaptureRate = { 0.5f };
+#pragma endregion
+
+#pragma region Drop
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop")
+	TArray<FDC1PalDropDef>			Drops;
 #pragma endregion
 
 #pragma region AI
