@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
 struct FDC1ItemRow;
 struct FDC1ValuableItemRow;
 struct FDC1EquipItemRow;
+struct FDC1ItemRecipeRow;
 
 #pragma region Item Helper
 
@@ -21,6 +22,16 @@ namespace DC1ItemHelper
 
 	// 장비 데이터 조회 함수 (없으면 nullptr = 장비 불가)
 	const FDC1EquipItemRow* FindEquipItemRow(FName InItemID);
+}
+
+#pragma endregion
+
+
+#pragma region Recipe Helper
+
+namespace DC1RecipeHelper
+{
+	bool FindRecipeRow(FName InRecipeID, FDC1ItemRecipeRow& OutRecipe);
 }
 
 #pragma endregion
