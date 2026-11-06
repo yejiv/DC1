@@ -9,7 +9,10 @@
 #include "DC1PalData.generated.h"
 
 class UAnimMontage;
+class UAnimSequence;
 class UTexture2D;
+class USkeletalMesh;
+
 class ADC1PalProjectile;
 class ADC1PalCharacter;
 
@@ -28,6 +31,41 @@ struct FDC1PalMontageSet
 	{
 		return (0 < Montages.Num()) ? Montages[FMath::RandRange(0, Montages.Num() - 1)] : nullptr;
 	}
+};
+
+// 팰 미리보기 설정 (메쉬 / Idle 애니 / 카메라). 카메라 값은 PreviewActor의 Camera 변수와 같은 의미
+USTRUCT(BlueprintType)
+struct FDC1PalPreviewSettings
+{
+	GENERATED_BODY()
+
+	// 프리뷰용 메쉬
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Mesh")
+	TSoftObjectPtr<USkeletalMesh>		Mesh = { nullptr };
+
+	// 원본 메쉬를 따라갈 수 없으므로 루프 재생할 Idle 애니
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Anim")
+	TSoftObjectPtr<UAnimSequence>	IdleAnim = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera", meta = (ClampMin = "10"))
+	float							CameraDistance = { 50.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
+	float							CameraHeight = { 0.f };
+
+	// 양수면 화면 기준 오른쪽
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
+	float							CameraRight = { 0.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
+	float							CameraYaw = { 0.f };
+
+	// 양수면 내려다봄
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
+	float							CameraPitch = { 0.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera", meta = (ClampMin = "5", ClampMax = "170"))
+	float							CameraFOV = { 90.f };
 };
 
 UCLASS()
@@ -172,6 +210,12 @@ public:
 	// 스폰 지점 기준 배회 반경
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Wander")
 	float							WanderRadius = { 800.f };
+#pragma endregion
+
+#pragma region Preview
+	// UI 미리보기(팰 정보 화면 등)에서 쓰는 메쉬 / 애니 / 카메라
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview")
+	FDC1PalPreviewSettings			PreviewSettings;
 #pragma endregion
 
 public:

@@ -163,6 +163,7 @@ enum class EDC1PlayerStat : uint8
 	Weight = 5 UMETA(DisplayName = "Weight"),
 };
 
+#pragma region Pal Info
 // 팰 속성
 UENUM(BlueprintType)
 enum class EDC1PalElement : uint8
@@ -189,6 +190,13 @@ enum class EDC1PalGender : uint8
 	Female = 2 UMETA(DisplayName = "Female"),
 
 	Max			UMETA(Hidden),
+};
+#pragma endregion
+
+UENUM()
+enum class EDC1PreviewType : uint8
+{
+	Player, Pal
 };
 
 UENUM()

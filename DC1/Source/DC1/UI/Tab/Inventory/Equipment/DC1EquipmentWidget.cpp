@@ -11,7 +11,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Components/Image.h"
 
-#include "Subsystem/PlayerPreview/DC1PlayerPreviewSubsystem.h"
+#include "Subsystem/PlayerPreview/DC1PreviewSubsystem.h"
 #include "Data/DA/UI/DC1UIResourceData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -78,9 +78,9 @@ void UDC1EquipmentWidget::NativeConstruct()
 
 	// 화면이 열려 있는 동안만 미리보기 촬영
 	SetupPlayerPreview();
-	if (UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr)
+	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
 	{
-		PreviewSubsystem->BeginPreview();
+		PreviewSubsystem->BeginPlayerPreview();
 	}
 }
 
@@ -91,7 +91,7 @@ void UDC1EquipmentWidget::NativeDestruct()
 		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
 	}
 
-	if (UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr)
+	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
 	{
 		PreviewSubsystem->EndPreview();
 	}
@@ -107,14 +107,14 @@ void UDC1EquipmentWidget::SetupPlayerPreview()
 	}
 
 	const UDC1UIResourceData* ResourceData = UDC1AssetManager::GetAssetByTag<UDC1UIResourceData>(DC1AssetTags::Asset_UI_Resource_Common);
-	UDC1PlayerPreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PlayerPreviewSubsystem>() : nullptr;
+	UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr;
 	if (nullptr == ResourceData || nullptr == ResourceData->PlayerPreviewMaterial || nullptr == PreviewSubsystem)
 	{
 		return;
 	}
 
 	PlayerPreviewMID = UMaterialInstanceDynamic::Create(ResourceData->PlayerPreviewMaterial, this);
-	PlayerPreviewMID->SetTextureParameterValue(PlayerPreviewTextureParam, PreviewSubsystem->GetRenderTarget());
+	PlayerPreviewMID->SetTextureParameterValue(PlayerPreviewTextureParam, PreviewSubsystem->GetRenderTarget(EDC1PreviewType::Player));
 	Image_CharacterPreview->SetBrushFromMaterial(PlayerPreviewMID);
 }
 
