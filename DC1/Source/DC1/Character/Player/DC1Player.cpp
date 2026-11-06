@@ -959,6 +959,8 @@ void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 		InteractCollider->SetCollisionEnabled(IsDown ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
 	}
 
+	OnInteractOptionsChanged.Broadcast();
+
 	// BuildMode, InteractEnable 관리
 	RefreshIncapacitated();
 }
