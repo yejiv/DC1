@@ -7,6 +7,7 @@
 #include "GameplayTagContainer.h"
 #include "DC1BuildWidget.generated.h"
 
+class ADC1PlayerState;
 class UDC1BuildRowWidget;
 class UDC1BuildViewModel;
 
@@ -36,6 +37,8 @@ public:
 	void	InitBuild(UDC1BuildViewModel* InViewModel);
 
 	bool	VisibleSlot(const FGameplayTag& InRowTag, const FGameplayTag& InSlotTag);
+
+	void	RefreshCostState(const ADC1PlayerState* InPlayerState);
 
 private:
 	UPROPERTY(meta = (BindWidget))

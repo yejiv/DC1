@@ -16,6 +16,8 @@
 #include "GameFramework/PlayerState.h"
 
 #include "Define/DC1BuildSupportHelper.h"
+#include "Define/DC1CraftHelper.h"
+#include "Character/Player/DC1PlayerState.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -297,7 +299,8 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuild
 		IsSubCheck &= (SubCheck->CheckOverlap());
 	}
 
-	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this) && CanPlaceAt(InBuilder);
+	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this) && CanPlaceAt(InBuilder)
+		&& DC1CraftHelper::HasCraftCosts(Cast<ADC1PlayerState>(InBuilder), BuildActorData.BuildCosts);
 
 
 	if (CanBuilding != CurrentCanBuilding)

@@ -79,3 +79,16 @@ bool UDC1BuildWidget::VisibleSlot(const FGameplayTag& InRowTag, const FGameplayT
 
 	return RowWidget->VisibleSlot(InSlotTag);
 }
+
+void UDC1BuildWidget::RefreshCostState(const ADC1PlayerState* InPlayerState)
+{
+	for (const TPair<FGameplayTag, TObjectPtr<UDC1BuildRowWidget>>& Pair : BuildRowsByTag)
+	{
+		if (false == ::IsValid(Pair.Value))
+		{
+			continue;
+		}
+
+		Pair.Value->RefreshCostState(InPlayerState);
+	}
+}
