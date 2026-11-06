@@ -3,6 +3,7 @@
 #include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1Player.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
@@ -53,12 +54,14 @@ APawn* UDC1PalRideComponent::GetRider() const
 		return nullptr;
 	}
 
+	// 붙은 액터는 후보만. 탄 팰이 나인 플레이어가 탄 사람
 	TArray<AActor*> AttachedActors;
 	Owner->GetAttachedActors(AttachedActors);
 
 	for (AActor* Attached : AttachedActors)
 	{
-		if (APawn* Rider = Cast<APawn>(Attached))
+		ADC1Player* Rider = Cast<ADC1Player>(Attached);
+		if (nullptr != Rider && Owner == Rider->GetRiddenPawn())
 		{
 			return Rider;
 		}

@@ -3,17 +3,18 @@
 #include "Animation/AnimNotifyState/DC1ANS_RideMove.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1Player.h"
 #include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Components/SkeletalMeshComponent.h"
 
 namespace DC1ANSRideMove
 {
-	// 탄 사람이 붙어 있는 팰의 탑승 컴포넌트
+	// 탄 사람이 탄 팰의 탑승 컴포넌트
 	static UDC1PalRideComponent* FindRideComponent(const USkeletalMeshComponent* InMeshComp)
 	{
-		const AActor* Rider = (nullptr != InMeshComp) ? InMeshComp->GetOwner() : nullptr;
-		const ADC1PalCharacter* Pal = (nullptr != Rider) ? Cast<ADC1PalCharacter>(Rider->GetAttachParentActor()) : nullptr;
+		const ADC1Player* Rider = (nullptr != InMeshComp) ? Cast<ADC1Player>(InMeshComp->GetOwner()) : nullptr;
+		const ADC1PalCharacter* Pal = (nullptr != Rider) ? Cast<ADC1PalCharacter>(Rider->GetRiddenPawn()) : nullptr;
 		return (nullptr != Pal) ? Pal->GetRideComponent() : nullptr;
 	}
 }

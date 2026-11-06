@@ -40,7 +40,7 @@ public:
 	// 서버. 파티가 탑승 단계를 바꿀 때 부른다
 	void							SetRideState(EDC1RideState InState, EDC1RideDirection InDirection);
 
-	// 등에 붙어 있는 폰 = 탄 사람. 붙음은 복제되므로 클라에서도 찾을 수 있다
+	// 탄 사람 = 이 팰에 붙어 있고 GetRiddenPawn 이 이 팰인 플레이어. 둘 다 복제되므로 클라에서도 찾을 수 있다
 	APawn*							GetRider() const;
 
 	// 팰 정면 기준 InLocation 이 있는 쪽
