@@ -79,13 +79,13 @@ int32 UDC1InventoryComponentBase::FindEmptySlot() const
 	return -1;
 }
 
-bool UDC1InventoryComponentBase::FindItemInSlot(FName InItemID, int32* SlotIndex) const
+bool UDC1InventoryComponentBase::FindItemInSlot(FName InItemID, OUT int32* SlotIndex) const
 {
 	for (int32 i = 0; i < Slots.Num(); ++i)
 	{
 		if (Slots[i].ItemID.IsEqual(InItemID))
 		{
-			if(SlotIndex)
+			if (SlotIndex)
 				*SlotIndex = i;
 
 			return true;
@@ -93,6 +93,55 @@ bool UDC1InventoryComponentBase::FindItemInSlot(FName InItemID, int32* SlotIndex
 	}
 
 	return false;
+}
+
+int32 UDC1InventoryComponentBase::GetItemCount(FName InItemID) const
+{
+	int32 StackCount = 0;
+
+	for (int32 i = 0; i < Slots.Num(); ++i)
+	{
+		if (Slots[i].ItemID.IsEqual(InItemID))
+		{
+			StackCount += Slots[i].StackCount;
+		}
+	}
+
+	return StackCount;
+}
+
+bool UDC1InventoryComponentBase::RemoveItemByID(FName InItemID, int32 InCount)
+{
+	if (GetOwnerRole() != ROLE_Authority || true == InItemID.IsNone() || InCount <= 0)
+	{
+		return false;
+	}
+
+	int32 TotalStackCount = GetItemCount(InItemID);
+	if (TotalStackCount < InCount)
+	{
+		return false;
+	}
+
+	int32 TotalRemoveCount = InCount;
+
+	for (int32 i = Slots.Num() - 1; i >= 0; --i)
+	{
+		if (Slots[i].ItemID.IsEqual(InItemID))
+		{
+			int32 RemoveCount = FMath::Min(TotalRemoveCount, Slots[i].StackCount);
+			RemoveItem(i, RemoveCount);
+
+			TotalRemoveCount -= RemoveCount;
+		}
+
+		if (TotalRemoveCount <= 0)
+		{
+			break;
+		}
+	}
+
+	return true;
 }
 
 

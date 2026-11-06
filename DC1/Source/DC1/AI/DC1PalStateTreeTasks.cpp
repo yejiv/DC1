@@ -2,15 +2,20 @@
 
 #include "AI/DC1PalStateTreeTasks.h"
 
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Controller/DC1PalAIController.h"
 #include "Data/DA/Pal/DC1PalData.h"
+#include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "Interface/DC1WorkTargetInterface.h"
+#include "System/DC1AssetManager.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemGlobals.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -37,6 +42,9 @@ namespace DC1PalTaskHelper
 
 	// 이보다 느리면 주인이 서 있는 것으로 봄
 	static constexpr float FollowOwnerMoveThreshold = 10.f;
+
+	// 거점 팰 배회 지점이 거점 밖으로 나오면 다시 뽑는 횟수. 다 실패하면 배회 중심으로
+	static constexpr int32 BaseWanderMaxAttempts = 8;
 
 	// 주인이 향하는 쪽. 서 있으면 보는 쪽
 	static FVector GetOwnerHeading(const AActor& Owner)
@@ -74,6 +82,20 @@ namespace DC1PalTaskHelper
 	static UDC1AbilitySystemComponent* GetASC(const AActor* Actor)
 	{
 		return Cast<UDC1AbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor));
+	}
+
+	static const UDC1PalRegistryData* GetRegistry()
+	{
+		return UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	}
+
+	static float AddSanity(UAbilitySystemComponent& ASC, float InDelta)
+	{
+		const float MaxSanity = ASC.GetNumericAttribute(UDC1PalAttributeSet::GetMaxSanityAttribute());
+		const float NewSanity = FMath::Clamp(ASC.GetNumericAttribute(UDC1PalAttributeSet::GetSanityAttribute()) + InDelta, 0.f, MaxSanity);
+		ASC.SetNumericAttributeBase(UDC1PalAttributeSet::GetSanityAttribute(), NewSanity);
+
+		return NewSanity;
 	}
 
 	static EStateTreeRunStatus ActivateAbility(UDC1AbilitySystemComponent& ASC, const FGameplayTag& AbilityTag, const FGameplayTag& StateTag, const AActor* Owner)
@@ -309,6 +331,30 @@ EStateTreeRunStatus FDC1PalWanderTask::EnterState(FStateTreeExecutionContext& Co
 	if (false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), AIController->GetWanderRadius(), Destination))
 	{
 		return EStateTreeRunStatus::Failed;
+	}
+
+	// 거점 팰은 거점 범위 안에서만 움직인다.
+	// 배회 중심(HomeLocation)은 팰박스 근처 내비메시 점이라 팰박스와 어긋난 만큼 반경이 범위 밖으로 밀린다
+	if (const ADC1PalBoxActor* PalBox = Pal->GetBasePalBox())
+	{
+		if (false == PalBox->IsInBase(Pal->GetActorLocation()))
+		{
+			// 이미 밖이면 배회 대신 중심으로 돌아온다
+			Destination.Location = AIController->GetHomeLocation();
+		}
+		else
+		{
+			int32 Attempt = 0;
+			while (false == PalBox->IsInBase(Destination.Location))
+			{
+				if (++Attempt >= DC1PalTaskHelper::BaseWanderMaxAttempts
+					|| false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), AIController->GetWanderRadius(), Destination))
+				{
+					Destination.Location = AIController->GetHomeLocation();
+					break;
+				}
+			}
+		}
 	}
 
 	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->WalkSpeed;
@@ -829,6 +875,13 @@ EStateTreeRunStatus FDC1PalWorkTask::EnterState(FStateTreeExecutionContext& Cont
 		return EStateTreeRunStatus::Succeeded;
 	}
 
+	// SAN 이 없음
+	const UAbilitySystemComponent* PalASC = DC1PalTaskHelper::GetASC(Pal);
+	if (nullptr == PalASC || PalASC->GetNumericAttribute(UDC1PalAttributeSet::GetSanityAttribute()) <= 0.f)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
 	// 할 일이 없음
 	IDC1WorkTargetInterface* Target = DC1PalTaskHelper::AssignNearestWorkTarget(*Pal, *PalBox);
 	AActor* TargetActor = Cast<AActor>(Target);
@@ -893,6 +946,14 @@ EStateTreeRunStatus FDC1PalWorkTask::Tick(FStateTreeExecutionContext& Context, c
 
 	if (true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
 	{
+		// SAN 감소
+		const UDC1PalRegistryData* Registry = DC1PalTaskHelper::GetRegistry();
+		const float DrainPerSecond = (nullptr != Registry) ? Registry->SanityDrainPerSecond : 0.f;
+		if (DC1PalTaskHelper::AddSanity(*ASC, -DrainPerSecond * DeltaTime) <= 0.f)
+		{
+			return EStateTreeRunStatus::Succeeded;
+		}
+
 		return EStateTreeRunStatus::Running;
 	}
 
@@ -927,4 +988,122 @@ void FDC1PalWorkTask::ExitState(FStateTreeExecutionContext& Context, const FStat
 	}
 
 	Pal->SetWorkTarget(nullptr);
+}
+
+
+EStateTreeRunStatus FDC1PalSleepTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	InstanceData.bSleeping = false;
+	InstanceData.bWakeSent = false;
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	const UDC1PalRegistryData* Registry = DC1PalTaskHelper::GetRegistry();
+	if (nullptr == PalData || nullptr == Registry)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 잠자리
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(Pal->GetWorld());
+	FNavLocation SleepSpot;
+	if (nullptr == NavSystem || false == NavSystem->GetRandomReachablePointInRadius(AIController->GetHomeLocation(), Registry->SleepRadius, SleepSpot))
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->WalkSpeed;
+	Pal->SetOrientToMovement(true);
+
+	AIController->MoveToLocation(SleepSpot.Location, InstanceData.AcceptanceRadius);
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FDC1PalSleepTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(Pal);
+	const UDC1PalRegistryData* Registry = DC1PalTaskHelper::GetRegistry();
+	if (nullptr == ASC || nullptr == Registry)
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	// 잠자리로 가는 중
+	if (false == InstanceData.bSleeping)
+	{
+		if (EPathFollowingStatus::Idle != AIController->GetMoveStatus())
+		{
+			return EStateTreeRunStatus::Running;
+		}
+
+		Pal->SetOrientToMovement(false);
+		ASC->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Sleep);
+		InstanceData.bSleeping = true;
+	}
+
+	if (false == InstanceData.bWakeSent)
+	{
+		const float MaxSanity = ASC->GetNumericAttribute(UDC1PalAttributeSet::GetMaxSanityAttribute());
+		if (DC1PalTaskHelper::AddSanity(*ASC, Registry->SleepSanityHealPerSecond * DeltaTime) < MaxSanity)
+		{
+			return EStateTreeRunStatus::Running;
+		}
+
+		// 가득 참.
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Pal, DC1PalTags::Event_Pal_Wake, FGameplayEventData());
+		InstanceData.bWakeSent = true;
+	}
+
+	// 일어나는 모션이 끝날 때까지
+	return ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_Sleeping)
+		? EStateTreeRunStatus::Running
+		: EStateTreeRunStatus::Succeeded;
+}
+
+void FDC1PalSleepTask::ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	if (false == IsValid(Pal))
+	{
+		return;
+	}
+
+	AIController->StopMovement();
+	Pal->SetOrientToMovement(false);
+
+	if (const UDC1PalData* PalData = Pal->GetPalData())
+	{
+		Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+	}
+
+	if (UDC1AbilitySystemComponent* ASC = DC1PalTaskHelper::GetASC(Pal))
+	{
+		ASC->CancelAbilityByTag(DC1PalTags::Ability_Pal_Sleep);
+	}
+}
+
+
+bool FDC1PalSanityDepletedCondition::TestCondition(FStateTreeExecutionContext& Context) const
+{
+	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	const ADC1PalAIController* AIController = InstanceData.AIController;
+	const UAbilitySystemComponent* ASC = IsValid(AIController) ? DC1PalTaskHelper::GetASC(AIController->GetPawn()) : nullptr;
+	if (nullptr == ASC)
+	{
+		return InstanceData.bInvert;
+	}
+
+	const bool bDepleted = ASC->GetNumericAttribute(UDC1PalAttributeSet::GetSanityAttribute()) <= 0.f;
+	return bDepleted != InstanceData.bInvert;
 }

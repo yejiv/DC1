@@ -43,6 +43,7 @@ void UDC1AnimInstance_Player::NativeUpdateAnimation(float DeltaSeconds)
 	IsGliding = CMC->IsGliding();
 	IsOnGround = CMC->IsMovingOnGround();
 	IsDown = Player->IsDownOrDead();
+	IsRiding = (nullptr != Player->GetRiddenPawn());
 
 	Compute_Direction();
 	Compute_AimPitch(DeltaSeconds);

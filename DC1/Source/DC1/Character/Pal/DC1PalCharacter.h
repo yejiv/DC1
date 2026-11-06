@@ -13,16 +13,19 @@
 #include "DC1PalCharacter.generated.h"
 
 class ADC1PalBoxActor;
+class ADC1PlayerState;
 class UDC1AbilitySystemComponent;
 class UDC1PalAttributeSet;
 class UDC1PalData;
 class UDC1PalRegistryData;
+class UDC1PalRideComponent;
 class UCapsuleComponent;
 class UWidgetComponent;
 struct FInputActionValue;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalSanityChanged, float /*Current*/, float /*Max*/);
 
 /**
  *
@@ -69,8 +72,15 @@ public:
 	// 파티가 이 액터를 슬롯과 대조할 때 쓴다. 야생이면 비어 있다
 	const FGuid&						GetInstanceID() const { return InstanceID; }
 
-	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 서버 전용
+	// 주인(내 팰의 플레이어). 야생은 널. 폰은 탑승·리스폰 때 바뀌므로 PlayerState 를 든다
+	ADC1PlayerState*					GetOwnerPlayerState() const { return OwnerPlayerState; }
+
+	// 거점 팰이면 소속 팰박스. 파트너,야생은 널. 복제된다 (클라 HP바가 거점 팰인지 본다)
 	ADC1PalBoxActor*					GetBasePalBox() const { return BasePalBox.Get(); }
+
+	// SAN 현재값 / 최대값
+	float								GetSanity() const;
+	float								GetMaxSanity() const;
 
 	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> Work GA가 GetCurrentWorkTarget으로 읽음. 서버 전용
 	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget) { WorkTarget = InWorkTarget; }
@@ -87,14 +97,20 @@ public:
 	void								CancelCapture();// BeginCapture 되돌리기
 
 	// InBasePalBox 가 있으면 거점 팰로 나온다
-	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox = nullptr);
+	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox = nullptr);
 #pragma endregion
+
+	// 탑승 상태
+	UDC1PalRideComponent*				GetRideComponent() const { return RideComponent; }
 
 	// 죽었다. 파티가 받아서 자동 회수한다. OnDeath의 맨 끝에서 발화한다
 	FDC1OnPalDied						OnPalDied;
 
 	// 체력이 변했다. 머리 위 HP바가 구독한다
 	FDC1OnPalHealthChanged				OnPalHealthChanged;
+
+	// SAN 이 변했다. 머리 위 SAN 배지가 구독한다
+	FDC1OnPalSanityChanged				OnPalSanityChanged;
 
 protected:
 	virtual void						PostInitializeComponents() override;
@@ -111,13 +127,6 @@ protected:
 
 	// 탑승 중 스킬. InSkillIndex 는 PalData.SkillTags 순서.
 	void								OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex);
-	void								TickRideSkillTurn();
-
-	UFUNCTION(Server, Reliable)
-	void								Server_UseRideSkill(const FGameplayTag& InSkillTag);
-
-	// 스킬을 쓰거나 돌아서는 동안 조작 막음ㅁ
-	bool								IsRideActionLocked() const;
 
 	// PalData.SkillTags 마다 그 스킬 스펙을 준다 (서버)
 	void								GrantSkillAbilities();
@@ -140,6 +149,8 @@ protected:
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
+
+	void								HandleSanityChangedForUI(const struct FOnAttributeChangeData& Data);
 
 	// 레벨 변경 → HP바 갱신
 	void								HandleLevelChangedForUI(const struct FOnAttributeChangeData& Data);
@@ -169,15 +180,8 @@ protected:
 
 	FTimerHandle HealthWidgetVisibilityTimer;
 
-	// 탑승 중 스킬을 쓰기 전 카메라 방향으로 도는 시간
-	UPROPERTY(EditDefaultsOnly, Category = "Pal|Ride", meta = (ClampMin = "0.0"))
-	float RideSkillTurnTime = { 0.15f };
-
-	FTimerHandle RideSkillTurnTimer;
-	FRotator RideSkillTurnFrom = { FRotator::ZeroRotator };
-	FRotator RideSkillTurnTo = { FRotator::ZeroRotator };
-	float RideSkillTurnStartTime = { 0.f };
-	FGameplayTag PendingRideSkillTag;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Ride")
+	TObjectPtr<UDC1PalRideComponent> RideComponent = { nullptr };
 
 	UPROPERTY()
 	TObjectPtr<UDC1PalAttributeSet> PalAttributeSet = { nullptr };
@@ -191,7 +195,11 @@ protected:
 	UPROPERTY(Transient)
 	FGuid InstanceID;
 
-	TWeakObjectPtr<ADC1PalBoxActor> BasePalBox;
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<ADC1PalBoxActor> BasePalBox = { nullptr };
+
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<ADC1PlayerState> OwnerPlayerState = { nullptr };
 
 	TWeakInterfacePtr<IDC1WorkTargetInterface> WorkTarget;
 

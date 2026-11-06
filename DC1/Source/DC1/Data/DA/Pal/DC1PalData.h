@@ -124,6 +124,33 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.0"))
 	float							RideSpeed = { 700.f };
+
+	// 올라타기 시작 / 내리기 끝 위치. 팰 방향 (X 앞, Y 오른쪽). XY 는 탑승 소켓 기준, Z 는 팰 발밑 기준
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
+	TMap<EDC1RideDirection, FVector>	RideMountOffsets = {
+		{ EDC1RideDirection::Front,	FVector(150.f, 0.f, 0.f) },
+		{ EDC1RideDirection::Left,	FVector(0.f, -120.f, 0.f) },
+		{ EDC1RideDirection::Right,	FVector(0.f, 120.f, 0.f) },
+		{ EDC1RideDirection::Rear,	FVector(-150.f, 0.f, 0.f) },
+	};
+
+	// 탄 사람이 트는 몽타주. 옆 ↔ 등 이동 구간은 몽타주의 DC1 Ride Move 노티파이로 찍는다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
+	TMap<EDC1RideDirection, TSoftObjectPtr<UAnimMontage>>	RideMountMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
+	TSoftObjectPtr<UAnimMontage>	RideDismountMontage;
+
+	// 내리는 쪽. 탄 방향과 상관없이 항상 여기로 내린다 (자리는 RideMountOffsets)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
+	EDC1RideDirection				RideDismountDirection = { EDC1RideDirection::Left };
+
+	// 탄 사람 몽타주 길이에 맞춘다. 서버는 이 시간 뒤에 탑승·하차를 끝낸다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.01"))
+	float							RideMountDuration = { 1.2f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.01"))
+	float							RideDismountDuration = { 1.f };
 #pragma endregion
 
 #pragma region Stats

@@ -279,7 +279,10 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 	UDC1BuildDestroySubsystem* DestroySubsystem = GetWorld()->GetSubsystem<UDC1BuildDestroySubsystem>();
 	if (true == ::IsValid(DestroySubsystem))
 	{
-		DestroySubsystem->RequestDestroy(InTarget);
+		APlayerController* PC = GetOwner<APlayerController>();
+		APlayerState* PS = (nullptr != PC) ? PC->PlayerState : nullptr;
+
+		DestroySubsystem->RequestDestroy(InTarget, PS);
 	}
 }
 

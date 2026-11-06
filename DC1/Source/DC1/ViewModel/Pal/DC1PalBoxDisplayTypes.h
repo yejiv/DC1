@@ -108,6 +108,12 @@ struct FDC1PalBoxDetailInfo
 	UPROPERTY()
 	float							WorkSpeed = { 0.f };
 
+	UPROPERTY()
+	float							Sanity = { 0.f };
+
+	UPROPERTY()
+	float							MaxSanity = { 0.f };
+
 	// WorkChart 순서
 	UPROPERTY()
 	TArray<FDC1PalBoxWorkInfo>		Works;

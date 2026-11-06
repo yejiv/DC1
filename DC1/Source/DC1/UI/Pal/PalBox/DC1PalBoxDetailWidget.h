@@ -72,6 +72,12 @@ private:
 	TObjectPtr<UTextBlock>		Text_MaxHealth = { nullptr };
 
 	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_Sanity = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_MaxSanity = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UTextBlock>		Text_Attack = { nullptr };
 
 	UPROPERTY(Transient, meta = (BindWidget))

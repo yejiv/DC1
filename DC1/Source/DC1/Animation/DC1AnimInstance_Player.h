@@ -34,6 +34,9 @@ public:
 	bool				IsOnGround = { false };
 	UPROPERTY(BlueprintReadOnly)
 	bool				IsDown = { false };
+	// 팰 등에 붙어 있는지 (올라타기, 내리기 몽타주 중에도 true)
+	UPROPERTY(BlueprintReadOnly)
+	bool				IsRiding = { false };
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector2D		MoveXY = {};

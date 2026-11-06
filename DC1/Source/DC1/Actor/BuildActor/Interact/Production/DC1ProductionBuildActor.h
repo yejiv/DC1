@@ -41,7 +41,6 @@ public:
 
 	void			CollectProduct(ADC1Character* InCollect);
 
-
 protected:
 	virtual void	ApplyState() override;
 	virtual bool	CanAcceptWorker(const ADC1Character* InWorker) const override;
@@ -61,20 +60,24 @@ protected:
 	UFUNCTION()
 	void			OnRep_StoredCount(int32 OldCount);
 
+	UFUNCTION()
+	void			OnRep_ProductItemID();
 
-private:
-	bool			IsCompleted() const { return BuildState == EDC1BuildState::Completed; }
-	APawn*			GetLocalPawn() const;
-
+	virtual void	OnProductCollected(int32 InCollectedCount) {}
 
 	// 서버 전용
 	void			SetStoredCount(int32 InNewCount);
+	// 서버 RegisterRecipe / 클라 OnRep 수렴점
+	void			ApplyProductItemID();
 
+	static void		OverrideOptions(TArray<FDC1InteractOption>& OutOptions, const TArray<FDC1InteractOption>& InOverrides);
+
+private:
+	APawn*			GetLocalPawn() const;
 	// 서버 SetStoredCount / 클라 OnRep 수렴점
 	void			ApplyStoredCount(int32 InOldCount);
 
 	void			RefreshLocalInRange();
-
 	// 건설 완료 + 생산 아이템 지정 + 작업량 유효
 	bool			CanProduce() const;
 
@@ -87,15 +90,15 @@ private:
 
 protected:
 	// DT_Item의 Item ID 값
-	UPROPERTY(EditDefaultsOnly, Category = "Production")
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_ProductItemID, Category = "Production")
 	FName							ProductItemID = { NAME_None };
 
 	// 아이템 1개당 생산 필요 작업량
 	UPROPERTY(EditdefaultsOnly, Category = "Production", meta = (ClampMin = "0.01"))
 	float							RequiredWorkPerItem = { 100.f };
 
-	UPROPERTY(EditDefaultsOnly, Category = "Production", meta = (ClampMin = "1"))
-	int32							MaxStoredCount = { 1 };
+	UPROPERTY(EditDefaultsOnly, Replicated, Category = "Production", meta = (ClampMin = "1", ClampMax = "9999"))
+	int32							MaxStoredCount = { 9999 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Interact")
 	TArray<FDC1InteractOption>		CollectOptions;
@@ -113,18 +116,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Work", meta = (Categories = "Work"))
 	FGameplayTag					WorkTypeTag;
 
-private:
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };
 
 	UPROPERTY(ReplicatedUsing = OnRep_StoredCount)
 	int32							StoredCount = { 0 };
 
-
-private:
 	// 누적 작업량 - 서버
 	float							CurrentProductionWork = { 0.f };
+	// 1회 제작 시 실제 생산 개수
+	int32							ProductCountPerWork = { 1 };
 
+private:
 	bool							IsLocalInRange = { false };
-
 };

@@ -8,6 +8,7 @@
 
 class UImage;
 class UTextBlock;
+class UWidget;
 class UMaterialInterface;
 class UWidgetAnimation;
 class UDC1StatusBar;
@@ -40,6 +41,10 @@ private:
 
 	void RefreshBar(); // 바 갱신 한 곳. 델리게이트와 초기값 읽기가 공유
 
+	void HandleSanityChanged(float Current, float Max);
+
+	void RefreshSanity(); // SAN 배지 갱신 한 곳
+
 	void ApplyPalInfo(); // 이름 등 변하지 않는 값. InitForPal에서 1회
 
 private:
@@ -64,6 +69,17 @@ private:
 	// 레벨
 	UPROPERTY(Transient, meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>		Text_Level = { nullptr };
+
+	// SAN 배지 (링 + 숫자). 거점 팰만 보인다
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UWidget>			Panel_Sanity = { nullptr };
+
+	// 브러시는 링 머티리얼(Percent 파라미터)이어야 채움이 바뀐다
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UImage>			Image_SanityRing = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock>		Text_Sanity = { nullptr };
 
 	// 연출.
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))

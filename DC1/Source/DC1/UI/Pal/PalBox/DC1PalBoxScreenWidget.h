@@ -73,7 +73,7 @@ private:
 	TSubclassOf<UDC1PalBoxCursorWidget>	CursorWidgetClass;
 
 	UPROPERTY(EditAnywhere, Category = "PalBox")
-	FKey								CloseKey = EKeys::Zero;
+	FKey								CloseKey = EKeys::Escape;
 
 	// 이 값 이상 끌고 떼면 드래그
 	UPROPERTY(EditDefaultsOnly, Category = "PalBox", meta = (ClampMin = "0.0"))

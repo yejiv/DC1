@@ -44,7 +44,10 @@ private:
 
 	// Interact
 	virtual void					OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
-
+	// HandlleBuildCompleted 바인딩
+	virtual void					OnPlaced(const APlayerState* InBuilder) override;
+	// 완성 시 거점 상자 등록 ( BaseRegistryComp )
+	void							HandleBuildCompleted();
 protected:
 	// 상자 종류별 수납 칸 수 ( BP 서브클래스에서 상자 종류에 맞게 설정, 예: 나무 10 / 금속 24 / 제련 금속 40 )
 	UPROPERTY(EditDefaultsOnly, Category = "Chest")

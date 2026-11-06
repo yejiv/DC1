@@ -117,6 +117,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_NearSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Encount);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Work);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Sleep);
 
 #pragma endregion
 
@@ -126,6 +127,8 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Idling);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_HitReacting);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Encounting);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_SuperArmor);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Pal_Sleeping);
 #pragma endregion
 
 #pragma region Anim
@@ -136,6 +139,10 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill2);	// 근접 스킬이 둘인 종의 두 번째 몽타주
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Encount);
+	// 잠. Start → Loop(반복) → End 를 이어 튼다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Sleep_Start);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Sleep_Loop);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Sleep_End);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_LookAround);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Idle_Eat);
@@ -159,6 +166,7 @@ namespace DC1PalTags
 
 #pragma region Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Attack_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Wake);		// SAN 이 다 차서 깨운다
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Pal_Work_Hit);		// 작업 타격 ( EventMagnitude = 배율 )
 #pragma endregion
 

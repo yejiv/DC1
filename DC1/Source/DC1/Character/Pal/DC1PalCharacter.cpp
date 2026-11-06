@@ -13,6 +13,7 @@
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -51,17 +52,9 @@ namespace DC1PalCharacter
 				return nullptr;
 			}
 
-			// 탑승 중이면 팰의 PlayerState 가 주인 것
-			if (false == Pal->IsPlayerControlled())
-			{
-				const ADC1PalAIController* PalController = Cast<ADC1PalAIController>(Pal->GetController());
-				if (nullptr == PalController)
-				{
-					return nullptr;
-				}
-
-				Pawn = Cast<APawn>(PalController->GetFollowTarget());
-			}
+			// 내 팰이면 주인 파티. 탑승 중이든 아니든 같다
+			const ADC1PlayerState* OwnerState = Pal->GetOwnerPlayerState();
+			return (nullptr != OwnerState) ? OwnerState->GetPalPartyComponent() : nullptr;
 		}
 
 		const ADC1PlayerState* PlayerState = (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
@@ -87,6 +80,8 @@ ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	PalAttributeSet = CreateDefaultSubobject<UDC1PalAttributeSet>(TEXT("PalAttributeSet"));
+
+	RideComponent = CreateDefaultSubobject<UDC1PalRideComponent>(TEXT("RideComponent"));
 
 	// 피격 판정.
 	HitboxComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Hitbox"));
@@ -126,16 +121,10 @@ void ADC1PalCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& Out
 
 void ADC1PalCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
 {
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
-
-	for (AActor* Attached : AttachedActors)
+	if (APawn* Rider = RideComponent->GetRider())
 	{
-		if (APawn* Rider = Cast<APawn>(Attached))
-		{
-			Rider->CalcCamera(DeltaTime, OutResult);
-			return;
-		}
+		Rider->CalcCamera(DeltaTime, OutResult);
+		return;
 	}
 
 	Super::CalcCamera(DeltaTime, OutResult);
@@ -265,70 +254,15 @@ void ADC1PalCharacter::GrantSkillAbilities()
 	}
 }
 
-bool ADC1PalCharacter::IsRideActionLocked() const
-{
-	return (true == GetWorldTimerManager().IsTimerActive(RideSkillTurnTimer))
-		|| (true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking));
-}
-
 void ADC1PalCharacter::OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex)
 {
 	// 카메라 방향으로 짧게 돈 뒤 서버에 발동을 요청
-
-	if (true == IsRideActionLocked() || nullptr == PalData || false == PalData->SkillTags.IsValidIndex(InSkillIndex))
-	{
-		return;
-	}
-
-	// 쿨타임 중
-	const FGameplayTag SkillTag = PalData->SkillTags[InSkillIndex];
-	const FGameplayTag CooldownTag = DC1PalTags::FindSkillCooldownTag(SkillTag);
-	if (true == CooldownTag.IsValid() && true == IsValid(AbilitySystemComponent) && true == AbilitySystemComponent->HasMatchingGameplayTag(CooldownTag))
-	{
-		return;
-	}
-
-	PendingRideSkillTag = SkillTag;
-	RideSkillTurnFrom = GetActorRotation();
-	RideSkillTurnTo = FRotator(0.f, GetControlRotation().Yaw, 0.f);
-	RideSkillTurnStartTime = GetWorld()->GetTimeSeconds();
-
-	GetWorldTimerManager().SetTimer(RideSkillTurnTimer, this, &ThisClass::TickRideSkillTurn, 0.01f, true);
-}
-
-void ADC1PalCharacter::TickRideSkillTurn()
-{
-	const float Elapsed = GetWorld()->GetTimeSeconds() - RideSkillTurnStartTime;
-	const float Alpha = (RideSkillTurnTime > 0.f) ? FMath::Clamp(Elapsed / RideSkillTurnTime, 0.f, 1.f) : 1.f;
-
-	// 탄 사람 클라가 돌리면 이동 복제로 서버에 간다
-	SetActorRotation(FQuat::Slerp(RideSkillTurnFrom.Quaternion(), RideSkillTurnTo.Quaternion(), Alpha));
-
-	if (Alpha < 1.f)
-	{
-		return;
-	}
-
-	GetWorldTimerManager().ClearTimer(RideSkillTurnTimer);
-	Server_UseRideSkill(PendingRideSkillTag);
-	PendingRideSkillTag = FGameplayTag::EmptyTag;
-}
-
-void ADC1PalCharacter::Server_UseRideSkill_Implementation(const FGameplayTag& InSkillTag)
-{
-	if (false == IsPlayerControlled() || nullptr == PalData || false == PalData->SkillTags.Contains(InSkillTag)
-		|| false == IsValid(AbilitySystemComponent) || true == AbilitySystemComponent->HasMatchingGameplayTag(DC1PalTags::State_Pal_Attacking))
-	{
-		return;
-	}
-
-	// 쿨타임은 어빌리티의 CheckCooldown 이 막는다
-	AbilitySystemComponent->ActivateAbilityByTag(InSkillTag);
+	RideComponent->RequestRideSkill(InSkillIndex);
 }
 
 void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 {
-	if (true == IsRideActionLocked())
+	if (true == RideComponent->IsRideActionLocked())
 	{
 		return;
 	}
@@ -342,7 +276,7 @@ void ADC1PalCharacter::OnRideMove(const FInputActionValue& Value)
 
 void ADC1PalCharacter::OnRideJumpPressed(const FInputActionValue& Value)
 {
-	if (true == IsRideActionLocked())
+	if (true == RideComponent->IsRideActionLocked())
 	{
 		return;
 	}
@@ -420,6 +354,7 @@ void ADC1PalCharacter::ApplyPalData()
 
 		// HP바용. BindHealthWatcher 가 RemoveAll(this) 를 하므로 반드시 그 뒤에 온다
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChangedForUI);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PalAttributeSet::GetSanityAttribute()).AddUObject(this, &ThisClass::HandleSanityChangedForUI);
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetLevelAttribute()).AddUObject(this, &ThisClass::HandleLevelChangedForUI);
 	}
 
@@ -545,6 +480,21 @@ void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Da
 	OnPalHealthChanged.Broadcast(Data.NewValue, PalAttributeSet->GetMaxHealth());
 }
 
+void ADC1PalCharacter::HandleSanityChangedForUI(const FOnAttributeChangeData& Data)
+{
+	OnPalSanityChanged.Broadcast(Data.NewValue, GetMaxSanity());
+}
+
+float ADC1PalCharacter::GetSanity() const
+{
+	return IsValid(PalAttributeSet) ? PalAttributeSet->GetSanity() : 0.f;
+}
+
+float ADC1PalCharacter::GetMaxSanity() const
+{
+	return IsValid(PalAttributeSet) ? PalAttributeSet->GetMaxSanity() : 0.f;
+}
+
 void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Data)
 {
 	if (false == IsValid(HealthWidgetComponent))
@@ -662,6 +612,7 @@ FDC1PalInstance ADC1PalCharacter::Fold()
 	if (IsValid(PalAttributeSet))
 	{
 		Instance.CurrentHealth = PalAttributeSet->GetHealth();
+		Instance.CurrentSanity = PalAttributeSet->GetSanity();
 		Instance.Level = GetLevel();
 	}
 
@@ -716,7 +667,7 @@ void ADC1PalCharacter::CancelCapture()
 	}
 }
 
-ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PalBoxActor* InBasePalBox)
+ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox)
 {
 	if (nullptr == InWorld || false == InInstance.IsValidPal())
 	{
@@ -755,6 +706,7 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	Pal->SpeciesTag = InInstance.SpeciesTag;
 	Pal->InstanceID = InInstance.PalID;
 	Pal->Team = EDC1Team::Player;
+	Pal->OwnerPlayerState = InOwner;
 
 	// OnPossess 가 이걸 보고 트리를 고르므로 FinishSpawning 전에
 	Pal->BasePalBox = InBasePalBox;
@@ -769,6 +721,11 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	if (IsValid(Pal->PalAttributeSet))
 	{
 		Pal->PalAttributeSet->SetHealth(InInstance.CurrentHealth);
+
+		if (0.f <= InInstance.CurrentSanity)
+		{
+			Pal->PalAttributeSet->SetSanity(InInstance.CurrentSanity);
+		}
 	}
 
 	return Pal;
@@ -828,6 +785,8 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ADC1PalCharacter, Team);
+	DOREPLIFETIME(ADC1PalCharacter, OwnerPlayerState);
+	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const

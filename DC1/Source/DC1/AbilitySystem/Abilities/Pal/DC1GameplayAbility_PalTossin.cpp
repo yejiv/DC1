@@ -21,6 +21,9 @@ UDC1GameplayAbility_PalTossin::UDC1GameplayAbility_PalTossin(const FObjectInitia
 {
 	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_Attacking);
 
+	// 돌진 중엔 맞아도 피격 경직이 안 걸린다 (PalHit 이 이 태그로 막힌다)
+	ActivationOwnedTags.AddTag(DC1PalTags::State_Pal_SuperArmor);
+
 	MontageTag = DC1PalTags::Anim_Pal_Tossin;
 	TriggerEventTag = DC1PalTags::Event_Pal_Attack_Hit;
 

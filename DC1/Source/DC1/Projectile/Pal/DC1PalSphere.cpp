@@ -4,6 +4,8 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "UI/Pal/DC1PalCaptureWidget.h"
+#include "Subsystem/DC1ViewModelSubsystem.h"
+#include "ViewModel/Notification/DC1NotificationViewModel.h"
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -12,6 +14,8 @@
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 
 ADC1PalSphere::ADC1PalSphere()
 	: Super()
@@ -250,7 +254,8 @@ void ADC1PalSphere::Resolve(bool bInSuccess)
 
 	if (true == bInSuccess)
 	{
-		OnPalCaptured.Broadcast(Pal->Fold());
+		CaptureDisplay.CapturedPal = Pal->Fold();
+		OnPalCaptured.Broadcast(CaptureDisplay.CapturedPal);
 
 		SetCaptureDisplay(ShakeIndex, 1.f, true);
 		SetLifeSpan(SuccessHoldDuration);
@@ -271,11 +276,39 @@ void ADC1PalSphere::SetCaptureDisplay(int32 InStage, float InChance, bool bInSuc
 
 	ForceNetUpdate();
 	RefreshCaptureWidget();
+	TryRequestCaptureNotice();
 }
 
 void ADC1PalSphere::OnRep_CaptureDisplay()
 {
 	RefreshCaptureWidget();
+	TryRequestCaptureNotice();
+}
+
+void ADC1PalSphere::TryRequestCaptureNotice()
+{
+	if (true == bCaptureNoticeRequested || false == CaptureDisplay.bSuccess)
+	{
+		return;
+	}
+
+	const APawn* Thrower = GetInstigator();
+	const APlayerController* PC = IsValid(Thrower) ? Thrower->GetController<APlayerController>() : nullptr;
+	const ULocalPlayer* LocalPlayer = (nullptr != PC && true == PC->IsLocalController()) ? PC->GetLocalPlayer() : nullptr;
+	if (nullptr == LocalPlayer)
+	{
+		return;
+	}
+
+	bCaptureNoticeRequested = true;
+
+	if (UDC1ViewModelSubsystem* VMSubsystem = LocalPlayer->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		if (UDC1NotificationViewModel* NotificationViewModel = VMSubsystem->GetViewModel<UDC1NotificationViewModel>())
+		{
+			NotificationViewModel->PushPalCaptureNotice(CaptureDisplay.CapturedPal);
+		}
+	}
 }
 
 void ADC1PalSphere::RefreshCaptureWidget()

@@ -59,6 +59,11 @@ public:
 
 	bool FindItemInSlot(FName InItemID, OUT int32* SlotIndex) const;
 
+	// 모든 슬롯 합계
+	int32	GetItemCount(FName InItemID) const;
+	// 슬롯별 Count 차감, 부족하면 false ( 차감 X )
+	bool	RemoveItemByID(FName InItemID, int32 InCount);
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SwapSlots(int32 InIndex1, int32 InIndex2);
 
@@ -89,7 +94,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetCapacityAndColumns(int32 InTotalCapacity, int32 InColumns);
-
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")

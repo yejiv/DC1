@@ -33,6 +33,7 @@
 
 #include "Subsystem/DC1ViewModelSubsystem.h"
 #include "ViewModel/Player/DC1PlayerStatusViewModel.h"
+#include "ViewModel/Pal/DC1PalRideViewModel.h"
 
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 
@@ -508,7 +509,7 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
-		Party->Server_ToggleDeploy();
+		Party->Server_ToggleDeploy(Party->GetSelectedSlot());
 	}
 }
 
@@ -523,6 +524,36 @@ void ADC1PlayerController::OnRidePressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->Server_ToggleRide();
+	}
+
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		if (UDC1PalRideViewModel* RideViewModel = ViewModelSubsystem->GetViewModel<UDC1PalRideViewModel>())
+		{
+			RideViewModel->NotifyRideHoldCompleted();
+		}
+	}
+}
+
+void ADC1PlayerController::OnRideHoldStarted(const FInputActionValue& Value)
+{
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		if (UDC1PalRideViewModel* RideViewModel = ViewModelSubsystem->GetViewModel<UDC1PalRideViewModel>())
+		{
+			RideViewModel->SetRideHoldPressed(true);
+		}
+	}
+}
+
+void ADC1PlayerController::OnRideHoldReleased(const FInputActionValue& Value)
+{
+	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
+	{
+		if (UDC1PalRideViewModel* RideViewModel = ViewModelSubsystem->GetViewModel<UDC1PalRideViewModel>())
+		{
+			RideViewModel->SetRideHoldPressed(false);
+		}
 	}
 }
 
@@ -941,7 +972,11 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	// Ride
 	if (const UInputAction* RideAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_Ride))
 	{
-		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Started, this, &ThisClass::OnRidePressed);
+		// 누르면 Started, 다 채우면 Triggered, 중간에 떼면 Canceled, 다 채우고 떼면 Completed
+		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Started, this, &ThisClass::OnRideHoldStarted);
+		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Triggered, this, &ThisClass::OnRidePressed);
+		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Canceled, this, &ThisClass::OnRideHoldReleased);
+		EnhancedInputComponent->BindAction(RideAction, ETriggerEvent::Completed, this, &ThisClass::OnRideHoldReleased);
 	}
 
 	// Climb

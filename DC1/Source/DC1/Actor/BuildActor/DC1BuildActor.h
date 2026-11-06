@@ -73,10 +73,15 @@ public:
 	const int32						GetRoofSupportSpan() const { return RoofSupportSpan; }
 	
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
+	const bool						IsCompleted() const { return EDC1BuildState::Completed == BuildState; }
 
 	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
 
 	const bool						GetHasPillar() const { return HasPillar; }
+
+	const bool						GetIsBaseRequired() const { return IsBaseRequired; }
+	APlayerState*					GetDestroyInstigator() const { return DestroyInstigator.Get(); }
+	void							SetDestroyInstigator(APlayerState* InInstigator);
 
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
@@ -104,9 +109,10 @@ public:
 	virtual void					InitBuild(const FDC1BuildActorData& InBuildActorData);
 	virtual void					BuildDestroy();
 
-	// 건물별 추가 설치 조건. 기본은 허용 ( 미리보기 · 서버 검증 양쪽에서 호출 )
-	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const { return true; }
-	virtual void					OnPlaced(const APlayerState* InBuilder) {};
+	// 건물별 추가 설치 조건
+	virtual bool					CanPlaceAt(const APlayerState* InBuilder) const;
+	// 배치 확정(서버)
+	virtual void					OnPlaced(const APlayerState* InBuilder);
 
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
@@ -164,6 +170,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
 	bool											IsBuildableSurface = { false };
 
+	// 거점 범위 안에만 건설이 가능한가 + 거점 파괴 시 같이 파괴
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Check")
+	bool											IsBaseRequired = { false };
+
 	// Preview, Constrction 상태에서 사용할 Materail
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Material")
 	TObjectPtr<UMaterialInterface>					TranslucentMaterial = { nullptr };
@@ -197,6 +207,9 @@ private:
 	float											DestroySequenceDuration = { 0.2f };
 
 private:
+	// Destroy를 요청한 플레이어
+	TWeakObjectPtr<APlayerState>					DestroyInstigator;
+
 	bool											CanBuilding = { false };
 	FTimerHandle									DestroySequenceTimer;
 	bool											IsDestroying = { false };

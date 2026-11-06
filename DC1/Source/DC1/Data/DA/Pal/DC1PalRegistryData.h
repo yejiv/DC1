@@ -315,4 +315,20 @@ public:
 	// 상자 회복. 초당 최대 체력 비율 (기절 포함)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Box", meta = (ClampMin = "0.0"))
 	float											BoxHealRatePerSecond = { 0.01f };
+
+	// 상자·거점 칸 SAN 회복. 초당 양
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Box", meta = (ClampMin = "0.0"))
+	float											BoxSanityHealPerSecond = { 1.f };
+
+	// 거점 팰이 작업하는 동안 초당 SAN 소모
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Sanity", meta = (ClampMin = "0.0"))
+	float											SanityDrainPerSecond = { 0.556f };
+
+	// 잠자는 동안 초당 SAN 회복. 가득 차면 깬다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Sanity", meta = (ClampMin = "0.0"))
+	float											SleepSanityHealPerSecond = { 3.333f };
+
+	// 침대가 없을 때 팰박스 중심에서 이 반경 안 랜덤 지점에서 잔다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Sanity", meta = (ClampMin = "0.0"))
+	float											SleepRadius = { 500.f };
 };

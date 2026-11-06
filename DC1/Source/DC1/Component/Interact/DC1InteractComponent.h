@@ -13,6 +13,7 @@ class ADC1Player;
 class APlayerController;
 class ADC1InteractBuildActor;
 class ADC1ProductionBuildActor;
+class ADC1CraftBuildActor;
 class ADC1PickupItem;
 class UDC1InteractPromptWidget;
 class UDC1UIManagerSubsystem;
@@ -41,6 +42,8 @@ public:
 	void						RequestCancelBuild(ADC1InteractBuildActor* InBuildTarget);
 	void						RequestCollectProduct(ADC1ProductionBuildActor* InProductionTarget);
 	void						RequestPickupItem(ADC1PickupItem* InPickup);
+	void						RequestRegisterRecipe(ADC1CraftBuildActor* InCraftTarget, FName InRecipeID, int32 InCraftCount);
+	void						RequestCancelRecipe(ADC1CraftBuildActor* InCraftTarget);
 
 	// 서버 검증용 - 작업 GA도 사용 ( 클라가 보낸 대상 거리 확인 )
 	bool						IsInInteractRange(const ADC1Player* Player, const AActor* InTarget) const;
@@ -54,6 +57,12 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void						Server_PickupItem(ADC1PickupItem* InPickup);
+
+	UFUNCTION(Server, Reliable)
+	void						Server_RegisterRecipe(ADC1CraftBuildActor* InCraftTarget, FName InRecipeID, int32 InCraftCount);
+
+	UFUNCTION(Server, Reliable)
+	void						Server_CancelRecipe(ADC1CraftBuildActor* InCraftTarget);
 
 	void						HandleScreenStackChanged();
 

@@ -199,6 +199,25 @@ enum class EDC1PreviewType : uint8
 	Player, Pal
 };
 
+// 팰 탑승 단계.
+UENUM(BlueprintType)
+enum class EDC1RideState : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	Mounting = 1 UMETA(DisplayName = "Mounting"),
+	Riding = 2 UMETA(DisplayName = "Riding"),
+	Dismounting = 3 UMETA(DisplayName = "Dismounting"),
+};
+
+UENUM(BlueprintType)
+enum class EDC1RideDirection : uint8
+{
+	Front = 0 UMETA(DisplayName = "Front"),
+	Left = 1 UMETA(DisplayName = "Left"),
+	Right = 2 UMETA(DisplayName = "Right"),
+	Rear = 3 UMETA(DisplayName = "Rear"),
+};
+
 UENUM()
 enum class EDC1CollisionLayer : uint8
 {

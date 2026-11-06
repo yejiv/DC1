@@ -311,6 +311,9 @@ void ADC1Player::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 void ADC1Player::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FixedSpringArmHeight = SpringArm->GetRelativeLocation().Z;
+	CurrentSpringArmHeight = FixedSpringArmHeight;
 }
 
 void ADC1Player::Tick(float DeltaTime)
@@ -318,6 +321,10 @@ void ADC1Player::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, CurrentTargetArmLength, DeltaTime, ZoomInSpeed);
+
+	FVector SpringArmLocation = SpringArm->GetRelativeLocation();
+	SpringArmLocation.Z = FMath::FInterpTo(SpringArmLocation.Z, CurrentSpringArmHeight, DeltaTime, ZoomInSpeed);
+	SpringArm->SetRelativeLocation(SpringArmLocation);
 }
 
 void ADC1Player::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -381,6 +388,9 @@ void ADC1Player::NotifyControllerChanged()
 	Super::NotifyControllerChanged();
 
 	StaminaWidgetComponent->SetVisibility(IsLocallyControlled());
+
+	// 팰에 붙은 채 조종이 풀리면 탑승
+	CurrentSpringArmHeight = (nullptr != GetRiddenPawn() && nullptr == GetController()) ? RideSpringArmHeight : FixedSpringArmHeight;
 }
 
 void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)

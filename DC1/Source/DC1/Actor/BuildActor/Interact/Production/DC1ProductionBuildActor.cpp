@@ -8,13 +8,17 @@
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
+
+#include "Item/Pickup/DC1PickupItem.h"
+
 #include "Component/Interact/DC1InteractComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
-
 #include "Components/SphereComponent.h"
 
 #include "Define/DC1Enums.h"
+#include "Define/DC1Helper.h"
 #include "Tags/Build/DC1GameplayTag_Build.h"
+#include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 {
@@ -58,6 +62,8 @@ void ADC1ProductionBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ThisClass, ProductionProgress);
 	DOREPLIFETIME(ThisClass, StoredCount);
+	DOREPLIFETIME(ThisClass, ProductItemID);
+	DOREPLIFETIME(ThisClass, MaxStoredCount);
 }
 
 void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
@@ -69,21 +75,7 @@ void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& Ou
 		return;
 	}
 
-	for (const FDC1InteractOption& CollectOption : CollectOptions)
-	{
-		FDC1InteractOption* ChangeOption = OutOptions.FindByPredicate([&CollectOption](const FDC1InteractOption& Option)
-			{
-				return Option.Key == CollectOption.Key;
-			});
-		if (nullptr != ChangeOption)
-		{
-			*ChangeOption = CollectOption;
-		}
-		else
-		{
-			OutOptions.Add(CollectOption);
-		}
-	}
+	OverrideOptions(OutOptions, CollectOptions);
 }
 
 bool ADC1ProductionBuildActor::ShouldKeepOptionsWhileHeld() const
@@ -111,15 +103,20 @@ void ADC1ProductionBuildActor::CollectProduct(ADC1Character* InCollect)
 		return;
 	}
 
-	if (true == InventoryComp->AddItem(ProductItemID, StoredCount))
+	// 인벤토리 추가 실패 시 바닥에 드롭
+	if (false == InventoryComp->AddItem(ProductItemID, StoredCount))
 	{
-		SetStoredCount(0);
+		const FVector Forward = GetActorForwardVector();
+		const FVector DropLocation = GetCheckBoxCenter() + Forward * (GetExtentCenterToDirection(Forward, GetActorQuat()) + 50.f);
+
+		ADC1PickupItem::SpawnDrop(GetWorld(), ProductItemID, StoredCount, DropLocation);
 	}
-	else
-	{
-		// TODO - Drop Item
-		// TODO - SetStoredCount(0);
-	}
+
+	const int32 CollectedCount = StoredCount;
+
+	SetStoredCount(0);
+
+	OnProductCollected(CollectedCount);
 }
 
 void ADC1ProductionBuildActor::ApplyState()
@@ -171,7 +168,7 @@ void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 	while (CurrentProductionWork >= RequiredWorkPerItem && NewCount < MaxStoredCount)
 	{
 		CurrentProductionWork -= RequiredWorkPerItem;
-		++NewCount;
+		NewCount += ProductCountPerWork;
 	}
 
 	if (NewCount >= MaxStoredCount)
@@ -271,6 +268,11 @@ void ADC1ProductionBuildActor::OnRep_StoredCount(int32 OldCount)
 	ApplyStoredCount(OldCount);
 }
 
+void ADC1ProductionBuildActor::OnRep_ProductItemID()
+{
+	ApplyProductItemID();
+}
+
 APawn* ADC1ProductionBuildActor::GetLocalPawn() const
 {
 	UGameInstance* GameInstance = GetGameInstance();
@@ -327,6 +329,32 @@ void ADC1ProductionBuildActor::RefreshLocalInRange()
 bool ADC1ProductionBuildActor::CanProduce() const
 {
 	return (true == IsCompleted()) && (false == ProductItemID.IsNone()) && (RequiredWorkPerItem > 0.f);
+}
+
+void ADC1ProductionBuildActor::ApplyProductItemID()
+{
+	OnInteractOptionsChanged.Broadcast();
+	UpdateInfoState();
+	OnProductionChanged.Broadcast();
+}
+
+void ADC1ProductionBuildActor::OverrideOptions(TArray<FDC1InteractOption>& OutOptions, const TArray<FDC1InteractOption>& InOverrides)
+{
+	for (const FDC1InteractOption& OverrideOption : InOverrides)
+	{
+		FDC1InteractOption* ChangeOption = OutOptions.FindByPredicate([&OverrideOption](const FDC1InteractOption& Option)
+			{
+				return Option.Key == OverrideOption.Key;
+			});
+		if (nullptr != ChangeOption)
+		{
+			*ChangeOption = OverrideOption;
+		}
+		else
+		{
+			OutOptions.Add(OverrideOption);
+		}
+	}
 }
 
 void ADC1ProductionBuildActor::OnInfoRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

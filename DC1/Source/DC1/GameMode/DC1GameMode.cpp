@@ -6,6 +6,7 @@
 #include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Character/Player/DC1Player.h"
+#include "GameMode/DC1GameState.h"
 
 #include "Define/DC1Macro.h"
 #include "Save/DC1SaveSubsystem.h"
@@ -15,6 +16,7 @@ ADC1GameMode::ADC1GameMode()
 	PlayerControllerClass = ADC1PlayerController::StaticClass();
 	PlayerStateClass = ADC1PlayerState::StaticClass();
 	DefaultPawnClass = ADC1Player::StaticClass();
+	GameStateClass = ADC1GameState::StaticClass();
 }
 
 void ADC1GameMode::PostLogin(APlayerController* NewPlayer)

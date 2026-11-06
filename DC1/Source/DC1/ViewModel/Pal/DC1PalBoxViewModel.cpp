@@ -2,6 +2,7 @@
 
 #include "ViewModel/Pal/DC1PalBoxViewModel.h"
 
+#include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Data/DA/Pal/DC1PalData.h"
@@ -149,6 +150,10 @@ bool UDC1PalBoxViewModel::GetDetailInfo(EDC1PalContainer InContainer, int32 InSl
 	OutDetailInfo.Attack = Registry.GetAttackPowerFor(PalData, Pal.Level, Pal.TalentAttack) * AttackMultiplier;
 	OutDetailInfo.Defense = Registry.GetDefensePowerFor(PalData, Pal.Level, Pal.TalentDefense) * DefenseMultiplier;
 	OutDetailInfo.WorkSpeed = PalData.WorkSpeedStat * WorkSpeedMultiplier;
+
+	// SAN. -1 은 아직 안 정함 = 가득. 나와서 일하는 거점 팰은 파티가 1초마다 칸에 옮겨 적는다
+	OutDetailInfo.MaxSanity = GetDefault<UDC1PalAttributeSet>()->GetMaxSanity();
+	OutDetailInfo.Sanity = (Pal.CurrentSanity < 0.f) ? OutDetailInfo.MaxSanity : Pal.CurrentSanity;
 
 	// 작업 적성
 	OutDetailInfo.Works.Reset();

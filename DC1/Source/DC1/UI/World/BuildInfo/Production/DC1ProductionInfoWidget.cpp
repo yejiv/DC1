@@ -143,6 +143,14 @@ void UDC1ProductionInfoWidget::SetItemInfo(FName InItemID)
 		return;
 	}
 
+	if (true == InItemID.IsNone())
+	{
+		ItemIcon->SetVisibility(ESlateVisibility::Collapsed);
+		ItemNameText->SetText(FText::GetEmpty());
+
+		return;
+	}
+
 	const FDC1ItemRow* Row = DC1ItemHelper::FindItemRow(InItemID);
 
 	if (nullptr == Row)
