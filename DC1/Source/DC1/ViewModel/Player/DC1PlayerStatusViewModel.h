@@ -8,6 +8,8 @@
 #include "DC1PlayerStatusViewModel.generated.h"
 
 class UAbilitySystemComponent;
+class APlayerState;
+class APawn;
 
 struct FGameplayAttribute;
 struct FOnAttributeChangeData;
@@ -21,6 +23,9 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FOnDownGaugeChanged, float /*Current*/, flo
 
 // 기절 진입 / 해제 ( State.Downed 태그 )
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDownStateChanged, bool /*IsDowned*/);
+
+// 스태미나 출처가 바뀜 (탑승하면 탄 팰, 내리면 플레이어)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnStaminaSourceChanged, bool /*IsRiding*/);
 
 // 레벨과 경험치는 NEXT 표시와 EXP 바가 같이 쓰므로 하나로 묶는다
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnLevelChanged, int32 /*Level*/, int32 /*RemainingExp*/, float /*ExpPercent*/);
@@ -41,6 +46,7 @@ public:
 	FOnShieldChanged				OnShieldChanged;
 	FOnDownGaugeChanged		OnDownGaugeChanged;
 	FOnDownStateChanged		OnDownStateChanged;
+	FOnStaminaSourceChanged	OnStaminaSourceChanged;
 
 	FOnLevelChanged				OnLevelChanged;
 
@@ -67,6 +73,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetStaminaPercent() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	bool IsStaminaFromRide() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetSatiety() const;
@@ -124,8 +133,22 @@ private:
 
 	float GetAttributeValue(const FGameplayAttribute& InAttribute) const;
 
+	UFUNCTION()
+	void HandlePawnSet(APlayerState* InPlayer, APawn* InNewPawn, APawn* InOldPawn);
+
+	// 폰이 자기 ASC 를 가지면(팰) 그것, 아니면 PlayerState 의 ASC
+	UAbilitySystemComponent* ResolveStaminaSource(APawn* InPawn) const;
+
+	void BindStaminaSource(UAbilitySystemComponent* InASC);
+	void UnbindStaminaSource();
+
 private:
 	TWeakObjectPtr<UAbilitySystemComponent>	AbilitySystemComponent = { nullptr };
+
+	// 스태미나를 읽는 ASC
+	TWeakObjectPtr<UAbilitySystemComponent>	StaminaSourceASC = { nullptr };
+
+	TWeakObjectPtr<APlayerState>			BoundPlayerState = { nullptr };
 
 	// State.Downed 태그 이벤트 해제용
 	FDelegateHandle							DownStateHandle;

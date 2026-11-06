@@ -36,8 +36,10 @@ void UDC1StaminaWidget::BindViewModel()
 				return;
 
 			StatusViewModel->OnStaminaChanged.AddUObject(this, &ThisClass::HandleStaminaChanged);
+			StatusViewModel->OnStaminaSourceChanged.AddUObject(this, &ThisClass::HandleStaminaSourceChanged);
 
 			HandleStaminaChanged(StatusViewModel->GetStamina(), StatusViewModel->GetMaxStamina());
+			HandleStaminaSourceChanged(StatusViewModel->IsStaminaFromRide());
 		}
 	}
 }
@@ -48,7 +50,20 @@ void UDC1StaminaWidget::UnbindViewModel()
 		return;
 
 	StatusViewModel->OnStaminaChanged.RemoveAll(this);
+	StatusViewModel->OnStaminaSourceChanged.RemoveAll(this);
 	StatusViewModel.Reset();
+}
+
+void UDC1StaminaWidget::HandleStaminaSourceChanged(bool InIsRiding)
+{
+	// 탑승 중이면 팰 아이콘
+	if (nullptr == Image_Icon)
+	{
+		return;
+	}
+
+	const bool IsBarShown = (nullptr != StaminaBar && ESlateVisibility::Collapsed != StaminaBar->GetVisibility());
+	Image_Icon->SetVisibility((true == InIsRiding && true == IsBarShown) ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 }
 
 void UDC1StaminaWidget::HandleStaminaChanged(float Current, float Max)
@@ -64,4 +79,6 @@ void UDC1StaminaWidget::HandleStaminaChanged(float Current, float Max)
 	{
 		StaminaBar->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
+
+	HandleStaminaSourceChanged(StatusViewModel->IsStaminaFromRide());
 }

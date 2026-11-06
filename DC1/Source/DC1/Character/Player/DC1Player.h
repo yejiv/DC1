@@ -118,6 +118,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
 
+	// 이 기계의 로컬 플레이어가 조종했던 캐릭터인가. 탑승으로 조종이 팰로 넘어가도 스태미나 위젯을 유지한다
+	bool									IsLocalPlayerCharacter = { false };
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UDC1ScreenOffsetWidgetComponent>		InteractPromptWidgetComponent = { nullptr };
 

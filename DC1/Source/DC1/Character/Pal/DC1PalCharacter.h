@@ -124,6 +124,8 @@ protected:
 	void								OnRideMove(const FInputActionValue& Value);
 	void								OnRideJumpPressed(const FInputActionValue& Value);
 	void								OnRideJumpReleased(const FInputActionValue& Value);
+	void								OnRideSprintPressed(const FInputActionValue& Value);
+	void								OnRideSprintReleased(const FInputActionValue& Value);
 
 	// 탑승 중 스킬. InSkillIndex 는 PalData.SkillTags 순서.
 	void								OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex);

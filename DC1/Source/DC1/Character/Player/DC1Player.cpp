@@ -361,10 +361,18 @@ void ADC1Player::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
 
-	StaminaWidgetComponent->SetVisibility(IsLocallyControlled());
+	if (true == IsLocallyControlled())
+	{
+		IsLocalPlayerCharacter = true;
+	}
 
 	// 팰에 붙은 채 조종이 풀리면 탑승
-	CurrentSpringArmHeight = (nullptr != GetRiddenPawn() && nullptr == GetController()) ? RideSpringArmHeight : FixedSpringArmHeight;
+	const bool IsRiding = (nullptr != GetRiddenPawn() && nullptr == GetController());
+
+	// 탑승 중에도 게이지 보임. 값은 VM 이 탄 팰의 스태미나
+	StaminaWidgetComponent->SetVisibility(true == IsLocallyControlled() || (true == IsLocalPlayerCharacter && true == IsRiding));
+
+	CurrentSpringArmHeight = (true == IsRiding) ? RideSpringArmHeight : FixedSpringArmHeight;
 }
 
 void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)

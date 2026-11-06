@@ -81,17 +81,13 @@ public:
 #pragma endregion
 
 #pragma region Locomotion
-	// 추격 속도. AnimInstance의 NormalizedSpeed 분모
+	// 달리기 (원작 RunSpeed). 추격·도주·추종·작업 이동·탑승 평소 속도.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RunSpeed = { 400.f };
 
-	// 배회 속도
+	// 걷기 (원작 WalkSpeed). 배회·잠자리 이동
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							WalkSpeed = { 150.f };
-
-	// 도망 속도. 플레이어보다 조금 느려야 잡힘
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
-	float							FleeSpeed = { 500.f };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Locomotion")
 	float							RotationRateYaw = { 360.f };
@@ -105,8 +101,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))
 	FName							RideSocketName = { TEXT("RideMarker") };
 
+	// 탑승 질주 (원작 RideSprintSpeed). 질주 키를 누르는 동안. 평소 탑승 속도는 RunSpeed
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.0"))
-	float							RideSpeed = { 700.f };
+	float							RideSprintSpeed = { 700.f };
+
+	// 최대 스태미나 (원작 Stamina). 탑승 질주가 쓴다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable", ClampMin = "0.0"))
+	float							Stamina = { 100.f };
 
 	// 올라타기 시작 / 내리기 끝 위치. 팰 방향 (X 앞, Y 오른쪽). XY 는 탑승 소켓 기준, Z 는 팰 발밑 기준
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ride", meta = (EditCondition = "bRideable"))

@@ -251,7 +251,7 @@ void UDC1PalBaseComponent::HealBasePals()
 			bChanged = true;
 		}
 
-		// 나와서 일하는 거점 팰은 액터가 SAN 을 쓴다(작업 소모·잠 회복). 칸에는 옮겨 적기만 해서 팰박스 상세가 실시간 값을 본다
+		// 나와서 일하는 거점 팰은 액터가 SAN 사용
 		const TObjectPtr<ADC1PalCharacter>* Spawned = BaseSpawnedPals.FindByPredicate([&Pal](const ADC1PalCharacter* Other)
 			{
 				return (::IsValid(Other) && Other->GetInstanceID() == Pal.PalID);
@@ -269,7 +269,6 @@ void UDC1PalBaseComponent::HealBasePals()
 			continue;
 		}
 
-		// 칸에만 있는 팰(기절해서 안 나온 팰). -1 = 아직 안 정함(가득)이라 건너뛴다
 		if (0.f <= Pal.CurrentSanity && Pal.CurrentSanity < MaxSanity && Registry->BoxSanityHealPerSecond > 0.f)
 		{
 			Pal.CurrentSanity = FMath::Min(MaxSanity, Pal.CurrentSanity + (Registry->BoxSanityHealPerSecond * BaseHealInterval));

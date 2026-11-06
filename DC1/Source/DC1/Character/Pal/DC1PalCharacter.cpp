@@ -14,6 +14,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Component/Pal/DC1PalRideComponent.h"
+#include "Component/Pal/DC1PalMovementComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -80,7 +81,7 @@ namespace DC1PalCharacter
 }
 
 ADC1PalCharacter::ADC1PalCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UDC1PalMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
@@ -199,10 +200,22 @@ void ADC1PalCharacter::NotifyControllerChanged()
 
 	SetOrientToMovement(IsRidden);
 
+	// 탑승 중 평소 속도도 달리기 속도. 질주는 키를 누르는 동안만(OnRideSprint)
 	UCharacterMovementComponent* Movement = GetCharacterMovement();
 	if (nullptr != Movement && nullptr != PalData)
 	{
-		Movement->MaxWalkSpeed = IsRidden ? PalData->RideSpeed : PalData->RunSpeed;
+		Movement->MaxWalkSpeed = PalData->RunSpeed;
+	}
+
+	// 타고 내릴 때 질주가 남지 않게 (어빌리티가 끝나며 CMC 플래그도 끈다)
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->CancelAbilityByTag(DC1PalTags::Ability_Pal_RideSprint);
+	}
+
+	if (UDC1PalMovementComponent* PalMovement = Cast<UDC1PalMovementComponent>(Movement))
+	{
+		PalMovement->SetRideSprint(false);
 	}
 }
 
@@ -226,6 +239,12 @@ void ADC1PalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnRideJumpPressed);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::OnRideJumpReleased);
+	}
+
+	if (const UInputAction* SprintAction = InputData->FindInputActionbyTag(DC1PalTags::Input_Ride_Sprint))
+	{
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ThisClass::OnRideSprintPressed);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::OnRideSprintReleased);
 	}
 
 	const FGameplayTag SkillInputTags[] = { DC1PalTags::Input_Ride_Skill1, DC1PalTags::Input_Ride_Skill2, DC1PalTags::Input_Ride_Skill3 };
@@ -296,6 +315,22 @@ void ADC1PalCharacter::OnRideJumpReleased(const FInputActionValue& Value)
 	StopJumping();
 }
 
+void ADC1PalCharacter::OnRideSprintPressed(const FInputActionValue& Value)
+{
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_RideSprint);
+	}
+}
+
+void ADC1PalCharacter::OnRideSprintReleased(const FInputActionValue& Value)
+{
+	if (IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->CancelAbilityByTag(DC1PalTags::Ability_Pal_RideSprint);
+	}
+}
+
 void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 {
 	if (false == IsValid(HealthWidgetComponent))
@@ -350,6 +385,11 @@ void ADC1PalCharacter::ApplyPalData()
 		Movement->RotationRate = FRotator(0.f, PalData->RotationRateYaw, 0.f);
 	}
 
+	if (UDC1PalMovementComponent* PalMovement = Cast<UDC1PalMovementComponent>(GetCharacterMovement()))
+	{
+		PalMovement->SetRideSprintSpeed(PalData->RideSprintSpeed);
+	}
+
 	if (IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
@@ -398,6 +438,8 @@ void ADC1PalCharacter::ApplyPalData()
 		PalAttributeSet->InitAttackPower(FinalAttack);
 		PalAttributeSet->InitDefensePower(FinalDefense);
 		PalAttributeSet->InitWorkSpeed(PalData->WorkSpeedStat);
+		PalAttributeSet->InitMaxStamina(PalData->Stamina);
+		PalAttributeSet->InitStamina(PalData->Stamina);
 	}
 
 	if (EDC1PalGender::None == PalInstance.Gender)

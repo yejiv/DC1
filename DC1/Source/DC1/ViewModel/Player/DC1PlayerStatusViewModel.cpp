@@ -4,6 +4,8 @@
 #include "ViewModel/Player/DC1PlayerStatusViewModel.h"
 
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "GameFramework/Pawn.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -25,8 +27,6 @@ void UDC1PlayerStatusViewModel::BindSource(ADC1PlayerState* InPlayerState)
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetHealthAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleHealthChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxHealthAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleMaxHealthChanged);
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleStaminaChanged);
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleMaxStaminaChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetSatietyAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleSatietyChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxSatietyAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleSatietyChanged);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetShieldAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleShieldChanged);
@@ -40,6 +40,11 @@ void UDC1PlayerStatusViewModel::BindSource(ADC1PlayerState* InPlayerState)
 	DownStateHandle = AbilitySystemComponent->RegisterGameplayTagEvent(DC1StateTags::State_Downed, EGameplayTagEventType::NewOrRemoved)
 		.AddUObject(this, &UDC1PlayerStatusViewModel::HandleDownStateChanged);
 
+	// 스태미나는 조종 중인 폰을 따라감
+	BoundPlayerState = InPlayerState;
+	InPlayerState->OnPawnSet.AddDynamic(this, &UDC1PlayerStatusViewModel::HandlePawnSet);
+	BindStaminaSource(ResolveStaminaSource(InPlayerState->GetPawn()));
+
 	BroadcastAll();
 }
 
@@ -50,8 +55,6 @@ void UDC1PlayerStatusViewModel::ClearSource()
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetHealthAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxHealthAttribute()).RemoveAll(this);
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).RemoveAll(this);
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetSatietyAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxSatietyAttribute()).RemoveAll(this);
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetShieldAttribute()).RemoveAll(this);
@@ -65,6 +68,14 @@ void UDC1PlayerStatusViewModel::ClearSource()
 	{
 		AbilitySystemComponent->UnregisterGameplayTagEvent(DownStateHandle, DC1StateTags::State_Downed, EGameplayTagEventType::NewOrRemoved);
 		DownStateHandle.Reset();
+	}
+
+	UnbindStaminaSource();
+
+	if (true == BoundPlayerState.IsValid())
+	{
+		BoundPlayerState->OnPawnSet.RemoveDynamic(this, &UDC1PlayerStatusViewModel::HandlePawnSet);
+		BoundPlayerState.Reset();
 	}
 
 	AbilitySystemComponent.Reset();
@@ -93,12 +104,27 @@ float UDC1PlayerStatusViewModel::GetHealthPercent() const
 
 float UDC1PlayerStatusViewModel::GetStamina() const
 {
+	if (true == StaminaSourceASC.IsValid())
+	{
+		return StaminaSourceASC->GetNumericAttribute(UDC1PlayerSet::GetStaminaAttribute());
+	}
+
 	return GetAttributeValue(UDC1PlayerSet::GetStaminaAttribute());
 }
 
 float UDC1PlayerStatusViewModel::GetMaxStamina() const
 {
+	if (true == StaminaSourceASC.IsValid())
+	{
+		return StaminaSourceASC->GetNumericAttribute(UDC1PlayerSet::GetMaxStaminaAttribute());
+	}
+
 	return GetAttributeValue(UDC1PlayerSet::GetMaxStaminaAttribute());
+}
+
+bool UDC1PlayerStatusViewModel::IsStaminaFromRide() const
+{
+	return (true == StaminaSourceASC.IsValid() && StaminaSourceASC != AbilitySystemComponent);
 }
 
 float UDC1PlayerStatusViewModel::GetStaminaPercent() const
@@ -241,7 +267,55 @@ void UDC1PlayerStatusViewModel::BroadcastAll()
 	OnShieldChanged.Broadcast(GetShield(), GetMaxShield());
 	OnDownGaugeChanged.Broadcast(GetDownGauge(), GetMaxDownGauge());
 	OnDownStateChanged.Broadcast(IsDowned());
+	OnStaminaSourceChanged.Broadcast(IsStaminaFromRide());
 	BroadcastLevel();
+}
+
+void UDC1PlayerStatusViewModel::HandlePawnSet(APlayerState* InPlayer, APawn* InNewPawn, APawn* InOldPawn)
+{
+	UAbilitySystemComponent* NewSource = ResolveStaminaSource(InNewPawn);
+	if (NewSource == StaminaSourceASC.Get())
+	{
+		return;
+	}
+
+	BindStaminaSource(NewSource);
+
+	OnStaminaSourceChanged.Broadcast(IsStaminaFromRide());
+	OnStaminaChanged.Broadcast(GetStamina(), GetMaxStamina());
+}
+
+UAbilitySystemComponent* UDC1PlayerStatusViewModel::ResolveStaminaSource(APawn* InPawn) const
+{
+	UAbilitySystemComponent* PawnASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InPawn);
+	return (nullptr != PawnASC) ? PawnASC : AbilitySystemComponent.Get();
+}
+
+void UDC1PlayerStatusViewModel::BindStaminaSource(UAbilitySystemComponent* InASC)
+{
+	UnbindStaminaSource();
+
+	if (nullptr == InASC)
+	{
+		return;
+	}
+
+	StaminaSourceASC = InASC;
+	InASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleStaminaChanged);
+	InASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).AddUObject(this, &UDC1PlayerStatusViewModel::HandleMaxStaminaChanged);
+}
+
+void UDC1PlayerStatusViewModel::UnbindStaminaSource()
+{
+	if (false == StaminaSourceASC.IsValid())
+	{
+		StaminaSourceASC.Reset();
+		return;
+	}
+
+	StaminaSourceASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetStaminaAttribute()).RemoveAll(this);
+	StaminaSourceASC->GetGameplayAttributeValueChangeDelegate(UDC1PlayerSet::GetMaxStaminaAttribute()).RemoveAll(this);
+	StaminaSourceASC.Reset();
 }
 
 int32 UDC1PlayerStatusViewModel::GetExpToNextLevel() const
