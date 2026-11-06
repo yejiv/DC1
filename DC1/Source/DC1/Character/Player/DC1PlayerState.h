@@ -13,6 +13,7 @@ class UDC1TechTreeComponent;
 class UDC1PlayerInventoryComponent;
 class UDC1ValuableInventoryComponent;
 class UDC1PalPartyComponent;
+class UDC1PalSphereComponent;
 class UDC1EquipComponent;
 class UDC1AppearanceComponent;
 class UDC1TeleportComponent;
@@ -37,6 +38,7 @@ public:
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
+	UDC1PalSphereComponent*				GetPalSphereComponent() const { return PalSphereComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
@@ -70,6 +72,10 @@ private:
 	// 잡은 팰 목록. 아이템 슬롯과 구조가 달라 따로 둔다
 	UPROPERTY(VisibleAnywhere, Category = "Pal")
 	TObjectPtr<UDC1PalPartyComponent> PalPartyComponent = { nullptr };
+
+	// 던질 팰스피어 등급 목록과 선택
+	UPROPERTY(VisibleAnywhere, Category = "Pal")
+	TObjectPtr<UDC1PalSphereComponent> PalSphereComponent = { nullptr };
 
 	// 장착 정보는 폰보다 오래 살아야 한다. 죽어서 드랍할 때 무엇을 들고 있었는지 읽어야 하기 때문
 	UPROPERTY(VisibleAnywhere, Category = "Equip")

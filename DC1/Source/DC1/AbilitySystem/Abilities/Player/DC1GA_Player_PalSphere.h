@@ -32,6 +32,8 @@ public:
 	void OnMontageAborted();
 
 private:
+	// 던질 스피어가 인벤토리에 1개 이상 있어야 한다
+	virtual bool	CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void	ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void	EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
@@ -42,10 +44,6 @@ public:
 	FGameplayTag	ThrowMontageTag;
 
 public:
-	// 던질 스피어. 등급이 늘면 BP를 바꿔 끼운다
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
-	TSubclassOf<ADC1PalSphere>	SphereClass;
-
 	// 손에서 떠나는 지점. 소켓이 없으면 눈높이 앞쪽에서 나간다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
 	FName						ThrowSocketName;
@@ -53,4 +51,8 @@ public:
 	// 소켓이 없을 때만 쓰는 폴백 오프셋
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere", meta = (ClampMin = "0.0"))
 	float						ThrowForwardOffset = { 80.f };
+
+private:
+	// 발동할 때 정한 스피어. 조준 중에 등급을 바꿔도 이번 투척은 그대로
+	FName						ThrowItemID;
 };

@@ -66,7 +66,7 @@ protected:
 	float					ComputeCaptureChance(float InHealthRatio, float InCaptureRate, float InPalLevel) const;	//성공확률
 
 	void					BeginShaking();	//판정 시작
-	void					OnShake(); //단계 판정
+	void					OnShake();		//단계 판정
 	void					Resolve(bool bInSuccess);	//판정 후 정리
 
 	void					SetCaptureDisplay(int32 InStage, float InChance, bool bInSuccess);

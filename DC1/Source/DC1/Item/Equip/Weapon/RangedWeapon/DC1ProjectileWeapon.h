@@ -40,6 +40,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
 	TSubclassOf<ADC1Projectile>		ProjectileClass;
 
+	// 쏠 때 인벤토리에서 하나 빼는 탄 ( DT_ItemData 의 ItemID ). 비우면 탄 없이 쏜다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName									AmmoItemID;
+
 private:
 	FVector				GetAimDirection();
 };

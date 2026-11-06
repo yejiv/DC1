@@ -11,6 +11,7 @@
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/PalSphere/DC1PalSphereComponent.h"
 #include "Component/Teleport/DC1TeleportComponent.h"
 #include "Component/Player/DC1PlayerStatComponent.h"
 
@@ -39,6 +40,8 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 
 	PalPartyComponent = CreateDefaultSubobject<UDC1PalPartyComponent>(TEXT("PalPartyComponent"));
 	PalPartyComponent->SetIsReplicated(true);
+
+	PalSphereComponent = CreateDefaultSubobject<UDC1PalSphereComponent>(TEXT("PalSphereComponent"));
 
 	EquipComponent = CreateDefaultSubobject<UDC1EquipComponent>(TEXT("EquipComponent"));
 	EquipComponent->SetIsReplicated(true);

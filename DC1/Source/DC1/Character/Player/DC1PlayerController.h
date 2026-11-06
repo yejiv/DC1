@@ -86,6 +86,9 @@ private:
 	void OnPalSlotPrevPressed(const FInputActionValue& Value);
 	void OnPalSlotNextPressed(const FInputActionValue& Value);
 
+	// 스피어 등급 바꾸기 (2)
+	void OnSphereNextPressed(const FInputActionValue& Value);
+
 	// 팰 탑승/하차 토글. F 를 끝까지 눌렀을 때 (IA_Default_Ride 의 Hold 트리거)
 	void OnRidePressed(const FInputActionValue& Value);
 	// F 누름 / 뗌. 라이딩 HUD 연출용

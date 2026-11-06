@@ -20,6 +20,7 @@
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/PalSphere/DC1PalSphereComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
@@ -472,6 +473,15 @@ void ADC1PlayerController::ChangeWeapon(const FInputActionValue& Value)
 
 void ADC1PlayerController::OnThrowPressed(const FInputActionValue& Value)
 {
+	// 고른 등급을 발동보다 먼저 보낸다 ( ASC 와 같은 PlayerState 라 순서대로 도착 )
+	if (const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>())
+	{
+		if (UDC1PalSphereComponent* SphereComp = DC1PlayerState->GetPalSphereComponent())
+		{
+			SphereComp->Server_SetThrowSphere(SphereComp->GetSelectedSphereItemID());
+		}
+	}
+
 	PressAbilityInput(DC1PlayerTags::Ability_Player_PalSphere);
 }
 
@@ -563,6 +573,20 @@ void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->CycleSlot(1);
+	}
+}
+
+void ADC1PlayerController::OnSphereNextPressed(const FInputActionValue& Value)
+{
+	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
+	if (nullptr == DC1PlayerState)
+	{
+		return;
+	}
+
+	if (UDC1PalSphereComponent* SphereComp = DC1PlayerState->GetPalSphereComponent())
+	{
+		SphereComp->CycleSphere();
 	}
 }
 
@@ -916,6 +940,12 @@ void ADC1PlayerController::SetUpDefaultInput(UEnhancedInputComponent* EnhancedIn
 	if (const UInputAction* PalSlotNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_PalSlotNext))
 	{
 		EnhancedInputComponent->BindAction(PalSlotNextAction, ETriggerEvent::Started, this, &ThisClass::OnPalSlotNextPressed);
+	}
+
+	// Sphere
+	if (const UInputAction* SphereNextAction = InputData->FindInputActionbyTag(DC1InputTags::Input_Default_SphereNext))
+	{
+		EnhancedInputComponent->BindAction(SphereNextAction, ETriggerEvent::Started, this, &ThisClass::OnSphereNextPressed);
 	}
 
 	// Ride
