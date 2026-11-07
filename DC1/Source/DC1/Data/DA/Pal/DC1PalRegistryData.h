@@ -331,4 +331,8 @@ public:
 	// 침대가 없을 때 팰박스 중심에서 이 반경 안 랜덤 지점에서 잔다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Sanity", meta = (ClampMin = "0.0"))
 	float											SleepRadius = { 500.f };
+
+	// 거점 정보 HUD 에서 이 SAN 미만이면 "지쳐 보인다" 문구. 원작 거점 팰이 땡땡이를 시작하는 값
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Sanity", meta = (ClampMin = "0.0"))
+	float											TiredSanityThreshold = { 65.f };
 };

@@ -14,6 +14,7 @@
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
@@ -35,6 +36,13 @@ void UDC1PalBaseComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, BasePals);
+	DOREPLIFETIME(ThisClass, BasePalActivities);
+}
+
+EDC1BasePalActivity UDC1PalBaseComponent::FindActivity(const FGuid& InPalID) const
+{
+	const FDC1BasePalActivity* Found = BasePalActivities.FindByPredicate([&InPalID](const FDC1BasePalActivity& Other) { return Other.PalID == InPalID; });
+	return (nullptr != Found) ? Found->Activity : EDC1BasePalActivity::None;
 }
 
 void UDC1PalBaseComponent::InitBase()
@@ -225,8 +233,51 @@ void UDC1PalBaseComponent::OnRep_BasePals()
 	NotifyBaseChanged();
 }
 
+void UDC1PalBaseComponent::OnRep_BasePalActivities()
+{
+	NotifyBaseChanged();
+}
+
+void UDC1PalBaseComponent::RefreshActivities()
+{
+	TArray<FDC1BasePalActivity> NewActivities;
+
+	for (const ADC1PalCharacter* Spawned : BaseSpawnedPals)
+	{
+		const UAbilitySystemComponent* ASC = ::IsValid(Spawned) ? Spawned->GetAbilitySystemComponent() : nullptr;
+		if (nullptr == ASC)
+		{
+			continue;
+		}
+
+		FDC1BasePalActivity& Entry = NewActivities.AddDefaulted_GetRef();
+		Entry.PalID = Spawned->GetInstanceID();
+
+		if (true == ASC->HasMatchingGameplayTag(DC1PalTags::State_Pal_Sleeping))
+		{
+			Entry.Activity = EDC1BasePalActivity::Sleeping;
+		}
+		else if (true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
+		{
+			Entry.Activity = EDC1BasePalActivity::Working;
+		}
+	}
+
+	if (NewActivities == BasePalActivities)
+	{
+		return;
+	}
+
+	BasePalActivities = MoveTemp(NewActivities);
+
+	// 서버에선 OnRep 이 안 온다
+	NotifyBaseChanged();
+}
+
 void UDC1PalBaseComponent::HealBasePals()
 {
+	RefreshActivities();
+
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 	if (false == ::IsValid(Registry))
 	{
