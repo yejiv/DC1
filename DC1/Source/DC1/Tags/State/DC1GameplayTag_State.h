@@ -26,6 +26,9 @@ namespace DC1StateTags
 
 	// 기절 ( HP 0 → 사망 전 단계, 이동만 가능 )
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Downed);
+
+	// 팀원에게 치료받는 중 ( 기절 게이지 자연감소 정지 ). State.Downed 하위로 두지 않는다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_BeingRevived);
 #pragma endregion
 
 #pragma region Common

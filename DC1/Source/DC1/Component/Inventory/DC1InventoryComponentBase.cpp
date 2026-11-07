@@ -112,7 +112,7 @@ int32 UDC1InventoryComponentBase::GetItemCount(FName InItemID) const
 
 bool UDC1InventoryComponentBase::RemoveItemByID(FName InItemID, int32 InCount)
 {
-	if (GetOwnerRole() != ROLE_Authority || InItemID == NAME_None || InCount <= 0)
+	if (GetOwnerRole() != ROLE_Authority || true == InItemID.IsNone() || InCount <= 0)
 	{
 		return false;
 	}

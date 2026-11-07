@@ -81,6 +81,12 @@ void UDC1PlayerStatusViewModel::ClearSource()
 	AbilitySystemComponent.Reset();
 }
 
+void UDC1PlayerStatusViewModel::SetGiveUpHoldRatio(float Ratio)
+{
+	GiveUpHoldRatio = Ratio;
+	OnGiveUpHoldRatioChanged.Broadcast(GiveUpHoldRatio);
+}
+
 float UDC1PlayerStatusViewModel::GetHealth() const
 {
 	return GetAttributeValue(UDC1PlayerSet::GetHealthAttribute());

@@ -14,6 +14,8 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Work, "Ability.Player.Work");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Downed, "Ability.Player.Downed");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Revive, "Ability.Player.Revive");
 #pragma endregion
 
 #pragma region Event

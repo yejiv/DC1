@@ -85,4 +85,5 @@ namespace DC1BuildTags
 namespace DC1InteractTags
 {
 	UE_DEFINE_GAMEPLAY_TAG(Interact_Work, "Interact.Work");
+	UE_DEFINE_GAMEPLAY_TAG(Interact_Revive, "Interact.Revive");
 }

@@ -24,6 +24,7 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Working, "State.Working");
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Downed, "State.Downed");
+	UE_DEFINE_GAMEPLAY_TAG(State_BeingRevived, "State.BeingRevived");
 #pragma endregion
 
 #pragma region Common

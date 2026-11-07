@@ -1,4 +1,4 @@
-#include "Define/DC1ItemHelper.h"
+﻿#include "Define/DC1ItemHelper.h"
 #include "Define/DC1Helper.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -65,6 +65,31 @@ bool DC1ItemHelper::IsValuableItem(FName InItemID)
 const FDC1EquipItemRow* DC1ItemHelper::FindEquipItemRow(FName InItemID)
 {
 	return FindRowByItemID<FDC1EquipItemRow>(DC1DataTableTags::DataTable_EquipItem, InItemID);
+}
+
+#pragma endregion
+
+#pragma region Recipe Helper
+
+bool DC1RecipeHelper::FindRecipeRow(FName InRecipeID, FDC1ItemRecipeRow& OutRecipe)
+{
+	TArray<FDC1ItemRecipeRow> RecipeRows;
+	if (false == DC1DataTableHelper::GetAllRows(DC1DataTableTags::DataTable_ItemRecipe, RecipeRows))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DC1RecipeHelper :: Cant Find RecipeRows from DataTable_ItemRecipe"));
+		return false;
+	}
+
+		for (FDC1ItemRecipeRow& Row : RecipeRows)
+	{
+		if (true == Row.RecipeID.IsEqual(InRecipeID))
+		{
+			OutRecipe = Row;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 #pragma endregion

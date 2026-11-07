@@ -12,6 +12,8 @@
 
 #include "ViewModel/Build/DC1BuildViewModel.h"
 
+#include "Define/DC1CraftHelper.h"
+
 
 void UDC1BuildRowWidget::InitRow(const FGameplayTag& InRowTag, const FText& InRowName)
 {
@@ -78,4 +80,17 @@ bool UDC1BuildRowWidget::VisibleSlot(const FGameplayTag& InSlotTag)
 	}
 
 	return true;
+}
+
+void UDC1BuildRowWidget::RefreshCostState(const ADC1PlayerState* InPlayerState)
+{
+	for (const TPair<FGameplayTag, TObjectPtr<UDC1BuildButton>>& Pair : Slots)
+	{
+		if (false == ::IsValid(Pair.Value))
+		{
+			continue;
+		}
+
+		Pair.Value->SetState(DC1CraftHelper::HasCraftCosts(InPlayerState, Pair.Value->GetBuildCost()));
+	}
 }

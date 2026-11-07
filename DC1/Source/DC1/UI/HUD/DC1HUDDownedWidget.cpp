@@ -18,11 +18,12 @@ void UDC1HUDDownedWidget::NativeConstruct()
 	SetVisibility(ESlateVisibility::Collapsed);
 	HandleDownedStateChanged(StatusViewModel->IsDowned());
 
-	GiveUpOption.InputType = EDC1InteractInputType::Press;
+	GiveUpOption.InputType = EDC1InteractInputType::HoldConfirm;
 	GiveUpOption.Key = EDC1InteractKey::F;
-	GiveUpOption.DisplayText = FText::FromString("포기");
+	GiveUpOption.DisplayText = FText::FromString(TEXT("포기"));
 	
 	GiveUpPrompt->SetOption(GiveUpOption);
+	GiveUpPrompt->SetFillRatio(0.f);
 }
 
 void UDC1HUDDownedWidget::NativeDestruct()
@@ -42,6 +43,7 @@ void UDC1HUDDownedWidget::BindViewModel()
 
 		StatusViewModel->OnDownGaugeChanged.AddUObject(this, &ThisClass::HandleDownedGaugeChanged);
 		StatusViewModel->OnDownStateChanged.AddUObject(this, &ThisClass::HandleDownedStateChanged);
+		StatusViewModel->OnGiveUpHoldRatioChanged.AddUObject(this, &ThisClass::HandleGiveUpHoldRatioChanged);
 
 		HandleDownedGaugeChanged(StatusViewModel->GetDownGauge(), StatusViewModel->GetMaxDownGauge());
 	}
@@ -54,6 +56,7 @@ void UDC1HUDDownedWidget::UnbindViewModel()
 
 	StatusViewModel->OnDownGaugeChanged.RemoveAll(this);
 	StatusViewModel->OnDownStateChanged.RemoveAll(this);
+	StatusViewModel->OnGiveUpHoldRatioChanged.RemoveAll(this);
 	StatusViewModel.Reset();
 }
 
@@ -65,4 +68,9 @@ void UDC1HUDDownedWidget::HandleDownedStateChanged(bool InIsDowned)
 void UDC1HUDDownedWidget::HandleDownedGaugeChanged(float Current, float Max)
 {
 	DownedGaugeBar->SetPercent(StatusViewModel->GetDownGaugePercent());
+}
+
+void UDC1HUDDownedWidget::HandleGiveUpHoldRatioChanged(float Ratio)
+{
+	GiveUpPrompt->SetFillRatio(Ratio);
 }

@@ -103,6 +103,21 @@ ADC1Player::ADC1Player(const FObjectInitializer& ObjectInitializer)
 	InteractPromptWidgetComponent->SetPivot({ 0.5f, 0.5f });
 	InteractPromptWidgetComponent->SetVisibility(false);
 	InteractPromptWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Interact Collider
+	InteractCollider = CreateDefaultSubobject<USphereComponent>("InteractCollider");
+	InteractCollider->SetupAttachment(RootComponent);
+	InteractCollider->SetCollisionProfileName(DC1CollisionProfile::Interaction);
+	InteractCollider->SetGenerateOverlapEvents(true);
+	InteractCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Interact Option
+	FDC1InteractOption InteractOption = {};
+	InteractOption.InputType = EDC1InteractInputType::HoldAbility;
+	InteractOption.Key = EDC1InteractKey::F;
+	InteractOption.DisplayText = FText::FromString(TEXT("치료하기"));
+	InteractOption.InteractionTag = DC1InteractTags::Interact_Revive;
+	InteractOptions.Add(InteractOption);
 }
 
 UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
@@ -157,6 +172,17 @@ IDC1WorkTargetInterface* ADC1Player::GetCurrentWorkTarget() const
 
 	return Cast<IDC1WorkTargetInterface>(InteractComp->GetCurrentTarget());
 }
+
+#pragma region Interact Interface
+UPrimitiveComponent* ADC1Player::GetInteractCollider() const
+{
+	return InteractCollider;
+}
+void ADC1Player::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
+{
+	OutOptions = InteractOptions;
+}
+#pragma endregion
 
 void ADC1Player::OnAttackColliderOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -878,6 +904,53 @@ void ADC1Player::HandleDownedGaugeChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+bool ADC1Player::CanBeRevived() const
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		return true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Downed) &&
+			false == ASC->HasMatchingGameplayTag(DC1StateTags::State_BeingRevived);
+	}
+
+	return false;
+}
+
+void ADC1Player::StartBeingRevived()
+{
+	if (false == HasAuthority())
+		return;
+
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_BeingRevived, 1, EGameplayTagReplicationState::TagOnly);
+	}
+}
+
+void ADC1Player::StopBeingRevived()
+{
+	if (false == HasAuthority())
+		return;
+
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->SetLooseGameplayTagCount(DC1StateTags::State_BeingRevived, 0, EGameplayTagReplicationState::TagOnly);
+	}
+}
+
+void ADC1Player::CompleteRevived()
+{
+	if (false == HasAuthority())
+		return;
+
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		const float MaxHealth = ASC->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+		ASC->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), MaxHealth * 0.1f);
+	}
+
+	CancelAbility(DC1PlayerTags::Ability_Player_Downed);
+}
+
 void ADC1Player::ShowDeathScreen()
 {
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
@@ -892,6 +965,13 @@ void ADC1Player::ShowDeathScreen()
 void ADC1Player::OnDownStateChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	IsDown = NewCount > 0;
+
+	if (true == IsValid(InteractCollider))
+	{
+		InteractCollider->SetCollisionEnabled(IsDown ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+	}
+
+	OnInteractOptionsChanged.Broadcast();
 
 	// BuildMode, InteractEnable 관리
 	RefreshIncapacitated();

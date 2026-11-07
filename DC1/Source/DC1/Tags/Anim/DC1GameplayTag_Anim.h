@@ -23,6 +23,7 @@ namespace DC1AnimTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_ClimbAtTop);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Death);
 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Handiwork);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Build);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Deforest);
 #pragma endregion

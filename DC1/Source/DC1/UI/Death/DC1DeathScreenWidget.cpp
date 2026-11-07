@@ -30,6 +30,11 @@ void UDC1DeathScreenWidget::NativeConstruct()
 	}
 
 	RespawnTextFormatOption.SetMinimumFractionalDigits(1).SetMaximumFractionalDigits(1).SetRoundingMode(ERoundingMode::FromZero);
+
+	if (nullptr != DeathLogoImage)
+	{
+		DeathLogoImage->Activate();
+	}
 }
 
 void UDC1DeathScreenWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

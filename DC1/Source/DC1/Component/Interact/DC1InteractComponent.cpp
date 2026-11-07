@@ -4,6 +4,7 @@
 #include "Component/Interact/DC1InteractComponent.h"
 #include "Define/DC1Enums.h"
 #include "Actor/BuildActor/Interact/Production/DC1ProductionBuildActor.h"
+#include "Actor/BuildActor/Interact/Production/Craft/DC1CraftBuildActor.h"
 #include "Item/Pickup/DC1PickupItem.h"
 #include "Character/Player/DC1Player.h"
 
@@ -42,6 +43,7 @@ UDC1InteractComponent::UDC1InteractComponent()
 
 	// 작업 종류( 건설 / 벌목 / 채광 등 )는 작업 GA가 대상에서 읽음 - 옵션은 Interact.Work 하나
 	InteractionToAbility.Add(DC1InteractTags::Interact_Work, DC1PlayerTags::Ability_Player_Work);
+	InteractionToAbility.Add(DC1InteractTags::Interact_Revive, DC1PlayerTags::Ability_Player_Revive);
 }
 
 IDC1InteractableInterface* UDC1InteractComponent::GetCurrentInteractable() const
@@ -160,6 +162,16 @@ void UDC1InteractComponent::RequestPickupItem(ADC1PickupItem* InPickup)
 	Server_PickupItem(InPickup);
 }
 
+void UDC1InteractComponent::RequestRegisterRecipe(ADC1CraftBuildActor* InCraftTarget, FName InRecipeID, int32 InCraftCount)
+{
+	Server_RegisterRecipe(InCraftTarget, InRecipeID, InCraftCount);
+}
+
+void UDC1InteractComponent::RequestCancelRecipe(ADC1CraftBuildActor* InCraftTarget)
+{
+	Server_CancelRecipe(InCraftTarget);
+}
+
 void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildActor* InBuildTarget)
 {
 	ADC1Player* Player = GetPlayer();
@@ -232,6 +244,48 @@ void UDC1InteractComponent::Server_PickupItem_Implementation(ADC1PickupItem* InP
 
 	// F 입력 Pickup -> InByInteract = true
 	InPickup->TryPickup(Player, true);
+}
+
+void UDC1InteractComponent::Server_RegisterRecipe_Implementation(ADC1CraftBuildActor* InCraftTarget, FName InRecipeID, int32 InCraftCount)
+{
+	ADC1Player* Player = GetPlayer();
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	if (true == Player->IsDownOrDead())
+	{
+		return;
+	}
+
+	if (false == ::IsValid(InCraftTarget) || false == IsInInteractRange(Player, InCraftTarget))
+	{
+		return;
+	}
+
+	InCraftTarget->RegisterRecipe(Player, InRecipeID, InCraftCount);
+}
+
+void UDC1InteractComponent::Server_CancelRecipe_Implementation(ADC1CraftBuildActor* InCraftTarget)
+{
+	ADC1Player* Player = GetPlayer();
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	if (true == Player->IsDownOrDead())
+	{
+		return;
+	}
+
+	if (false == ::IsValid(InCraftTarget) || false == IsInInteractRange(Player, InCraftTarget))
+	{
+		return;
+	}
+
+	InCraftTarget->CancelRecipe(Player);
 }
 
 void UDC1InteractComponent::HandleScreenStackChanged()

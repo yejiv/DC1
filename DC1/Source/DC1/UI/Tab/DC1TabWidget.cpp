@@ -130,11 +130,6 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 		return false;
 	}
 
-	if (false == ::IsValid(TabSwitcher))
-	{
-		return false;
-	}
-
 	UDC1TabHeaderButton* ChangeTabButton = GetTabButton(InTab);
 	if (false == ::IsValid(ChangeTabButton))
 	{
@@ -149,8 +144,14 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 
 	ChangeTabButton->SetState(EDC1TabButtonState::Active);
 	CurrentTab = InTab;
-	TabSwitcher->SetActiveWidgetIndex(*Index);
-	
+
+	if (true == ::IsValid(TabSwitcher))
+	{
+		TabSwitcher->SetActiveWidgetIndex(*Index);
+	}
+
+	OnTabSelected(InTab);
+
 	return true;
 }
 

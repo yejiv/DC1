@@ -22,6 +22,9 @@ namespace DC1PlayerTags
 	// 기절 ( HP 0 → 사망 전 단계 ). 서버가 활성화
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Downed);
 
+	// 기절한 팀원 치료 ( F 홀드 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Revive);
+
 #pragma endregion
 
 #pragma region Event

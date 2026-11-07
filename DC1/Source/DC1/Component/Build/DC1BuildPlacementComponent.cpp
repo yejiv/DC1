@@ -8,9 +8,11 @@
 
 #include "Define/DC1Helper.h"
 #include "Define/DC1BuildSupportHelper.h"
+#include "Define/DC1CraftHelper.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"
 
 #include "EnhancedInputSubsystems.h"
@@ -107,6 +109,13 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 
 	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
 	if (nullptr == BuildRow)
+	{
+		return false;
+	}
+
+	const APlayerController* PC = GetOwner<APlayerController>();
+	const ADC1PlayerState* PlayerState = (true == ::IsValid(PC)) ? PC->GetPlayerState<ADC1PlayerState>() : nullptr;
+	if (false == DC1CraftHelper::HasCraftCosts(PlayerState, BuildRow->BuildCosts))
 	{
 		return false;
 	}
@@ -233,16 +242,22 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 		return;
 	}
 
+	APlayerController* PC = GetOwner<APlayerController>();
+	if (false == ::IsValid(PC))
+	{
+		return;
+	}
+
+	ADC1PlayerState* PlayerState = PC->GetPlayerState<ADC1PlayerState>();
+	if (false == DC1CraftHelper::HasCraftCosts(PlayerState, BuildRow->BuildCosts))
+	{
+		return;
+	}
+
 	ADC1BuildActor* NewBuild = SpawnBuildActor(*BuildRow, InTransform, false);
 	if (false == ::IsValid(NewBuild))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Server_PlaceBuild - Failed Spawn Build Actor"));
-		return;
-	}
-
-	APlayerController* PC = GetOwner<APlayerController>();
-	if (false == ::IsValid(PC))
-	{
 		return;
 	}
 
@@ -255,8 +270,8 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 	}
 
 	NewBuild->OnPlaced(PC->PlayerState);
-	// TODO Cost 감소
-	// ..d
+
+	DC1CraftHelper::RemoveCraftCosts(PlayerState, BuildRow->BuildCosts);
 }
 
 void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1BuildActor* InTarget)
