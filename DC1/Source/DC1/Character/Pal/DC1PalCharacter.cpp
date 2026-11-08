@@ -15,6 +15,7 @@
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Component/Pal/DC1PalRideComponent.h"
 #include "Component/Pal/DC1PalMovementComponent.h"
+#include "Component/Notification/DC1NotificationComponent.h"
 
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -48,8 +49,8 @@ namespace DC1PalCharacter
 	// 시체 중심에서 이만큼 위에서 튀어나온다. 래그돌 안에서 시작하지 않게
 	constexpr float DropSpawnHeight = 30.f;
 
-	// 가해자 파티 (파트너면 주인)
-	static UDC1PalPartyComponent* FindPartyOf(const AActor* InCauser)
+	// 가해자의 플레이어 (파트너면 주인). 야생 팰이면 nullptr
+	static ADC1PlayerState* FindPlayerStateOf(const AActor* InCauser)
 	{
 		const APawn* Pawn = Cast<APawn>(InCauser);
 
@@ -60,12 +61,17 @@ namespace DC1PalCharacter
 				return nullptr;
 			}
 
-			// 내 팰이면 주인 파티. 탑승 중이든 아니든 같다
-			const ADC1PlayerState* OwnerState = Pal->GetOwnerPlayerState();
-			return (nullptr != OwnerState) ? OwnerState->GetPalPartyComponent() : nullptr;
+			// 내 팰이면 주인. 탑승 중이든 아니든 같다
+			return Pal->GetOwnerPlayerState();
 		}
 
-		const ADC1PlayerState* PlayerState = (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
+		return (nullptr != Pawn) ? Pawn->GetPlayerState<ADC1PlayerState>() : nullptr;
+	}
+
+	// 가해자 파티 (파트너면 주인)
+	static UDC1PalPartyComponent* FindPartyOf(const AActor* InCauser)
+	{
+		const ADC1PlayerState* PlayerState = FindPlayerStateOf(InCauser);
 		return (nullptr != PlayerState) ? PlayerState->GetPalPartyComponent() : nullptr;
 	}
 
@@ -812,12 +818,26 @@ void ADC1PalCharacter::OnDeath()
 		MeshComp->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 	}
 
-	// 처치 경험치, 드랍
+	// 처치 경험치, 쓰러뜨림 알림, 드랍
 	if (true == HasAuthority() && EDC1Team::Wild == Team)
 	{
-		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(LastDamageCauser.Get()))
+		const AActor* Killer = LastDamageCauser.Get();
+
+		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(Killer))
 		{
 			Party->GrantExperienceFor(GetLevel());
+		}
+
+		// 쓰러뜨린 사람 화면에만. 팰이 쓰러뜨렸으면 그 팰이 주어
+		const ADC1PlayerState* KillerPlayerState = DC1PalCharacter::FindPlayerStateOf(Killer);
+		UDC1NotificationComponent* NotificationComponent = (nullptr != KillerPlayerState) ? KillerPlayerState->GetNotificationComponent() : nullptr;
+		if (nullptr != NotificationComponent)
+		{
+			const ADC1PalCharacter* KillerPal = Cast<ADC1PalCharacter>(Killer);
+			const FGameplayTag KillerSpecies = (nullptr != KillerPal) ? KillerPal->SpeciesTag : FGameplayTag();
+			const FString KillerNickname = (nullptr != KillerPal) ? KillerPal->PalInstance.Nickname : FString();
+
+			NotificationComponent->Client_NotifyPalDefeated(KillerSpecies, KillerNickname, SpeciesTag);
 		}
 
 		SpawnDrops();

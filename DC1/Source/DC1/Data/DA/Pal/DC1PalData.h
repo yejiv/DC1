@@ -66,6 +66,8 @@ struct FDC1PalPreviewSettings
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera", meta = (ClampMin = "5", ClampMax = "170"))
 	float							CameraFOV = { 90.f };
+};
+
 // 드랍
 USTRUCT(BlueprintType)
 struct FDC1PalDropDef
