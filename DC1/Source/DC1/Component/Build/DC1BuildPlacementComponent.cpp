@@ -349,6 +349,7 @@ FDC1BuildActorData UDC1BuildPlacementComponent::MakeBuildActorData(const FDC1Bui
 	Data.BuildTag = InRow.BuildTag;
 	Data.RequiredWork = InRow.RequiredWork;
 	Data.BuildCosts = InRow.BuildCosts;
+	Data.WorkTypeTag = InRow.WorkTypeTag;
 
 	return Data;
 }

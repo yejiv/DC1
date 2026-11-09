@@ -39,7 +39,7 @@ ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 
 FGameplayTag ADC1ProductionBuildActor::GetWorkTypeTag() const
 {
-	return (true == IsCompleted()) ? WorkTypeTag : Super::GetWorkTypeTag();
+	return (true == IsCompleted()) ? BuildActorData.WorkTypeTag : Super::GetWorkTypeTag();
 }
 
 void ADC1ProductionBuildActor::BeginPlay()

@@ -108,17 +108,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
 	TSubclassOf<UDC1BuildInfoWidget>	ProductionInfoWidgetClass = { nullptr };
-
+	// 일할 수 있는 최대 팰 수
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
 	int32							MaxPalWorkers = { 1 };
-
-	// 완성 후 작업 종류 ( 벌목장 = Work.Lumbering ) - 펠 적성 · 플레이어 도구/몽타주 모두 이 값 기준
-	UPROPERTY(EditDefaultsOnly, Category = "Production|Work", meta = (Categories = "Work"))
-	FGameplayTag					WorkTypeTag;
-
+	// 생산 진행률
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };
-
+	// 보유 중 개수
 	UPROPERTY(ReplicatedUsing = OnRep_StoredCount)
 	int32							StoredCount = { 0 };
 
