@@ -148,8 +148,21 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 	}
 
 	ChangeTabButton->SetState(EDC1TabButtonState::Active);
+
+	// 이전 Tab Widget Deactivate
+	if (UDC1UserWidget* PreWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+	{
+		PreWidget->Deactivate();
+	}
+
 	CurrentTab = InTab;
 	TabSwitcher->SetActiveWidgetIndex(*Index);
+
+	// 현재 Tab Widget Activate
+	if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+	{
+		CurrentWidget->Activate();
+	}
 	
 	return true;
 }

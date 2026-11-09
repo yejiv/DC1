@@ -25,6 +25,9 @@ public:
 	// 미리보기가 꺼져 있는 동안 애니 Tick 정지
 	void SetAnimationEnabled(bool bInEnabled);
 
+public:
+	virtual void SetCaptureEnabled(bool bInEnabled) override;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Preview")
 	TObjectPtr<USkeletalMeshComponent> PalMesh = { nullptr };

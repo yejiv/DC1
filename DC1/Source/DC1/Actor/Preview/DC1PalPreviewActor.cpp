@@ -17,10 +17,22 @@ ADC1PalPreviewActor::ADC1PalPreviewActor()
 
 void ADC1PalPreviewActor::SetPalPreview(const FDC1PalPreviewSettings& InSettings)
 {
+	PalMesh->SetSkeletalMeshAsset(InSettings.Mesh.LoadSynchronous());
+	PalMesh->PlayAnimation(InSettings.IdleAnim.LoadSynchronous(), true);
 
+	SetCameraSetting(InSettings.CameraDistance, InSettings.CameraHeight, InSettings.CameraRight, InSettings.CameraYaw, InSettings.CameraPitch, InSettings.CameraFOV);
+
+	SetShowOnlyActor(this);
 }
 
 void ADC1PalPreviewActor::SetAnimationEnabled(bool bInEnabled)
 {
+	PalMesh->SetComponentTickEnabled(bInEnabled);
+}
 
+void ADC1PalPreviewActor::SetCaptureEnabled(bool bInEnabled)
+{
+	Super::SetCaptureEnabled(bInEnabled);
+
+	SetAnimationEnabled(bInEnabled);
 }

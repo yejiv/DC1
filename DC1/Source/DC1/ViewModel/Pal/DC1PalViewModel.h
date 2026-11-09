@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ViewModel/DC1ViewModelBase.h"
 #include "Define/DC1Enums.h"
+#include "GameplayTagContainer.h"
 #include "ViewModel/Pal/DC1PalDisplayTypes.h"
 #include "DC1PalViewModel.generated.h"
 
@@ -31,6 +32,10 @@ public:
 	UTexture2D*				GetPalIconTexture(int32 Offset);
 	bool						GetPalAlive(int32 Offset);
 	void						GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo);
+
+	// 위 함수들과 달리 선택 슬롯 오프셋이 아닌 슬롯 번호 기준. 빈 칸이면 EmptyTag
+	// DC1PalInfoWidget에서 Preview 모델을 그리기 위해 구현
+	FGameplayTag			GetSpeciesTag(int32 InSlotIndex) const;
 
 	bool						IsDeployed();
 

@@ -94,6 +94,9 @@ void UDC1PreviewSubsystem::BeginPlayerPreview()
 
 void UDC1PreviewSubsystem::BeginPalPreview(const FGameplayTag& PalID)
 {
+	if (false == PalID.IsValid())
+		return;
+
 	ADC1PreviewActor* Actor = BeginPreview(EDC1PreviewType::Pal);
 	if (nullptr == Actor)
 	{

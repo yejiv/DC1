@@ -85,6 +85,23 @@ void ADC1PreviewActor::ApplyPreviewSettings()
 	FillLight->SetIntensity(FillLightIntensity);
 	FillLight->SetLightColor(FillLightColor);
 
+	ApplyPreviewCameraSetting();
+}
+
+void ADC1PreviewActor::SetCameraSetting(float InDistance, float InHeight, float InRight, float InYaw, float InPitch, float InFov)
+{
+	CameraDistance = InDistance;
+	CameraHeight = InHeight;
+	CameraRight = InRight;
+	CameraYaw = InYaw;
+	CameraPitch = InPitch;
+	CameraFOV = InFov;
+
+	ApplyPreviewCameraSetting();
+}
+
+void ADC1PreviewActor::ApplyPreviewCameraSetting()
+{
 	// 카메라 오른쪽 = -Y
 	const FVector CameraLocation = FRotator(0.f, CameraYaw, 0.f).RotateVector(FVector(CameraDistance, -CameraRight, CameraHeight));
 	CaptureComponent->SetRelativeLocationAndRotation(CameraLocation, FRotator(-CameraPitch, 180.f + CameraYaw, 0.f));

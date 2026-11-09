@@ -4,12 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
+#include "GameplayTagContainer.h"
 #include "DC1PalInfoWidget.generated.h"
 
+class UImage;
 class UWidgetSwitcher;
-class UDC1PalViewModel;
+class UMaterialInstanceDynamic;
+
 class UDC1PalPartyWidget;
 class UDC1PalDetailWidget;
+
+class UDC1PreviewSubsystem;
 
 /**
  * 팰 정보 화면
@@ -21,23 +26,43 @@ class DC1_API UDC1PalInfoWidget : public UDC1UserWidget
 	GENERATED_BODY()
 
 public:
-	void SetViewModel(UDC1PalViewModel* InViewModel);
+	virtual void	NativeOnInitialized() override;
+	virtual void	NativeConstruct() override;
+	virtual void	NativeDestruct() override;
 
+public:
 	void ShowPartyPanel();
 	void ShowDetailPanel();
 
 private:
+	virtual void	NativeOnActivated() override;
+	virtual void	NativeOnDeactivated() override;
+
+private:
+	void HandleChangedFocusingPal(const FGameplayTag& SpeciesTag);
+
+private:
 	UPROPERTY(Transient, meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher>		WidgetSwitcher_Panel = { nullptr };
+	TObjectPtr<UWidgetSwitcher>			WidgetSwitcher_Panel = { nullptr };
 
 	// 팰 파티 현황
 	UPROPERTY(Transient, meta = (BindWidget))
-	TObjectPtr<UDC1PalPartyWidget>	PalPartyWidget = { nullptr };
+	TObjectPtr<UDC1PalPartyWidget>		PalPartyWidget = { nullptr };
 
 	// 팰 상세 정보
 	UPROPERTY(Transient, meta = (BindWidget))
-	TObjectPtr<UDC1PalDetailWidget>	PalDetailWidget = { nullptr };
+	TObjectPtr<UDC1PalDetailWidget>		PalDetailWidget = { nullptr };
 
+	// PreviewSubsystem의 Pal 렌더 타깃을 표시
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UImage>						Image_PalPreview = { nullptr };
+
+private:
 	UPROPERTY()
-	TObjectPtr<UDC1PalViewModel>	CachedViewModel = { nullptr };
+	TObjectPtr<UMaterialInstanceDynamic>		PalPreviewMID = { nullptr };
+
+	FName												TextureParamName = { TEXT("RenderTarget") };
+
+private:
+	TWeakObjectPtr<UDC1PreviewSubsystem>	PreviewSubsystem = { nullptr };
 };

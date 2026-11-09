@@ -22,7 +22,7 @@ public:
 
 public:
 	void SetRenderTarget(UTextureRenderTarget2D* InRenderTarget);
-	void SetCaptureEnabled(bool bInEnabled);
+	virtual void SetCaptureEnabled(bool bInEnabled);
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
@@ -35,6 +35,12 @@ protected:
 
 	// 캡처가 InPreviewActor의 컴포넌트만 촬영하도록 설정하는 함수
 	void SetShowOnlyActor(ADC1PreviewActor* InPreviewActor);
+
+	// Camera 멤버 변수를 바꾸고 바로 반영 (에디터에서 값을 고쳐도 이 값 기준으로 다시 반영됨)
+	void SetCameraSetting(float InDistance, float InHeight, float InRight, float InYaw, float InPitch, float InFov);
+
+	// Camera 멤버 변수를 캡처 컴포넌트에 반영
+	void ApplyPreviewCameraSetting();
 
 private:
 	// 아래 Character / Camera / Light 변수를 컴포넌트에 반영 (컴포넌트 값을 직접 바꾸면 덮어써짐)

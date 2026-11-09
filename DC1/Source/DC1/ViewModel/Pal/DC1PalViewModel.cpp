@@ -95,6 +95,16 @@ void UDC1PalViewModel::GetPalInfo(FDC1PalDisplayInfo& OutDisplayInfo)
 	OutDisplayInfo.HealthPercent = PalInfo->CurrentHealth / FMath::Max(0.1f, MaxHealth);
 }
 
+FGameplayTag UDC1PalViewModel::GetSpeciesTag(int32 InSlotIndex) const
+{
+	if (false == PalPartyComponent.IsValid())
+		return FGameplayTag::EmptyTag;
+
+	const FDC1PalInstance* PalInfo = PalPartyComponent->GetPalInfo(InSlotIndex);
+
+	return (nullptr != PalInfo) ? PalInfo->SpeciesTag : FGameplayTag::EmptyTag;
+}
+
 bool UDC1PalViewModel::IsDeployed()
 {
 	if (false == PalPartyComponent.IsValid())
