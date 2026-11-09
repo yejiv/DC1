@@ -2,6 +2,9 @@
 
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 
+#include "Character/Pal/DC1PalCharacter.h"
+#include "Data/DA/Pal/DC1PalData.h"
+
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 #include "GenericTeamAgentInterface.h"
@@ -62,12 +65,20 @@ bool UDC1PalAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackDat
 		return true;
 	}
 
-	// 적이 가한 게 아니면 데미지가 아예 들어가지 않는다.
-	//
-	// 방어력·속성 경감은 여기가 아니라 UDC1PalDamageExecution 에 있다.
-	// 이 검사만 여기 남는 이유는 출처를 가리지 않아야 하기 때문이다 —
-	// 플레이어가 자기 파트너를 때리는 것도 막아야 하는데, 그쪽은 아직 공용 GE(계산기 없음)를 쓴다
-	return (ETeamAttitude::Hostile == Self->GetTeamAttitudeTowards(*Causer));
+	if (ETeamAttitude::Hostile != Self->GetTeamAttitudeTowards(*Causer))
+	{
+		return false;
+	}
+
+	// 야생 알파는 받는 피해 감소
+	const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(Data.Target.GetAvatarActor());
+	const UDC1PalData* SelfPalData = (nullptr != SelfPal) ? SelfPal->GetPalData() : nullptr;
+	if (nullptr != SelfPalData && true == SelfPal->IsAlpha() && EDC1Team::Wild == SelfPal->GetTeam())
+	{
+		Data.EvaluatedData.Magnitude *= SelfPalData->AlphaReceiveDamageRate;
+	}
+
+	return true;
 }
 
 void UDC1PalAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity)

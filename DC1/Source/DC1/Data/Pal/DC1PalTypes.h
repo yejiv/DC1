@@ -77,6 +77,10 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
 	int32					OwnerPlayerID = { INDEX_NONE };
 
+	// 알파(필드 보스) 개체. 배율은 UDC1PalData 의 Alpha*
+	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	bool					bIsAlpha = { false };
+
 	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }
 
 	bool IsDeployable() const { return IsValidPal() && (CurrentHealth > 0.f); }

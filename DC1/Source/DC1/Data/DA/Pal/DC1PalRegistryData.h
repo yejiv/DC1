@@ -218,7 +218,7 @@ public:
 	TSoftObjectPtr<UTexture2D>	FindPassiveRankIcon(int32 InRank) const;
 
 	// 최종 스탯
-	float	GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const;
+	float	GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent, bool InIsAlpha) const;
 	float	GetAttackPowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const;
 	float	GetDefensePowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const;
 

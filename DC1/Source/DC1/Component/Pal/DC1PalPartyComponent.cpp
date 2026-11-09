@@ -223,7 +223,18 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 	}
 
 	// 포획 경험치 (잡힌 팰 제외)
-	GrantExperienceFor(InPal.Level);
+	float ExpRate = 1.f;
+	if (true == InPal.bIsAlpha)
+	{
+		const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+		const UDC1PalData* PalData = ::IsValid(Registry) ? Registry->FindPalDataByTag(InPal.SpeciesTag).LoadSynchronous() : nullptr;
+		if (nullptr != PalData)
+		{
+			ExpRate = PalData->AlphaExpRate;
+		}
+	}
+
+	GrantExperienceFor(InPal.Level, ExpRate);
 
 	// 파티 → 상자 순서로 빈칸
 	for (const EDC1PalContainer Container : { EDC1PalContainer::Party, EDC1PalContainer::Box })
@@ -465,10 +476,10 @@ float UDC1PalPartyComponent::GetMaxHealthOf(const FDC1PalInstance& InPal)
 		return 0.f;
 	}
 
-	return Registry->GetMaxHealthFor(*PalData, InPal.Level, InPal.TalentHealth);
+	return Registry->GetMaxHealthFor(*PalData, InPal.Level, InPal.TalentHealth, InPal.bIsAlpha);
 }
 
-void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
+void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel, float InExpRate)
 {
 	if (ROLE_Authority != GetOwnerRole())
 	{
@@ -481,7 +492,7 @@ void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel)
 		return;
 	}
 
-	const int32 Amount = Registry->GetDropExp(InDefeatedLevel);
+	const int32 Amount = FMath::RoundToInt(Registry->GetDropExp(InDefeatedLevel) * InExpRate);
 	if (Amount <= 0)
 	{
 		return;

@@ -240,7 +240,32 @@ public:
 	TArray<FDC1PalDropDef>			Drops;
 #pragma endregion
 
+#pragma region Alpha
+	// 알파 개체에만 쓰는 배율. 1 = 일반 개체와 같다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.1"))
+	float							AlphaScale = { 1.f };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.1"))
+	float							AlphaHealthRate = { 1.f };
+
+	// 야생일 때만. 잡은 알파에는 안 건다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.0"))
+	float							AlphaReceiveDamageRate = { 1.f };
+
+	// 처치·포획 경험치
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.0"))
+	float							AlphaExpRate = { 1.f };
+
+	// CaptureRate 에 곱한다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.0"))
+	float							AlphaCaptureRate = { 1.f };
+#pragma endregion
+
 #pragma region AI
+	// 야생일 때 플레이어를 보면 어떻게 하나
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+	EDC1PalTemperament				Temperament = { EDC1PalTemperament::Timid };
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Perception")
 	float							SightRadius = { 1500.f };
 
