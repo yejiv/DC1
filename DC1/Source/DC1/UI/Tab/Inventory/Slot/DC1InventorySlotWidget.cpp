@@ -6,6 +6,7 @@
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "UI/Tooltip/DC1InventoryTooltipWidget.h"
 
 #include "Components/SizeBox.h"
 #include "Components/Border.h"
@@ -81,6 +82,22 @@ void UDC1InventorySlotWidget::SetSlotData(const UDC1InventoryViewModel* ViewMode
 	}
 
 	UpdateEmptyIconVisibility(false);
+
+	if (nullptr == TooltipClass)
+	{
+		return;
+	}
+
+	if (false == ::IsValid(CachedTooltip))
+	{
+		CachedTooltip = CreateWidget<UDC1InventoryTooltipWidget>(GetOwningPlayer(), TooltipClass);
+	}
+
+	if (true == ::IsValid(CachedTooltip))
+	{
+		CachedTooltip->SetInventoryItem(InventorySlot.ItemID, InventorySlot.StackCount);
+		SetToolTip(CachedTooltip);
+	}
 }
 
 void UDC1InventorySlotWidget::ClearSlot()
@@ -95,6 +112,8 @@ void UDC1InventorySlotWidget::ClearSlot()
 	}
 
 	UpdateEmptyIconVisibility(true);
+
+	SetToolTip(nullptr);
 }
 
 void UDC1InventorySlotWidget::SetEmptyIcon(UTexture2D* InIcon)

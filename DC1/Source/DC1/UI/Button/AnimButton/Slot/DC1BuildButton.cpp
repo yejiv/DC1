@@ -3,6 +3,8 @@
 
 #include "UI/Button/AnimButton/Slot/DC1BuildButton.h"
 
+#include "UI/Tooltip/DC1BuildTooltipWidget.h"
+
 #include "Components/Image.h"
 
 void UDC1BuildButton::NativeConstruct()
@@ -51,8 +53,21 @@ void UDC1BuildButton::HandleUnhovered()
 	}
 }
 
+void UDC1BuildButton::RefreshTooltip(UDC1TooltipWidget* InTooltip)
+{
+	UDC1BuildTooltipWidget* BuildTooltip = Cast<UDC1BuildTooltipWidget>(InTooltip);
+	if (false == ::IsValid(BuildTooltip))
+	{
+		return;
+	}
+
+	BuildTooltip->SetBuild(CachedRow);
+}
+
 void UDC1BuildButton::InitBuildButton(const FDC1BuildRow& InBuildRow)
 {
+	CachedRow = InBuildRow;
+
 	if (true == InBuildRow.BuildTag.IsValid())
 	{
 		BuildTag = InBuildRow.BuildTag;

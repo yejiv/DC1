@@ -6,9 +6,8 @@
 #include "UI/Button/AnimButton/DC1BracketButton.h"
 #include "Define/DC1Enums.h"
 #include "GameplayTagContainer.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1TechTreeButton.generated.h"
-
-struct FDC1TechRow;
 
 UCLASS()
 class DC1_API UDC1TechTreeButton : public UDC1BracketButton
@@ -24,10 +23,12 @@ protected:
 protected:
 	virtual void	HandleHovered() override;
 	virtual void	HandleUnhovered() override;
+	virtual void	RefreshTooltip(UDC1TooltipWidget* InTooltip) override;
 
 public:
 	void			InitTechButton(const FDC1TechRow& InRow);
 	void			SetState(EDC1TechSlotState InNewState);
+	void			SetTooltipData(const FText& InDescription, const TArray<FDC1ItemCost>& InCosts);
 
 private:
 	void			ApplyState();
@@ -144,4 +145,8 @@ private:
 	int32						RequiredLevel = { 0 };
 	FGameplayTag				TechTag = { FGameplayTag::EmptyTag };
 	EDC1TechSlotState			SlotState = { EDC1TechSlotState::Default };
+
+	FDC1TechRow					CachedRow;
+	FText						TooltipDescription = { FText::GetEmpty() };
+	TArray<FDC1ItemCost>		TooltipCosts;
 };

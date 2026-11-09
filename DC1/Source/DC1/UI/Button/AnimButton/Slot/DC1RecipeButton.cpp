@@ -6,6 +6,7 @@
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Define/DC1ItemHelper.h"
+#include "UI/Tooltip/DC1RecipeTooltipWidget.h"
 
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -43,8 +44,20 @@ void UDC1RecipeButton::HandleClicked()
 	OnRecipeClicked.Broadcast(RecipeID);
 }
 
+void UDC1RecipeButton::RefreshTooltip(UDC1TooltipWidget* InTooltip)
+{
+	UDC1RecipeTooltipWidget* RecipeTooltip = Cast<UDC1RecipeTooltipWidget>(InTooltip);
+	if (false == ::IsValid(RecipeTooltip))
+	{
+		return;
+	}
+
+	RecipeTooltip->SetRecipe(CachedRecipe);
+}
+
 void UDC1RecipeButton::SetRecipe(const FDC1ItemRecipeRow& InRecipe, bool InCanCraft)
 {
+	CachedRecipe = InRecipe;
 	RecipeID = InRecipe.RecipeID;
 	CanCraft = InCanCraft;
 

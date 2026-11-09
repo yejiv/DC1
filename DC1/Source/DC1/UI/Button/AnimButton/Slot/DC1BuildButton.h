@@ -28,6 +28,7 @@ protected:
 protected:
 	virtual void	HandleHovered() override;
 	virtual void	HandleUnhovered() override;
+	virtual void	RefreshTooltip(UDC1TooltipWidget* InTooltip) override;
 
 public:
 	void			InitBuildButton(const FDC1BuildRow& InBuildRow);
@@ -75,4 +76,6 @@ private:
 	int32					SortOrder = { 0 };
 
 	TArray<FDC1ItemCost>	CachedCosts;
+
+	FDC1BuildRow			CachedRow;
 };
