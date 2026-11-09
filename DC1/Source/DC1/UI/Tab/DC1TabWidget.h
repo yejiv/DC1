@@ -52,6 +52,7 @@ public:
 protected:
 	virtual void	ButtonInitialize();
 	virtual void	CloseWidget(const FKey& InKey);
+	virtual void	OnTabSelected(const FGameplayTag& InTab) {}
 
 private:
 	bool			CanSelectTab(const FGameplayTag& InTab) const;
@@ -64,8 +65,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "TAB")
 	TMap<FGameplayTag, int32>							TabToSwitchIndex;
 
+	FGameplayTag										CurrentTab = { FGameplayTag::EmptyTag };
+
 private:
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UWidgetSwitcher>		TabSwitcher = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
@@ -82,8 +85,6 @@ private:
 
 private:
 	TMap<int32, FGameplayTag>		SwitchIndexToTab;
-
-	FGameplayTag					CurrentTab = { FGameplayTag::EmptyTag };
 };
 
 

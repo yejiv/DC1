@@ -109,6 +109,7 @@ namespace DC1PalTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Work, "Ability.Pal.Work");
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_Sleep, "Ability.Pal.Sleep");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Pal_RideSprint, "Ability.Pal.RideSprint");
 #pragma endregion
 
 #pragma region State
@@ -161,6 +162,7 @@ namespace DC1PalTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Move, "Input.Ride.Move");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Jump, "Input.Ride.Jump");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Sprint, "Input.Ride.Sprint");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Skill1, "Input.Ride.Skill1");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Ride_Skill2, "Input.Ride.Skill2");

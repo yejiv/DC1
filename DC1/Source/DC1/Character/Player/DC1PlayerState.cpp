@@ -11,8 +11,10 @@
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/PalSphere/DC1PalSphereComponent.h"
 #include "Component/Teleport/DC1TeleportComponent.h"
 #include "Component/Player/DC1PlayerStatComponent.h"
+#include "Component/Notification/DC1NotificationComponent.h"
 
 #include "Save/DC1PlayerSaveGame.h"
 #include "Tags/State/DC1GameplayTag_State.h"
@@ -40,6 +42,8 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	PalPartyComponent = CreateDefaultSubobject<UDC1PalPartyComponent>(TEXT("PalPartyComponent"));
 	PalPartyComponent->SetIsReplicated(true);
 
+	PalSphereComponent = CreateDefaultSubobject<UDC1PalSphereComponent>(TEXT("PalSphereComponent"));
+
 	EquipComponent = CreateDefaultSubobject<UDC1EquipComponent>(TEXT("EquipComponent"));
 	EquipComponent->SetIsReplicated(true);
 
@@ -48,6 +52,8 @@ ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
 	TeleportComponent = CreateDefaultSubobject<UDC1TeleportComponent>(TEXT("TeleportComponent"));
 
 	StatComponent = CreateDefaultSubobject<UDC1PlayerStatComponent>(TEXT("StatComponent"));
+
+	NotificationComponent = CreateDefaultSubobject<UDC1NotificationComponent>(TEXT("NotificationComponent"));
 }
 
 UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const

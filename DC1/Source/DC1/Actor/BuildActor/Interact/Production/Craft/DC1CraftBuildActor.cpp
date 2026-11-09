@@ -18,6 +18,10 @@
 #include "Define/DC1CraftHelper.h"
 #include "Define/DC1ItemHelper.h"
 
+#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
+#include "UI/Craft/DC1CraftScreenWidget.h"
+
 namespace
 {
 	void GiveOrDrop(UDC1PlayerInventoryComponent* InInventory, const AActor* InDropAt, FName InItemID, int32 InCount)
@@ -252,7 +256,17 @@ void ADC1CraftBuildActor::OnCompletedInteract(ADC1Character* InInteractOwner, ED
 	// 제작 중인 아이템 없음 + F ( 제작 )
 	if (true == ProductItemID.IsNone() && true == HasOptionKey(RecipeOptions, InKey))
 	{
-		// TODO : Open Recipe UI
+		UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+		if (false == ::IsValid(UIManager))
+		{
+			return;
+		}
+
+		UDC1CraftScreenWidget* CraftScreen = Cast<UDC1CraftScreenWidget>(UIManager->PushScreen(DC1UITags::UI_Craft_Recipe));
+		if (true == ::IsValid(CraftScreen))
+		{
+			CraftScreen->OpenStation(this);
+		}
 		return;
 	}
 

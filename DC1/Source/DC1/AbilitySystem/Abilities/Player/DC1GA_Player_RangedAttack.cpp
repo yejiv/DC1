@@ -10,13 +10,51 @@
 #include "Tags/DC1GamePlayTags.h"
 
 #include "Character/DC1Character.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1EquipComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "System/DC1AssetManager.h"
 #include "Data/DA/Anim/DC1AnimData.h"
+
+namespace DC1GAPlayerRangedAttack
+{
+	// CanActivateAbility 는 인스턴스가 아직 없을 수 있어 ActorInfo 로 찾는다
+	static const ADC1ProjectileWeapon* FindWeapon(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		const UDC1EquipComponent* EquipComp = (nullptr != PS) ? PS->GetEquipComponent() : nullptr;
+		return (nullptr != EquipComp) ? Cast<ADC1ProjectileWeapon>(EquipComp->GetCurrentWeapon()) : nullptr;
+	}
+
+	static UDC1PlayerInventoryComponent* FindInventory(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		return (nullptr != PS) ? PS->GetInventoryComponent() : nullptr;
+	}
+}
 
 UDC1GA_Player_RangedAttack::UDC1GA_Player_RangedAttack(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	DrawMontageTag = DC1AnimTags::Anim_Attack_Bow;
+}
+
+bool UDC1GA_Player_RangedAttack::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (false == Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	// 탄을 안 쓰는 무기는 그대로
+	const ADC1ProjectileWeapon* Weapon = DC1GAPlayerRangedAttack::FindWeapon(ActorInfo);
+	if (nullptr == Weapon || true == Weapon->AmmoItemID.IsNone())
+	{
+		return true;
+	}
+
+	const UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerRangedAttack::FindInventory(ActorInfo);
+	return (nullptr != Inventory && Inventory->GetItemCount(Weapon->AmmoItemID) > 0);
 }
 
 void UDC1GA_Player_RangedAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -66,6 +104,16 @@ void UDC1GA_Player_RangedAttack::OnInputReleased(float TimeHeld)
 	{
 		if (ADC1ProjectileWeapon* Weapon = Cast<ADC1ProjectileWeapon>(GetEquippedWeapon()))
 		{
+			// 당기는 중에 화살을 옮겼거나 버렸으면 안 쏜다
+			if (false == Weapon->AmmoItemID.IsNone())
+			{
+				UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerRangedAttack::FindInventory(CurrentActorInfo);
+				if (nullptr == Inventory || false == Inventory->RemoveItemByID(Weapon->AmmoItemID, 1))
+				{
+					return;
+				}
+			}
+
 			// 데미지는 발사 시점 값으로 굳혀서 화살에 들려보낸다. 조준 방향은 무기가 직접 뽑는다
 			Weapon->FireProjectile(MakeDamageSpec());
 		}

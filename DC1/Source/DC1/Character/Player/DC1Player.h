@@ -112,8 +112,10 @@ private:
 	virtual void OnDeath() override;
 
 public:
-	// 탑승 = 폰에 붙어 있음. 아니면 null
-	APawn*				GetRiddenPawn() const;
+	// 탄 팰. 안 타면 null
+	APawn*				GetRiddenPawn() const { return RiddenPawn; }
+	// 서버 전용. 파티 컴포넌트가 탈 때·다 내릴 때 부른다
+	void				SetRiddenPawn(APawn* InRiddenPawn) { RiddenPawn = InRiddenPawn; }
 
 	// 탑승 중엔 팰 컨트롤러 시점
 	virtual FRotator GetViewRotation() const override;
@@ -138,6 +140,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent>			StaminaWidgetComponent = { nullptr };
+
+	// 이 기계의 로컬 플레이어가 조종했던 캐릭터인가. 탑승으로 조종이 팰로 넘어가도 스태미나 위젯을 유지한다
+	bool									IsLocalPlayerCharacter = { false };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UDC1ScreenOffsetWidgetComponent>		InteractPromptWidgetComponent = { nullptr };
@@ -257,4 +262,8 @@ private:
 private:
 	UPROPERTY(Replicated)
 	float	RespawnAvailableTime = { };
+
+	// 탄 팰. 붙기 전에 넣고 뗀 뒤에 비운다
+	UPROPERTY(Replicated)
+	TObjectPtr<APawn>	RiddenPawn = { nullptr };
 };

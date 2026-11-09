@@ -125,7 +125,6 @@ UAbilitySystemComponent* ADC1Player::GetAbilitySystemComponent() const
 	const ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>();
 
 	// 탑승 중엔 PlayerState 가 탄 팰에 있다
-	const APawn* RiddenPawn = GetRiddenPawn();
 	if (nullptr == PS && nullptr != RiddenPawn)
 	{
 		PS = RiddenPawn->GetPlayerState<ADC1PlayerState>();
@@ -306,6 +305,7 @@ void ADC1Player::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 
 	// 사망 화면 카운트다운용 - 본인만
 	DOREPLIFETIME_CONDITION(ADC1Player, RespawnAvailableTime, COND_OwnerOnly);
+	DOREPLIFETIME(ADC1Player, RiddenPawn);
 }
 
 void ADC1Player::BeginPlay()
@@ -348,14 +348,8 @@ void ADC1Player::PossessedBy(AController* NewController)
 	InitializeAppearance();
 }
 
-APawn* ADC1Player::GetRiddenPawn() const
-{
-	return Cast<APawn>(GetAttachParentActor());
-}
-
 FRotator ADC1Player::GetViewRotation() const
 {
-	const APawn* RiddenPawn = GetRiddenPawn();
 	if (nullptr != RiddenPawn && nullptr != RiddenPawn->GetController())
 	{
 		return RiddenPawn->GetController()->GetControlRotation();
@@ -387,10 +381,18 @@ void ADC1Player::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
 
-	StaminaWidgetComponent->SetVisibility(IsLocallyControlled());
+	if (true == IsLocallyControlled())
+	{
+		IsLocalPlayerCharacter = true;
+	}
 
-	// 팰에 붙은 채 조종이 풀리면 탑승
-	CurrentSpringArmHeight = (nullptr != GetRiddenPawn() && nullptr == GetController()) ? RideSpringArmHeight : FixedSpringArmHeight;
+	// 탄 팰이 있는데 조종이 풀리면 탑승
+	const bool IsRiding = (nullptr != GetRiddenPawn() && nullptr == GetController());
+
+	// 탑승 중에도 게이지 보임. 값은 VM 이 탄 팰의 스태미나
+	StaminaWidgetComponent->SetVisibility(true == IsLocallyControlled() || (true == IsLocalPlayerCharacter && true == IsRiding));
+
+	CurrentSpringArmHeight = (true == IsRiding) ? RideSpringArmHeight : FixedSpringArmHeight;
 }
 
 void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)

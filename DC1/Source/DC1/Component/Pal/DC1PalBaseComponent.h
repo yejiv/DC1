@@ -11,6 +11,29 @@ class ADC1PalCharacter;
 class ADC1PalBoxActor;
 class APlayerState;
 
+// 나와 있는 거점 팰이 지금 하는 일. 일·잠 태그는 서버에만 있어 클라 표시용으로 따로 복제한다
+UENUM()
+enum class EDC1BasePalActivity : uint8
+{
+	None,
+	Working,
+	Sleeping,
+};
+
+USTRUCT()
+struct FDC1BasePalActivity
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FGuid					PalID;
+
+	UPROPERTY()
+	EDC1BasePalActivity		Activity = { EDC1BasePalActivity::None };
+
+	bool operator==(const FDC1BasePalActivity& InOther) const { return PalID == InOther.PalID && Activity == InOther.Activity; }
+};
+
 /*
 	서버 공용 팰 거점 정보 - 서버 당 거점 1개
 	Server RPC를 두지 말 것 -> Owner가 PalBox(PalBox는 Owner 없음, 서버 스폰 액터) -> RPC 불발
@@ -31,6 +54,9 @@ public:
 	TArray<FDC1PalInstance>&		GetBasePals() { return BasePals; }
 	const TArray<FDC1PalInstance>&	GetBasePals() const { return BasePals; }
 	int32							GetBaseCapacity() const { return BaseCapacity; }
+
+	// 나와 있지 않거나 아무것도 안 하면 None ( 거점 정보 HUD )
+	EDC1BasePalActivity				FindActivity(const FGuid& InPalID) const;
 	// PalBox OnPlaced에서 호출
 	void							InitBase();
 	// PalBox EndPlay에서 호출
@@ -46,9 +72,15 @@ private:
 	UFUNCTION()
 	void	OnRep_BasePals();
 
+	UFUNCTION()
+	void	OnRep_BasePalActivities();
+
 private:
 	// 거점 회복 타이머
 	void	HealBasePals();
+
+	// 나와 있는 거점 팰의 일·잠 태그를 복제 배열에 옮김 ( 서버, 회복 타이머마다 )
+	void	RefreshActivities();
 
 	// 접힌 팰을 같은 PalID 칸에 덮음
 	void	StoreFoldedPal(const FDC1PalInstance& InFolded);
@@ -61,6 +93,8 @@ private:
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_BasePals)
 	TArray<FDC1PalInstance>		BasePals;
+	UPROPERTY(ReplicatedUsing = OnRep_BasePalActivities)
+	TArray<FDC1BasePalActivity>	BasePalActivities;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Base", meta = (ClampMin = "1"))
 	int32						BaseCapacity = { 5 };

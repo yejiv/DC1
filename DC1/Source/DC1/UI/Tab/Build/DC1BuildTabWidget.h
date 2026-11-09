@@ -15,6 +15,7 @@ class DC1_API UDC1BuildTabWidget : public UDC1TabWidget
 
 protected:
 	virtual void			NativeOnInitialized() override;
+	virtual void			NativeOnActivated() override;
 	virtual void			CloseWidget(const FKey& InKey) override;
 
 public:
@@ -22,6 +23,7 @@ public:
 	void					SetViewModel(UDC1BuildViewModel* InViewModel);
 private:
 	void					RefreshAll();
+	void					RefreshCostState();
 	void					HandleBuildUnlocked(const FGameplayTag& InUnlockedTag);
 
 

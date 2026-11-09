@@ -12,10 +12,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 
-#include "Actor/BuildActor/Interact/Production/Craft/DC1CraftBuildActor.h"
-#include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
-#include "Component/Interact/DC1InteractComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
@@ -234,32 +231,6 @@ namespace DC1DebugCommands
 			*ItemID.ToString(), Count, (true == IsRemoved) ? TEXT("OK") : TEXT("FAILED"), Player, Total - Player);
 	}
 
-	void RegisterRecipe(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
-	{
-		if (InArgs.Num() < 2)
-		{
-			Ar.Logf(TEXT("Usage: DC1.RegisterRecipe <RecipeID> <Count>   ex) DC1.RegisterRecipe Recipe_2101 3"));
-			return;
-		}
-
-		const FName RecipeID(*InArgs[0]);
-		const int32 CraftCount = FCString::Atoi(*InArgs[1]);
-
-		const UGameInstance* GameInstance = (true == ::IsValid(InWorld)) ? InWorld->GetGameInstance() : nullptr;
-		const ADC1PlayerController* LocalPC = (nullptr != GameInstance) ? Cast<ADC1PlayerController>(GameInstance->GetFirstLocalPlayerController()) : nullptr;
-		UDC1InteractComponent* InteractComp = (true == ::IsValid(LocalPC)) ? LocalPC->GetInteractComponent() : nullptr;
-		ADC1CraftBuildActor* Craft = (true == ::IsValid(InteractComp)) ? Cast<ADC1CraftBuildActor>(InteractComp->GetCurrentTarget()) : nullptr;
-		if (false == ::IsValid(Craft))
-		{
-			Ar.Logf(ELogVerbosity::Error, TEXT("[DC1Debug] Aim at a craft station first."));
-			return;
-		}
-
-		InteractComp->RequestRegisterRecipe(Craft, RecipeID, CraftCount);
-
-		Ar.Logf(TEXT("[DC1Debug] RegisterRecipe [%s] x%d requested to [%s]."), *RecipeID.ToString(), CraftCount, *Craft->GetName());
-	}
-
 	FAutoConsoleCommand AddItemCommand(
 		TEXT("DC1.AddItem"),
 		TEXT("DC1.AddItem <ItemID> [Count=1] - add item to local player's inventory"),
@@ -279,11 +250,6 @@ namespace DC1DebugCommands
 		TEXT("DC1.RemoveCraft"),
 		TEXT("DC1.RemoveCraft <ItemID> <Count> - remove craft material (player first, then base chests)"),
 		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&RemoveCraft));
-
-	FAutoConsoleCommand RegisterRecipeCommand(
-		TEXT("DC1.RegisterRecipe"),
-		TEXT("DC1.RegisterRecipe <RecipeID> <Count> - register recipe order on the aimed production station (client -> server RPC)"),
-		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&RegisterRecipe));
 }
 
 #endif

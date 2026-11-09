@@ -10,6 +10,7 @@
 struct FDC1BuildRow;
 struct FDC1TechRow;
 
+class ADC1PlayerState;
 class UDC1BuildViewModel;
 class UDC1BuildButton;
 class UTextBlock;
@@ -25,6 +26,8 @@ public:
 	UDC1BuildButton*	AddBuildSlot(const FDC1BuildRow& InBuildRow, UDC1BuildViewModel* InViewModel);
 
 	bool				VisibleSlot(const FGameplayTag& InSlotTag);
+
+	void				RefreshCostState(const ADC1PlayerState* InPlayerState);
 
 private:
 	UPROPERTY(meta = (BindWidget))

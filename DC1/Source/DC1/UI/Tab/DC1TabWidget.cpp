@@ -130,11 +130,6 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 		return false;
 	}
 
-	if (false == ::IsValid(TabSwitcher))
-	{
-		return false;
-	}
-
 	UDC1TabHeaderButton* ChangeTabButton = GetTabButton(InTab);
 	if (false == ::IsValid(ChangeTabButton))
 	{
@@ -156,14 +151,18 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 	}
 
 	CurrentTab = InTab;
-	TabSwitcher->SetActiveWidgetIndex(*Index);
-
+	if (true == ::IsValid(TabSwitcher))
+	{
+		TabSwitcher->SetActiveWidgetIndex(*Index);
+	}
 	// 현재 Tab Widget Activate
 	if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
 	{
 		CurrentWidget->Activate();
 	}
-	
+
+	OnTabSelected(InTab);
+
 	return true;
 }
 

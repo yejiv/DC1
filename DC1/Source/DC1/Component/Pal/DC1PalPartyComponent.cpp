@@ -4,6 +4,7 @@
 #include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Controller/DC1PalAIController.h"
@@ -362,13 +363,18 @@ void UDC1PalPartyComponent::HealStoredPals()
 		}
 
 		const float MaxHealth = GetMaxHealthOf(Pal);
-		if (Pal.CurrentHealth >= MaxHealth)
+		if (Pal.CurrentHealth < MaxHealth && Registry->BoxHealRatePerSecond > 0.f)
 		{
-			continue;
+			Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
+			bChanged = true;
 		}
 
-		Pal.CurrentHealth = FMath::Min(MaxHealth, Pal.CurrentHealth + (MaxHealth * Registry->BoxHealRatePerSecond * BoxHealInterval));
-		bChanged = true;
+		// -1 = 아직 안 정함(가득)이라 건너뛴다
+		if (0.f <= Pal.CurrentSanity && Pal.CurrentSanity < MaxSanity && Registry->BoxSanityHealPerSecond > 0.f)
+		{
+			Pal.CurrentSanity = FMath::Min(MaxSanity, Pal.CurrentSanity + (Registry->BoxSanityHealPerSecond * BoxHealInterval));
+			bChanged = true;
+		}
 	}
 
 	if (false == bChanged)
@@ -741,6 +747,11 @@ void UDC1PalPartyComponent::HandleRideApproachFinished(bool InArrived)
 
 		if (false == ::IsValid(Rider))
 		{
+			// 접근 때 멈춘 트리 재시작
+			if (ADC1PalAIController* PalController = GetDeployedPalController())
+			{
+				PalController->TryStartBehavior();
+			}
 			Client_SetRideApproachInputBlocked(false);
 		}
 		return;
@@ -754,11 +765,14 @@ void UDC1PalPartyComponent::Ride()
 	ADC1PalCharacter* Pal = DeployedPal;
 	const UDC1PalData* PalData = ::IsValid(Pal) ? Pal->GetPalData() : nullptr;
 	APlayerController* PC = GetOwnerController();
-	ACharacter* Player = (nullptr != PC) ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+	ADC1Player* Player = (nullptr != PC) ? Cast<ADC1Player>(PC->GetPawn()) : nullptr;
 	if (nullptr == PalData || false == ::IsValid(Player))
 	{
 		return;
 	}
+
+	// 붙이기·Possess 전에. 팀원 PossessedBy/UnPossessed 가 이걸로 탑승을 안다
+	Player->SetRiddenPawn(Pal);
 
 	// 내릴 때 다시 Possess
 	RiddenPalController = Pal->GetController();
@@ -856,6 +870,10 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 	Client_SetRideApproachInputBlocked(false);
 
 	Player->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	if (ADC1Player* RiderPlayer = Cast<ADC1Player>(Player))
+	{
+		RiderPlayer->SetRiddenPawn(nullptr);
+	}
 	Player->SetActorRotation(FRotator(0.f, Player->GetActorRotation().Yaw, 0.f));
 
 	if (UCharacterMovementComponent* Movement = Player->GetCharacterMovement())

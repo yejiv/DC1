@@ -12,6 +12,8 @@
 #include "ViewModel/Build/DC1BuildViewModel.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
 
+#include "Character/Player/DC1PlayerState.h"
+
 void UDC1BuildTabWidget::NativeOnInitialized()
 {
 	// 베이스가 탭 버튼을 수집하고 ButtonInitialize를 부른다. RefreshAll보다 먼저여야 한다
@@ -27,6 +29,13 @@ void UDC1BuildTabWidget::NativeOnInitialized()
 	{
 		SetViewModel(ViewModelSubsystem->GetViewModel<UDC1BuildViewModel>());
 	}
+}
+
+void UDC1BuildTabWidget::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+
+	RefreshCostState();
 }
 
 void UDC1BuildTabWidget::CloseWidget(const FKey& InKey)
@@ -119,6 +128,26 @@ void UDC1BuildTabWidget::RefreshAll()
 	if (false == IsInit)
 	{
 		IsInit = true;
+	}
+}
+
+void UDC1BuildTabWidget::RefreshCostState()
+{
+	const ADC1PlayerState* PlayerState = GetOwningPlayerState<ADC1PlayerState>();
+	if (false == ::IsValid(PlayerState))
+	{
+		return;
+	}
+
+	for (const TPair<FGameplayTag, int32>& Pair : TabToSwitchIndex)
+	{
+		UDC1BuildWidget* BuildWidget = GetTabWidget<UDC1BuildWidget>(Pair.Key);
+		if (false == ::IsValid(BuildWidget))
+		{
+			continue;
+		}
+
+		BuildWidget->RefreshCostState(PlayerState);
 	}
 }
 

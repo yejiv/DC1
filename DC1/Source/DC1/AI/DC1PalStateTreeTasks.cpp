@@ -438,7 +438,7 @@ EStateTreeRunStatus FDC1PalRetreatTask::EnterState(FStateTreeExecutionContext& C
 	}
 
 	Pal->SetOrientToMovement(true);
-	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->FleeSpeed;
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
 
 	// 등을 돌리는 순간 시야에서 사라져 표적 참조가 끊긴다. 지금 붙들어둔다
 	InstanceData.Threat = Target;

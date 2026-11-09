@@ -3,6 +3,7 @@
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
+#include "Component/Notification/DC1NotificationComponent.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "AbilitySystemComponent.h"
@@ -887,14 +888,31 @@ void UDC1PlayerInventoryComponent::Server_DiscardItem_Implementation(int32 InSlo
 
 bool UDC1PlayerInventoryComponent::AddItem(FName InItemID, int32 InCount /* = 1 */)
 {
+	bool bAdded = false;
+
 	// 귀중품은 귀중품 인벤토리로 넘김 (서버 권한 검사는 넘겨받은 쪽에서 수행)
 	if (true == IsValuableItem(InItemID))
 	{
 		UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory();
-		return ::IsValid(ValuableInventory) && ValuableInventory->AddItem(InItemID, InCount);
+		bAdded = ::IsValid(ValuableInventory) && ValuableInventory->AddItem(InItemID, InCount);
+	}
+	else
+	{
+		bAdded = Super::AddItem(InItemID, InCount);
 	}
 
-	return Super::AddItem(InItemID, InCount);
+	// 획득 알림 ( 넣기는 서버에서만 성공한다 )
+	if (true == bAdded)
+	{
+		const ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetOwner());
+		UDC1NotificationComponent* NotificationComponent = (nullptr != OwnerPlayerState) ? OwnerPlayerState->GetNotificationComponent() : nullptr;
+		if (nullptr != NotificationComponent)
+		{
+			NotificationComponent->Client_NotifyItemAcquired(InItemID, InCount);
+		}
+	}
+
+	return bAdded;
 }
 
 bool UDC1PlayerInventoryComponent::CanAcceptItem(FName InItemID) const

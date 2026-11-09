@@ -31,6 +31,7 @@ private:
 private:
 	void HandleWeaponDisplayChanged();
 	void HandleAmmoDisplayChanged();
+	void HandleSphereDisplayChanged();
 
 private:
 	UPROPERTY(Transient, meta=(BindWidget))
@@ -39,13 +40,17 @@ private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1DigitCounter>		Digit_PalSphere = {};
 
+	// 고른 스피어 등급(2 키) 아이콘
+	UPROPERTY(Transient, meta = (BindWidgetOptional))
+	TObjectPtr<UImage>					Image_Icon_PalSphere = {};
+
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1DigitCounter>		Digit_WeaponCurrent = {};
 
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1DigitCounter>		Digit_WeaponRemain = {};
 
-	// [0] 잔탄 카운터 / [1] 무한대. 탄약 개념이 없는 무기는 1
+	// [0] 무한대 / [1] 잔탄 카운터. 탄약 개념이 없는 무기는 0
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UWidgetSwitcher>		WS_DigitWeapon = {};
 

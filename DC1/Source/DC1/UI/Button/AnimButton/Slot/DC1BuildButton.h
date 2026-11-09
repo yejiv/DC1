@@ -49,7 +49,7 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>		ButtonImage = { nullptr };
 
-	// Button Outline Image
+	// Button Image
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>		IconBackImage = { nullptr };
 
@@ -67,7 +67,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "UserButton|Build|Image|Opacity")
 	float					InactiveHoverImageOpacity = { 0.4f };
-
 
 private:
 	bool					CanBuild = { false };

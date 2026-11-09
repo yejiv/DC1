@@ -13,10 +13,12 @@ class UDC1TechTreeComponent;
 class UDC1PlayerInventoryComponent;
 class UDC1ValuableInventoryComponent;
 class UDC1PalPartyComponent;
+class UDC1PalSphereComponent;
 class UDC1EquipComponent;
 class UDC1AppearanceComponent;
 class UDC1TeleportComponent;
 class UDC1PlayerStatComponent;
+class UDC1NotificationComponent;
 
 class UDC1PlayerSaveGame;
 
@@ -37,10 +39,12 @@ public:
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
 	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
+	UDC1PalSphereComponent*				GetPalSphereComponent() const { return PalSphereComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
 	UDC1PlayerStatComponent*			GetStatComponent() const { return StatComponent; }
+	UDC1NotificationComponent*			GetNotificationComponent() const { return NotificationComponent; }
 
 public:
 	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
@@ -71,6 +75,10 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Pal")
 	TObjectPtr<UDC1PalPartyComponent> PalPartyComponent = { nullptr };
 
+	// 던질 팰스피어 등급 목록과 선택
+	UPROPERTY(VisibleAnywhere, Category = "Pal")
+	TObjectPtr<UDC1PalSphereComponent> PalSphereComponent = { nullptr };
+
 	// 장착 정보는 폰보다 오래 살아야 한다. 죽어서 드랍할 때 무엇을 들고 있었는지 읽어야 하기 때문
 	UPROPERTY(VisibleAnywhere, Category = "Equip")
 	TObjectPtr<UDC1EquipComponent> EquipComponent = { nullptr };
@@ -84,4 +92,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Stat")
 	TObjectPtr<UDC1PlayerStatComponent> StatComponent = { nullptr };
+
+	// 서버 판정(획득, 쓰러뜨림)을 이 플레이어 화면 알림으로 보낸다
+	UPROPERTY(VisibleAnywhere, Category = "Notification")
+	TObjectPtr<UDC1NotificationComponent> NotificationComponent = { nullptr };
 };

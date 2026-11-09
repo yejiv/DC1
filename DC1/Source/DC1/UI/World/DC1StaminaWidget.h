@@ -32,6 +32,7 @@ private:
 
 private:
 	void HandleStaminaChanged(float Current, float Max);
+	void HandleStaminaSourceChanged(bool InIsRiding);
 
 private:
 	UPROPERTY(Transient, meta = (BindWidget))

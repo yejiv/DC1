@@ -33,7 +33,9 @@ void UDC1HUDEquipWidget::BindViewModel()
 
 		EquipViewModel->OnWeaponChanged.AddUObject(this, &ThisClass::HandleWeaponDisplayChanged);
 		EquipViewModel->OnAmmoChanged.AddUObject(this, &ThisClass::HandleAmmoDisplayChanged);
+		EquipViewModel->OnSphereChanged.AddUObject(this, &ThisClass::HandleSphereDisplayChanged);
 		HandleWeaponDisplayChanged();
+		HandleSphereDisplayChanged();
 	}
 }
 
@@ -43,6 +45,7 @@ void UDC1HUDEquipWidget::UnbindViewModel()
 	{
 		EquipViewModel->OnWeaponChanged.RemoveAll(this);
 		EquipViewModel->OnAmmoChanged.RemoveAll(this);
+		EquipViewModel->OnSphereChanged.RemoveAll(this);
 	}
 	EquipViewModel.Reset();
 }
@@ -67,7 +70,22 @@ void UDC1HUDEquipWidget::HandleAmmoDisplayChanged()
 	if (false == EquipViewModel.IsValid())
 		return;
 
+	// 위 = 장전(1/0), 아래 = 보유 수
 	Digit_WeaponCurrent->SetValue(EquipViewModel->GetLoadedAmmo());
-	// Temp
-	Digit_WeaponRemain->SetValue(15);
+	Digit_WeaponRemain->SetValue(EquipViewModel->GetReserveAmmo());
+}
+
+void UDC1HUDEquipWidget::HandleSphereDisplayChanged()
+{
+	if (false == EquipViewModel.IsValid())
+		return;
+
+	Digit_PalSphere->SetValue(EquipViewModel->GetSelectedSphereCount());
+
+	if (nullptr != Image_Icon_PalSphere)
+	{
+		UTexture2D* Icon = EquipViewModel->GetSelectedSphereIcon();
+		Image_Icon_PalSphere->SetBrushFromTexture(Icon);
+		Image_Icon_PalSphere->SetVisibility(nullptr != Icon ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+	}
 }

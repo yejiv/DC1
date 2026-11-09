@@ -4,6 +4,7 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Base/DC1BaseRegistryComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "GameMode/DC1GameState.h"
 
 namespace
@@ -97,6 +98,52 @@ bool DC1CraftHelper::RemoveCraftItem(ADC1PlayerState* InPlayerState, FName InIte
 		{
 			break;
 		}
+	}
+
+	return true;
+}
+
+bool DC1CraftHelper::HasCraftCosts(const ADC1PlayerState* InPlayerState, const TArray<FDC1ItemCost>& InCosts)
+{
+	TArray<UDC1InventoryComponentBase*> Inventories;
+	GetCraftInventories(InPlayerState, Inventories);
+
+	for (const FDC1ItemCost& Cost : InCosts)
+	{
+		if (Cost.Count <= 0)
+		{
+			continue;
+		}
+
+		if (SumItemCount(Inventories, Cost.ItemID) < Cost.Count)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool DC1CraftHelper::RemoveCraftCosts(ADC1PlayerState* InPlayerState, const TArray<FDC1ItemCost>& InCosts)
+{
+	if (false == ::IsValid(InPlayerState) || false == InPlayerState->HasAuthority())
+	{
+		return false;
+	}
+
+	if (false == HasCraftCosts(InPlayerState, InCosts))
+	{
+		return false;
+	}
+
+	for (const FDC1ItemCost& Cost : InCosts)
+	{
+		if (Cost.Count <= 0)
+		{
+			continue;
+		}
+
+		RemoveCraftItem(InPlayerState, Cost.ItemID, Cost.Count);
 	}
 
 	return true;

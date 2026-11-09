@@ -124,6 +124,8 @@ protected:
 	void								OnRideMove(const FInputActionValue& Value);
 	void								OnRideJumpPressed(const FInputActionValue& Value);
 	void								OnRideJumpReleased(const FInputActionValue& Value);
+	void								OnRideSprintPressed(const FInputActionValue& Value);
+	void								OnRideSprintReleased(const FInputActionValue& Value);
 
 	// 탑승 중 스킬. InSkillIndex 는 PalData.SkillTags 순서.
 	void								OnRideSkillPressed(const FInputActionValue& Value, int32 InSkillIndex);
@@ -159,6 +161,8 @@ protected:
 
 	// 래그돌, AI 정지, 퍼셉션 해제
 	virtual void						OnDeath() override;
+
+	void								SpawnDrops();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Ability")
@@ -209,6 +213,14 @@ protected:
 
 	// 마지막 가해자
 	TWeakObjectPtr<AActor> LastDamageCauser;
+
+	// 드랍 수평 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Drop", meta = (ClampMin = "0.0"))
+	float DropScatterSpeed = { 250.f };
+
+	// 드랍 위쪽 속도
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Drop", meta = (ClampMin = "0.0"))
+	float DropLaunchSpeed = { 350.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
 	bool bOverrideLevel = { false };

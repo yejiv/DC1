@@ -118,6 +118,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Encount);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Work);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_Sleep);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Pal_RideSprint);
 
 #pragma endregion
 
@@ -177,6 +178,7 @@ namespace DC1PalTags
 	// DA_InputData 의 IA 키
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Move);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Jump);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Sprint);
 
 	// 탑승 중 스킬. PalData.SkillTags 의 0, 1, 2 번째
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Ride_Skill1);

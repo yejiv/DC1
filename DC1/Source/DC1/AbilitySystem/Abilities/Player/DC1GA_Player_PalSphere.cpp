@@ -14,10 +14,39 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Component/PalSphere/DC1PalSphereComponent.h"
 #include "Projectile/Pal/DC1PalSphere.h"
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+
+namespace DC1GAPlayerPalSphere
+{
+	static UDC1PalSphereComponent* FindSphereComponent(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		return (nullptr != PS) ? PS->GetPalSphereComponent() : nullptr;
+	}
+
+	// 서버는 Q 를 누를 때 받은 등급, 클라는 지금 고른 등급. 리슨 서버 호스트는 둘이 같다
+	static FName FindThrowItemID(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const UDC1PalSphereComponent* SphereComp = FindSphereComponent(InActorInfo);
+		if (nullptr == SphereComp)
+		{
+			return NAME_None;
+		}
+
+		return (true == InActorInfo->IsNetAuthority()) ? SphereComp->GetThrowSphereItemID() : SphereComp->GetSelectedSphereItemID();
+	}
+
+	static UDC1PlayerInventoryComponent* FindInventory(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		return (nullptr != PS) ? PS->GetInventoryComponent() : nullptr;
+	}
+}
 
 UDC1GA_Player_PalSphere::UDC1GA_Player_PalSphere(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -28,9 +57,23 @@ UDC1GA_Player_PalSphere::UDC1GA_Player_PalSphere(const FObjectInitializer& Objec
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
 }
 
+bool UDC1GA_Player_PalSphere::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (false == Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	const FName ItemID = DC1GAPlayerPalSphere::FindThrowItemID(ActorInfo);
+	const UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerPalSphere::FindInventory(ActorInfo);
+	return (false == ItemID.IsNone() && nullptr != Inventory && Inventory->GetItemCount(ItemID) > 0);
+}
+
 void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	ThrowItemID = DC1GAPlayerPalSphere::FindThrowItemID(ActorInfo);
 
 	// 상자가 꽉 차면 던지지 않는다
 	if (const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo()))
@@ -123,9 +166,18 @@ void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
 		return;
 	}
 
-	if (nullptr == SphereClass)
+	const UDC1PalSphereComponent* SphereComp = DC1GAPlayerPalSphere::FindSphereComponent(CurrentActorInfo);
+	const FDC1PalSphereDef* SphereDef = (nullptr != SphereComp) ? SphereComp->FindSphereDef(ThrowItemID) : nullptr;
+	if (nullptr == SphereDef || nullptr == SphereDef->SphereClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: SphereClass is not set. Check GA_Player_PalSphere."), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No SphereClass for item [%s]. Check PalSphereComponent SphereDefs on the PlayerState BP."), *GetName(), *ThrowItemID.ToString());
+		return;
+	}
+
+	// 조준 중에 다른 데로 옮겼거나 버렸으면 안 던진다
+	UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerPalSphere::FindInventory(CurrentActorInfo);
+	if (nullptr == Inventory || false == Inventory->RemoveItemByID(ThrowItemID, 1))
+	{
 		return;
 	}
 
@@ -141,7 +193,7 @@ void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
 	SpawnParams.Instigator = Player;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(SphereClass, SpawnLocation, AimRotation, SpawnParams);
+	ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(SphereDef->SphereClass, SpawnLocation, AimRotation, SpawnParams);
 	if (nullptr == Sphere)
 	{
 		return;
