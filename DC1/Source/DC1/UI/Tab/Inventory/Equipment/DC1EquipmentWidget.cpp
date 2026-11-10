@@ -76,11 +76,27 @@ void UDC1EquipmentWidget::NativeConstruct()
 
 	RefreshAllSlots();
 
-	// 화면이 열려 있는 동안만 미리보기 촬영
 	SetupPlayerPreview();
+}
+
+void UDC1EquipmentWidget::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+
+	// 인벤토리 탭이 보이는 동안만 미리보기 촬영 - 다른 탭의 EndPreview 뒤에도 탭 복귀 시 다시 켜진다
 	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
 	{
 		PreviewSubsystem->BeginPlayerPreview();
+	}
+}
+
+void UDC1EquipmentWidget::NativeOnDeactivated()
+{
+	Super::NativeOnDeactivated();
+
+	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
+	{
+		PreviewSubsystem->EndPreview();
 	}
 }
 

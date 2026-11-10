@@ -29,6 +29,8 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeOnActivated() override;
+	virtual void NativeOnDeactivated() override;
 
 protected:
 	// 장비 칸 전체를 VM 값으로 갱신하는 함수
