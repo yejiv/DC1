@@ -49,11 +49,14 @@ void UDC1PalPartyWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	const TArray<UUserWidget*>& SlotWidgets = EntryBox_Slots->GetAllEntries();
-	for (auto& Widget : SlotWidgets)
+	for (int32 i = 0; i < SlotWidgets.Num(); ++i)
 	{
-		if (UDC1PalBoxSlotWidget* SlotWidget = Cast<UDC1PalBoxSlotWidget>(Widget))
+		if (UDC1PalBoxSlotWidget* SlotWidget = Cast<UDC1PalBoxSlotWidget>(SlotWidgets[i]))
 		{
 			SlotWidget->OnSlotHovered.AddUObject(this, &ThisClass::HandleSlotHovered);
+
+			// 클릭 델리게이트는 인자가 없어 슬롯 번호를 같이 묶어둠
+			SlotWidget->OnClickedDelegate.AddUObject(this, &ThisClass::HandleSlotClicked, i);
 		}
 	}
 }
@@ -66,6 +69,7 @@ void UDC1PalPartyWidget::NativeDestruct()
 		if (UDC1PalBoxSlotWidget* SlotWidget = Cast<UDC1PalBoxSlotWidget>(Widget))
 		{
 			SlotWidget->OnSlotHovered.RemoveAll(this);
+			SlotWidget->OnClickedDelegate.RemoveAll(this);
 		}
 	}
 
@@ -102,4 +106,14 @@ void UDC1PalPartyWidget::HandleSlotHovered(int32 SlotIndex)
 	const FGameplayTag& SpeciesTag = CachedPalViewModel->GetSpeciesTag(SlotIndex);
 
 	OnChangedFocusingPal.ExecuteIfBound(SpeciesTag);
+}
+
+void UDC1PalPartyWidget::HandleSlotClicked(int32 SlotIndex)
+{
+	if (false == CachedPalViewModel.IsValid())
+		return;
+
+	const FGameplayTag& SpeciesTag = CachedPalViewModel->GetSpeciesTag(SlotIndex);
+
+	OnSelectedPal.ExecuteIfBound(SlotIndex, SpeciesTag);
 }

@@ -13,7 +13,6 @@
 #include "ViewModel/Pal/DC1PalViewModel.h"
 
 #include "Components/Image.h"
-#include "Components/WidgetSwitcher.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
@@ -41,34 +40,39 @@ void UDC1PalInfoWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	PalPartyWidget->OnChangedFocusingPal.BindUObject(this, &UDC1PalInfoWidget::HandleChangedFocusingPal);
+	PalPartyWidget->OnSelectedPal.BindUObject(this, &UDC1PalInfoWidget::HandleSelectedPal);
+	PalDetailWidget->OnBackClicked.BindUObject(this, &UDC1PalInfoWidget::CloseDetail);
 }
 
 void UDC1PalInfoWidget::NativeDestruct()
 {
 	PalPartyWidget->OnChangedFocusingPal.Unbind();
+	PalPartyWidget->OnSelectedPal.Unbind();
+	PalDetailWidget->OnBackClicked.Unbind();
 
 	Super::NativeDestruct();
 }
 
-void UDC1PalInfoWidget::ShowPartyPanel()
+void UDC1PalInfoWidget::OpenDetail(int32 InSlotIndex)
 {
-	PalPartyWidget->RefreshPalPartySlots();
-
-	WidgetSwitcher_Panel->SetActiveWidget(PalPartyWidget.Get());
-
-	Image_PalPreview->SetVisibility(ESlateVisibility::Collapsed);
+	PalDetailWidget->SetPalInfo(InSlotIndex);
+	PalDetailWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
-void UDC1PalInfoWidget::ShowDetailPanel()
+void UDC1PalInfoWidget::CloseDetail()
 {
-	WidgetSwitcher_Panel->SetActiveWidget(PalDetailWidget.Get());
+	PalDetailWidget->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UDC1PalInfoWidget::NativeOnActivated()
 {
 	Super::NativeOnActivated();
 
-	ShowPartyPanel();
+	PalPartyWidget->RefreshPalPartySlots();
+
+	CloseDetail();
+
+	Image_PalPreview->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UDC1PalInfoWidget::NativeOnDeactivated()
@@ -79,7 +83,32 @@ void UDC1PalInfoWidget::NativeOnDeactivated()
 		PreviewSubsystem->EndPreview(EDC1PreviewType::Pal);
 }
 
+bool UDC1PalInfoWidget::IsDetailOpen() const
+{
+	return ESlateVisibility::Collapsed != PalDetailWidget->GetVisibility();
+}
+
 void UDC1PalInfoWidget::HandleChangedFocusingPal(const FGameplayTag& SpeciesTag)
+{
+	// 상세 창이 열려 있는 동안은 호버로 미리보기를 바꾸지 않음 (선택한 팰 유지)
+	if (true == IsDetailOpen())
+		return;
+
+	FocusPal(SpeciesTag);
+}
+
+void UDC1PalInfoWidget::HandleSelectedPal(int32 SlotIndex, const FGameplayTag& SpeciesTag)
+{
+	// 빈 칸 클릭은 무시
+	if (false == SpeciesTag.IsValid())
+		return;
+
+	// 상세 창이 열려 있어도 다른 팰을 선택하면 그 팰로 갱신
+	FocusPal(SpeciesTag);
+	OpenDetail(SlotIndex);
+}
+
+void UDC1PalInfoWidget::FocusPal(const FGameplayTag& SpeciesTag)
 {
 	if (false == SpeciesTag.IsValid())
 	{
