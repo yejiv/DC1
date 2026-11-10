@@ -37,8 +37,8 @@ public:
 	// 스피어가 잡아온 것을 받는다. OnPalCaptured에 바인딩하는 진입점
 	void					HandlePalCaptured(const FDC1PalInstance& InPal);
 
-	// 처치·포획 경험치. 파티 전원 전액. 서버 전용
-	void					GrantExperienceFor(int32 InDefeatedLevel);
+	// 처치·포획 경험치. 파티 전원 전액. 서버 전용. InExpRate = 알파 배율 (일반 1)
+	void					GrantExperienceFor(int32 InDefeatedLevel, float InExpRate);
 
 	// 소환/회수 토글. 입력은 클라에서 들어오므로 서버로 넘긴다. 소환할 칸은 클라가 고른 번호를 같이 보낸다
 	UFUNCTION(Server, Reliable)

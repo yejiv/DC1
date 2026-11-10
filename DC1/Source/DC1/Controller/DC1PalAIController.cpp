@@ -297,6 +297,15 @@ void ADC1PalAIController::UpdateTarget()
 		ProvokedTarget = nullptr;
 	}
 
+	// 중립이랑 분기처리
+	const ADC1PalCharacter* SelfPal = Cast<ADC1PalCharacter>(SelfPawn);
+	const UDC1PalData* SelfPalData = (nullptr != SelfPal) ? SelfPal->GetPalData() : nullptr;
+	if (nullptr != SelfPalData && EDC1Team::Wild == SelfPal->GetTeam() && EDC1PalTemperament::Neutral == SelfPalData->Temperament)
+	{
+		SetCurrentTarget(nullptr);
+		return;
+	}
+
 	// 잡고 있던 표적이 아직 보이면 안 바꾼다.
 	if (true == DC1PalAIController::IsSensed(SensedTargets, CurrentTarget))
 	{
