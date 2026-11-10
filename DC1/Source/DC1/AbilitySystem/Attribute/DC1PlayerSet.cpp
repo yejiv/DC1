@@ -7,6 +7,7 @@
 #include "GameplayEffectExtension.h"
 #include "Tags/DC1GamePlayTags.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Component/Widget/DC1DamageNumberComponent.h"
 
 UDC1PlayerSet::UDC1PlayerSet()
 {
@@ -149,7 +150,10 @@ void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 		return;
 	}
 
+	// 데미지 Notify -> World UI 표시
+	const float OldShield = GetShield();
 	SetShield(FMath::Max(GetShield() - LocalDamage, 0.f));
+	UDC1DamageNumberComponent::NotifyDamage(Data, OldShield - GetShield(), EDC1DamageNumberType::Shield);
 }
 
 void UDC1PlayerSet::OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight)

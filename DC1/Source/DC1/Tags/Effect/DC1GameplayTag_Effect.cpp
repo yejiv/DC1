@@ -16,4 +16,10 @@ namespace DC1EffectTags
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Equip_Shield, "SetByCaller.Equip.Shield");
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Equip_Health, "SetByCaller.Equip.Health");
 #pragma endregion
+
+#pragma region Cue
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber, "GameplayCue.DamageNumber");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber_Health, "GameplayCue.DamageNumber.Health");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber_Shield, "GameplayCue.DamageNumber.Shield");
+#pragma endregion
 }

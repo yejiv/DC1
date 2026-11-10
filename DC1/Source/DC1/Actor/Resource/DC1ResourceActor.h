@@ -46,7 +46,8 @@ public:
 	ADC1ResourceActor();
 
 public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	float								GetWorkNumberRange() const { return WorkNumberRange; }
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
 	// IDC1WorkTargetInterface override
@@ -142,6 +143,9 @@ protected:
 	// 이 노드가 요구하는 작업 종류 - 나무 Work.Lumbering / 돌 Work.Mining
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Work", meta = (Categories = "Work"))
 	FGameplayTag									WorkTypeTag;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Resource|Work", meta = (ClampMin = "0"))
+	float											WorkNumberRange = { 1500.f };
 
 	// Debug TEMP  - 0이면 꺼짐
 	UPROPERTY(EditAnywhere, Category = "Resource|Debug", meta = (ClampMin = "0"))

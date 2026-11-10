@@ -5,6 +5,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
+#include "Component/Widget/DC1DamageNumberComponent.h"
 
 void UDC1AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -40,7 +41,10 @@ void UDC1AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 			return;
 		}
 
+		// 데미지 Notify -> World UI 표시
+		const float OldHealth = GetHealth();
 		SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
+		UDC1DamageNumberComponent::NotifyDamage(Data, OldHealth - GetHealth(), EDC1DamageNumberType::Health);
 
 		UE_LOG(LogTemp, Log, TEXT("[DC1] %s took %.1f damage from %s. Health = %.1f / %.1f"),
 			*GetNameSafe(Data.Target.GetAvatarActor()),
