@@ -34,18 +34,22 @@ protected:
 	virtual void	NativeDestruct() override;
 
 public:
-	virtual void HandleInputKey(const FKey& InKey);
+	virtual void	HandleInputKey(const FKey& InKey);
 
 public:
 	// Manager에서 활성화될 때 호출
-	virtual void Activate();
+	virtual void	Activate();
 
 	// Manager에서 비활성화될 때 호출
-	virtual void Deactivate();
+	virtual void	Deactivate();
 
 protected:
+	// 기본 구현이 자식에게 전파 - 오버라이드는 Super 호출 필수
 	virtual void	NativeOnActivated();
 	virtual void	NativeOnDeactivated();
+
+	// 자식에게 Activate/Deactivate를 전파할지 - 기본은 전부 ( TabWidget의 탭 변환에서의 비활성화 목적 )
+	virtual bool	ShouldPropagateTo(const UDC1UserWidget* InChild) const { return true; }
 
 	void			PopScreen();
 
@@ -61,6 +65,13 @@ protected:
 
 private:
 	void			HandleAnimFinished(FWidgetAnimationState& InState);
+
+	// NativeOnActivated/Deactivated override시 Super 미호출 -> 해당 자식 단계에서 전파 끊김
+	void			PropagateActivation(bool InIsActivate);
+
+protected:
+	// 상태가 바뀔 때만 NativeOnActivated/Deactivated 호출
+	bool			bIsActivated = { false };
 
 private:
 	// 재생 중인 Anim 진행 방향 Caching

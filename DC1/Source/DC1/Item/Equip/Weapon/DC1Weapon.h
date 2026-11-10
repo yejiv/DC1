@@ -32,10 +32,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
 	FName				AttackSocketName;
 
-	// 최종 데미지 = 공격력 x 이 값
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
-	float				DamageMultiplier = { 1.f };
-
 	// 장착 HUD 표시용. 인벤토리 아이콘(FDC1ItemRow::ItemIcon)과는 다른 에셋이다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
 	TSoftObjectPtr<UTexture2D>	EquipIcon;

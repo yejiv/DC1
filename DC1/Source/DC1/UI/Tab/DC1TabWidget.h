@@ -35,7 +35,12 @@ protected:
 
 protected:
 	virtual void	NativeOnInitialized() override;
-	
+
+	// 페이지 활성 = 화면 활성 && 현재 탭 - 현재 페이지만 따로 넘긴다
+	virtual void	NativeOnActivated() override;
+	virtual void	NativeOnDeactivated() override;
+	virtual bool	ShouldPropagateTo(const UDC1UserWidget* InChild) const override;
+
 public:
 	virtual void	HandleInputKey(const FKey& InKey) override;
 
@@ -55,6 +60,7 @@ protected:
 	virtual void	OnTabSelected(const FGameplayTag& InTab) {}
 
 private:
+	UDC1UserWidget*	GetActivePage() const;
 	bool			CanSelectTab(const FGameplayTag& InTab) const;
 	void			ChangeTab(bool InIsNext);
 

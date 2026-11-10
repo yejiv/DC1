@@ -11,5 +11,9 @@ namespace DC1EffectTags
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_PalPassive_Attack, "SetByCaller.PalPassive.Attack");
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_PalPassive_Defense, "SetByCaller.PalPassive.Defense");
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_PalPassive_WorkSpeed, "SetByCaller.PalPassive.WorkSpeed");
+
+	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Equip_Defense, "SetByCaller.Equip.Defense");
+	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Equip_Shield, "SetByCaller.Equip.Shield");
+	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Equip_Health, "SetByCaller.Equip.Health");
 #pragma endregion
 }

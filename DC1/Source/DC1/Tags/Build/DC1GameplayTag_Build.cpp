@@ -76,9 +76,26 @@ namespace DC1BuildTags
 
 
 #pragma region CATEGORY_CRAFTING
-	UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon, "Crafting.Weapon");
-	UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body, "Crafting.Armor.Body");
-	UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere, "Crafting.Sphere");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_Woodclub, "Crafting.Weapon.Woodclub");							
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_WoodBow, "Crafting.Weapon.WoodBow");							
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_StoneAxe, "Crafting.Weapon.StoneAxe");								
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_StonePickaxe, "Crafting.Weapon.StonePickaxe");					
+
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Consume_Arrow, "Crafting.Item.Consume.Arrow");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Material_WoodPlank, "Crafting.Item.Material.WoodPlank");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Material_Nail, "Crafting.Item.Material.Nail");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Material_Cloth, "Crafting.Item.Material.Cloth");
+		
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body_ClothClothes, "Crafting.Armor.Body.ClothClothes");
+
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_PalSphere, "Crafting.Sphere.PalSphere");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_MegaSphere, "Crafting.Sphere.MegaSphere");
+
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Normal, "Crafting.Glider.Normal");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Mega, "Crafting.Glider.Mega");
+
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shiled_Normal, "Crafting.Shiled.Normal");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shiled_Mega, "Crafting.Shiled.Mega");
 #pragma endregion
 }
 

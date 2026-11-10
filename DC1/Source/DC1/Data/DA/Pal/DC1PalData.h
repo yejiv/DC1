@@ -33,7 +33,7 @@ struct FDC1PalMontageSet
 	}
 };
 
-// 팰 미리보기 설정 (메쉬 / Idle 애니 / 카메라). 카메라 값은 PreviewActor의 Camera 변수와 같은 의미
+// 팰 미리보기 설정 (메쉬 / Idle 애니). 카메라는 모든 팰 공통이라 BP_PalPreviewActor의 Camera 변수 사용
 USTRUCT(BlueprintType)
 struct FDC1PalPreviewSettings
 {
@@ -46,26 +46,6 @@ struct FDC1PalPreviewSettings
 	// 원본 메쉬를 따라갈 수 없으므로 루프 재생할 Idle 애니
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Anim")
 	TSoftObjectPtr<UAnimSequence>	IdleAnim = { nullptr };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera", meta = (ClampMin = "10"))
-	float							CameraDistance = { 50.f };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
-	float							CameraHeight = { 0.f };
-
-	// 양수면 화면 기준 오른쪽
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
-	float							CameraRight = { 0.f };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
-	float							CameraYaw = { 0.f };
-
-	// 양수면 내려다봄
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera")
-	float							CameraPitch = { 0.f };
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Preview|Camera", meta = (ClampMin = "5", ClampMax = "170"))
-	float							CameraFOV = { 90.f };
 };
 
 // 드랍

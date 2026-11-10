@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "DC1PreviewActor.generated.h"
 
+class UDirectionalLightComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
 class USceneCaptureComponent2D;
@@ -61,6 +62,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Preview")
 	TObjectPtr<UPointLightComponent> FillLight = { nullptr };
 
+	// 직사광 (채널 2만 비춤, 캡처 중이고 세기가 0보다 클 때만 켬)
+	UPROPERTY(VisibleAnywhere, Category = "Preview")
+	TObjectPtr<UDirectionalLightComponent> SunLight = { nullptr };
+
 	UPROPERTY(VisibleAnywhere, Category = "Preview")
 	TObjectPtr<USceneCaptureComponent2D> CaptureComponent = { nullptr };
 
@@ -109,4 +114,15 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Preview|Light")
 	FLinearColor FillLightColor = { FLinearColor::White };
+
+	// 빛이 나아가는 방향 (Pitch 음수면 위에서 아래로 비춤)
+	UPROPERTY(EditAnywhere, Category = "Preview|Light")
+	FRotator SunLightRotation = { -40.f, -120.f, 0.f };
+
+	// 단위 Lux, 0이면 직사광 사용 안 함
+	UPROPERTY(EditAnywhere, Category = "Preview|Light", meta = (ClampMin = "0"))
+	float SunLightIntensity = { 0.f };
+
+	UPROPERTY(EditAnywhere, Category = "Preview|Light")
+	FLinearColor SunLightColor = { FLinearColor::White };
 };

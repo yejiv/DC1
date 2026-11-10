@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,6 +29,8 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeOnActivated() override;
+	virtual void NativeOnDeactivated() override;
 
 protected:
 	// 장비 칸 전체를 VM 값으로 갱신하는 함수

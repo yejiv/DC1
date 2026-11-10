@@ -29,7 +29,7 @@ public:
 
 	void BeginPlayerPreview();
 	void BeginPalPreview(const FGameplayTag& PalID);
-	void EndPreview();
+	void EndPreview(EDC1PreviewType InType);
 
 private:
 	// 공통: 액터 찾기/스폰 + 상태 기록 (갱신 / 캡처 켜기는 타입별 Begin에서)

@@ -5,7 +5,7 @@
 #include "Animation/WidgetAnimation.h"
 #include "Animation/WidgetAnimationState.h"
 #include "Subsystem/DC1UIManagerSubsystem.h"
-
+#include "Blueprint/WidgetTree.h"
 
 void UDC1UserWidget::NativeOnInitialized()
 {
@@ -46,6 +46,13 @@ void UDC1UserWidget::HandleInputKey(const FKey& InKey)
 
 void UDC1UserWidget::Activate()
 {
+	if (true == bIsActivated)
+	{
+		return;
+	}
+
+	bIsActivated = true;
+
 	FDC1AnimPlayInfo PlayInfo;
 	PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
 
@@ -56,6 +63,13 @@ void UDC1UserWidget::Activate()
 
 void UDC1UserWidget::Deactivate()
 {
+	if (false == bIsActivated)
+	{
+		return;
+	}
+
+	bIsActivated = false;
+
 	FDC1AnimPlayInfo PlayInfo;
 	PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
 
@@ -66,10 +80,36 @@ void UDC1UserWidget::Deactivate()
 
 void UDC1UserWidget::NativeOnActivated()
 {
+	PropagateActivation(true);
 }
 
 void UDC1UserWidget::NativeOnDeactivated()
 {
+	PropagateActivation(false);
+}
+
+void UDC1UserWidget::PropagateActivation(bool InIsActivate)
+{
+	TArray<UWidget*> ChildWidgets;
+	WidgetTree->GetAllWidgets(ChildWidgets);
+
+	for (UWidget* Widget : ChildWidgets)
+	{
+		UDC1UserWidget* UserWidget = Cast<UDC1UserWidget>(Widget);
+		if (false == ::IsValid(UserWidget) || false == ShouldPropagateTo(UserWidget))
+		{
+			continue;
+		}
+
+		if (true == InIsActivate)
+		{
+			UserWidget->Activate();
+		}
+		else
+		{
+			UserWidget->Deactivate();
+		}
+	}
 }
 
 void UDC1UserWidget::PopScreen()

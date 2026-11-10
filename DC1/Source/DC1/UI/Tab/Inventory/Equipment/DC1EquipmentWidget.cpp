@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "UI/Tab/Inventory/Equipment/DC1EquipmentWidget.h"
 
@@ -76,12 +76,7 @@ void UDC1EquipmentWidget::NativeConstruct()
 
 	RefreshAllSlots();
 
-	// 화면이 열려 있는 동안만 미리보기 촬영
 	SetupPlayerPreview();
-	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
-	{
-		PreviewSubsystem->BeginPlayerPreview();
-	}
 }
 
 void UDC1EquipmentWidget::NativeDestruct()
@@ -91,12 +86,29 @@ void UDC1EquipmentWidget::NativeDestruct()
 		CachedViewModel->OnEquipmentUIUpdated.RemoveAll(this);
 	}
 
+	Super::NativeDestruct();
+}
+
+void UDC1EquipmentWidget::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+
+	// 인벤토리 탭이 보이는 동안만 미리보기 촬영
 	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
 	{
-		PreviewSubsystem->EndPreview();
+		PreviewSubsystem->BeginPlayerPreview();
 	}
+}
 
-	Super::NativeDestruct();
+void UDC1EquipmentWidget::NativeOnDeactivated()
+{
+	Super::NativeOnDeactivated();
+
+	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
+	{
+		PreviewSubsystem->EndPreview(EDC1PreviewType::Player);
+		PreviewSubsystem->EndPreview(EDC1PreviewType::Pal);
+	}
 }
 
 void UDC1EquipmentWidget::SetupPlayerPreview()

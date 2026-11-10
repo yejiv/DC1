@@ -8,7 +8,6 @@
 #include "DC1PalInfoWidget.generated.h"
 
 class UImage;
-class UWidgetSwitcher;
 class UMaterialInstanceDynamic;
 
 class UDC1PalPartyWidget;
@@ -18,7 +17,7 @@ class UDC1PreviewSubsystem;
 
 /**
  * 팰 정보 화면
- * 팰 파티 현황(파티 팰 + 미리보기) / 팰 상세 정보 두 패널을 스위칭
+ * 팰 파티 현황(파티 팰 + 미리보기)은 항상 표시, 팰 상세 정보는 슬롯 클릭 시 우측에 팝업
  */
 UCLASS()
 class DC1_API UDC1PalInfoWidget : public UDC1UserWidget
@@ -31,25 +30,28 @@ public:
 	virtual void	NativeDestruct() override;
 
 public:
-	void ShowPartyPanel();
-	void ShowDetailPanel();
+	void OpenDetail(int32 InSlotIndex);
+	void CloseDetail();
 
 private:
 	virtual void	NativeOnActivated() override;
 	virtual void	NativeOnDeactivated() override;
 
 private:
+	bool IsDetailOpen() const;
+
+	// 미리보기를 해당 팰로 변경 (빈 태그면 미리보기 숨김)
+	void FocusPal(const FGameplayTag& SpeciesTag);
+
 	void HandleChangedFocusingPal(const FGameplayTag& SpeciesTag);
+	void HandleSelectedPal(int32 SlotIndex, const FGameplayTag& SpeciesTag);
 
 private:
-	UPROPERTY(Transient, meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher>			WidgetSwitcher_Panel = { nullptr };
-
 	// 팰 파티 현황
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1PalPartyWidget>		PalPartyWidget = { nullptr };
 
-	// 팰 상세 정보
+	// 팰 상세 정보 (기본 Collapsed)
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1PalDetailWidget>		PalDetailWidget = { nullptr };
 

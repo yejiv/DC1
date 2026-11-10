@@ -20,8 +20,6 @@ void ADC1PalPreviewActor::SetPalPreview(const FDC1PalPreviewSettings& InSettings
 	PalMesh->SetSkeletalMeshAsset(InSettings.Mesh.LoadSynchronous());
 	PalMesh->PlayAnimation(InSettings.IdleAnim.LoadSynchronous(), true);
 
-	SetCameraSetting(InSettings.CameraDistance, InSettings.CameraHeight, InSettings.CameraRight, InSettings.CameraYaw, InSettings.CameraPitch, InSettings.CameraFOV);
-
 	SetShowOnlyActor(this);
 }
 

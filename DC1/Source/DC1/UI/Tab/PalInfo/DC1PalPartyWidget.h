@@ -14,6 +14,7 @@ class UDC1PalViewModel;
 class UDC1PalBoxSlotWidget;
 
 DECLARE_DELEGATE_OneParam(FOnChangedFocusingPal, const FGameplayTag& /*PalTag*/);
+DECLARE_DELEGATE_TwoParams(FOnSelectedPal, int32 /*SlotIndex*/, const FGameplayTag& /*PalTag*/);
 
 /**
  * 팰 파티 현황 (파티에 등록한 팰 목록 + 선택한 팰 미리보기)
@@ -25,6 +26,9 @@ class DC1_API UDC1PalPartyWidget : public UDC1UserWidget
 
 public:
 	FOnChangedFocusingPal	OnChangedFocusingPal;
+
+	// 슬롯 클릭 시 호출
+	FOnSelectedPal			OnSelectedPal;
 
 public:
 	void RefreshPalPartySlots();
@@ -41,6 +45,7 @@ private:
 
 private:
 	void HandleSlotHovered(int32 SlotIndex);
+	void HandleSlotClicked(int32 SlotIndex);
 
 private:
 	// 파티 슬롯 목록 (Entry Widget Class = PalBoxSlotWidget)

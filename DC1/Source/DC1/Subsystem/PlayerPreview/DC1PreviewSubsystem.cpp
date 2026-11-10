@@ -53,7 +53,8 @@ UTextureRenderTarget2D* UDC1PreviewSubsystem::InitRenderTarget(TObjectPtr<UTextu
 
 void UDC1PreviewSubsystem::Deinitialize()
 {
-	EndPreview();
+	EndPreview(EDC1PreviewType::Player);
+	EndPreview(EDC1PreviewType::Pal);
 
 	if (::IsValid(PlayerPreviewActor))
 	{
@@ -109,17 +110,17 @@ void UDC1PreviewSubsystem::BeginPalPreview(const FGameplayTag& PalID)
 	Actor->SetCaptureEnabled(true);
 }
 
-void UDC1PreviewSubsystem::EndPreview()
+void UDC1PreviewSubsystem::EndPreview(EDC1PreviewType InType)
 {
 	bIsPreviewing = false;
-	UnbindEquipComponent();
 
-	if (::IsValid(PlayerPreviewActor))
+	if (EDC1PreviewType::Player == InType && ::IsValid(PlayerPreviewActor))
 	{
+		UnbindEquipComponent();
 		PlayerPreviewActor->SetCaptureEnabled(false);
 	}
 
-	if (::IsValid(PalPreviewActor))
+	if (EDC1PreviewType::Pal == InType && ::IsValid(PalPreviewActor))
 	{
 		PalPreviewActor->SetCaptureEnabled(false);
 	}
