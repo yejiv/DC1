@@ -52,6 +52,9 @@ struct FDC1BuildActorData
 	
 	UPROPERTY()
 	TArray<FDC1ItemCost>		BuildCosts;
+
+	UPROPERTY()
+	FGameplayTag				WorkTypeTag = { FGameplayTag::EmptyTag };
 };
 
 UCLASS()

@@ -55,6 +55,47 @@ void UDC1TabWidget::NativeOnInitialized()
 	ButtonInitialize();
 }
 
+void UDC1TabWidget::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+
+	if (UDC1UserWidget* ActivePage = GetActivePage())
+	{
+		ActivePage->Activate();
+	}
+}
+
+void UDC1TabWidget::NativeOnDeactivated()
+{
+	Super::NativeOnDeactivated();
+
+	if (UDC1UserWidget* ActivePage = GetActivePage())
+	{
+		ActivePage->Deactivate();
+	}
+}
+
+bool UDC1TabWidget::ShouldPropagateTo(const UDC1UserWidget* InChild) const
+{
+	// 탭 페이지는 전파에서 제외 - 현재 페이지만 NativeOnActivated에서 넘김
+	if (true == ::IsValid(TabSwitcher) && InChild->GetParent() == TabSwitcher.Get())
+	{
+		return false;
+	}
+
+	return Super::ShouldPropagateTo(InChild);
+}
+
+UDC1UserWidget* UDC1TabWidget::GetActivePage() const
+{
+	if (false == ::IsValid(TabSwitcher))
+	{
+		return nullptr;
+	}
+
+	return Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget());
+}
+
 void UDC1TabWidget::ButtonInitialize()
 {
 	for (const TPair<FGameplayTag, TObjectPtr<UDC1TabHeaderButton>>& Pair : TabButtons)
@@ -151,8 +192,8 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 
 	ChangeTabButton->SetState(EDC1TabButtonState::Active);
 
-	// 이전 Tab Widget Deactivate
-	if (UDC1UserWidget* PreWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+	// 이전 Tab Widget Deactivate - 활성이 아니었으면 Deactivate 안에서 무시된다
+	if (UDC1UserWidget* PreWidget = GetActivePage())
 	{
 		PreWidget->Deactivate();
 	}
@@ -162,8 +203,10 @@ bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
 	{
 		TabSwitcher->SetActiveWidgetIndex(*Index);
 	}
-	// 현재 Tab Widget Activate
-	if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+
+	// 현재 Tab Widget Activate - 화면이 비활성이면 화면 Activate 때 NativeOnActivated가 넘긴다
+	UDC1UserWidget* CurrentWidget = GetActivePage();
+	if (true == bIsActivated && true == ::IsValid(CurrentWidget))
 	{
 		CurrentWidget->Activate();
 	}

@@ -8,6 +8,7 @@
 #include "UI/Tab/TechTree/DC1TechTreePointWidget.h"
 
 #include "Define/DC1Helper.h"
+#include "Define/DC1ItemHelper.h"
 
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -16,6 +17,58 @@
 
 #include "ViewModel/TechTree/DC1TechTreeViewModel.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
+
+namespace
+{
+	struct FDC1UnlockTarget
+	{
+		FText					Description;
+		TArray<FDC1ItemCost>	Costs;
+	};
+
+	void CollectUnlockTargets(TMap<FGameplayTag, FDC1UnlockTarget>& OutTargets)
+	{
+		TArray<FDC1BuildRow> BuildRows;
+		if (true == DC1DataTableHelper::GetAllRows<FDC1BuildRow>(DC1DataTableTags::DataTable_UI_Build, BuildRows))
+		{
+			for (const FDC1BuildRow& BuildRow : BuildRows)
+			{
+				if (false == BuildRow.RequiredTechTag.IsValid() || true == OutTargets.Contains(BuildRow.RequiredTechTag))
+				{
+					continue;
+				}
+
+				FDC1UnlockTarget& Target = OutTargets.Add(BuildRow.RequiredTechTag);
+				Target.Description = BuildRow.Description;
+				Target.Costs = BuildRow.BuildCosts;
+			}
+		}
+
+		TArray<FDC1ItemRecipeRow> RecipeRows;
+		if (true == DC1DataTableHelper::GetAllRows<FDC1ItemRecipeRow>(DC1DataTableTags::DataTable_ItemRecipe, RecipeRows))
+		{
+			for (const FDC1ItemRecipeRow& RecipeRow : RecipeRows)
+			{
+				if (false == RecipeRow.RequiredTechTag.IsValid() || true == OutTargets.Contains(RecipeRow.RequiredTechTag))
+				{
+					continue;
+				}
+
+				FDC1UnlockTarget& Target = OutTargets.Add(RecipeRow.RequiredTechTag);
+
+				const FDC1ItemRow* ProductRow = DC1ItemHelper::FindItemRow(RecipeRow.ProductItemID);
+				Target.Description = (nullptr != ProductRow) ? ProductRow->Description : FText::GetEmpty();
+
+				for (const FDC1RecipeItem& RequiredItem : RecipeRow.RequiredItems)
+				{
+					FDC1ItemCost& Cost = Target.Costs.AddDefaulted_GetRef();
+					Cost.ItemID = RequiredItem.ItemID;
+					Cost.Count = RequiredItem.Count;
+				}
+			}
+		}
+	}
+}
 
 void UDC1TechTreeWidget::NativeOnInitialized()
 {
@@ -132,6 +185,9 @@ void UDC1TechTreeWidget::InitTechTree()
 		return;
 	}
 
+	TMap<FGameplayTag, FDC1UnlockTarget> UnlockTargets;
+	CollectUnlockTargets(UnlockTargets);
+
 	TMap<int32, TArray<const FDC1TechRow>> RowsByLevel;
 
 	for (const FDC1TechRow& Row : AllRows)
@@ -169,6 +225,10 @@ void UDC1TechTreeWidget::InitTechTree()
 					});
 
 				TechSlot->SetState(CachedViewModel->GetTechState(CurrentSlotTag));
+
+				const FDC1UnlockTarget* UnlockTarget = UnlockTargets.Find(CurrentSlotTag);
+				const FText& TooltipDescription = (false == Row.Description.IsEmpty() || nullptr == UnlockTarget) ? Row.Description : UnlockTarget->Description;
+				TechSlot->SetTooltipData(TooltipDescription, (nullptr != UnlockTarget) ? UnlockTarget->Costs : TArray<FDC1ItemCost>());
 
 				TechSlots.Add(TechSlot);
 			}

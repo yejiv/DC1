@@ -17,6 +17,7 @@ class UWidgetAnimation;
 class UTexture2D;
 
 class UDC1InventoryEntryWidget;
+class UDC1InventoryTooltipWidget;
 
 UCLASS()
 class DC1_API UDC1InventorySlotWidget : public UDC1UserWidget
@@ -106,4 +107,10 @@ private:
 	int32 CurrentSlotIndex = -1;
 	bool bIsBeingDragged = false;
 	EDC1InventorySource SlotSource = EDC1InventorySource::Player;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory|Tooltip")
+	TSubclassOf<UDC1InventoryTooltipWidget> TooltipClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UDC1InventoryTooltipWidget> CachedTooltip = { nullptr };
 };

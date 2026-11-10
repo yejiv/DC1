@@ -344,6 +344,13 @@ void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 		return;
 	}
 
+	// 알파(보스)는 머리 위 대신 화면 위 보스 HP바 ( UDC1PalBossViewModel )
+	if (true == bIsAlpha)
+	{
+		HealthWidgetComponent->SetVisibility(false);
+		return;
+	}
+
 	bool ShouldShow = (GetHealthRatio() < 1.f);
 
 	if (false == ShouldShow)
@@ -396,6 +403,10 @@ void ADC1PalCharacter::ApplyPalData()
 		PalMovement->SetRideSprintSpeed(PalData->RideSprintSpeed);
 	}
 
+	// 맵에 놓은 알파는 액터 값이 원본
+	PalInstance.bIsAlpha = bIsAlpha;
+	ApplyAlphaScale();
+
 	if (IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->InitAbilitySystem(this, this, PalData->AbilityDataTag);
@@ -435,7 +446,7 @@ void ADC1PalCharacter::ApplyPalData()
 			PalInstance.TalentDefense = FMath::RandRange(0, 100);
 		}
 
-		const float FinalMaxHealth = Registry->GetMaxHealthFor(*PalData, FinalLevel, PalInstance.TalentHealth);
+		const float FinalMaxHealth = Registry->GetMaxHealthFor(*PalData, FinalLevel, PalInstance.TalentHealth, PalInstance.bIsAlpha);
 		const float FinalAttack = Registry->GetAttackPowerFor(*PalData, FinalLevel, PalInstance.TalentAttack);
 		const float FinalDefense = Registry->GetDefensePowerFor(*PalData, FinalLevel, PalInstance.TalentDefense);
 
@@ -582,7 +593,7 @@ void ADC1PalCharacter::GainExperience(int32 InAmount)
 	}
 
 	const int32 NewLevel = PalInstance.Level;
-	const float NewMaxHealth = Registry->GetMaxHealthFor(*PalData, NewLevel, PalInstance.TalentHealth);
+	const float NewMaxHealth = Registry->GetMaxHealthFor(*PalData, NewLevel, PalInstance.TalentHealth, PalInstance.bIsAlpha);
 
 	// Base만 갱신 (패시브 배율 유지)
 	AbilitySystemComponent->SetNumericAttributeBase(UDC1CharacterAttributeSet::GetLevelAttribute(), static_cast<float>(NewLevel));
@@ -644,7 +655,12 @@ float ADC1PalCharacter::GetHealthRatio() const
 
 float ADC1PalCharacter::GetCaptureRate() const
 {
-	return (nullptr != PalData) ? PalData->CaptureRate : 0.f;
+	if (nullptr == PalData)
+	{
+		return 0.f;
+	}
+
+	return (true == bIsAlpha) ? (PalData->CaptureRate * PalData->AlphaCaptureRate) : PalData->CaptureRate;
 }
 
 EDC1PalElement ADC1PalCharacter::GetElement() const
@@ -762,6 +778,7 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 	Pal->InstanceID = InInstance.PalID;
 	Pal->Team = EDC1Team::Player;
 	Pal->OwnerPlayerState = InOwner;
+	Pal->bIsAlpha = InInstance.bIsAlpha;
 
 	// OnPossess 가 이걸 보고 트리를 고르므로 FinishSpawning 전에
 	Pal->BasePalBox = InBasePalBox;
@@ -825,7 +842,8 @@ void ADC1PalCharacter::OnDeath()
 
 		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(Killer))
 		{
-			Party->GrantExperienceFor(GetLevel());
+			const float ExpRate = (true == bIsAlpha && nullptr != PalData) ? PalData->AlphaExpRate : 1.f;
+			Party->GrantExperienceFor(GetLevel(), ExpRate);
 		}
 
 		// 쓰러뜨린 사람 화면에만. 팰이 쓰러뜨렸으면 그 팰이 주어
@@ -908,6 +926,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADC1PalCharacter, Team);
 	DOREPLIFETIME(ADC1PalCharacter, OwnerPlayerState);
 	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
+	DOREPLIFETIME(ADC1PalCharacter, bIsAlpha);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const
@@ -923,6 +942,21 @@ FGenericTeamId ADC1PalCharacter::GetGenericTeamId() const
 void ADC1PalCharacter::OnRep_Team()
 {
 	OnTeamChanged();
+}
+
+void ADC1PalCharacter::OnRep_IsAlpha()
+{
+	ApplyAlphaScale();
+}
+
+void ADC1PalCharacter::ApplyAlphaScale()
+{
+	if (false == bIsAlpha || nullptr == PalData)
+	{
+		return;
+	}
+
+	SetActorScale3D(FVector(PalData->AlphaScale));
 }
 
 void ADC1PalCharacter::ApplyTeamCollisionProfile()

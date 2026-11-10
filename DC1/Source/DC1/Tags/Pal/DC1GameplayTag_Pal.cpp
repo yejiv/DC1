@@ -54,6 +54,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_IcicleCutter, "Pal.Skill.IcicleCutter");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_FlareArrow, "Pal.Skill.FlareArrow");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_SpiritFlame, "Pal.Skill.SpiritFlame");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_PowerBomb, "Pal.Skill.PowerBomb");
 
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DoubleFang, "Pal.Skill.DoubleFang");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_DoubleFangElectric, "Pal.Skill.DoubleFangElectric");
@@ -63,6 +64,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_LightningClaw, "Pal.Skill.LightningClaw");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_Bite, "Pal.Skill.Bite");
 	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_BiteElectric, "Pal.Skill.BiteElectric");
+	UE_DEFINE_GAMEPLAY_TAG(Pal_Skill_EarthImpact, "Pal.Skill.EarthImpact");
 #pragma endregion
 
 #pragma region Passive
@@ -127,6 +129,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_FarSkill, "Anim.Pal.FarSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_NearSkill, "Anim.Pal.NearSkill");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_NearSkill2, "Anim.Pal.NearSkill2");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_EarthImpact, "Anim.Pal.EarthImpact");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Encount, "Anim.Pal.Encount");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Sleep_Start, "Anim.Pal.Sleep.Start");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Pal_Sleep_Loop, "Anim.Pal.Sleep.Loop");
@@ -194,6 +197,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_IcicleCutter, "Cooldown.Pal.Skill.IcicleCutter");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_FlareArrow, "Cooldown.Pal.Skill.FlareArrow");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_SpiritFlame, "Cooldown.Pal.Skill.SpiritFlame");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_PowerBomb, "Cooldown.Pal.Skill.PowerBomb");
 
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DoubleFang, "Cooldown.Pal.Skill.DoubleFang");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_DoubleFangElectric, "Cooldown.Pal.Skill.DoubleFangElectric");
@@ -203,6 +207,7 @@ namespace DC1PalTags
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_LightningClaw, "Cooldown.Pal.Skill.LightningClaw");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_Bite, "Cooldown.Pal.Skill.Bite");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_BiteElectric, "Cooldown.Pal.Skill.BiteElectric");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(Cooldown_Pal_Skill_EarthImpact, "Cooldown.Pal.Skill.EarthImpact");
 
 	FGameplayTag FindSkillCooldownTag(const FGameplayTag& InSkillTag)
 	{

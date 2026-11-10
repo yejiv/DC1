@@ -4,9 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "UI/Button/AnimButton/DC1BracketButton.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "DC1RecipeButton.generated.h"
-
-struct FDC1ItemRecipeRow;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnRecipeClicked, FName);
 
@@ -29,6 +28,7 @@ protected:
 	virtual void	HandleHovered() override;
 	virtual void	HandleUnhovered() override;
 	virtual void	HandleClicked() override;
+	virtual void	RefreshTooltip(UDC1TooltipWidget* InTooltip) override;
 
 private:
 	void			ApplyState();
@@ -69,4 +69,6 @@ private:
 	bool					CanCraft = { false };
 	bool					IsSelected = { false };
 	FName					RecipeID = { NAME_None };
+
+	FDC1ItemRecipeRow		CachedRecipe;
 };

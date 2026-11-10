@@ -47,6 +47,10 @@ struct FDC1TechRow : public FTableRowBase
 	// 해금 비용
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 UnlockCost;
+
+	// 설명 ( 툴팁 전용, 비어있을 시 BuildData의 Description 표시 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (MultiLine = true))
+	FText Description;
 };
 
 USTRUCT(BlueprintType)
@@ -54,7 +58,7 @@ struct FDC1ItemCost
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
 	FName ItemID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -89,9 +93,15 @@ struct FDC1BuildRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RequiredWork;
 
-	// Mouse Hover UI 전용 Name
+	// 건축물 이름 ( 툴팁 전용 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText DisplayName;
+	// 설명 ( 툴팁 전용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (MultiLine = true))
+	FText Description;
+	// 건축물 요구 적성
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Categories = "Work"))
+	FGameplayTag WorkTypeTag;
 
 	// Icon Image
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -169,6 +179,15 @@ struct FDC1EquipItemRow : public FTableRowBase
 	// 장착 시 스폰할 액터 ( 현재는 무기 칸만 사용 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftClassPtr<ADC1Equip> EquipClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32 AttackPower = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32 DefensePower = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32 Health = 0;
 };
 
 // 레시피 재료 - 건축 비용( FDC1ItemCost )과 분리해 에디터 표시를 레시피에만 적용

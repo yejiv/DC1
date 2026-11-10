@@ -191,6 +191,16 @@ enum class EDC1PalGender : uint8
 
 	Max			UMETA(Hidden),
 };
+
+// 야생 팰이 플레이어를 봤을 때의 반응. 맞으면 둘 다 반격한다
+UENUM(BlueprintType)
+enum class EDC1PalTemperament : uint8
+{
+	Timid = 0 UMETA(DisplayName = "Timid"),		// 놀라고 도망간다
+	Neutral = 1 UMETA(DisplayName = "Neutral"),	// 무시하고 하던 일을 한다
+
+	Max			UMETA(Hidden),
+};
 #pragma endregion
 
 UENUM()

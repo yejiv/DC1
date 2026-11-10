@@ -6,6 +6,8 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1UserButton.generated.h"
 
+class UDC1TooltipWidget;
+
 /**
  * 
  */
@@ -30,8 +32,20 @@ protected:
 	UFUNCTION()
 	virtual void HandleUnhovered();
 
+	virtual void RefreshTooltip(UDC1TooltipWidget* InTooltip);
+
+private:
+	UFUNCTION()
+	UWidget* GetTooltipWidget();
 
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton>				UserButton = { nullptr };
+
+private:
+	UPROPERTY(EditAnywhere, Category = "UserButton|Tooltip")
+	TSubclassOf<UDC1TooltipWidget>	TooltipClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UDC1TooltipWidget>	CachedTooltip = { nullptr };
 };

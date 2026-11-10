@@ -60,6 +60,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_IcicleCutter);		// 아이시클 커터
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_FlareArrow);		// 플레어 애로우
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_SpiritFlame);		// 스피릿 플레임
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_PowerBomb);		// 파워 봄
 
 	// 근접
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_DoubleFang);		// 더블 팽
@@ -70,6 +71,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_LightningClaw);	// 라이트닝 클로
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_Bite);				// 물기
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_BiteElectric);		// 물기 (전기)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Pal_Skill_EarthImpact);		// 어스 임팩트 (근접 판정을 크게)
 #pragma endregion
 
 	// 개체마다 다르게 붙는 특성. 배율과 랭크는 UDC1PalRegistryData 의 PassiveChart 가 갖는다.
@@ -139,6 +141,7 @@ namespace DC1PalTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_FarSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_NearSkill2);	// 근접 스킬이 둘인 종의 두 번째 몽타주
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_EarthImpact);	// 어스 임팩트 몽타주
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Encount);
 	// 잠. Start → Loop(반복) → End 를 이어 튼다
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Pal_Sleep_Start);

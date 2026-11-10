@@ -29,6 +29,8 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeOnActivated() override;
+	virtual void NativeOnDeactivated() override;
 
 	virtual void	NativeOnActivated() override;
 	virtual void	NativeOnDeactivated() override;

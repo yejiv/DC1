@@ -100,13 +100,15 @@ float UDC1PalRegistryData::GetGrowthTerm(float InStat, float InCoeff, int32 InLe
 	return InStat * InCoeff * Level * GetTalentMultiplier(InTalent);
 }
 
-float UDC1PalRegistryData::GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const
+float UDC1PalRegistryData::GetMaxHealthFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent, bool InIsAlpha) const
 {
 	const int32 Level = FMath::Max(1, InLevel);
 
-	return StatGrowth.HealthFlatBase
+	const float MaxHealth = StatGrowth.HealthFlatBase
 		+ (StatGrowth.HealthPerLevel * Level)
 		+ GetGrowthTerm(InPalData.HealthStat, StatGrowth.HealthCoeff, Level, InTalent);
+
+	return (true == InIsAlpha) ? (MaxHealth * InPalData.AlphaHealthRate) : MaxHealth;
 }
 
 float UDC1PalRegistryData::GetAttackPowerFor(const UDC1PalData& InPalData, int32 InLevel, int32 InTalent) const
@@ -310,7 +312,7 @@ int32 UDC1PalRegistryData::ApplyExperience(FDC1PalInstance& InOutPal, int32 InAm
 	{
 		if (const UDC1PalData* PalData = FindPalDataByTag(InOutPal.SpeciesTag).LoadSynchronous())
 		{
-			InOutPal.CurrentHealth = GetMaxHealthFor(*PalData, InOutPal.Level, InOutPal.TalentHealth);
+			InOutPal.CurrentHealth = GetMaxHealthFor(*PalData, InOutPal.Level, InOutPal.TalentHealth, InOutPal.bIsAlpha);
 		}
 	}
 

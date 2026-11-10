@@ -4,6 +4,7 @@
 #include "UI/Button/AnimButton/Slot/DC1TechTreeButton.h"
 
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "UI/Tooltip/DC1TechTooltipWidget.h"
 
 #include "Animation/WidgetAnimation.h"
 #include "Components/TextBlock.h"
@@ -56,8 +57,26 @@ void UDC1TechTreeButton::HandleUnhovered()
 	}
 }
 
+void UDC1TechTreeButton::RefreshTooltip(UDC1TooltipWidget* InTooltip)
+{
+	UDC1TechTooltipWidget* TechTooltip = Cast<UDC1TechTooltipWidget>(InTooltip);
+	if (false == ::IsValid(TechTooltip))
+	{
+		return;
+	}
+
+	TechTooltip->SetTech(CachedRow, TooltipDescription, TooltipCosts);
+}
+
+void UDC1TechTreeButton::SetTooltipData(const FText& InDescription, const TArray<FDC1ItemCost>& InCosts)
+{
+	TooltipDescription = InDescription;
+	TooltipCosts = InCosts;
+}
+
 void UDC1TechTreeButton::InitTechButton(const FDC1TechRow& InRow)
 {
+	CachedRow = InRow;
 	TechTag = InRow.TechTag;
 	RequiredLevel = InRow.RequiredLevel;
 

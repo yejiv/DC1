@@ -46,6 +46,9 @@ public:
 
 	EDC1Team							GetTeam() const { return Team; }
 
+	// 알파(필드 보스) 개체인가. 복제된다
+	bool								IsAlpha() const { return bIsAlpha; }
+
 	const UDC1PalData*					GetPalData() const { return PalData; }
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
@@ -140,6 +143,12 @@ protected:
 	UFUNCTION()
 	void								OnRep_Team();
 
+	// 클라는 ApplyPalData 때 알파인지 모를 수 있어서 복제로 받은 뒤 크기를 맞춘다
+	UFUNCTION()
+	void								OnRep_IsAlpha();
+
+	void								ApplyAlphaScale();
+
 	void								ApplyPalData();
 
 	// PassiveTags 를 GE 로 바꿔 붙인다
@@ -230,4 +239,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Team, Category = "Pal|Team")
 	EDC1Team Team = { EDC1Team::Wild };
+
+	// 알파(필드 보스)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_IsAlpha, Category = "Pal|Alpha")
+	bool bIsAlpha = { false };
 };
