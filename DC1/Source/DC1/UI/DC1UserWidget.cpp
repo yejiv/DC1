@@ -30,7 +30,10 @@ void UDC1UserWidget::NativeConstruct()
 
 void UDC1UserWidget::NativeDestruct()
 {
-	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : PlayingAnims)
+	TMap<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo> Anims = MoveTemp(PlayingAnims);
+	PlayingAnims.Reset();
+
+	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : Anims)
 	{
 		SnapAnimToEdge(Pair.Key, Pair.Value);
 	}
