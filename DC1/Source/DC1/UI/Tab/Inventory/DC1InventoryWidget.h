@@ -39,9 +39,6 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	virtual void	NativeOnActivated() override;
-	virtual void	NativeOnDeactivated() override;
-
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void SetViewModel(UDC1InventoryViewModel* NewViewModel);

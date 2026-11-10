@@ -349,26 +349,6 @@ FReply UDC1InventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
 	}
 }
 
-void UDC1InventoryWidget::NativeOnActivated()
-{
-	Super::NativeOnActivated();
-
-	if (false == IsValid(EquipmentWidget))
-		return;
-
-	EquipmentWidget->Activate();
-}
-
-void UDC1InventoryWidget::NativeOnDeactivated()
-{
-	Super::NativeOnDeactivated();
-
-	if (false == IsValid(EquipmentWidget))
-		return;
-
-	EquipmentWidget->Deactivate();
-}
-
 FReply UDC1InventoryWidget::HandleEquipSlotMouseDown(const FKey& InButton, int32 InEquipSlotIndex)
 {
 	const bool bIsEmpty = CachedViewModel->GetEquipmentSlot(InEquipSlotIndex).IsEmpty();
