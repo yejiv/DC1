@@ -2,6 +2,7 @@
 
 #include "Actor/Preview/DC1PreviewActor.h"
 
+#include "Components/DirectionalLightComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -29,6 +30,15 @@ ADC1PreviewActor::ADC1PreviewActor()
 	FillLight->LightingChannels.bChannel0 = false;
 	FillLight->LightingChannels.bChannel2 = true;
 
+	// 직사광 - 월드 하늘의 태양 역할을 가져가지 않도록 끄고, 월드 전체 그림자 맵이 생기지 않도록 그림자도 끔
+	SunLight = CreateDefaultSubobject<UDirectionalLightComponent>("SunLight");
+	SunLight->SetupAttachment(Root);
+	SunLight->LightingChannels.bChannel0 = false;
+	SunLight->LightingChannels.bChannel2 = true;
+	SunLight->bAtmosphereSunLight = false;
+	SunLight->CastShadows = false;
+	SunLight->SetVisibleFlag(false);
+
 	// 정면에서 캐릭터를 바라봄, 자기 컴포넌트만 촬영
 	CaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>("CaptureComponent");
 	CaptureComponent->SetupAttachment(Root);
@@ -38,9 +48,10 @@ ADC1PreviewActor::ADC1PreviewActor()
 	CaptureComponent->bCaptureOnMovement = false;
 
 	// 월드 환경광/하늘/안개가 섞이지 않도록 촬영 화면에서만 끔 (이름 기반이라 없는 플래그는 무시됨)
+	// DirectionalLights는 SunLight 때문에 켜둠 (월드 태양은 채널 0이라 미리보기 메쉬에 닿지 않음)
 	TArray<FEngineShowFlagsSetting> ShowFlagSettings;
 	for (const TCHAR* FlagName : { TEXT("Atmosphere"), TEXT("Fog"), TEXT("VolumetricFog"), TEXT("Cloud"), TEXT("SkyLighting"),
-		TEXT("DirectionalLights"), TEXT("GlobalIllumination"), TEXT("LumenGlobalIllumination"), TEXT("LumenReflections"), TEXT("AmbientOcclusion") })
+		TEXT("GlobalIllumination"), TEXT("LumenGlobalIllumination"), TEXT("LumenReflections"), TEXT("AmbientOcclusion") })
 	{
 		FEngineShowFlagsSetting Setting;
 		Setting.ShowFlagName = FlagName;
@@ -85,6 +96,11 @@ void ADC1PreviewActor::ApplyPreviewSettings()
 	FillLight->SetIntensity(FillLightIntensity);
 	FillLight->SetLightColor(FillLightColor);
 
+	SunLight->SetRelativeRotation(SunLightRotation);
+	SunLight->SetIntensity(SunLightIntensity);
+	SunLight->SetLightColor(SunLightColor);
+	SunLight->SetVisibility(CaptureComponent->bCaptureEveryFrame && SunLightIntensity > 0.f);
+
 	ApplyPreviewCameraSetting();
 }
 
@@ -116,6 +132,9 @@ void ADC1PreviewActor::SetRenderTarget(UTextureRenderTarget2D* InRenderTarget)
 void ADC1PreviewActor::SetCaptureEnabled(bool bInEnabled)
 {
 	CaptureComponent->bCaptureEveryFrame = bInEnabled;
+
+	// 디렉셔널 조명은 받는 물체가 없어도 메인 화면에서 조명 패스 비용이 들어 촬영 중에만 켬
+	SunLight->SetVisibility(bInEnabled && SunLightIntensity > 0.f);
 }
 
 void ADC1PreviewActor::ApplyPreviewLighting(UPrimitiveComponent* InComponent)

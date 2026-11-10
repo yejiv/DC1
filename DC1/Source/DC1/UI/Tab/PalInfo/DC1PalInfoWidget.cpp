@@ -21,8 +21,6 @@ void UDC1PalInfoWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	Image_PalPreview->SetVisibility(ESlateVisibility::Collapsed);
-
 	PreviewSubsystem = GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>();
 	if (nullptr == PreviewSubsystem)
 		return;
@@ -57,6 +55,8 @@ void UDC1PalInfoWidget::ShowPartyPanel()
 	PalPartyWidget->RefreshPalPartySlots();
 
 	WidgetSwitcher_Panel->SetActiveWidget(PalPartyWidget.Get());
+
+	Image_PalPreview->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UDC1PalInfoWidget::ShowDetailPanel()
@@ -76,7 +76,7 @@ void UDC1PalInfoWidget::NativeOnDeactivated()
 	Super::NativeOnDeactivated();
 
 	if(true == PreviewSubsystem.IsValid())
-		PreviewSubsystem->EndPreview();
+		PreviewSubsystem->EndPreview(EDC1PreviewType::Pal);
 }
 
 void UDC1PalInfoWidget::HandleChangedFocusingPal(const FGameplayTag& SpeciesTag)

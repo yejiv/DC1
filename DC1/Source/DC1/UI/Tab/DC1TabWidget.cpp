@@ -83,6 +83,13 @@ void UDC1TabWidget::CloseWidget(const FKey& InKey)
 	if (true == KeyList->Keys.Contains(InKey))
 	{
 		PopScreen();
+		// CurrentTab Deactivate
+		if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+		{
+			CurrentWidget->Deactivate();
+		}
+		// Main Tab 닫히는 경우 CurrentTab 초기화
+		CurrentTab = FGameplayTag::EmptyTag;
 	}
 }
 
