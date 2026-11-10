@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "DC1EquipComponent.generated.h"
 
 class ADC1Equip;
@@ -13,6 +14,7 @@ class ADC1Glider;
 class ADC1Tool;
 class ADC1Player;
 class UDC1PlayerInventoryComponent;
+class UAbilitySystemComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
 
@@ -29,6 +31,10 @@ struct FDC1EquipSlot
 	// 액터로 스폰되는 타입(무기, 글라이더)만 채워진다
 	UPROPERTY()
 	TObjectPtr<ADC1Equip> EquipActor = { nullptr };
+
+	// 방어구, 방패 칸이 적용한 스탯 GE Handle, 제거 위해 등록
+	UPROPERTY()
+	FActiveGameplayEffectHandle StatEffectHandle;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -62,9 +68,10 @@ public:
 	void		Server_ChangeWeapon(int32 Delta);
 
 public:
-	ADC1Weapon*			GetCurrentWeapon() const { return CurrentWeapon; }
-	ADC1Glider*				GetCurrentGlider() const { return CurrentGlider; }
+	ADC1Weapon*					GetCurrentWeapon() const { return CurrentWeapon; }
+	ADC1Glider*					GetCurrentGlider() const { return CurrentGlider; }
 
+	float						GetCurrentWeaponAttackPower() const;
 	void						SetGliderVisibility(bool IsVisiblity);
 
 	// 무기 표시 최종 판단 (이동 조건 + 도구 + 팰스피어). 조건이 추가되면 여기만 고친다
@@ -81,6 +88,8 @@ private:
 
 	// 같은 PlayerState의 인벤토리 조회 함수
 	UDC1PlayerInventoryComponent*	GetInventoryComponent() const;
+
+	UAbilitySystemComponent* GetOwningAbilitySystem() const;
 
 	// 장비 칸 변경 시 이전 적용을 되돌리고 칸 타입별로 다시 적용하는 함수 (서버)
 	void		HandleEquipmentSlotChanged(int32 InEquipSlotIndex);
@@ -113,6 +122,15 @@ private:
 
 	// 글라이더 칸 적용: 액터 스폰 후 숨김
 	void		HandleGliderChanged(int32 InEquipSlotIndex);
+
+	// 방어구 칸 적용: DefensePower, Health GE 처리
+	void		HandleArmorChanged(int32 InEquipSlotIndex);
+
+	// 실드 칸 적용: Shiled GE 처리
+	void		HandleShieldChanged(int32 InEquipSlotIndex);
+
+	// GE 생성 후 적용 함수
+	void		ApplyEquipStatEffect(UAbilitySystemComponent* InASC, int32 InEquipSlotIndex, float InDefensePower, float InMaxHealth, float InMaxShield);
 
 public:
 	// 슬롯 선택은 서버에서만 굴린다. 클라는 CurrentWeapon만 보면 되므로 복제하지 않는다

@@ -24,8 +24,9 @@ namespace DC1BuildTags
 
 	#pragma region CRAFTING_CRAFTANDREAPIR
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair_WorkBench00);			// 원시적인 작업대
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair_SphereBench);			// 스피어 제작대
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_CraftAndRepair_WorkBench01);			// 상급 제작대
 	#pragma endregion
-	
 	
 	#pragma region CRAFTING_SPHERE
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_Sphere_SphereBench00);				// 팰 스피어 제작대
@@ -80,9 +81,26 @@ namespace DC1BuildTags
 
 
 #pragma region CATEGORY_CRAFTING
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Body);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_Woodclub);								// 나무 곤봉
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_WoodBow);								// 오래된 활
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_StoneAxe);								// 돌 도끼
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_StonePickaxe);							// 돌 곡괭이
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Consume_Arrow);							// 화살
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Material_WoodPlank);						// 나무 판자
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Material_Nail);							// 못
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Material_Cloth);							// 천
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Body_ClothClothes);						// 천옷
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_PalSphere);								// 팰 스피어
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_MegaSphere);								// 메가 스피어
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Glider_Normal);									// 일반 낙하산
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Glider_Mega);									// 메가 글라이더
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Shiled_Normal);									// 일반 방패
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Shiled_Mega);									// 메가 방패
 #pragma endregion
 }
 

@@ -52,11 +52,18 @@ FGameplayEffectSpecHandle UDC1GA_Player_Attack::MakeDamageSpec() const
 
 	const float AttackPower = SourceASC->GetNumericAttribute(UDC1PlayerSet::GetAttackPowerAttribute());
 
-	const ADC1Weapon* Weapon = GetEquippedWeapon();
-	const float Multiplier = (nullptr != Weapon) ? Weapon->DamageMultiplier : 1.f;
+	// Damage = Player AttackPower + EquipWeaponPower
+	float WeaponAttackPower = 0.f;
+	if (const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo()))
+	{
+		if (UDC1EquipComponent* EquipComp = PS->GetEquipComponent())
+		{
+			WeaponAttackPower = EquipComp->GetCurrentWeaponAttackPower();
+		}
+	}
 
 	// 체력 감산은 AttributeSet의 PostGameplayEffectExecute가 한다. 여기서는 양수로 넘긴다
-	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower * Multiplier);
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, AttackPower + WeaponAttackPower);
 
 	return Spec;
 }

@@ -140,7 +140,7 @@ struct FDC1ItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxStack = 9999;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (MultiLine = true))
 	FText Description = FText::FromString(TEXT("설명 텍스트"));
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

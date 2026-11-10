@@ -17,5 +17,10 @@ namespace DC1EffectTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_PalPassive_Attack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_PalPassive_Defense);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_PalPassive_WorkSpeed);
+
+	// 장비(방어구, 방패)가 더할 스탯을 남는 칸
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Equip_Defense);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Equip_Shield);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Equip_Health);
 #pragma endregion
 }
