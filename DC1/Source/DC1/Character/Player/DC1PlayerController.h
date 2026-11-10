@@ -130,6 +130,9 @@ private:
 
 	void OnDebugDamageSelf();
 
+	UFUNCTION(Exec)
+	void DC1Damage(float InDamageAmount);
+
 	// NumPad2 : 세이브 테스트용
 	void OnDebugSavePlayer();
 

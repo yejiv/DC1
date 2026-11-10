@@ -805,6 +805,11 @@ void ADC1PlayerController::OnDebugDamageSelf()
 	ServerDebugDamageSelf(DebugDamageAmount);
 }
 
+void ADC1PlayerController::DC1Damage(float InDamageAmount)
+{
+	ServerDebugDamageSelf(InDamageAmount);
+}
+
 void ADC1PlayerController::ServerDebugDamageSelf_Implementation(float InDamageAmount)
 {
 	ADC1PlayerState* OwnerPlayerState = GetPlayerState<ADC1PlayerState>();
