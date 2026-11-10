@@ -8,17 +8,14 @@
 #include "Define/DC1Enums.h"
 #include "DC1PalRideComponent.generated.h"
 
+class ACharacter;
 class ADC1PalCharacter;
 class UDC1PalData;
 
 DECLARE_MULTICAST_DELEGATE(FOnRideStateChanged);
 
 /**
- *
- * 팰 탑승 상태. ADC1PalCharacter 에 붙는다.
- * 탑승 단계·방향 복제, 탄 사람 몽타주와 위치(옆 ↔ 등), 탑승 중 스킬 회전
- * 단계 진행(언제 타고 내리나)은 파티 컴포넌트가 정한다
- *
+ * 팰 탑승 상태. ADC1PalCharacter 에 붙음
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DC1_API UDC1PalRideComponent : public UActorComponent
@@ -37,10 +34,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Pal|Ride")
 	EDC1RideDirection				GetRideDirection() const { return RideDirection; }
 
-	// 서버. 파티가 탑승 단계를 바꿀 때 부른다
-	void							SetRideState(EDC1RideState InState, EDC1RideDirection InDirection);
+	// 서버. 파티가 탑승 단계를 바꿀 때 부른다. 단계가 None 이면 InRider 는 nullptr
+	void							SetRideState(EDC1RideState InState, EDC1RideDirection InDirection, ACharacter* InRider);
 
-	// 탄 사람 = 이 팰에 붙어 있고 GetRiddenPawn 이 이 팰인 플레이어. 둘 다 복제되므로 클라에서도 찾을 수 있다
+	// 탄 사람. 단계와 같이 복제되므로 OnRep_RideState 에서 항상 들어 있다
 	APawn*							GetRider() const;
 
 	// 팰 정면 기준 InLocation 이 있는 쪽
@@ -86,6 +83,10 @@ protected:
 
 	UPROPERTY(Replicated)
 	EDC1RideDirection				RideDirection = { EDC1RideDirection::Left };
+
+	// 탄 사람. 플레이어 쪽 붙음
+	UPROPERTY(Replicated)
+	TObjectPtr<ACharacter>			Rider = { nullptr };
 
 	// 노티파이 구간. 각 기계가 자기 애니 기준으로 센다
 	float							RideMoveStartTime = { 0.f };

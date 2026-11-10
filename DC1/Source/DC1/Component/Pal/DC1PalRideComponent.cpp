@@ -3,7 +3,6 @@
 #include "Component/Pal/DC1PalRideComponent.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
-#include "Character/Player/DC1Player.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
@@ -27,9 +26,10 @@ void UDC1PalRideComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME(UDC1PalRideComponent, RideState);
 	DOREPLIFETIME(UDC1PalRideComponent, RideDirection);
+	DOREPLIFETIME(UDC1PalRideComponent, Rider);
 }
 
-void UDC1PalRideComponent::SetRideState(EDC1RideState InState, EDC1RideDirection InDirection)
+void UDC1PalRideComponent::SetRideState(EDC1RideState InState, EDC1RideDirection InDirection, ACharacter* InRider)
 {
 	AActor* Owner = GetOwner();
 	if (nullptr == Owner || false == Owner->HasAuthority())
@@ -39,35 +39,15 @@ void UDC1PalRideComponent::SetRideState(EDC1RideState InState, EDC1RideDirection
 
 	RideState = InState;
 	RideDirection = InDirection;
+	Rider = InRider;
 
 	Owner->ForceNetUpdate();
-
-	// 서버에선 OnRep 이 안 온다
 	OnRep_RideState();
 }
 
 APawn* UDC1PalRideComponent::GetRider() const
 {
-	const AActor* Owner = GetOwner();
-	if (nullptr == Owner)
-	{
-		return nullptr;
-	}
-
-	// 붙은 액터는 후보만. 탄 팰이 나인 플레이어가 탄 사람
-	TArray<AActor*> AttachedActors;
-	Owner->GetAttachedActors(AttachedActors);
-
-	for (AActor* Attached : AttachedActors)
-	{
-		ADC1Player* Rider = Cast<ADC1Player>(Attached);
-		if (nullptr != Rider && Owner == Rider->GetRiddenPawn())
-		{
-			return Rider;
-		}
-	}
-
-	return nullptr;
+	return Rider;
 }
 
 EDC1RideDirection UDC1PalRideComponent::FindRideDirection(const FVector& InLocation) const
@@ -102,7 +82,6 @@ FVector UDC1PalRideComponent::GetRideSideLocation() const
 	FVector Location = Pal->GetMesh()->GetSocketLocation(PalData->RideSocketName) + Pal->GetActorRotation().RotateVector(*Offset);
 
 	// 높이는 팰 발밑 기준. 탄 사람 액터는 캡슐 중심이라 메쉬 오프셋만큼 올려야 메쉬 루트(발)가 땅에 닿는다
-	const ACharacter* Rider = Cast<ACharacter>(GetRider());
 	const float MeshOffsetZ = (nullptr != Rider) ? Rider->GetMesh()->GetRelativeLocation().Z : 0.f;
 	Location.Z = Pal->GetActorLocation().Z - Pal->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() - MeshOffsetZ + Offset->Z;
 
@@ -167,7 +146,6 @@ void UDC1PalRideComponent::OnRep_RideState()
 
 	OnRideStateChanged.Broadcast();
 
-	ACharacter* Rider = Cast<ACharacter>(GetRider());
 	const UDC1PalData* PalData = GetPalData();
 	if (nullptr == Rider || nullptr == PalData)
 	{
@@ -218,15 +196,13 @@ void UDC1PalRideComponent::PlaceRider(float InAlpha)
 {
 	const ADC1PalCharacter* Pal = GetPal();
 	const UDC1PalData* PalData = GetPalData();
-	APawn* Rider = GetRider();
 	if (nullptr == Rider || nullptr == PalData)
 	{
 		return;
 	}
 
 	// 앉는 자리. 액터는 캡슐 중심이라 메쉬 오프셋만큼 올려야 메쉬 루트(앉은 골반)가 소켓에 온다
-	const ACharacter* RiderCharacter = Cast<ACharacter>(Rider);
-	const float MeshOffsetZ = (nullptr != RiderCharacter) ? RiderCharacter->GetMesh()->GetRelativeLocation().Z : 0.f;
+	const float MeshOffsetZ = Rider->GetMesh()->GetRelativeLocation().Z;
 	const FVector SeatLocation = Pal->GetMesh()->GetSocketLocation(PalData->RideSocketName) - FVector(0.f, 0.f, MeshOffsetZ);
 	const FVector SideLocation = GetRideSideLocation();
 

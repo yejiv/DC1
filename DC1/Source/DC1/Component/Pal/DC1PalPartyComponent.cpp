@@ -801,7 +801,7 @@ void UDC1PalPartyComponent::Ride()
 	Player->AttachToComponent(Pal->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, PalData->RideSocketName);
 	Rider = Player;
 
-	Pal->GetRideComponent()->SetRideState(EDC1RideState::Mounting, Direction);
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Mounting, Direction, Rider);
 
 	// 붙인 뒤 바로 Possess
 	DC1PalParty::PossessKeepingView(*PC, *Pal);
@@ -818,7 +818,7 @@ void UDC1PalPartyComponent::FinishMount()
 	}
 
 	// Riding 이 되면 팰이 앉는 자리에 고정
-	Pal->GetRideComponent()->SetRideState(EDC1RideState::Riding, Pal->GetRideComponent()->GetRideDirection());
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Riding, Pal->GetRideComponent()->GetRideDirection(), Rider);
 }
 
 void UDC1PalPartyComponent::BeginDismount()
@@ -837,7 +837,7 @@ void UDC1PalPartyComponent::BeginDismount()
 
 	Client_SetRideApproachInputBlocked(true);
 
-	Pal->GetRideComponent()->SetRideState(EDC1RideState::Dismounting, PalData->RideDismountDirection);
+	Pal->GetRideComponent()->SetRideState(EDC1RideState::Dismounting, PalData->RideDismountDirection, Rider);
 
 	FTimerDelegate Finish = FTimerDelegate::CreateUObject(this, &ThisClass::EndRide, true);
 	GetWorld()->GetTimerManager().SetTimer(RideStepTimer, Finish, PalData->RideDismountDuration, false);
@@ -868,7 +868,7 @@ void UDC1PalPartyComponent::EndRide(bool InReturnPalToAI)
 			Player->SetActorLocation(DeployedPal->GetRideComponent()->GetRideSideLocation());
 		}
 
-		DeployedPal->GetRideComponent()->SetRideState(EDC1RideState::None, DeployedPal->GetRideComponent()->GetRideDirection());
+		DeployedPal->GetRideComponent()->SetRideState(EDC1RideState::None, DeployedPal->GetRideComponent()->GetRideDirection(), nullptr);
 	}
 
 	// Possess 뒤 떼기

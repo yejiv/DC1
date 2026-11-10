@@ -185,7 +185,7 @@ protected:
 	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
-	float HealthWidgetVisibleDistance = { 2000.f };
+	float HealthWidgetVisibleDistance = { 1200.f };
 
 	// 가시성 검사 주기
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.05"))

@@ -6,6 +6,7 @@
 #include "UI/DC1UserWidget.h"
 #include "DC1HUDPalRideWidget.generated.h"
 
+class UDC1HUDPalRideSkillRow;
 class UDC1PalRideViewModel;
 class UDynamicEntryBox;
 class UTextBlock;
@@ -24,6 +25,7 @@ class DC1_API UDC1HUDPalRideWidget : public UDC1UserWidget
 private:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
 	void BindViewModel();
@@ -33,9 +35,14 @@ private:
 	void HandleRideInfoChanged();
 	void HandleRideHoldChanged(bool InPressed);
 	void HandleRideHoldCompleted();
+	void HandleRideSkillCooldownChanged(int32 InIndex, bool InStarted);
 
 private:
 	TWeakObjectPtr<UDC1PalRideViewModel> RideViewModel = { nullptr };
+
+	// 스킬 순서대로의 줄. 쿨타임 막대를 매 틱 채운다
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UDC1HUDPalRideSkillRow>>	SkillRows;
 
 private:
 	// "탑승" / "내리기"
