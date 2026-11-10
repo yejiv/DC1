@@ -259,6 +259,14 @@ public:
 	// CaptureRate 에 곱한다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.0"))
 	float							AlphaCaptureRate = { 1.f };
+
+	// 보스 HP바 위 칭호
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha")
+	FText							AlphaTitle;
+
+	// 로컬 플레이어가 이 거리 안이면 화면 위에 보스 HP바
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Alpha", meta = (ClampMin = "0.0"))
+	float							AlphaBarRadius = { 3000.f };
 #pragma endregion
 
 #pragma region AI

@@ -344,6 +344,13 @@ void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 		return;
 	}
 
+	// 알파(보스)는 머리 위 대신 화면 위 보스 HP바 ( UDC1PalBossViewModel )
+	if (true == bIsAlpha)
+	{
+		HealthWidgetComponent->SetVisibility(false);
+		return;
+	}
+
 	bool ShouldShow = (GetHealthRatio() < 1.f);
 
 	if (false == ShouldShow)
