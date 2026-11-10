@@ -32,5 +32,6 @@ namespace DC1StateTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Invincible, "State.Invincible");
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Stamina_RegenBlocked, "State.Stamina.RegenBlocked");
+	UE_DEFINE_GAMEPLAY_TAG(State_Shield_RegenBlocked, "State.Shield.RegenBlocked");
 #pragma endregion
 }

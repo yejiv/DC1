@@ -36,5 +36,8 @@ namespace DC1StateTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Invincible);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Stamina_RegenBlocked);
+
+	// 실드 자연 회복 대기 상태
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Shield_RegenBlocked);
 #pragma endregion
 }
