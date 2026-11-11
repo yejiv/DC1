@@ -95,19 +95,19 @@ const float UDC1BuildCheckComponent::GetExtentCenterToDirection(const FVector& I
 	return DirectionExtent;
 }
 
-bool UDC1BuildCheckComponent::CheckCanBuild()
+EDC1BuildBlockReason UDC1BuildCheckComponent::CheckCanBuild()
 {
-	bool IsNoneOverlap = false;
-	bool IsAttachedSurface = true;
-
-	if (false == IsCheckSurface)
+	if (false == CheckOverlap())
 	{
-		IsAttachedSurface = CheckSurface();
+		return EDC1BuildBlockReason::Overlap;
 	}
 
-	IsNoneOverlap = CheckOverlap();
+	if (false == IsCheckSurface && false == CheckSurface())
+	{
+		return EDC1BuildBlockReason::InvalidSurface;
+	}
 
-	return (IsNoneOverlap && IsAttachedSurface);
+	return EDC1BuildBlockReason::None;
 }
 
 const FTransform UDC1BuildCheckComponent::ComputePlaceTransform(const FHitResult& InHit, float InYaw) const

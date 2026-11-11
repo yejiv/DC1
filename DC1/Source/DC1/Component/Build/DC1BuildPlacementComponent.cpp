@@ -90,7 +90,8 @@ void UDC1BuildPlacementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 	bool IsInRange = IsInBuildRange(PreviewActor, MaxDistance);
 
-	CanBuilding = PreviewActor->UpdatePreview(IsInRange, GetOwner<APlayerController>()->PlayerState);
+	// 설치 불가 broadcast
+	SetBlockReason(PreviewActor->UpdatePreview(IsInRange, GetOwner<APlayerController>()->PlayerState));
 }
 
 bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
@@ -98,13 +99,6 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 	if (true == IsOwnerDownOrDead())
 	{
 		return false;
-	}
-
-	CancelDismantle();
-
-	if (true == ::IsValid(PreviewActor))
-	{
-		CancelPlacement();
 	}
 
 	const FDC1BuildRow* BuildRow = FindBuildRow(InBuildTag);
@@ -115,9 +109,17 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 
 	const APlayerController* PC = GetOwner<APlayerController>();
 	const ADC1PlayerState* PlayerState = (true == ::IsValid(PC)) ? PC->GetPlayerState<ADC1PlayerState>() : nullptr;
+	// 재료 확인
 	if (false == DC1CraftHelper::HasCraftCosts(PlayerState, BuildRow->BuildCosts))
 	{
 		return false;
+	}
+	// 파괴 모드 취소
+	CancelDismantle();
+	// 배치 중 이었다면 빌드 모드 취소
+	if (true == ::IsValid(PreviewActor))
+	{
+		CancelPlacement();
 	}
 
 	PreviewActor = SpawnBuildActor(*BuildRow, FTransform::Identity, true);
@@ -126,10 +128,12 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: Can't Spawn Build Actor : %s"), *InBuildTag.ToString());
 		return false;
 	}
-
+	// 프리뷰는 복제 X, Only 클라
 	PreviewActor->SetReplicates(false);
 
 	CurrentBuildTag = InBuildTag;
+	// 모드 전환용
+	LastBuildTag = InBuildTag;
 	CurrentYaw = 0.f;
 
 	SetComponentTickEnabled(true);
@@ -150,6 +154,8 @@ bool UDC1BuildPlacementComponent::StartDismantle()
 	CancelPlacement();
 
 	IsDismantling = true;
+
+	SetBlockReason(EDC1BuildBlockReason::NoDismantleTarget);
 
 	SetComponentTickEnabled(true);
 	SetBuildMode(true);
@@ -175,7 +181,7 @@ void UDC1BuildPlacementComponent::CancelPlacement()
 	PreviewActor = nullptr;
 	CurrentBuildTag = FGameplayTag::EmptyTag;
 	CurrentYaw = 0.f;
-	CanBuilding = false;
+	SetBlockReason(EDC1BuildBlockReason::None);
 
 	// Build IMC 제거, State_Build Tag 제거, InteractComp 활성화
 	SetBuildMode(false);
@@ -188,7 +194,7 @@ void UDC1BuildPlacementComponent::CancelPlacement()
 
 void UDC1BuildPlacementComponent::ConfirmPlacement()
 {
-	if (false == ::IsValid(PreviewActor) || false == CanBuilding)
+	if (false == ::IsValid(PreviewActor) || EDC1BuildBlockReason::None != CurrentBlockReason)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: ConfirmPlacement - CanBuilding false"));
 		return;
@@ -214,6 +220,10 @@ void UDC1BuildPlacementComponent::CancelDismantle()
 
 	DismantleTarget.Reset();
 	IsDismantling = false;
+
+	SetBlockReason(EDC1BuildBlockReason::None);
+
+	OnDismantleTargetChanged.Broadcast(nullptr);
 
 	SetBuildMode(false);
 }
@@ -297,7 +307,7 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 		APlayerController* PC = GetOwner<APlayerController>();
 		APlayerState* PS = (nullptr != PC) ? PC->PlayerState : nullptr;
 
-		DestroySubsystem->RequestDestroy(InTarget, PS);
+		DestroySubsystem->RequestDestroy(InTarget, PS, EDC1BuildRefundMode::ToInstigator);
 	}
 }
 
@@ -478,7 +488,17 @@ void UDC1BuildPlacementComponent::SetUpBuildInput()
 
 	if (const UInputAction* CancelAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Cancel))
 	{
-		EnhancedInputComponent->BindAction(CancelAction, ETriggerEvent::Started, this, &ThisClass::OnCancelInput);
+		EnhancedInputComponent->BindAction(CancelAction, ETriggerEvent::Started, this, &ThisClass::OnBackInput);
+	}
+
+	if (const UInputAction* ExitAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Exit))
+	{
+		EnhancedInputComponent->BindAction(ExitAction, ETriggerEvent::Started, this, &ThisClass::OnExitInput);
+	}
+
+	if (const UInputAction* ToggleModeAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_ToggleMode))
+	{
+		EnhancedInputComponent->BindAction(ToggleModeAction, ETriggerEvent::Started, this, &ThisClass::OnToggleModeInput);
 	}
 
 	if (const UInputAction* RotateAction = InputData->FindInputActionbyTag(DC1InputBuildTags::Input_Build_Rotate))
@@ -504,15 +524,52 @@ void UDC1BuildPlacementComponent::OnConfirmInput()
 	ConfirmPlacement();
 }
 
-void UDC1BuildPlacementComponent::OnCancelInput()
+void UDC1BuildPlacementComponent::OnBackInput()
+{
+	ReturnToBuildMenu();
+}
+
+void UDC1BuildPlacementComponent::OnExitInput()
+{
+	CancelBuildMode();
+}
+
+void UDC1BuildPlacementComponent::OnToggleModeInput()
 {
 	if (true == IsDismantling)
 	{
-		CancelDismantle();
+		if (false == StartPlacement(LastBuildTag))
+		{
+			ReturnToBuildMenu();
+		}
+
 		return;
 	}
 
-	CancelPlacement();
+	StartDismantle();
+}
+
+void UDC1BuildPlacementComponent::ReturnToBuildMenu()
+{
+	const FGameplayTag TabTag = MakeBuildTabTag(LastBuildTag);
+
+	CancelBuildMode();
+
+	ADC1PlayerController* PC = GetOwner<ADC1PlayerController>();
+	if (true == ::IsValid(PC))
+	{
+		PC->OpenBuildMenu(TabTag);
+	}
+}
+
+FGameplayTag UDC1BuildPlacementComponent::MakeBuildTabTag(const FGameplayTag& InBuildTag)
+{
+	if (false == InBuildTag.IsValid())
+	{
+		return FGameplayTag::EmptyTag;
+	}
+
+	return InBuildTag.RequestDirectParent().RequestDirectParent();
 }
 
 void UDC1BuildPlacementComponent::OnRotateInput(const FInputActionValue& Value)
@@ -568,13 +625,13 @@ void UDC1BuildPlacementComponent::UpdateDismantleTarget()
 	FHitResult Hit;
 	ADC1BuildActor* HitTarget = TraceBuildActorByView(RayStart, RayEnd, Hit);
 
-	if (false == ::IsValid(HitTarget) || false == IsInBuildRange(HitTarget, MaxDistance))
+	if (false == ::IsValid(HitTarget) || true == HitTarget->IsInDestroySequence() || false == IsInBuildRange(HitTarget, MaxDistance))
 	{
 		HitTarget = nullptr;
 	}
 
 	ADC1BuildActor* PrevTarget = DismantleTarget.Get();
-	if (HitTarget == PrevTarget)
+	if (HitTarget == PrevTarget && false == DismantleTarget.IsStale())
 	{
 		return;
 	}
@@ -590,6 +647,10 @@ void UDC1BuildPlacementComponent::UpdateDismantleTarget()
 	}
 
 	DismantleTarget = HitTarget;
+
+	SetBlockReason((true == ::IsValid(HitTarget)) ? EDC1BuildBlockReason::None : EDC1BuildBlockReason::NoDismantleTarget);
+
+	OnDismantleTargetChanged.Broadcast(HitTarget);
 }
 
 void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
@@ -600,6 +661,43 @@ void UDC1BuildPlacementComponent::SetBuildMode(bool InEnabled)
 		PC->SetIMCEnabled(DC1IMCTags::IMC_Build, InEnabled);
 		PC->SetBuildMode(InEnabled);
 	}
+
+	RefreshBuildMode();
+}
+
+void UDC1BuildPlacementComponent::RefreshBuildMode()
+{
+	EDC1BuildMode NewMode = EDC1BuildMode::Default;
+
+	if (true == IsDismantling)
+	{
+		NewMode = EDC1BuildMode::Dismantle;
+	}
+	else if (true == ::IsValid(PreviewActor))
+	{
+		NewMode = EDC1BuildMode::Placement;
+	}
+
+	if (CurrentMode == NewMode)
+	{
+		return;
+	}
+
+	CurrentMode = NewMode;
+
+	OnBuildModeChanged.Broadcast(NewMode, CurrentBuildTag);
+}
+
+void UDC1BuildPlacementComponent::SetBlockReason(EDC1BuildBlockReason InReason)
+{
+	if (CurrentBlockReason == InReason)
+	{
+		return;
+	}
+
+	CurrentBlockReason = InReason;
+
+	OnBlockReasonChanged.Broadcast(InReason);
 }
 
 const APawn* UDC1BuildPlacementComponent::GetOwnerPawn() const

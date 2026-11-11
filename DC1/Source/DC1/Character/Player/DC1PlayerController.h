@@ -43,6 +43,8 @@ public:
 	// State Build 관리, InteractComp Tick 관리
 	void SetBuildMode(bool Enabled);
 
+	void OpenBuildMenu(const FGameplayTag& InTabTag);
+
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
 	UDC1DamageNumberComponent*		GetDamageNumberComponent() const { return DamageNumberComponent; }

@@ -118,7 +118,7 @@ void UDC1BaseRegistryComponent::DestroyBaseRequiredBuilds(APlayerState* InDestro
 			continue;
 		}
 
-		BuildDestroySubsystem->RequestDestroy(BuildActor, InDestroyer);
+		BuildDestroySubsystem->RequestDestroy(BuildActor, InDestroyer, EDC1BuildRefundMode::AtLocation);
 	}
 }
 

@@ -9,41 +9,6 @@
 
 namespace
 {
-	void GetCraftInventories(const ADC1PlayerState* InPlayerState, TArray<UDC1InventoryComponentBase*>& OutInventories)
-	{
-		if (false == ::IsValid(InPlayerState))
-		{
-			return;
-		}
-
-		UDC1PlayerInventoryComponent* PlayerInventory = InPlayerState->GetInventoryComponent();
-		if (true == ::IsValid(PlayerInventory))
-		{
-			OutInventories.Add(PlayerInventory);
-		}
-
-		const APawn* Pawn = InPlayerState->GetPawn();
-		if (false == ::IsValid(Pawn))
-		{
-			return;
-		}
-
-		const ADC1GameState* GS = ADC1GameState::Get(InPlayerState);
-		const ADC1PalBoxActor* PalBox = (true == ::IsValid(GS)) ? GS->FindBaseAt(Pawn->GetActorLocation()) : nullptr;
-		if (false == ::IsValid(PalBox))
-		{
-			return;
-		}
-
-		UDC1BaseRegistryComponent* BaseRegisterComp = PalBox->GetRegistryComponent();
-		if (false == ::IsValid(BaseRegisterComp))
-		{
-			return;
-		}
-
-		BaseRegisterComp->GetChestInventories(OutInventories);
-	}
-
 	int32 SumItemCount(const TArray<UDC1InventoryComponentBase*>& InInventories, FName InItemID)
 	{
 		int32 TotalCount = 0;
@@ -55,6 +20,41 @@ namespace
 
 		return TotalCount;
 	}
+}
+
+void DC1CraftHelper::GetCraftInventories(const ADC1PlayerState* InPlayerState, TArray<UDC1InventoryComponentBase*>& OutInventories)
+{
+	if (false == ::IsValid(InPlayerState))
+	{
+		return;
+	}
+
+	UDC1PlayerInventoryComponent* PlayerInventory = InPlayerState->GetInventoryComponent();
+	if (true == ::IsValid(PlayerInventory))
+	{
+		OutInventories.Add(PlayerInventory);
+	}
+
+	const APawn* Pawn = InPlayerState->GetPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return;
+	}
+
+	const ADC1GameState* GS = ADC1GameState::Get(InPlayerState);
+	const ADC1PalBoxActor* PalBox = (true == ::IsValid(GS)) ? GS->FindBaseAt(Pawn->GetActorLocation()) : nullptr;
+	if (false == ::IsValid(PalBox))
+	{
+		return;
+	}
+
+	UDC1BaseRegistryComponent* BaseRegisterComp = PalBox->GetRegistryComponent();
+	if (false == ::IsValid(BaseRegisterComp))
+	{
+		return;
+	}
+
+	BaseRegisterComp->GetChestInventories(OutInventories);
 }
 
 // 플레이어 인벤토리 + 거점 내부라면 거점 상자 포함 재료 개수

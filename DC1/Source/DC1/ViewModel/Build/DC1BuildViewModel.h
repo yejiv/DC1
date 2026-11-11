@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Component/DC1TechTreeComponent.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
 #include "ViewModel/DC1ViewModelBase.h"
 #include "DC1BuildViewModel.generated.h"
 
@@ -17,9 +18,13 @@ class DC1_API UDC1BuildViewModel : public UDC1ViewModelBase
 
 public:
 	// Widget이 구독
-	FDC1OnTechStateChange	OnBuildStateChanged;
+	FDC1OnTechStateChange			OnBuildStateChanged;
 
-	FDC1OnTechUnlocked		OnBuildUnlocked;
+	FDC1OnTechUnlocked				OnBuildUnlocked;
+
+	FDC1OnBuildModeChanged			OnBuildModeChanged;
+	FDC1OnBuildBlockReasonChanged	OnBlockReasonChanged;
+	FDC1OnDismantleTargetChanged	OnDismantleTargetChanged;
 
 public:
 	virtual void				BindSource(ADC1PlayerState* InPlayerState) override;
@@ -38,12 +43,23 @@ public:
 	bool						RequestStartPlacement(const FGameplayTag& InBuildTag);
 	bool						RequestStartDismantle();
 
+	EDC1BuildMode				GetBuildMode() const;
+	EDC1BuildBlockReason		GetBlockReason() const;
+	FGameplayTag				GetCurrentBuildTag() const;
+	ADC1BuildActor*				GetDismantleTarget() const;
+
+	const FDC1BuildRow*			FindBuildRow(const FGameplayTag& InBuildTag) const;
+
 private:
 	void						SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildPlacementComponent* InPlacementComp);
 
 	void						CacheBuildRows();
 	void						HandleTechStateChanged();
 	void						HandleTechUnlocked(const FGameplayTag& InTechTag);
+
+	void						HandleBuildModeChanged(EDC1BuildMode InMode, const FGameplayTag& InBuildTag);
+	void						HandleBlockReasonChanged(EDC1BuildBlockReason InReason);
+	void						HandleDismantleTargetChanged(ADC1BuildActor* InTarget);
 
 private:
 	UPROPERTY()
