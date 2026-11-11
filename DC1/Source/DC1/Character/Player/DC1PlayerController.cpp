@@ -29,6 +29,7 @@
 
 #include "Component/Build/DC1BuildPlacementComponent.h"
 #include "Component/Interact/DC1InteractComponent.h"
+#include "Component/Widget/DC1DamageNumberComponent.h"
 
 #include "Interface/DC1InteractableInterface.h"
 
@@ -49,6 +50,8 @@ ADC1PlayerController::ADC1PlayerController(const FObjectInitializer& ObjectIniti
 	BuildPlacementComponent = CreateDefaultSubobject<UDC1BuildPlacementComponent>("BuildPlacementComponent");
 
 	InteractComponent = CreateDefaultSubobject<UDC1InteractComponent>("InteractComponent");
+
+	DamageNumberComponent = CreateDefaultSubobject<UDC1DamageNumberComponent>("DamageNumberComponent");
 }
 
 void ADC1PlayerController::SetGameplayBaseIMC(const FGameplayTag& IMCTag)
@@ -803,6 +806,11 @@ void ADC1PlayerController::OnDebugSavePlayer()
 void ADC1PlayerController::OnDebugDamageSelf()
 {
 	ServerDebugDamageSelf(DebugDamageAmount);
+}
+
+void ADC1PlayerController::DC1Damage(float InDamageAmount)
+{
+	ServerDebugDamageSelf(InDamageAmount);
 }
 
 void ADC1PlayerController::ServerDebugDamageSelf_Implementation(float InDamageAmount)

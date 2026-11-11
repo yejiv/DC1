@@ -6,6 +6,8 @@
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 #include "Tags/DC1GamePlayTags.h"
+#include "Component/DC1AbilitySystemComponent.h"
+#include "Component/Widget/DC1DamageNumberComponent.h"
 
 UDC1PlayerSet::UDC1PlayerSet()
 {
@@ -111,8 +113,23 @@ bool UDC1PlayerSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Dat
 
 void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
-	// 기절이 아니면 기존대로 HP 처리
-	if (GetDamageAttribute() != Data.EvaluatedData.Attribute || false == Data.Target.HasMatchingGameplayTag(DC1StateTags::State_Downed))
+	if (GetDamageAttribute() != Data.EvaluatedData.Attribute)
+	{
+		Super::PostGameplayEffectExecute(Data);
+		return;
+	}
+
+	if (GetDamage() > 0.f)
+	{
+		if (UDC1AbilitySystemComponent* DC1ASC = Cast<UDC1AbilitySystemComponent>(&Data.Target))
+		{
+			DC1ASC->SetExclusiveStateTag(DC1StateTags::State_Shield_RegenBlocked, DC1StateTags::State_Shield_RegenBlocked);
+		}
+	}
+
+	const bool IsDowned = Data.Target.HasMatchingGameplayTag(DC1StateTags::State_Downed);
+
+	if (false == IsDowned && GetShield() <= 0.f)
 	{
 		Super::PostGameplayEffectExecute(Data);
 		return;
@@ -127,7 +144,16 @@ void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 		return;
 	}
 
-	SetDownedGauge(FMath::Clamp(GetDownedGauge() - LocalDamage, 0.f, GetMaxDownedGauge()));
+	if (true == IsDowned)
+	{
+		SetDownedGauge(FMath::Clamp(GetDownedGauge() - LocalDamage, 0.f, GetMaxDownedGauge()));
+		return;
+	}
+
+	// 데미지 Notify -> World UI 표시
+	const float OldShield = GetShield();
+	SetShield(FMath::Max(GetShield() - LocalDamage, 0.f));
+	UDC1DamageNumberComponent::NotifyDamage(Data, OldShield - GetShield(), EDC1DamageNumberType::Shield);
 }
 
 void UDC1PlayerSet::OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight)

@@ -93,7 +93,7 @@ void UDC1EquipmentWidget::NativeOnActivated()
 {
 	Super::NativeOnActivated();
 
-	// 화면이 열려 있는 동안만 미리보기 촬영
+	// 인벤토리 탭이 보이는 동안만 미리보기 촬영
 	if (UDC1PreviewSubsystem* PreviewSubsystem = GetOwningLocalPlayer() ? GetOwningLocalPlayer()->GetSubsystem<UDC1PreviewSubsystem>() : nullptr)
 	{
 		PreviewSubsystem->BeginPlayerPreview();

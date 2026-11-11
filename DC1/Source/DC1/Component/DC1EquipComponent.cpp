@@ -12,6 +12,8 @@
 #include "Item/Equip/Tool/DC1Tool.h"
 #include "Item/Equip/Glider/DC1Glider.h"
 
+#include "AbilitySystem/Attribute/DC1PlayerSet.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_EquipStat.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/DC1CharacterMovementComponent.h"
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
@@ -138,6 +140,20 @@ void UDC1EquipComponent::HandlePawnReady()
 	ApplyWeaponCollider();
 }
 
+float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
+{
+	const int32 EquipSlotIndex = GetCurrentWeaponEquipIndex();
+	if (false == EquipSlots.IsValidIndex(EquipSlotIndex)) return 0.f;
+
+	const FName ItemID = EquipSlots[EquipSlotIndex].ItemID;
+	if (NAME_None == ItemID) return 0.f;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(ItemID);
+	if (nullptr == EquipRow) return 0.f;
+
+	return EquipRow->AttackPower;
+}
+
 void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
 {
 	if (nullptr == CurrentGlider) return;
@@ -191,11 +207,29 @@ UDC1PlayerInventoryComponent* UDC1EquipComponent::GetInventoryComponent() const
 	return OwnerState->GetInventoryComponent();
 }
 
+UAbilitySystemComponent* UDC1EquipComponent::GetOwningAbilitySystem() const
+{
+	const ADC1PlayerState* OwnerState = Cast<ADC1PlayerState>(GetOwner());
+	if (nullptr == OwnerState) return nullptr;
+
+	return OwnerState->GetAbilitySystemComponent();
+}
+
 void UDC1EquipComponent::HandleEquipmentSlotChanged(int32 InEquipSlotIndex)
 {
 	// 폰이 없으면 건너뛴다. 폰이 붙을 때 Init_Equip이 전체를 다시 맞춘다
 	if (false == IsValid(GetOwningPlayer())) return;
 	if (false == EquipSlots.IsValidIndex(InEquipSlotIndex)) return;
+
+	UAbilitySystemComponent* ASC = GetOwningAbilitySystem();
+	if (nullptr == ASC) return;
+
+	// HP 비율 기록
+	const float OldMaxHealth = ASC->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+	const float HealthRatio = (OldMaxHealth > 0.f) ? ASC->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute()) / OldMaxHealth : 1.f;
+
+	// Shield 수치 기록
+	const float OldMaxShield = ASC->GetNumericAttribute(UDC1PlayerSet::GetMaxShieldAttribute());
 
 	// 모든 칸 공통: 이전 적용 해제 + ItemID 갱신. 적용은 아래 타입별 함수가 한다
 	RefreshEquipSlot(InEquipSlotIndex);
@@ -208,10 +242,11 @@ void UDC1EquipComponent::HandleEquipmentSlotChanged(int32 InEquipSlotIndex)
 		HandleWeaponChanged(InEquipSlotIndex);
 		break;
 	case EDC1EquipSlotType::Head:
-		break;
 	case EDC1EquipSlotType::Body:
+		HandleArmorChanged(InEquipSlotIndex);
 		break;
 	case EDC1EquipSlotType::Shield:
+		HandleShieldChanged(InEquipSlotIndex);
 		break;
 	case EDC1EquipSlotType::Glider:
 		HandleGliderChanged(InEquipSlotIndex);
@@ -220,6 +255,20 @@ void UDC1EquipComponent::HandleEquipmentSlotChanged(int32 InEquipSlotIndex)
 		break;
 	case EDC1EquipSlotType::Food:
 		break;
+	}
+
+	// 기록한 HP 비율에 따라 현재 HP 갱신
+	const float NewMaxHealth = ASC->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+	if (false == FMath::IsNearlyEqual(OldMaxHealth, NewMaxHealth))
+	{
+		ASC->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), NewMaxHealth * HealthRatio);
+	}
+
+	// MaxShield 수치 다를 시 최대로 갱신
+	const float NewMaxShield = ASC->GetNumericAttribute(UDC1PlayerSet::GetMaxShieldAttribute());
+	if (false == FMath::IsNearlyEqual(OldMaxShield, NewMaxShield))
+	{
+		ASC->SetNumericAttributeBase(UDC1PlayerSet::GetShieldAttribute(), NewMaxShield);
 	}
 }
 
@@ -245,6 +294,12 @@ void UDC1EquipComponent::RefreshEquipSlot(int32 InEquipSlotIndex)
 		OldEquip->Destroy();
 	}
 	EquipSlot.EquipActor = nullptr;
+
+	if (UAbilitySystemComponent* ASC = GetOwningAbilitySystem())
+	{
+		ASC->RemoveActiveGameplayEffect(EquipSlot.StatEffectHandle);
+	}
+	EquipSlot.StatEffectHandle.Invalidate();
 
 	// 인벤토리 기준으로 지금 적용할 아이템 갱신 (비었으면 NAME_None)
 	EquipSlot.ItemID = NAME_None;
@@ -419,6 +474,42 @@ void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
 			CurrentGlider->AttachSocketName
 		);
 	}
+}
+
+void UDC1EquipComponent::HandleArmorChanged(int32 InEquipSlotIndex)
+{
+	const FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
+	if (NAME_None == EquipSlot.ItemID) return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlot.ItemID);
+	if (nullptr == EquipRow) return;
+
+	ApplyEquipStatEffect(GetOwningAbilitySystem(), InEquipSlotIndex, EquipRow->DefensePower, EquipRow->Health, 0.f);
+}
+
+void UDC1EquipComponent::HandleShieldChanged(int32 InEquipSlotIndex)
+{
+	const FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
+	if (NAME_None == EquipSlot.ItemID) return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlot.ItemID);
+	if (nullptr == EquipRow) return;
+
+	ApplyEquipStatEffect(GetOwningAbilitySystem(), InEquipSlotIndex, 0.f, 0.f, EquipRow->Health);
+}
+
+void UDC1EquipComponent::ApplyEquipStatEffect(UAbilitySystemComponent* InASC, int32 InEquipSlotIndex, float InDefensePower, float InMaxHealth, float InMaxShield)
+{
+	if (nullptr == InASC) return;
+
+	FGameplayEffectSpecHandle Spec = InASC->MakeOutgoingSpec(UDC1GameplayEffect_EquipStat::StaticClass(), 1.f, InASC->MakeEffectContext());
+	if (false == Spec.IsValid()) return;
+
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Equip_Defense, InDefensePower);
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Equip_Health, InMaxHealth);
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Equip_Shield, InMaxShield);
+
+	EquipSlots[InEquipSlotIndex].StatEffectHandle = InASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 }
 
 void UDC1EquipComponent::SetWeaponState(WEAPONSTATE WeaponState)

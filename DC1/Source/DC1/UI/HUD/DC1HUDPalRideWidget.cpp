@@ -35,6 +35,7 @@ void UDC1HUDPalRideWidget::BindViewModel()
 		RideViewModel->OnRideInfoChanged.AddUObject(this, &ThisClass::HandleRideInfoChanged);
 		RideViewModel->OnRideHoldChanged.AddUObject(this, &ThisClass::HandleRideHoldChanged);
 		RideViewModel->OnRideHoldCompleted.AddUObject(this, &ThisClass::HandleRideHoldCompleted);
+		RideViewModel->OnRideSkillCooldownChanged.AddUObject(this, &ThisClass::HandleRideSkillCooldownChanged);
 
 		HandleRideInfoChanged();
 	}
@@ -48,7 +49,24 @@ void UDC1HUDPalRideWidget::UnbindViewModel()
 	RideViewModel->OnRideInfoChanged.RemoveAll(this);
 	RideViewModel->OnRideHoldChanged.RemoveAll(this);
 	RideViewModel->OnRideHoldCompleted.RemoveAll(this);
+	RideViewModel->OnRideSkillCooldownChanged.RemoveAll(this);
 	RideViewModel.Reset();
+}
+
+void UDC1HUDPalRideWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (false == RideViewModel.IsValid())
+		return;
+
+	for (int32 Index = 0; Index < SkillRows.Num(); ++Index)
+	{
+		if (nullptr != SkillRows[Index] && true == RideViewModel->IsRideSkillCoolingDown(Index))
+		{
+			SkillRows[Index]->SetCooldownRatio(RideViewModel->GetRideSkillCooldownRatio(Index));
+		}
+	}
 }
 
 void UDC1HUDPalRideWidget::HandleRideInfoChanged()
@@ -63,6 +81,7 @@ void UDC1HUDPalRideWidget::HandleRideInfoChanged()
 	Text_Action->SetText(bRiding ? DismountText : RideText);
 
 	SkillContainer->Reset();
+	SkillRows.Reset();
 
 	if (true == bRiding)
 	{
@@ -71,9 +90,15 @@ void UDC1HUDPalRideWidget::HandleRideInfoChanged()
 
 		for (int32 Index = 0; Index < NumSkills; ++Index)
 		{
-			if (UDC1HUDPalRideSkillRow* Row = SkillContainer->CreateEntry<UDC1HUDPalRideSkillRow>())
+			// 자리는 스킬 순서 번호와 맞춘다
+			UDC1HUDPalRideSkillRow* Row = SkillContainer->CreateEntry<UDC1HUDPalRideSkillRow>();
+			SkillRows.Add(Row);
+
+			if (nullptr != Row)
 			{
 				Row->SetSkill(SkillNames[Index], SkillKeyIcons[Index]);
+				Row->SetCoolingDown(RideViewModel->IsRideSkillCoolingDown(Index));
+				Row->SetCooldownRatio(RideViewModel->GetRideSkillCooldownRatio(Index));
 			}
 		}
 	}
@@ -93,4 +118,18 @@ void UDC1HUDPalRideWidget::HandleRideHoldCompleted()
 {
 	StopAnim(SuccessAnim);
 	PlayAnim(SuccessAnim, FDC1AnimPlayInfo());
+}
+
+void UDC1HUDPalRideWidget::HandleRideSkillCooldownChanged(int32 InIndex, bool InStarted)
+{
+	if (false == SkillRows.IsValidIndex(InIndex) || nullptr == SkillRows[InIndex])
+		return;
+
+	UDC1HUDPalRideSkillRow* Row = SkillRows[InIndex];
+	Row->SetCoolingDown(InStarted);
+
+	if (true == InStarted)
+	{
+		Row->PlayCooldownFlash();
+	}
 }

@@ -17,6 +17,7 @@ class UDC1TabWidget;
 
 class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
+class UDC1DamageNumberComponent;
 
 struct FInputActionInstance;
 
@@ -44,6 +45,7 @@ public:
 
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
+	UDC1DamageNumberComponent*		GetDamageNumberComponent() const { return DamageNumberComponent; }
 
 	void PressAbilityInput(const FGameplayTag& InAbilityTag);
 	void ReleaseAbilityInput(const FGameplayTag& InAbilityTag);
@@ -130,6 +132,9 @@ private:
 
 	void OnDebugDamageSelf();
 
+	UFUNCTION(Exec)
+	void DC1Damage(float InDamageAmount);
+
 	// NumPad2 : 세이브 테스트용
 	void OnDebugSavePlayer();
 
@@ -176,6 +181,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Build|Interact")
 	TObjectPtr<UDC1InteractComponent> InteractComponent = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = "UI|DamageNumber")
+	TObjectPtr<UDC1DamageNumberComponent> DamageNumberComponent = { nullptr };
 
 private:
 	bool			IsTurn = { true };
