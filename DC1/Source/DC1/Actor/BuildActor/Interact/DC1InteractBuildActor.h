@@ -45,7 +45,6 @@ public:
 public:
 	ADC1InteractBuildActor();
 
-
 public:
 	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == BuildState; }
 	float							GetBuildProgress() const { return BuildProgress; }

@@ -126,6 +126,11 @@ void UDC1ProductionInfoWidget::OnInfoStateChanged(EDC1BuildInfoState InPrevState
 
 void UDC1ProductionInfoWidget::SetActivePanel(EDC1BuildInfoState InState)
 {
+	if (false == ::IsValid(ProductionStateSwitcher))
+	{
+		return;
+	}
+
 	int32* Index = StateToSwitchIndex.Find(InState);
 	if (nullptr == Index || nullptr == ProductionStateSwitcher->GetWidgetAtIndex(*Index))
 	{
