@@ -16,12 +16,17 @@ class DC1_API UDC1CraftMaterialEntryWidget : public UDC1UserWidget
 
 public:
 	void			SetMaterial(FName InItemID, int32 InOwnedCount, int32 InRequiredCount);
+	void			SetMaterialAmount(FName InItemID, int32 InCount);
+	void			ClearMaterial();
+
+private:
+	void			SetItemInfo(FName InItemID);
 
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>			Image_Icon = { nullptr };
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>		Text_Name = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
@@ -34,4 +39,7 @@ private:
 private:
 	UPROPERTY(EditAnywhere, Category = "UserButton|Recipe|Image|Opacity")
 	float					InactiveImageOpacity = { 0.4f };
+
+	UPROPERTY(EditAnywhere, Category = "UserButton|Recipe|Text|Color")
+	FLinearColor			InactiveFontColor = { FLinearColor::Red };
 };

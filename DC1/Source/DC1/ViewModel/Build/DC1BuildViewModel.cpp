@@ -42,6 +42,13 @@ void UDC1BuildViewModel::SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildP
 		TechComp->OnTechUnlocked.RemoveAll(this);
 	}
 
+	if (true == ::IsValid(PlacementComp))
+	{
+		PlacementComp->OnBuildModeChanged.RemoveAll(this);
+		PlacementComp->OnBlockReasonChanged.RemoveAll(this);
+		PlacementComp->OnDismantleTargetChanged.RemoveAll(this);
+	}
+
 	TechComp = InTechComp;
 	PlacementComp = InPlacementComp;
 
@@ -51,7 +58,59 @@ void UDC1BuildViewModel::SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildP
 		TechComp->OnTechUnlocked.AddUObject(this, &ThisClass::HandleTechUnlocked);
 	}
 
+	if (true == ::IsValid(PlacementComp))
+	{
+		PlacementComp->OnBuildModeChanged.AddUObject(this, &ThisClass::HandleBuildModeChanged);
+		PlacementComp->OnBlockReasonChanged.AddUObject(this, &ThisClass::HandleBlockReasonChanged);
+		PlacementComp->OnDismantleTargetChanged.AddUObject(this, &ThisClass::HandleDismantleTargetChanged);
+	}
+
 	OnBuildStateChanged.Broadcast();
+
+	OnBuildModeChanged.Broadcast(GetBuildMode(), GetCurrentBuildTag());
+}
+
+EDC1BuildMode UDC1BuildViewModel::GetBuildMode() const
+{
+	return ::IsValid(PlacementComp) ? PlacementComp->GetBuildMode() : EDC1BuildMode::Default;
+}
+
+EDC1BuildBlockReason UDC1BuildViewModel::GetBlockReason() const
+{
+	return ::IsValid(PlacementComp) ? PlacementComp->GetBlockReason() : EDC1BuildBlockReason::None;
+}
+
+FGameplayTag UDC1BuildViewModel::GetCurrentBuildTag() const
+{
+	return ::IsValid(PlacementComp) ? PlacementComp->GetCurrentBuildTag() : FGameplayTag::EmptyTag;
+}
+
+ADC1BuildActor* UDC1BuildViewModel::GetDismantleTarget() const
+{
+	return ::IsValid(PlacementComp) ? PlacementComp->GetDismantleTarget() : nullptr;
+}
+
+const FDC1BuildRow* UDC1BuildViewModel::FindBuildRow(const FGameplayTag& InBuildTag) const
+{
+	return SortedBuildRows.FindByPredicate([&InBuildTag](const FDC1BuildRow& InRow)
+		{
+			return InRow.BuildTag == InBuildTag;
+		});
+}
+
+void UDC1BuildViewModel::HandleBuildModeChanged(EDC1BuildMode InMode, const FGameplayTag& InBuildTag)
+{
+	OnBuildModeChanged.Broadcast(InMode, InBuildTag);
+}
+
+void UDC1BuildViewModel::HandleBlockReasonChanged(EDC1BuildBlockReason InReason)
+{
+	OnBlockReasonChanged.Broadcast(InReason);
+}
+
+void UDC1BuildViewModel::HandleDismantleTargetChanged(ADC1BuildActor* InTarget)
+{
+	OnDismantleTargetChanged.Broadcast(InTarget);
 }
 
 bool UDC1BuildViewModel::IsTabUnlocked(const FGameplayTag& InTabTag) const

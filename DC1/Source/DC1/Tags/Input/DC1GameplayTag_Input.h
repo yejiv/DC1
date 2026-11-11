@@ -67,6 +67,8 @@ namespace DC1InputBuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Cancel);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Rotate);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Snap);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_Exit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Build_ToggleMode);
 }
 
 namespace DC1InputInteractTags

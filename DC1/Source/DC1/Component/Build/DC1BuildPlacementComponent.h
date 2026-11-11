@@ -16,6 +16,10 @@ struct FDC1BuildSnapInput;
 class ADC1BuildActor;
 class UDC1BuildSnapSolver;
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnBuildModeChanged, EDC1BuildMode, const FGameplayTag&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnBuildBlockReasonChanged, EDC1BuildBlockReason);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnDismantleTargetChanged, ADC1BuildActor*);
+
 UCLASS()
 class DC1_API UDC1BuildPlacementComponent : public UActorComponent
 {
@@ -28,13 +32,23 @@ protected:
 	virtual void		BeginPlay() override;
 	virtual void		EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-public:	
+public:
 	virtual void		TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	bool				StartPlacement(const FGameplayTag& InBuildTag);
-	bool				StartDismantle();
-	void				CancelBuildMode();
+	FDC1OnBuildModeChanged			OnBuildModeChanged;
+	FDC1OnBuildBlockReasonChanged	OnBlockReasonChanged;
+	FDC1OnDismantleTargetChanged	OnDismantleTargetChanged;
+
+public:
+	bool					StartPlacement(const FGameplayTag& InBuildTag);
+	bool					StartDismantle();
+	void					CancelBuildMode();
+
+	EDC1BuildMode			GetBuildMode() const { return CurrentMode; }
+	EDC1BuildBlockReason	GetBlockReason() const { return CurrentBlockReason; }
+	const FGameplayTag&		GetCurrentBuildTag() const { return CurrentBuildTag; }
+	ADC1BuildActor*			GetDismantleTarget() const { return DismantleTarget.Get(); }
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -61,10 +75,18 @@ private:
 	void				SetBuildMode(bool InEnabled);
 
 	void				OnConfirmInput();
-	void				OnCancelInput();
+	void				OnBackInput();
+	void				OnExitInput();
+	void				OnToggleModeInput();
 	void				OnRotateInput(const FInputActionValue& Value);
 	void				OnSnapPressed();
 	void				OnSnapReleased();
+
+	void				ReturnToBuildMenu();
+	void				RefreshBuildMode();
+	void				SetBlockReason(EDC1BuildBlockReason InReason);
+
+	static FGameplayTag	MakeBuildTabTag(const FGameplayTag& InBuildTag);
 
 	void				UpdateDismantleTarget();
 
@@ -127,8 +149,13 @@ private:
 
 	FGameplayTag							CurrentBuildTag = { FGameplayTag::EmptyTag };
 
+	// 돌아가기, 모드전환용
+	FGameplayTag							LastBuildTag = { FGameplayTag::EmptyTag };
+
+	EDC1BuildMode							CurrentMode = { EDC1BuildMode::Default };
+	EDC1BuildBlockReason					CurrentBlockReason = { EDC1BuildBlockReason::None };
+
 	float									CurrentYaw = { 0.f };
-	bool									CanBuilding = { false };
 	float									DistanceMarginFactor = { 1.1f };
 
 	// 이번 틱에 자동 스냅이 걸렸나 ( 회전 스텝·표면 검사 분기에 쓴다 )

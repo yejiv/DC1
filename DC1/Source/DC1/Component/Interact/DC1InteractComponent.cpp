@@ -199,7 +199,7 @@ void UDC1InteractComponent::Server_CancelBuild_Implementation(ADC1InteractBuildA
 	UDC1BuildDestroySubsystem* BuildDestroySubsystem = World->GetSubsystem<UDC1BuildDestroySubsystem>();
 	if (true == ::IsValid(BuildDestroySubsystem))
 	{
-		BuildDestroySubsystem->RequestDestroy(InBuildTarget);
+		BuildDestroySubsystem->RequestDestroy(InBuildTarget, Player->GetPlayerState(), EDC1BuildRefundMode::ToInstigator);
 	}
 }
 

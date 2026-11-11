@@ -63,7 +63,7 @@ public:
 	const float						GetExtentCenterToDirection(const FVector& InWorldDirection, const FQuat& InQuat) const;
 
 public:
-	bool							CheckCanBuild();
+	EDC1BuildBlockReason			CheckCanBuild();
 	bool							CheckOverlap();
 
 	const FTransform				ComputePlaceTransform(const FHitResult& InHit, float InYaw) const;
