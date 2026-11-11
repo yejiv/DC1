@@ -10,10 +10,10 @@ struct FDC1InventorySlotInfo
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, SaveGame)
 	FName ItemID = NAME_None;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, SaveGame)
 	int32 StackCount = 0;
 
 	bool IsEmpty() const { return ItemID == NAME_None || StackCount <= 0; }

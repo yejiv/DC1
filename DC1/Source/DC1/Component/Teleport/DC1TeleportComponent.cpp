@@ -249,6 +249,12 @@ void UDC1TeleportComponent::OnRep_UnlockedPointIds()
 	}
 }
 
+void UDC1TeleportComponent::OnPostLoad()
+{
+	// 리슨 서버 호스트는 OnRep이 안 옴
+	OnRep_UnlockedPointIds();
+}
+
 bool UDC1TeleportComponent::IsInnerInteractRange(AActor* InPoint) const
 {
 	if (nullptr == InPoint)

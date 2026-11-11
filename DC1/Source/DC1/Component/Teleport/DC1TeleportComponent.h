@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1TeleportComponent.generated.h"
 
 /**
@@ -12,7 +13,7 @@
  *
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class DC1_API UDC1TeleportComponent : public UActorComponent
+class DC1_API UDC1TeleportComponent : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -20,6 +21,9 @@ public:
 	UDC1TeleportComponent();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// 세이브 로드 완료 후 ( 서버 )
+	virtual void OnPostLoad() override;
 
 public:
 	const TArray<FName>&	GetUnlockedPointIds() const { return UnlockedPointIds; }
@@ -71,7 +75,7 @@ private:
 
 private:
 	// 해금된 텔레포트 지점 ID ( 세이브 키 )
-	UPROPERTY(ReplicatedUsing = OnRep_UnlockedPointIds)
+	UPROPERTY(ReplicatedUsing = OnRep_UnlockedPointIds, SaveGame)
 	TArray<FName>			UnlockedPointIds;
 
 	// 서버 검증용 지점 상호작용 허용 거리 ( 네트워크 지연을 감안해 상호작용 범위보다 넉넉하게 )

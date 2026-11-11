@@ -4,6 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "AttributeSet.h"
 #include "Define/DC1Enums.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1PlayerStatComponent.generated.h"
 
 struct FOnAttributeChangeData;
@@ -60,25 +61,25 @@ private:
 	int32* FindCount(EDC1PlayerStat InStat);
 
 private:
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	int32 Health = { 0 };
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	int32 Stamina = { 0 };
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	int32 Attack = { 0 };
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	int32 WorkSpeed = { 0 };
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	int32 Weight = { 0 };
 };
 
 // 레벨업 스탯 포인트로 플레이어 스탯을 강화 (서버 권한)
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class DC1_API UDC1PlayerStatComponent : public UActorComponent
+class DC1_API UDC1PlayerStatComponent : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -101,6 +102,11 @@ public:
 public:
 	void	RequestEnhanceStats(const FDC1StatInvestment& InAllocation);
 
+public:
+	// 세이브 직전 / 로드 완료 후 ( 서버 )
+	virtual void OnPreSave() override;
+	virtual void OnPostLoad() override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -121,8 +127,21 @@ private:
 	UAbilitySystemComponent* GetAbilitySystemComponent() const;
 
 private:
-	UPROPERTY(ReplicatedUsing = OnRep_InvestedStats)
+	UPROPERTY(ReplicatedUsing = OnRep_InvestedStats, SaveGame)
 	FDC1StatInvestment InvestedStats;
+
+	// GAS 어트리뷰트 저장용 ( AttributeSet은 수집 대상이 아님 → 여기로 복사 )
+	UPROPERTY(SaveGame)
+	float SavedLevel = { 0.f };
+
+	UPROPERTY(SaveGame)
+	float SavedExperience = { 0.f };
+
+	UPROPERTY(SaveGame)
+	float SavedHealth = { 0.f };
+
+	UPROPERTY(SaveGame)
+	float SavedSatiety = { 0.f };
 
 	// 패널에 표시할 스탯과 강화 규칙
 	UPROPERTY(EditDefaultsOnly, Category = "Stat")

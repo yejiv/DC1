@@ -592,6 +592,20 @@ void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()
 	// 추가 처리는 자식 클래스에서 오버라이드
 }
 
+void UDC1InventoryComponentBase::OnPostLoad()
+{
+	// 고정 칸 인벤토리는 현재 기획 칸 수에 맞춤 ( 귀중품은 가진 수만큼이라 건드리지 않음 )
+	if (true == IsFixedCapacity())
+	{
+		Slots.SetNum(TotalCapacity);
+	}
+
+	Rows = (TotalCapacity + Columns - 1) / Columns;
+
+	// 가상 함수 → Player에선 무게, 음식칸 재계산까지 같이 됨
+	OnInventoryUpdated_Internal();
+}
+
 void UDC1InventoryComponentBase::OnRep_Slots(const TArray<FDC1InventorySlotInfo>& OldSlots)
 {
 	// 실제로 변경된 슬롯만 찾아 개별 갱신 이벤트 발생 (서버의 부분 갱신 최적화와 동일한 방식)

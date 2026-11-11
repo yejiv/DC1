@@ -73,6 +73,16 @@ void UDC1TechTreeComponent::BeginPlay()
 	OnRep_UnlockedTags();
 }
 
+void UDC1TechTreeComponent::OnPostLoad()
+{
+	// 저장 이후 기본 해금이 추가됐을 수 있음 → 다시 합침
+	UnlockedTechTags.AppendTags(DefaultUnlockedTags);
+
+	// BeginPlay와 같은 서버 갱신 경로 ( 로드된 태그 OnTechUnlocked 브로드캐스트 )
+	OnRep_TechState();
+	OnRep_UnlockedTags();
+}
+
 void UDC1TechTreeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

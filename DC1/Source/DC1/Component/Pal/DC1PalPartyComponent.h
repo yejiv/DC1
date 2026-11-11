@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Data/Pal/DC1PalTypes.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1PalPartyComponent.generated.h"
 
 class ADC1PalCharacter;
@@ -25,14 +26,14 @@ DECLARE_MULTICAST_DELEGATE(FOnPalBoxChanged);
  *
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class DC1_API UDC1PalPartyComponent : public UActorComponent
+class DC1_API UDC1PalPartyComponent : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
 public:
 	UDC1PalPartyComponent();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void			GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// 스피어가 잡아온 것을 받는다. OnPalCaptured에 바인딩하는 진입점
 	void					HandlePalCaptured(const FDC1PalInstance& InPal);
@@ -114,8 +115,7 @@ public:
 	bool					ReceivePal(const FDC1PalInstance& InPal);
 
 public:
-	void ExportSaveData(TArray<FDC1PalInstance>& Out) const;
-	void ImportSaveData(const TArray<FDC1PalInstance>& In);
+	virtual void			OnPostLoad() override;
 
 public:
 	// 팰 슬롯 변화 시 호출
@@ -189,7 +189,7 @@ protected:
 	bool					FindDeployTransform(FTransform& OutTransform) const;
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_Pals)
+	UPROPERTY(ReplicatedUsing = OnRep_Pals, SaveGame)
 	TArray<FDC1PalInstance>	Pals;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "1"))
@@ -216,7 +216,7 @@ protected:
 	TObjectPtr<AController>	RiddenPalController = { nullptr };
 
 	// 상자
-	UPROPERTY(ReplicatedUsing = OnRep_BoxPals)
+	UPROPERTY(ReplicatedUsing = OnRep_BoxPals, SaveGame)
 	TArray<FDC1PalInstance>	BoxPals;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Box", meta = (ClampMin = "1"))

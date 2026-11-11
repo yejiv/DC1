@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
 
 #pragma region Stat Investment
 
@@ -231,6 +232,56 @@ void UDC1PlayerStatComponent::ApplyStatInvestment(EDC1PlayerStat InStat, int32 I
 void UDC1PlayerStatComponent::HandleLevelChanged(const FOnAttributeChangeData& InData)
 {
 	OnStatPointsChanged.Broadcast();
+}
+
+void UDC1PlayerStatComponent::OnPreSave()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (nullptr == ASC)
+		return;
+
+	SavedLevel		= ASC->GetNumericAttributeBase(UDC1PlayerSet::GetLevelAttribute());
+	SavedExperience	= ASC->GetNumericAttributeBase(UDC1PlayerSet::GetExperienceAttribute());
+	SavedHealth		= ASC->GetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute());
+	SavedSatiety	= ASC->GetNumericAttributeBase(UDC1PlayerSet::GetSatietyAttribute());
+}
+
+void UDC1PlayerStatComponent::OnPostLoad()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (nullptr == ASC)
+		return;
+
+	// 1. 레벨 / 경험치 ( 0 = 이 필드가 없던 옛 세이브 → 건드리지 않음 )
+	if (0.f < SavedLevel)
+	{
+		ASC->SetNumericAttributeBase(UDC1PlayerSet::GetLevelAttribute(), SavedLevel);
+		ASC->SetNumericAttributeBase(UDC1PlayerSet::GetExperienceAttribute(), SavedExperience);
+	}
+
+	// 2. 투자 횟수만큼 최대치 다시 올리기 ( 평소 강화와 같은 함수 )
+	InvestedStats.ForEachCount([this](EDC1PlayerStat InStat, int32 InCount)
+	{
+		if (0 < InCount)
+		{
+			ApplyStatInvestment(InStat, InCount);
+		}
+	});
+
+	// 3. 현재값은 최대치가 정해진 뒤에 ( ApplyStatInvestment가 현재값도 올리므로 마지막에 덮어씀 )
+	if (0.f < SavedHealth)
+	{
+		const float MaxHealth = ASC->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+		ASC->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), FMath::Min(SavedHealth, MaxHealth));
+	}
+	if (0.f < SavedSatiety)
+	{
+		const float MaxSatiety = ASC->GetNumericAttribute(UDC1PlayerSet::GetMaxSatietyAttribute());
+		ASC->SetNumericAttributeBase(UDC1PlayerSet::GetSatietyAttribute(), FMath::Min(SavedSatiety, MaxSatiety));
+	}
+
+	// 리슨 서버 호스트는 OnRep이 안 옴
+	OnRep_InvestedStats();
 }
 
 UAbilitySystemComponent* UDC1PlayerStatComponent::GetAbilitySystemComponent() const
