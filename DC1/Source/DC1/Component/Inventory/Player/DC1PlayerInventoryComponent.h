@@ -76,6 +76,7 @@ public:
 public:
 	// 아이템 추가 함수 (귀중품은 귀중품 인벤토리로 넘김)
 	virtual bool AddItem(FName InItemID, int32 InCount = 1) override;
+	virtual int32 AddItemPartial(FName InItemID, int32 InCount) override;
 
 	// 보관 가능 여부 확인 함수 (귀중품 불가)
 	virtual bool CanAcceptItem(FName InItemID) const override;
@@ -229,6 +230,8 @@ protected:
 
 	// 같은 PlayerState의 귀중품 인벤토리 조회 함수
 	UDC1ValuableInventoryComponent* FindValuableInventory() const;
+
+	void NotifyItemAcquired(FName InItemID, int32 InCount) const;
 
 	// 장비 칸 복제 수신 시 UI 갱신 이벤트를 보내는 함수
 	UFUNCTION()

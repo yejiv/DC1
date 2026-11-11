@@ -194,11 +194,12 @@ void UDC1BuildDestroySubsystem::RefundBuild(const ADC1BuildActor* InActor, EDC1B
 			continue;
 		}
 
-		if (true == ::IsValid(Inventory) && true == Inventory->AddItem(Cost.ItemID, Cost.Count))
+		const int32 RemainCount = ::IsValid(Inventory) ? Inventory->AddItemPartial(Cost.ItemID, Cost.Count) : Cost.Count;
+		if (RemainCount <= 0)
 		{
 			continue;
 		}
 
-		ADC1PickupItem::SpawnDrop(World, Cost.ItemID, Cost.Count, OverflowLocation);
+		ADC1PickupItem::SpawnDrop(World, Cost.ItemID, RemainCount, OverflowLocation);
 	}
 }

@@ -27,6 +27,7 @@ public:
 
 public:
 	virtual bool AddItem(FName InItemID, int32 InCount = 1) override;
+	virtual int32 AddItemPartial(FName InItemID, int32 InCount) override;
 	virtual bool RemoveItem(int32 InSlotIndex, int32 InCount = 1) override;
 	virtual bool CanAcceptItem(FName InItemID) const override;
 

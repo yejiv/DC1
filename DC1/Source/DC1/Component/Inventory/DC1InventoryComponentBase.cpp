@@ -147,6 +147,38 @@ bool UDC1InventoryComponentBase::RemoveItemByID(FName InItemID, int32 InCount)
 
 bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 {
+	if (InCount <= 0 || false == CanAddItemToSlots(InItemID))
+	{
+		return false;
+	}
+
+	if (GetFillableCount(InItemID) < InCount)
+	{
+		return false;
+	}
+
+	FillSlots(InItemID, InCount);
+
+	return true;
+}
+
+int32 UDC1InventoryComponentBase::AddItemPartial(FName InItemID, int32 InCount)
+{
+	if (InCount <= 0)
+	{
+		return 0;
+	}
+
+	if (false == CanAddItemToSlots(InItemID))
+	{
+		return InCount;
+	}
+
+	return FillSlots(InItemID, InCount);
+}
+
+bool UDC1InventoryComponentBase::CanAddItemToSlots(FName InItemID) const
+{
 	// 서버에서만 실행
 	if (GetOwnerRole() != ROLE_Authority)
 	{
@@ -154,40 +186,98 @@ bool UDC1InventoryComponentBase::AddItem(FName InItemID, int32 InCount)
 	}
 
 	// 유효성 검사
-	if (InItemID.IsNone() || InCount <= 0)
+	if (InItemID.IsNone())
 	{
 		return false;
 	}
 
 	// 이 인벤토리에 보관할 수 없는 아이템 (예: 상자에 귀중품)
-	if (false == CanAcceptItem(InItemID))
+	return CanAcceptItem(InItemID);
+}
+
+int32 UDC1InventoryComponentBase::GetSlotStackLimit(FName InItemID) const
+{
+	const FDC1ItemRow* ItemRow = DC1ItemHelper::FindItemRow(InItemID);
+	if (nullptr == ItemRow)
 	{
-		return false;
+		return MAX_int32;
 	}
 
-	int32 SlotIndex = INDEX_NONE;
+	return FMath::Max(1, GetStackLimit(*ItemRow));
+}
 
-	if (FindItemInSlot(InItemID, &SlotIndex))
+int32 UDC1InventoryComponentBase::GetFillableCount(FName InItemID) const
+{
+	const int64 StackLimit = GetSlotStackLimit(InItemID);
+	int64 FillableCount = 0;
+
+	for (const FDC1InventorySlotInfo& Slot : Slots)
 	{
-		// 기존 수량에 누적 (덮어쓰기 방지)
-		Slots[SlotIndex].StackCount += InCount;
-		OnSlotChanged.Broadcast(SlotIndex);
+		if (true == Slot.IsEmpty())
+		{
+			FillableCount += StackLimit;
+		}
+		else if (true == Slot.ItemID.IsEqual(InItemID))
+		{
+			FillableCount += FMath::Max<int64>(0, StackLimit - Slot.StackCount);
+		}
+
+		if (FillableCount >= MAX_int32)
+		{
+			return MAX_int32;
+		}
+	}
+
+	return static_cast<int32>(FillableCount);
+}
+
+int32 UDC1InventoryComponentBase::FillSlots(FName InItemID, int32 InCount)
+{
+	const int32 StackLimit = GetSlotStackLimit(InItemID);
+	int32 RemainCount = InCount;
+	bool IsChanged = false;
+
+	// 먼저 있는 아이템들 스택 먼저 채움
+	for (int32 Index = 0; Index < Slots.Num() && RemainCount > 0; ++Index)
+	{
+		FDC1InventorySlotInfo& Slot = Slots[Index];
+		if (true == Slot.IsEmpty() || false == Slot.ItemID.IsEqual(InItemID) || Slot.StackCount >= StackLimit)
+		{
+			continue;
+		}
+
+		const int32 AddCount = FMath::Min(RemainCount, StackLimit - Slot.StackCount);
+		Slot.StackCount += AddCount;
+		RemainCount -= AddCount;
+
+		OnSlotChanged.Broadcast(Index);
+		IsChanged = true;
+	}
+
+	// 남은 만큼 빈칸에 추가
+	for (int32 Index = 0; Index < Slots.Num() && RemainCount > 0; ++Index)
+	{
+		FDC1InventorySlotInfo& Slot = Slots[Index];
+		if (false == Slot.IsEmpty())
+		{
+			continue;
+		}
+
+		const int32 AddCount = FMath::Min(RemainCount, StackLimit);
+		Slot.ItemID = InItemID;
+		Slot.StackCount = AddCount;
+		RemainCount -= AddCount;
+
+		OnSlotChanged.Broadcast(Index);
+		IsChanged = true;
+	}
+
+	if (true == IsChanged)
+	{
 		OnInventoryUpdated_Internal();
-		return true;
 	}
 
-	// 새 슬롯에 추가
-	int32 NewSlotIndex = FindEmptySlot();
-	if (NewSlotIndex != INDEX_NONE)
-	{
-		Slots[NewSlotIndex].ItemID = InItemID;
-		Slots[NewSlotIndex].StackCount = InCount;
-		OnSlotChanged.Broadcast(NewSlotIndex);
-		OnInventoryUpdated_Internal();
-		return true;
-	}
-
-	return false;
+	return RemainCount;
 }
 
 bool UDC1InventoryComponentBase::RemoveItem(int32 InSlotIndex, int32 InCount)
