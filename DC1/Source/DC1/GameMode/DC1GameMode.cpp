@@ -19,23 +19,73 @@ ADC1GameMode::ADC1GameMode()
 	GameStateClass = ADC1GameState::StaticClass();
 }
 
+void ADC1GameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>())
+	{
+		Subsystem->StartAutoSave();
+	}
+}
+
+void ADC1GameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>())
+	{
+		Subsystem->StopAutoSave();
+		Subsystem->SaveAll();
+		Subsystem->FlushAll();
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void ADC1GameMode::StartPlay()
+{
+	Super::StartPlay();
+
+	for (ADC1PlayerState* PS : PendingLoadedStates)
+	{
+		if (false == IsValid(PS))
+			continue;
+		LoadPlayer(PS);
+	}
+	PendingLoadedStates.Reset();
+}
+
 void ADC1GameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
 	ADC1PlayerState* PS = NewPlayer ? NewPlayer->GetPlayerState<ADC1PlayerState>() : nullptr;
 
-	if (nullptr == PS)
+	if (false == IsValid(PS))
 	{
 		return;
 	}
 
-	const bool bLoaded = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>()->LoadPlayerData(PS);
-
-	if (false == bLoaded)
+	// BeginPlay가 호출되기 전이면 Load 대기
+	if (false == GetWorld()->HasBegunPlay())
 	{
-		LOG_WARNING(TEXT("[Load] Load Failed"));
+		PendingLoadedStates.Add(PS);
+		return;
 	}
+
+	LoadPlayer(PS);
+}
+
+void ADC1GameMode::Logout(AController* Exiting)
+{
+	if (UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>())
+	{
+		if (ADC1PlayerState* PS = Exiting ? Exiting->GetPlayerState<ADC1PlayerState>() : nullptr)
+		{
+			Subsystem->SavePlayerData(PS);
+		}
+	}
+
+	Super::Logout(Exiting);
 }
 
 bool ADC1GameMode::RespawnPlayer(AController* InController, const FTransform* InSpawnTransform)
@@ -67,4 +117,19 @@ bool ADC1GameMode::RespawnPlayer(AController* InController, const FTransform* In
 	}
 
 	return nullptr != InController->GetPawn();
+}
+
+void ADC1GameMode::LoadPlayer(ADC1PlayerState* InPS)
+{
+	UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>();
+	if (nullptr == Subsystem)
+		return;
+
+	const bool bLoaded = Subsystem->LoadPlayerData(InPS);
+	InPS->SetCompleteLoaded(bLoaded);
+
+	if (false == bLoaded)
+	{
+		LOG_WARNING(TEXT("[Load] Load Failed"));
+	}
 }

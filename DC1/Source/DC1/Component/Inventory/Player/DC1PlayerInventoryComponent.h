@@ -33,6 +33,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	// 세이브 로드 완료 후 ( 서버 )
+	virtual void OnPostLoad() override;
+
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	float GetCurrentWeight() const { return CurrentWeight; }
@@ -261,14 +264,14 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeight, BlueprintReadOnly, Category = "Inventory|Weight")
 	float CurrentWeight = 0.0f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_EquipmentSlots, BlueprintReadOnly, Category = "Inventory|Equipment")
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentSlots, BlueprintReadOnly, SaveGame, Category = "Inventory|Equipment")
 	TArray<FDC1InventorySlotInfo> EquipmentSlots;
 
 	// 타입별 열린 칸 수 (앞에서부터 이 수만큼 열림)
-	UPROPERTY(ReplicatedUsing = OnRep_UnlockedSlotCounts)
+	UPROPERTY(ReplicatedUsing = OnRep_UnlockedSlotCounts, SaveGame)
 	int32 UnlockedWeaponCount = { DC1EquipSlotLayout::DefaultUnlockedWeaponCount };
 
-	UPROPERTY(ReplicatedUsing = OnRep_UnlockedSlotCounts)
+	UPROPERTY(ReplicatedUsing = OnRep_UnlockedSlotCounts, SaveGame)
 	int32 UnlockedAccessoryCount = { DC1EquipSlotLayout::DefaultUnlockedAccessoryCount };
 
 	// 먹이 주머니로 열리는 음식 칸 수

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Component/Inventory/DC1InventoryTypes.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1InventoryComponentBase.generated.h"
 
 struct FDC1ItemRow;
@@ -20,7 +21,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotChanged, int32);
  * 플레이어, 상자 등 모든 인벤토리 액터에 부착 가능
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class DC1_API UDC1InventoryComponentBase : public UActorComponent
+class DC1_API UDC1InventoryComponentBase : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -37,6 +38,9 @@ public:
 public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// 세이브 로드 완료 후 ( 서버 )
+	virtual void OnPostLoad() override;
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory")
@@ -134,7 +138,7 @@ private:
 	bool AddItemToEmptySlot(FName InItemID, int32 InCount);
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_Slots, BlueprintReadOnly, Category = "Inventory")
+	UPROPERTY(ReplicatedUsing = OnRep_Slots, BlueprintReadOnly, SaveGame, Category = "Inventory")
 	TArray<FDC1InventorySlotInfo> Slots;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory|Settings", meta = (ClampMin = "1"))

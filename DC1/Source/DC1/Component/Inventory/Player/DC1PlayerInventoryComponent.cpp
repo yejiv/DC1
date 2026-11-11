@@ -626,6 +626,22 @@ void UDC1PlayerInventoryComponent::OnInventoryUpdated_Internal()
 	Super::OnInventoryUpdated_Internal();
 }
 
+void UDC1PlayerInventoryComponent::OnPostLoad()
+{
+	// 무게 계산이 장비칸을 볼 수 있으니 먼저 칸 수부터 맞춤
+	EquipmentSlots.SetNum(DC1EquipSlotLayout::SlotCount);
+
+	// 칸 수 맞춤 + CalculateWeight + RefreshFoodSlotCount + OnInventoryUpdated
+	Super::OnPostLoad();
+
+	// EquipComponent가 칸별로 이전 적용을 되돌리고 새로 적용 ( 평소 장착 경로와 동일 )
+	for (int32 Index = 0; Index < DC1EquipSlotLayout::SlotCount; ++Index)
+	{
+		OnEquipmentSlotChanged.Broadcast(Index);
+	}
+	OnEquipmentUpdated.Broadcast();
+}
+
 // ========================
 // 드래그 드롭 아이템 이동
 // ========================

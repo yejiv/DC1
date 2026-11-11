@@ -200,19 +200,10 @@ bool UDC1PalPartyComponent::ReceivePal(const FDC1PalInstance& InPal)
 	return false;
 }
 
-void UDC1PalPartyComponent::ExportSaveData(TArray<FDC1PalInstance>& Out) const
+void UDC1PalPartyComponent::OnPostLoad()
 {
-	Out = Pals;
-}
-
-void UDC1PalPartyComponent::ImportSaveData(const TArray<FDC1PalInstance>& In)
-{
-	// Server만 동작
-	if (true == GetOwner()->HasAuthority())
-	{
-		Pals = In;
-		OnPalSlotChanged.Broadcast();
-	}
+	OnPalSlotChanged.Broadcast();
+	OnPalBoxChanged.Broadcast();
 }
 
 void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)

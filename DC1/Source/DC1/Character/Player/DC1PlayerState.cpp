@@ -61,24 +61,9 @@ UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
-void ADC1PlayerState::WriteSaveData(UDC1PlayerSaveGame* Out) const
+void ADC1PlayerState::SetCompleteLoaded(bool bSuccess)
 {
-	if (false == IsValid(Out))
-		return;
-
-	if(true == IsValid(PalPartyComponent))
-		PalPartyComponent->ExportSaveData(Out->PartyPals);
-}
-
-void ADC1PlayerState::ReadSaveData(const UDC1PlayerSaveGame* In)
-{
-	if (false == IsValid(In))
-		return;
-
-	if (false == IsValid(PalPartyComponent))
-		return;
-
-	PalPartyComponent->ImportSaveData(In->PartyPals);
+	bSaveLoaded = bSuccess;
 }
 
 void ADC1PlayerState::ResetForRespawn(float InHealthRatio)

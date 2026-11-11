@@ -7,6 +7,7 @@
 #include "Define/DC1Enums.h"
 #include "GameplayTagContainer.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1TechTreeComponent.generated.h"
 
 struct FOnAttributeChangeData;
@@ -21,7 +22,7 @@ DECLARE_MULTICAST_DELEGATE(FDC1OnTechStateChange);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnTechUnlocked, const FGameplayTag&);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DC1_API UDC1TechTreeComponent : public UActorComponent
+class DC1_API UDC1TechTreeComponent : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -47,6 +48,9 @@ public:
 public:
 	virtual void			BeginPlay() override;
 	virtual void			GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// 세이브 로드 완료 후 ( 서버 )
+	virtual void			OnPostLoad() override;
 
 public:
 	void			RequestUnlockTech(const FGameplayTag& InTechTag);
@@ -77,15 +81,15 @@ private:
 
 private:
 	// 기술 포인트 ( OnRep )
-	UPROPERTY(ReplicatedUsing = OnRep_TechState)
+	UPROPERTY(ReplicatedUsing = OnRep_TechState, SaveGame)
 	int32							TechPoints = { 10 };
 
 	// 고대 기술 포인트 ( OnRep )
-	UPROPERTY(ReplicatedUsing = OnRep_TechState)
+	UPROPERTY(ReplicatedUsing = OnRep_TechState, SaveGame)
 	int32							AncientTechPoints = { 0 };
 
 	// 해금된 Tech Tags ( OnRep )
-	UPROPERTY(ReplicatedUsing = OnRep_UnlockedTags)
+	UPROPERTY(ReplicatedUsing = OnRep_UnlockedTags, SaveGame)
 	FGameplayTagContainer			UnlockedTechTags;
 
 	// 시작부터 해금될 Tech Tags

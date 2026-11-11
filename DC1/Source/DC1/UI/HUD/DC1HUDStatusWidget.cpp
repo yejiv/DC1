@@ -49,6 +49,7 @@ void UDC1HUDStatusWidget::UnbindViewModel()
 void UDC1HUDStatusWidget::HandleHealthChanged(float Current, float Max)
 {
 	HealthBar->SetPercent(StatusViewModel->GetHealthPercent());
-	Text_Health->SetText(FText::AsNumber(Current));
-	Text_MaxHealth->SetText(FText::AsNumber(Max));
+	// 정수 단위 표기
+	Text_Health->SetText(FText::AsNumber(FMath::CeilToInt(Current)));
+	Text_MaxHealth->SetText(FText::AsNumber(FMath::RoundToInt(Max)));
 }

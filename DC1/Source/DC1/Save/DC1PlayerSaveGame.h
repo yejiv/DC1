@@ -6,6 +6,7 @@
 #include "GameFramework/SaveGame.h"
 
 #include "Data/Pal/DC1PalTypes.h"
+#include "Save/DC1SaveTypes.h"
 
 #include "DC1PlayerSaveGame.generated.h"
 
@@ -23,7 +24,7 @@ public:
 
 public:
 	UPROPERTY()
-	TArray<FDC1PalInstance> PartyPals;
+	TArray<FDC1ObjectSaveRecord> Components;
 
 private:
 	UPROPERTY()

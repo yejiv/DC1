@@ -26,51 +26,51 @@ struct FDC1PalInstance
 	GENERATED_BODY()
 
 	// 어떤 종인가. UDC1PalRegistryData 조회 키
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	FGameplayTag			SpeciesTag;
 
 	// 개체 식별자. 같은 종 여러 마리를 위치와 무관하게 지목한다.
 	// 인덱스로 참조하면 한 마리 방출할 때 뒤가 전부 밀린다
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	FGuid					PalID;
 
 	// 비어 있으면 UI가 종 이름을 대신 표시
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	FString					Nickname;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	EDC1PalGender			Gender = { EDC1PalGender::None };
 
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	int32					Level = { 1 };
 
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	float					Experience = { 0.f };
 
 	// 개체값
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	int32					TalentHealth = { -1 };
 
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	int32					TalentAttack = { -1 };
 
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	int32					TalentDefense = { -1 };
 
 	// 다쳐서 잡힌 팰은 그 상태가 유지
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	float					CurrentHealth = { 0.f };
 
 	// 현재 SAN. -1 = 아직 안 정함(가득)
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	float					CurrentSanity = { -1.f };
 
 	// 개체가 태어날 때 굴려서 붙는다. 같은 종도 개체마다 다르게 만드는 값
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	TArray<FGameplayTag>	PassiveTags;
 
 	// 추첨을 이미 했는가
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	bool					bPassivesRolled = { false };
 
 	// 거점에 배치한 플레이어 ID ( APlayerState::GetPlayerId ) - 거점 배치 전용
@@ -78,7 +78,7 @@ struct FDC1PalInstance
 	int32					OwnerPlayerID = { INDEX_NONE };
 
 	// 알파(필드 보스) 개체. 배율은 UDC1PalData 의 Alpha*
-	UPROPERTY(BlueprintReadOnly, Category = "Pal")
+	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	bool					bIsAlpha = { false };
 
 	bool IsValidPal() const { return SpeciesTag.IsValid() && PalID.IsValid(); }

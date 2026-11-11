@@ -34,21 +34,21 @@ public:
 	ADC1PlayerState(const FObjectInitializer& ObjectInitializer);
 
 public:
-	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
+	virtual UAbilitySystemComponent*		GetAbilitySystemComponent() const override;
 	UDC1TechTreeComponent*				GetTechTreeComponent() const { return TechTreeComponent; }
 	UDC1PlayerInventoryComponent*		GetInventoryComponent() const { return InventoryComponent; }
-	UDC1ValuableInventoryComponent*		GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
+	UDC1ValuableInventoryComponent*	GetValuableInventoryComponent() const { return ValuableInventoryComponent; }
 	UDC1PalPartyComponent*				GetPalPartyComponent() const { return PalPartyComponent; }
 	UDC1PalSphereComponent*				GetPalSphereComponent() const { return PalSphereComponent; }
 	UDC1EquipComponent*					GetEquipComponent() const { return EquipComponent; }
 	UDC1AppearanceComponent*			GetAppearanceComponent() const { return AppearanceComponent; }
 	UDC1TeleportComponent*				GetTeleportComponent() const { return TeleportComponent; }
-	UDC1PlayerStatComponent*			GetStatComponent() const { return StatComponent; }
+	UDC1PlayerStatComponent*				GetStatComponent() const { return StatComponent; }
 	UDC1NotificationComponent*			GetNotificationComponent() const { return NotificationComponent; }
 
 public:
-	void WriteSaveData(UDC1PlayerSaveGame* Out) const;
-	void ReadSaveData(const UDC1PlayerSaveGame* In);
+	bool IsSuccessLoad() const { return bSaveLoaded; }
+	void SetCompleteLoaded(bool bSuccess);
 
 public:
 	// 부활 전 상태 초기화 ( 서버 ) - 사망 태그 제거, 체력 InHealthRatio, 스태미나 최대
@@ -96,4 +96,7 @@ private:
 	// 서버 판정(획득, 쓰러뜨림)을 이 플레이어 화면 알림으로 보낸다
 	UPROPERTY(VisibleAnywhere, Category = "Notification")
 	TObjectPtr<UDC1NotificationComponent> NotificationComponent = { nullptr };
+
+private:
+	bool bSaveLoaded = { false };
 };
