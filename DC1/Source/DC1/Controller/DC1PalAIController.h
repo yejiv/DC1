@@ -62,6 +62,9 @@ public:
 	void					ProvokeBy(AActor* InInstigator);
 	bool					IsProvoked() const { return ::IsValid(ProvokedTarget); }
 
+	// 주인이 때린 상대. 그 상대가 주인과 싸우는 동안 같이 싸운다
+	void					NotifyOwnerHit(AActor* InVictim);
+
 	// 주인 기준 월드 오프셋
 	const FVector&			GetFollowAnchor() const { return FollowAnchor; }
 	bool					UpdateFollowAnchor(float DeltaTime);
@@ -145,6 +148,9 @@ protected:
 
 	// 나를 때린 적 있는 상대
 	TArray<TWeakObjectPtr<AActor>>	Aggressors;
+
+	// 주인이 때린 상대. 최근에 때린 상대가 뒤
+	TArray<TWeakObjectPtr<AActor>>	OwnerHitTargets;
 
 	FGameplayTag					SelectedSkillTag;
 

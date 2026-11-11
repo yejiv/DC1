@@ -95,9 +95,6 @@ private:
 	// 서버 - 고갈 시 배정 전원 해제 → 펠 Work GA 종료
 	void	ClearPalWorkers();
 
-	// TEMP v3 - ST 연결 전 검증용 ( ST 완성 후 삭제 )
-	void	DebugAssignNearbyPals();
-
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Resource")
 	TObjectPtr<USceneComponent>						SceneRoot = { nullptr };
@@ -147,10 +144,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Work", meta = (ClampMin = "0"))
 	float											WorkNumberRange = { 1500.f };
 
-	// Debug TEMP  - 0이면 꺼짐
-	UPROPERTY(EditAnywhere, Category = "Resource|Debug", meta = (ClampMin = "0"))
-	float											DebugAssignRadius = { 0.f };
-
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_ResourceState)
 	EDC1ResourceActorState							ResourceState = { EDC1ResourceActorState::Active };
@@ -174,6 +167,4 @@ private:
 
 	// 서버만 - 배정된 펠 ( 휴식 중에도 유지 ). 정보 패널(UI) 없어서 복제 X ( Dormancy 유지 )
 	TArray<TWeakObjectPtr<ADC1PalCharacter>>		PalWorkers;
-
-	FTimerHandle									DebugAssignTimer;	// TEMP v3
 };

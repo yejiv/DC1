@@ -528,6 +528,17 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 		PalController->ProvokeBy(Causer);
 	}
 
+	// 플레이어가 때린 야생 팰이면 그 플레이어의 파트너도 같이 싸운다. 파트너가 때린 건 파트너 자신의 도발로 처리된다
+	if (EDC1Team::Wild == GetTeam() && nullptr == Cast<ADC1PalCharacter>(Causer))
+	{
+		const UDC1PalPartyComponent* CauserParty = DC1PalCharacter::FindPartyOf(Causer);
+		const ADC1PalCharacter* Partner = (nullptr != CauserParty) ? CauserParty->GetDeployedPal() : nullptr;
+		if (ADC1PalAIController* PartnerController = IsValid(Partner) ? Cast<ADC1PalAIController>(Partner->GetController()) : nullptr)
+		{
+			PartnerController->NotifyOwnerHit(this);
+		}
+	}
+
 	if (IsValid(AbilitySystemComponent))
 	{
 		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Hit);

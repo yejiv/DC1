@@ -14,13 +14,8 @@
 #include "Item/Pickup/DC1PickupItem.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
-#include "Tags/Pal/DC1GameplayTag_Pal.h"
-#include "Tags/State/DC1GameplayTag_State.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
-
-// TEMP v3 - DebugAssignNearbyPals ( ST 완성 후 함께 삭제 )
-#include "EngineUtils.h"
 
 namespace
 {
@@ -184,18 +179,11 @@ void ADC1ResourceActor::BeginPlay()
 	}
 
 	ApplyResourceState(false);
-
-	// TEMP v3 - 3초마다 근처 거점 펠 배정 + GA 실행 ( 리스폰 후 재배정까지 확인 )
-	if (true == HasAuthority() && DebugAssignRadius > 0.f)
-	{
-		GetWorldTimerManager().SetTimer(DebugAssignTimer, this, &ThisClass::DebugAssignNearbyPals, 3.f, true);
-	}
 }
 
 void ADC1ResourceActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorldTimerManager().ClearTimer(RespawnTimer);
-	GetWorldTimerManager().ClearTimer(DebugAssignTimer);
 
 	if (true == ::IsValid(AbilitySystemComponent))
 	{
@@ -497,45 +485,4 @@ void ADC1ResourceActor::ClearPalWorkers()
 
 	PalWorkers.Empty();
 	OnPalWorkersChanged.Broadcast();
-}
-
-void ADC1ResourceActor::DebugAssignNearbyPals()
-{
-	// TEMP v3 - ST 대신 배정 → SetWorkTarget → Work GA. 이미 일하는 펠은 GA 활성 실패로 그냥 지나감 ( ST 완성 후 삭제 )
-	if (EDC1ResourceActorState::Active != ResourceState)
-	{
-		return;
-	}
-
-	const FVector Center = GetActorLocation();
-	const float RadiusSq = FMath::Square(DebugAssignRadius);
-
-	for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
-	{
-		ADC1PalCharacter* Pal = *It;
-		if (false == ::IsValid(Pal) || FVector::DistSquared(Center, Pal->GetActorLocation()) > RadiusSq)
-		{
-			continue;
-		}
-
-		if (false == AssignPalWorker(Pal))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[DC1] %s DebugAssign Rejected - [%s]"), *GetName(), *GetNameSafe(Pal));
-			continue;
-		}
-
-		Pal->SetWorkTarget(this);
-
-		// 프로젝트 규약 - ActivationTag( 스펙 동적 태그 ) 캐시로 실행. 엔진 TryActivateAbilitiesByTag는 GA 에셋 태그만 본다
-		UDC1AbilitySystemComponent* ASC = Cast<UDC1AbilitySystemComponent>(Pal->GetAbilitySystemComponent());
-		if (false == ::IsValid(ASC) || true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
-		{
-			continue;
-		}
-
-		if (false == ASC->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Work))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[DC1] %s DebugAssign GA Failed - [%s] ( DA_Ability_Pal에 Ability.Pal.Work 항목 확인 )"), *GetName(), *GetNameSafe(Pal));
-		}
-	}
 }
