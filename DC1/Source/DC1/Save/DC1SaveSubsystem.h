@@ -72,7 +72,7 @@ private:
 	FString CustomizeFileName = { "Customize" };
 
 	FTimerHandle	AutoSaveTimerHandle;
-	float				AutoSaveInterval = { 10.f };
+	float				AutoSaveInterval = { 300.f };
 
 private:
 	// 작업 Pipe
