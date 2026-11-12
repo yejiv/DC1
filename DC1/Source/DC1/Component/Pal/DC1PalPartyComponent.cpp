@@ -17,9 +17,11 @@
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Save/DC1SaveSubsystem.h"
 
 #include "AbilitySystemComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -304,11 +306,13 @@ void UDC1PalPartyComponent::Server_MovePal_Implementation(EDC1PalContainer InFro
 	if (true == bCrossBase)
 	{
 		FDC1PalInstance& Entered = PalBase->GetBasePals()[BaseIndex];
-		const APlayerState* OwnerState = Cast<APlayerState>(GetOwner());
-		if (true == Entered.IsValidPal() && nullptr != OwnerState)
+		ADC1PlayerState* OwnerState = Cast<ADC1PlayerState>(GetOwner());
+		const UGameInstance* GI = GetWorld()->GetGameInstance();
+		UDC1SaveSubsystem* SaveSubsystem = (nullptr != GI) ? GI->GetSubsystem<UDC1SaveSubsystem>() : nullptr;
+		if (true == Entered.IsValidPal() && nullptr != OwnerState && nullptr != SaveSubsystem)
 		{
 			// 거점 칸 팰의 주인 == 옮긴 사람
-			Entered.OwnerPlayerID = OwnerState->GetPlayerId();
+			Entered.OwnerSlotName = SaveSubsystem->MakeSlotName(OwnerState);
 		}
 	}
 
