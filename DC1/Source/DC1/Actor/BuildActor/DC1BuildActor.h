@@ -104,6 +104,8 @@ public:
 	const bool						IsBlockedAt(const FTransform& InActorTransform, const TArray<FDC1BuildBox>& InBlockers) const;
 	
 	const bool						GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutSupporters, bool& OutIsOnGround) const;
+	// BuildCheck 박스 중 가장 큰 XY 반지름
+	const float						GetMaxCheckRadius2D() const;
 
 protected:
 	virtual void					BeginPlay() override;

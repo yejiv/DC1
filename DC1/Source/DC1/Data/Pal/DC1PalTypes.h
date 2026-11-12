@@ -73,9 +73,9 @@ struct FDC1PalInstance
 	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")
 	bool					bPassivesRolled = { false };
 
-	// 거점에 배치한 플레이어 ID ( APlayerState::GetPlayerId ) - 거점 배치 전용
+	// 거점에 배치한 플레이어 세이브 슬롯 이름 ( UDC1SaveSubsystem::MakeSlotName ) - 거점 배치 전용, Null 서브시스템이면 빈 값
 	UPROPERTY(BlueprintReadOnly, Category = "Pal")
-	int32					OwnerPlayerID = { INDEX_NONE };
+	FString					OwnerSlotName;
 
 	// 알파(필드 보스) 개체. 배율은 UDC1PalData 의 Alpha*
 	UPROPERTY(BlueprintReadOnly, SaveGame, Category = "Pal")

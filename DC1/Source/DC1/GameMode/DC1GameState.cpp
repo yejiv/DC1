@@ -6,7 +6,9 @@
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Save/DC1SaveSubsystem.h"
 
+#include "Engine/GameInstance.h"
 #include "Net/UnrealNetwork.h"
 
 void ADC1GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -84,17 +86,24 @@ void ADC1GameState::NotifyBaseChanged()
 	}
 }
 
-UDC1PalPartyComponent* ADC1GameState::FindPalPartyByPlayerID(int32 InPlayerID) const
+UDC1PalPartyComponent* ADC1GameState::FindPalPartyBySlotName(const FString& InSlotName) const
 {
-	if (INDEX_NONE == InPlayerID)
+	if (true == InSlotName.IsEmpty())
+	{
+		return nullptr;
+	}
+
+	const UGameInstance* GI = GetGameInstance();
+	UDC1SaveSubsystem* SaveSubsystem = (nullptr != GI) ? GI->GetSubsystem<UDC1SaveSubsystem>() : nullptr;
+	if (false == ::IsValid(SaveSubsystem))
 	{
 		return nullptr;
 	}
 
 	for (const TObjectPtr<APlayerState>& PS : PlayerArray)
 	{
-		const ADC1PlayerState* DC1PS = Cast<ADC1PlayerState>(PS);
-		if (false == ::IsValid(DC1PS) || InPlayerID != DC1PS->GetPlayerId())
+		ADC1PlayerState* DC1PS = Cast<ADC1PlayerState>(PS);
+		if (false == ::IsValid(DC1PS) || InSlotName != SaveSubsystem->MakeSlotName(DC1PS))
 		{
 			continue;
 		}
