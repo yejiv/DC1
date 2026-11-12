@@ -109,15 +109,18 @@ private:
 
 	bool				IsOwnerDownOrDead() const;
 
+	float				ComputePlaceDistance() const;
+
+	float				ComputeAimDistance() const;
 
 private:
 	// 배치 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
-	float		PlaceDistance = { 300.f };
+	float		PlaceMargin = { 30.f };
 
 	// 설치 최대 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
-	float		MaxDistance = { 500.f };
+	float		MaxDistance = { 600.f };
 
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		RangeUpHeight = { 300.f };
@@ -133,9 +136,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Build|Snap")
 	float		SnapAimInflate = { 30.f };
-
+	// 기둥 최대 높이 각도
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		MaxPillarDegree = { 60.f };
+	// 기둥 제외 건축물 최대 거리 각도
+	UPROPERTY(EditAnywhere, Category = "Build|Placement")
+	float		MaxFarDegree = { 30.f };
 
 private:
 	UPROPERTY()
@@ -155,6 +161,7 @@ private:
 	EDC1BuildMode							CurrentMode = { EDC1BuildMode::Default };
 	EDC1BuildBlockReason					CurrentBlockReason = { EDC1BuildBlockReason::None };
 
+	float									CurrentPlaceDistance = { 0.f };
 	float									CurrentYaw = { 0.f };
 	float									DistanceMarginFactor = { 1.1f };
 
