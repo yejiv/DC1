@@ -41,8 +41,13 @@ namespace DC1ItemTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Food_Ingredient);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Food_Cooked);
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Processed);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw_Default);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw_Wood);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw_Stone);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw_Pal);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Raw_Ore);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Processed_Default);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Material_Processed_Ingot);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Essential);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Schematic);
