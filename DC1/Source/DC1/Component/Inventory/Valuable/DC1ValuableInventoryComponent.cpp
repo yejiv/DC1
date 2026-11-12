@@ -57,6 +57,16 @@ bool UDC1ValuableInventoryComponent::AddItem(FName InItemID, int32 InCount /* = 
 	return true;
 }
 
+int32 UDC1ValuableInventoryComponent::AddItemPartial(FName InItemID, int32 InCount)
+{
+	if (InCount <= 0)
+	{
+		return 0;
+	}
+
+	return (true == AddItem(InItemID, InCount)) ? 0 : InCount;
+}
+
 bool UDC1ValuableInventoryComponent::RemoveItem(int32 InSlotIndex, int32 InCount /* = 1 */)
 {
 	// 서버에서만 실행

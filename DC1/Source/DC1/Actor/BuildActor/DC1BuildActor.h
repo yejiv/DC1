@@ -79,14 +79,15 @@ public:
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
 	const bool						IsCompleted() const { return EDC1BuildState::Completed == BuildState; }
 	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == BuildState; }
+	const bool						IsInDestroySequence() const { return EDC1BuildState::Destroying == BuildState; }
 
-	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
+	UDC1BuildLinkComponent*	GetLinkComponent() const { return BuildLinkComp; }
 
 	const bool						GetHasPillar() const { return HasPillar; }
 
 	const bool						GetIsBaseRequired() const { return IsBaseRequired; }
 	APlayerState*					GetDestroyInstigator() const { return DestroyInstigator.Get(); }
-	void							SetDestroyInstigator(APlayerState* InInstigator);
+	void								SetDestroyInstigator(APlayerState* InInstigator);
 
 	const EDC1BuildProbeDirection	GetProbeDirection() const;
 	const FVector					GetCheckBoxCenter() const;
@@ -122,7 +123,8 @@ public:
 	// 조준 시 해체 모드 표시 ( 로컬 )
 	void							SetDismantleHighlight(bool InIsHighlighted);
 
-	bool							UpdatePreview(bool InIsInRange, const APlayerState* InBuilder);
+	// None == 설치가능, 그 외 설치불가 이유 return
+	EDC1BuildBlockReason			UpdatePreview(bool InIsInRange, const APlayerState* InBuilder);
 	bool							TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const;
 
 	void							InitPreview(const FDC1BuildActorData& InBuildActorData);
@@ -144,6 +146,8 @@ protected:
 
 private:
 	void							FinishDestroySequence();
+
+	EDC1BuildBlockReason			EvaluateBlockReason(bool InIsInRange, const APlayerState* InBuilder);
 
 protected:
 	UPROPERTY(EditDefaultsOnly)

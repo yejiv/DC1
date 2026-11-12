@@ -30,7 +30,7 @@ private:
 
 private:
 	// NoItem <-> 생산
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UWidgetSwitcher>		ProductionStateSwitcher;
 
 	UPROPERTY(EditAnywhere, Category = "Panel")
@@ -42,10 +42,10 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage>				ItemProgressImage;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>			StoredCountText;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock>			MaxCountText;
 
 	// Detail 전용 영역 ( 이름 + 작업자 )

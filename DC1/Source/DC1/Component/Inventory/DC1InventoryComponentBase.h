@@ -100,8 +100,11 @@ public:
 	void SetCapacityAndColumns(int32 InTotalCapacity, int32 InColumns);
 
 public:
+	// 전부 들어갈 수 있을때만 인벤토리에 넣고 전부 못들어갈 시 넣지 않음
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	virtual bool AddItem(FName InItemID, int32 InCount = 1);
+	// 들어갈 수 있을만큼 넣고 남은 수 반환
+	virtual int32 AddItemPartial(FName InItemID, int32 InCount);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	virtual bool RemoveItem(int32 InSlotIndex, int32 InCount = 1);
@@ -136,6 +139,14 @@ protected:
 
 private:
 	bool AddItemToEmptySlot(FName InItemID, int32 InCount);
+
+	bool CanAddItemToSlots(FName InItemID) const;
+	// 해당 아이템 최대 Stack
+	int32 GetSlotStackLimit(FName InItemID) const;
+	// 인벤토리에 넣을 수 있는 최대 개수
+	int32 GetFillableCount(FName InItemID) const;
+	// 기존 슬롯에 추가 후 빈칸에 추가 -> 그 이후 추가하지 못한 남은 수만큼 return
+	int32 FillSlots(FName InItemID, int32 InCount);
 
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Slots, BlueprintReadOnly, SaveGame, Category = "Inventory")

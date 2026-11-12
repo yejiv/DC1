@@ -24,4 +24,5 @@ namespace DC1WorkTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Farming);			// 목장
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Handiwork_Building);// 건설
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Work_Kindling_Cooking);	// 요리
 }

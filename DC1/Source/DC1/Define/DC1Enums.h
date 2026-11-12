@@ -102,6 +102,36 @@ enum class EDC1BuildSupportRule : uint8
 	Surface = 3 UMETA(DisplayName = "Surface"),		// 맨땅 or IsBuildableSurafce 위 ( 단순 건축물 )
 };
 
+UENUM(BlueprintType)
+enum class EDC1BuildMode : uint8
+{
+	Default = 0 UMETA(DisplayName = "Default"),				
+	Placement = 1 UMETA(DisplayName = "Placement"),		// 배치 모드
+	Dismantle = 2 UMETA(DisplayName = "Dismantle"),		// 해체 모드
+};
+
+UENUM(BlueprintType)
+enum class EDC1BuildBlockReason : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),						// 설치 가능
+	OutOfRange = 1 UMETA(DisplayName = "OutOfRange"),			// 거리 안됨
+	OutsideBase = 2 UMETA(DisplayName = "OutsideBase"),			// 거점 밖
+	NotEnoughCost = 3 UMETA(DisplayName = "NotEnoughCost"),		// 재료 부족
+	Overlap = 4 UMETA(DisplayName = "Overlap"),					// 겹침
+	InvalidSurface = 5 UMETA(DisplayName = "InvalidSurface"),	// 지면과 멀리 떨어짐
+	NoSupport = 6 UMETA(DisplayName = "NoSupport"),				// 지지대 없음
+	NoDismantleTarget = 7 UMETA(DisplayName = "NoDismantleTarget"),
+};
+
+// 재료 반환을 어떻게 할 것인가
+UENUM(BlueprintType)
+enum class EDC1BuildRefundMode : uint8
+{
+	None = 0 UMETA(DisplayName = "None"),
+	ToInstigator = 1 UMETA(DisplayName = "ToInstigator"),	// 요청자(인벤토리)에
+	AtLocation = 2 UMETA(DisplayName = "AtLocation"),		// 바닥에
+};
+
 #pragma endregion
 
 UENUM(BlueprintType)

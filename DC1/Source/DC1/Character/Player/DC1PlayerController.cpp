@@ -128,6 +128,11 @@ void ADC1PlayerController::SetBuildMode(bool Enabled)
 	}
 }
 
+void ADC1PlayerController::OpenBuildMenu(const FGameplayTag& InTabTag)
+{
+	OpenTabWidget(DC1UITags::UI_Main_Build, InTabTag);
+}
+
 void ADC1PlayerController::PressAbilityInput(const FGameplayTag& InAbilityTag)
 {
 	if (false == IsValid(ControlObject))
@@ -261,6 +266,11 @@ bool ADC1PlayerController::InputKey(const FInputKeyEventArgs& Params)
 		if (true == ::IsValid(UIManager))
 		{
 			UIManager->RouteInputKey(Params.Key);
+		}
+
+		if (false == IsActiveScreen)
+		{
+			return true;
 		}
 	}
 

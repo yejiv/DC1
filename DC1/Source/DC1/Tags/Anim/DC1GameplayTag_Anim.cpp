@@ -24,5 +24,10 @@ namespace DC1AnimTags
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Handiwork, "Anim.Action.Working.Handiwork");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Build, "Anim.Action.Working.Build");
 	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Deforest, "Anim.Action.Working.Deforest");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Mining, "Anim.Action.Working.Mining");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Watering, "Anim.Action.Working.Watering");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Planting, "Anim.Action.Working.Planting");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Gathering, "Anim.Action.Working.Gathering");
+	UE_DEFINE_GAMEPLAY_TAG(Anim_Action_Working_Cook, "Anim.Action.Working.Cook");
 #pragma endregion
 }

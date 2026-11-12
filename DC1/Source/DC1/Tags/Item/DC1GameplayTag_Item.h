@@ -11,6 +11,8 @@ namespace DC1ItemTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Tool_Hammer);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Tool_DeforestAxe);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Tool_MiningPickaxe);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Tool_WaterningPot);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Tool_Pan);
 #pragma endregion
 
 #pragma region Type

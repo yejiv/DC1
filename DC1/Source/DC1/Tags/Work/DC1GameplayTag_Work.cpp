@@ -19,4 +19,5 @@ namespace DC1WorkTags
 	UE_DEFINE_GAMEPLAY_TAG(Work_Farming, "Work.Farming");
 
 	UE_DEFINE_GAMEPLAY_TAG(Work_Handiwork_Building, "Work.Handiwork.Building");
+	UE_DEFINE_GAMEPLAY_TAG(Work_Kindling_Cooking, "Work.Kindling.Cooking");
 }

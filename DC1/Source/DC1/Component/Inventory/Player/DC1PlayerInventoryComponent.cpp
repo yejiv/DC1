@@ -920,15 +920,43 @@ bool UDC1PlayerInventoryComponent::AddItem(FName InItemID, int32 InCount /* = 1 
 	// 획득 알림 ( 넣기는 서버에서만 성공한다 )
 	if (true == bAdded)
 	{
-		const ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetOwner());
-		UDC1NotificationComponent* NotificationComponent = (nullptr != OwnerPlayerState) ? OwnerPlayerState->GetNotificationComponent() : nullptr;
-		if (nullptr != NotificationComponent)
-		{
-			NotificationComponent->Client_NotifyItemAcquired(InItemID, InCount);
-		}
+		NotifyItemAcquired(InItemID, InCount);
 	}
 
 	return bAdded;
+}
+
+int32 UDC1PlayerInventoryComponent::AddItemPartial(FName InItemID, int32 InCount)
+{
+	int32 RemainCount = InCount;
+
+	if (true == IsValuableItem(InItemID))
+	{
+		UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory();
+		RemainCount = ::IsValid(ValuableInventory) ? ValuableInventory->AddItemPartial(InItemID, InCount) : InCount;
+	}
+	else
+	{
+		RemainCount = Super::AddItemPartial(InItemID, InCount);
+	}
+
+	const int32 AddedCount = InCount - RemainCount;
+	if (AddedCount > 0)
+	{
+		NotifyItemAcquired(InItemID, AddedCount);
+	}
+
+	return RemainCount;
+}
+
+void UDC1PlayerInventoryComponent::NotifyItemAcquired(FName InItemID, int32 InCount) const
+{
+	const ADC1PlayerState* OwnerPlayerState = Cast<ADC1PlayerState>(GetOwner());
+	UDC1NotificationComponent* NotificationComponent = (nullptr != OwnerPlayerState) ? OwnerPlayerState->GetNotificationComponent() : nullptr;
+	if (nullptr != NotificationComponent)
+	{
+		NotificationComponent->Client_NotifyItemAcquired(InItemID, InCount);
+	}
 }
 
 bool UDC1PlayerInventoryComponent::CanAcceptItem(FName InItemID) const

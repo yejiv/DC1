@@ -262,8 +262,6 @@ void ADC1BuildActor::BeginDestroySequence()
 		return;
 	}
 
-	// TODO Cost Return
-
 	IsDestroying = true;
 
 	SetState(EDC1BuildState::Destroying);
@@ -290,18 +288,11 @@ void ADC1BuildActor::SetDismantleHighlight(bool InIsHighlighted)
 	BuildMesh->SetOverlayMaterial(OverlayMaterial);
 }
 
-bool ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuilder)
+EDC1BuildBlockReason ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuilder)
 {
-	bool IsSubCheck = true;
+	const EDC1BuildBlockReason Reason = EvaluateBlockReason(InIsInRange, InBuilder);
 
-	for (UDC1BuildCheckComponent* SubCheck : SubBuildCheckComps)
-	{
-		IsSubCheck &= (SubCheck->CheckOverlap());
-	}
-
-	const bool CurrentCanBuilding = IsSubCheck && BuildCheckComp->CheckCanBuild() && (true == InIsInRange) && DC1BuildSupportHelper::HasSupport(this) && CanPlaceAt(InBuilder)
-		&& DC1CraftHelper::HasCraftCosts(Cast<ADC1PlayerState>(InBuilder), BuildActorData.BuildCosts);
-
+	const bool CurrentCanBuilding = (EDC1BuildBlockReason::None == Reason);
 
 	if (CanBuilding != CurrentCanBuilding)
 	{
@@ -311,7 +302,46 @@ bool ADC1BuildActor::UpdatePreview(bool InIsInRange, const APlayerState* InBuild
 		SetMaterialTranslucentColor(TranslucentColor);
 	}
 
-	return CanBuilding;
+	return Reason;
+}
+
+EDC1BuildBlockReason ADC1BuildActor::EvaluateBlockReason(bool InIsInRange, const APlayerState* InBuilder)
+{
+	if (false == InIsInRange)
+	{
+		return EDC1BuildBlockReason::OutOfRange;
+	}
+
+	if (false == CanPlaceAt(InBuilder))
+	{
+		return EDC1BuildBlockReason::OutsideBase;
+	}
+
+	if (false == DC1CraftHelper::HasCraftCosts(Cast<ADC1PlayerState>(InBuilder), BuildActorData.BuildCosts))
+	{
+		return EDC1BuildBlockReason::NotEnoughCost;
+	}
+
+	for (UDC1BuildCheckComponent* SubCheck : SubBuildCheckComps)
+	{
+		if (true == ::IsValid(SubCheck) && false == SubCheck->CheckOverlap())
+		{
+			return EDC1BuildBlockReason::Overlap;
+		}
+	}
+
+	const EDC1BuildBlockReason CheckReason = BuildCheckComp->CheckCanBuild();
+	if (EDC1BuildBlockReason::None != CheckReason)
+	{
+		return CheckReason;
+	}
+
+	if (false == DC1BuildSupportHelper::HasSupport(this))
+	{
+		return EDC1BuildBlockReason::NoSupport;
+	}
+
+	return EDC1BuildBlockReason::None;
 }
 
 bool ADC1BuildActor::TraceCheckBox(const FVector& InRayStart, const FVector& InRayEnd, const FCollisionQueryParams& InParams, float InInflate, FVector& OutImpactPoint) const

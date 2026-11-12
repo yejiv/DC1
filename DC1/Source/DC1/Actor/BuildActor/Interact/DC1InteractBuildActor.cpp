@@ -23,9 +23,6 @@
 
 #include "Net/UnrealNetwork.h"
 
-// TEMP v6 - DebugAssignNearbyPals ( v7에서 함께 삭제 )
-#include "EngineUtils.h"
-
 ADC1InteractBuildActor::ADC1InteractBuildActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -255,12 +252,6 @@ void ADC1InteractBuildActor::ApplyState()
 		SetMaterialTranslucentColor(ConstructionColor);
 		SetMaterialBuildProgress();
 		SetActorTickEnabled(true);
-
-		// DEBUG
-		if (true == HasAuthority() && DebugAssignRadius > 0.f)
-		{
-			DebugAssignNearbyPals();
-		}
 	}
 	else if (BuildState == EDC1BuildState::Completed)
 	{
@@ -275,12 +266,6 @@ void ADC1InteractBuildActor::ApplyState()
 
 		ClearWorkers();
 		ClearPalWorkers();
-
-		// DEBUG 생산 적성 팰 배정
-		if (true == HasAuthority() && DebugAssignRadius > 0.f)
-		{
-			DebugAssignNearbyPals();
-		}
 	}
 
 	OnInteractOptionsChanged.Broadcast();
@@ -638,39 +623,4 @@ bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
 void ADC1InteractBuildActor::ApplyPalWorkers()
 {
 	OnPalWorkersChanged.Broadcast();
-}
-
-void ADC1InteractBuildActor::DebugAssignNearbyPals()
-{
-	// TEMP v6 - 첫 성공 팰만 작업(AddWorker), 나머지는 배정만(휴식) + SAN 랜덤으로 복제 확인 ( v7에서 삭제 )
-	const FVector Center = GetActorLocation();
-	const float RadiusSq = FMath::Square(DebugAssignRadius);
-	bool IsWorkerAdded = false;
-
-	for (TActorIterator<ADC1PalCharacter> It(GetWorld()); It; ++It)
-	{
-		ADC1PalCharacter* Pal = *It;
-		if (false == ::IsValid(Pal) || FVector::DistSquared(Center, Pal->GetActorLocation()) > RadiusSq)
-		{
-			continue;
-		}
-
-		if (false == AssignPalWorker(Pal))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ADC1InteractBuildActor :: DebugAssign Rejected - [%s] -> [%s]"), *GetNameSafe(Pal), *GetNameSafe(this));
-			continue;
-		}
-
-		if (false == IsWorkerAdded)
-		{
-			AddWorker(Pal);
-			IsWorkerAdded = true;
-		}
-
-		UAbilitySystemComponent* ASC = Pal->GetAbilitySystemComponent();
-		if (true == ::IsValid(ASC))
-		{
-			ASC->SetNumericAttributeBase(UDC1PalAttributeSet::GetSanityAttribute(), FMath::FRandRange(30.f, 100.f));
-		}
-	}
 }

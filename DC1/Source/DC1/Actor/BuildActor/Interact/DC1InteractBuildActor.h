@@ -45,7 +45,6 @@ public:
 public:
 	ADC1InteractBuildActor();
 
-
 public:
 	float							GetBuildProgress() const { return BuildProgress; }
 	float							GetCurrentWorkSpeed() const { return CurrentWorkSpeed; }
@@ -143,9 +142,6 @@ private:
 	// 서버 직접 / 클라 OnRep 수렴점
 	void							ApplyPalWorkers();
 
-	// Debug
-	void							DebugAssignNearbyPals();
-
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UBoxComponent>				InteractCollider = { nullptr };
@@ -195,10 +191,6 @@ private:
 	// Workers 작업 속도 합
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWorkSpeed)
 	float									CurrentWorkSpeed = { 0.f };
-
-
-	UPROPERTY(EditDefaultsOnly, Category = "Build|Debug", meta = (ClampMin = "0"))
-	float									DebugAssignRadius = { 0.f };
 
 private:
 	TSet<TWeakObjectPtr<const ADC1Character>>	Workers;

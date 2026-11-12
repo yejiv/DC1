@@ -316,27 +316,17 @@ void UDC1GA_Player_Work::FinishWork()
 		StopWork();
 	}
 
-	if (false == IsPlayingMontage)
+	UAnimMontage* Montage = GetCurrentMontage();
+	// 몽타주 진행 중 && End Section 있는지
+	const bool CanJumpToEndSection = (true == IsPlayingMontage) && (true == ::IsValid(Montage)) && (true == Montage->IsValidSectionName(CurrentEndSectionName));
+	if (true == CanJumpToEndSection)
 	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		// End Section 있으면 점프
+		MontageJumpToSection(CurrentEndSectionName);
+		return;
 	}
-	else
-	{
-		UAnimMontage* Montage = GetCurrentMontage();
-		if (true == ::IsValid(Montage) && Montage->IsValidSectionName(CurrentEndSectionName))
-		{
-			MontageJumpToSection(CurrentEndSectionName);
-		}
-		else
-		{
-			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-			if (true == ::IsValid(ASC))
-			{
-				FName CurrentSectionName = ASC->GetCurrentMontageSectionName();
-				MontageSetNextSectionName(CurrentSectionName, NAME_None);
-			}
-		}
-	}
+	// 몽타주 없음 || End 섹션 없으면 즉시 종료
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UDC1GA_Player_Work::HandleBuildCompleted()

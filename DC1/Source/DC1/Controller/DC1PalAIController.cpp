@@ -262,13 +262,6 @@ void ADC1PalAIController::UpdateTarget()
 		return;
 	}
 
-	if (AActor* OwnerEnemy = GetFollowTargetEnemy())
-	{
-		SetCurrentTarget(OwnerEnemy);
-		LastSeenTime = Now;
-		return;
-	}
-
 	const FVector SelfLocation = SelfPawn->GetActorLocation();
 
 	// 나를 때린 상대. 싸우던 상대가 안 보이면 때린 적 있는 다른 상대로 넘어간다.
@@ -295,6 +288,14 @@ void ADC1PalAIController::UpdateTarget()
 		}
 
 		ProvokedTarget = nullptr;
+	}
+
+	// 나를 때린 상대가 없을 때만 주인이 싸우는 상대를 돕는다
+	if (AActor* OwnerEnemy = GetFollowTargetEnemy())
+	{
+		SetCurrentTarget(OwnerEnemy);
+		LastSeenTime = Now;
+		return;
 	}
 
 	// 중립이랑 분기처리
@@ -456,6 +457,24 @@ void ADC1PalAIController::ProvokeBy(AActor* InInstigator)
 	UpdateTarget();
 }
 
+void ADC1PalAIController::NotifyOwnerHit(AActor* InVictim)
+{
+	if (false == IsValid(InVictim))
+	{
+		return;
+	}
+
+	// 다시 때리면 맨 뒤로 옮긴다 (최근 순). 사라졌거나 죽은 상대는 이때 정리
+	OwnerHitTargets.RemoveAll([InVictim](const TWeakObjectPtr<AActor>& Weak)
+		{
+			return (false == Weak.IsValid() || Weak.Get() == InVictim || true == DC1PalAIController::IsDead(Weak.Get()));
+		});
+
+	OwnerHitTargets.Add(InVictim);
+
+	UpdateTarget();
+}
+
 void ADC1PalAIController::StopBehavior()
 {
 	// StateTree 정지
@@ -472,6 +491,7 @@ void ADC1PalAIController::ClearTargetState()
 	SensedTargets.Reset();
 	ProvokedTarget = nullptr;
 	Aggressors.Reset();
+	OwnerHitTargets.Reset();
 
 	// SetCurrentTarget은 타겟이 이미 없으면 그냥 반환하므로 스킬은 따로 비운다
 	ClearSelectedSkill();
@@ -642,10 +662,10 @@ AActor* ADC1PalAIController::GetFollowTargetEnemy() const
 		return nullptr;
 	}
 
-	// 내가 보고 있는 적만
-	for (const TWeakObjectPtr<AActor>& Weak : SensedTargets)
+	// 주인이 최근에 때린 상대부터
+	for (int32 Index = OwnerHitTargets.Num() - 1; Index >= 0; --Index)
 	{
-		AActor* Candidate = Weak.Get();
+		AActor* Candidate = OwnerHitTargets[Index].Get();
 
 		const APawn* CandidatePawn = Cast<APawn>(Candidate);
 		if (false == IsValid(CandidatePawn) || true == DC1PalAIController::IsDead(Candidate))
@@ -659,8 +679,7 @@ AActor* ADC1PalAIController::GetFollowTargetEnemy() const
 			continue;
 		}
 
-		// 표적으로 삼은 것만으로는 부족하다. 야생 팰은 발견만 해도 주인을 표적에 넣는데,
-		// 도발되기 전까지는 싸우지 않고 도망친다. 실제로 교전 중일 때만 참전한다
+		// 지금도 주인과 싸우는 중일 때만. 표적을 파트너로 옮겼거나 도발이 풀렸으면 빠진다
 		if (FollowTarget == OtherController->GetCurrentTarget() && true == OtherController->IsProvoked())
 		{
 			return Candidate;
