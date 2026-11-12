@@ -60,5 +60,6 @@ private:
 	int32							MaxCraftCount = { 9999 };
 
 private:
+	UPROPERTY(SaveGame)
 	FName							CurrentRecipeID = { NAME_None };
 };

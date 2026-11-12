@@ -58,10 +58,10 @@ struct FDC1ItemCost
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, SaveGame, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
 	FName ItemID;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, SaveGame)
 	int32 Count;
 };
 

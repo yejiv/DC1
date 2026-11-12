@@ -8,6 +8,8 @@
 #include "Tasks/Pipe.h"
 #include "DC1SaveSubsystem.generated.h"
 
+class USaveGame;
+
 class ADC1PlayerState;
 class UDC1PlayerSaveGame;
 
@@ -26,13 +28,16 @@ public:
 	void StartAutoSave();
 	void StopAutoSave();
 
+	FString MakeSlotName(ADC1PlayerState* PS);
+
 public:
 	bool SaveAll();
 	// Pending(세이브 잔여) 모두 처리
 	void FlushAll();
 
-	// World Data Save [TODO]
-
+	// World Data Save
+	bool SaveWorldData();
+	bool LoadWorldData();
 
 	// Player Data Save
 	bool SavePlayerData(ADC1PlayerState* PS);
@@ -64,12 +69,14 @@ private:
 	void LaunchWrite(const FString& SlotName, TArray<uint8>&& InBytes);
 	void OnWriteFinished(const FString& SlotName, bool bSuccess);
 
+	bool SaveGameToMemoryAndLaunch(const FString& SlotName, USaveGame* SaveGame);
+
 private:
 	FName MakeKey(const AActor* InActor, const UObject* InTarget) const;
-	FString MakeSlotName(ADC1PlayerState* PS);
 
 private:
 	FString CustomizeFileName = { "Customize" };
+	FString WorldFileName = { "World" };
 
 	FTimerHandle	AutoSaveTimerHandle;
 	float				AutoSaveInterval = { 300.f };

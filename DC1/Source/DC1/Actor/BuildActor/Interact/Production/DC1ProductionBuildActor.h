@@ -38,6 +38,8 @@ protected:
 public:
 	virtual void	GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
 	virtual bool	ShouldKeepOptionsWhileHeld() const override;
+	// Save Interface override
+	virtual void	OnPostLoad() override;
 
 	void			CollectProduct(ADC1Character* InCollect);
 
@@ -90,14 +92,14 @@ private:
 
 protected:
 	// DT_Item의 Item ID 값
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_ProductItemID, Category = "Production")
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_ProductItemID, SaveGame, Category = "Production")
 	FName							ProductItemID = { NAME_None };
 
 	// 아이템 1개당 생산 필요 작업량
-	UPROPERTY(EditdefaultsOnly, Category = "Production", meta = (ClampMin = "0.01"))
+	UPROPERTY(EditdefaultsOnly, SaveGame, Category = "Production", meta = (ClampMin = "0.01"))
 	float							RequiredWorkPerItem = { 100.f };
 
-	UPROPERTY(EditDefaultsOnly, Replicated, Category = "Production", meta = (ClampMin = "1", ClampMax = "9999"))
+	UPROPERTY(EditDefaultsOnly, Replicated, SaveGame, Category = "Production", meta = (ClampMin = "1", ClampMax = "9999"))
 	int32							MaxStoredCount = { 9999 };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Interact")
@@ -115,12 +117,14 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };
 	// 보유 중 개수
-	UPROPERTY(ReplicatedUsing = OnRep_StoredCount)
+	UPROPERTY(ReplicatedUsing = OnRep_StoredCount, SaveGame)
 	int32							StoredCount = { 0 };
 
 	// 누적 작업량 - 서버
+	UPROPERTY(SaveGame)
 	float							CurrentProductionWork = { 0.f };
 	// 1회 제작 시 실제 생산 개수
+	UPROPERTY(SaveGame)
 	int32							ProductCountPerWork = { 1 };
 
 private:

@@ -3,6 +3,10 @@
 
 #include "Save/DC1SaveSubsystem.h"
 
+#include "EngineUtils.h"
+
+#include "Actor/BuildActor/DC1BuildActor.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
 #include "Define/DC1Macro.h"
@@ -14,6 +18,7 @@
 #include "GameMode/DC1GameState.h"
 
 #include "Save/DC1PlayerSaveGame.h"
+#include "Save/DC1WorldSaveGame.h"
 #include "Save/DC1CustomizationSaveGame.h"
 #include "Character/Player/DC1PlayerState.h"
 
@@ -91,6 +96,65 @@ void UDC1SaveSubsystem::FlushAll()
 	SavePipe.WaitUntilEmpty();
 }
 
+bool UDC1SaveSubsystem::SaveWorldData()
+{
+	// 서버만 저장하도록
+	UWorld* World = GetGameInstance()->GetWorld();
+	if (false == IsValid(World))
+		return false;
+	if (NM_Client == World->GetNetMode())
+		return false;
+	UDC1WorldSaveGame* SaveGame = Cast<UDC1WorldSaveGame>(UGameplayStatics::CreateSaveGameObject(UDC1WorldSaveGame::StaticClass()));
+	if (false == IsValid(SaveGame))
+		return false;
+
+	// 1. 저장할 액터 수집
+	for (TActorIterator<ADC1BuildActor> It(World); It; ++It)
+	{
+		ADC1BuildActor* BuildActor = *It;
+
+		// 레벨에 미리 배치된 액터는 저장 X
+		if (false == BuildActor->GetBuildActorData().BuildTag.IsValid())
+			continue;
+
+		// 이미 완성되거나 건설중인 액터만 저장
+		if (false == BuildActor->IsCompleted() && false == BuildActor->IsUnderConstruction())
+			continue;
+
+		// 2. 액터별 ActorClass / Transform / CollectRecords
+		FDC1ActorSaveRecord& ActorRecord = SaveGame->Actors.AddDefaulted_GetRef();
+		ActorRecord.ActorClass = BuildActor->GetClass();
+		ActorRecord.Transform = BuildActor->GetActorTransform();
+		CollectRecords(BuildActor, ActorRecord.Records);
+	}
+
+	// 3. SaveGameToMemory → LaunchWrite(WorldFileName)
+	SaveGame->SetSaveVersion(CurrentSaveVersion);
+	return SaveGameToMemoryAndLaunch(WorldFileName, SaveGame);
+}
+
+bool UDC1SaveSubsystem::LoadWorldData()
+{
+	UWorld* World = GetGameInstance()->GetWorld();
+	if (false == IsValid(World))
+		return false;
+	if (NM_Client == World->GetNetMode())
+		return false;
+
+	// 1. LoadGameFromSlot(WorldFileName)
+	UDC1WorldSaveGame* SaveGame = Cast<UDC1WorldSaveGame>(UGameplayStatics::LoadGameFromSlot(WorldFileName, 0));
+	if (false == IsValid(SaveGame))
+	{
+		LOG_ERROR(TEXT("Create SaveGame is Failed"))
+			return false;
+	}
+
+	//World->SpawnActorDeferred()
+
+	// 2. 액터별 스폰 → ApplyRecords
+	return false;
+}
+
 bool UDC1SaveSubsystem::SavePlayerData(ADC1PlayerState* PS)
 {
 	if (false == IsValid(PS) || false == PS->HasAuthority())
@@ -121,23 +185,7 @@ bool UDC1SaveSubsystem::SavePlayerData(ADC1PlayerState* PS)
 	SaveGame->SetSaveVersion(CurrentSaveVersion);
 	SaveGame->SetOwnerNetId(SlotName);
 
-	TArray<uint8> SaveGameBytes;
-	if (false == UGameplayStatics::SaveGameToMemory(SaveGame, SaveGameBytes))
-	{
-		LOG_ERROR(TEXT("[Save] SaveGameToMemory Failed"));
-		return false;
-	}
-
-	// 이미 Save중인 슬롯이면 잔여 작업 컨테이너에 저장
-	if (true == InFlightSlots.Contains(SlotName))
-	{
-		PendingBytes.Add(SlotName, SaveGameBytes);
-		return true;
-	}
-	
-	LaunchWrite(SlotName, MoveTemp(SaveGameBytes));
-
-	return true;
+	return SaveGameToMemoryAndLaunch(SlotName, SaveGame);
 }
 
 bool UDC1SaveSubsystem::LoadPlayerData(ADC1PlayerState* PS)
@@ -328,6 +376,27 @@ void UDC1SaveSubsystem::OnWriteFinished(const FString& SlotName, bool bSuccess)
 	{
 		LaunchWrite(SlotName, MoveTemp(Next));
 	}
+}
+
+bool UDC1SaveSubsystem::SaveGameToMemoryAndLaunch(const FString& SlotName, USaveGame* SaveGame)
+{
+	TArray<uint8> SaveGameBytes;
+	if (false == UGameplayStatics::SaveGameToMemory(SaveGame, SaveGameBytes))
+	{
+		LOG_ERROR(TEXT("[Save] SaveGameToMemory Failed"));
+		return false;
+	}
+
+	// 이미 Save중인 슬롯이면 잔여 작업 컨테이너에 저장
+	if (true == InFlightSlots.Contains(SlotName))
+	{
+		PendingBytes.Add(SlotName, SaveGameBytes);
+		return true;
+	}
+
+	LaunchWrite(SlotName, MoveTemp(SaveGameBytes));
+
+	return true;
 }
 
 bool UDC1SaveSubsystem::HasCustomizeLocalData()

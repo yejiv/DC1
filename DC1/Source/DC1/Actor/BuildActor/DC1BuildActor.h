@@ -8,6 +8,7 @@
 #include "Define/DC1Enums.h"
 #include "Define/DC1Structs.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1BuildActor.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnBuildDestroyFinished, ADC1BuildActor*);
@@ -44,21 +45,21 @@ struct FDC1BuildActorData
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FGameplayTag				BuildTag = { FGameplayTag::EmptyTag };
-	
-	UPROPERTY()
+
+	UPROPERTY(SaveGame)
 	float						RequiredWork = { 0.f };
-	
-	UPROPERTY()
+
+	UPROPERTY(SaveGame)
 	TArray<FDC1ItemCost>		BuildCosts;
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FGameplayTag				WorkTypeTag = { FGameplayTag::EmptyTag };
 };
 
 UCLASS()
-class DC1_API ADC1BuildActor : public AActor
+class DC1_API ADC1BuildActor : public AActor, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -77,6 +78,7 @@ public:
 	
 	const bool						IsPreview() const { return EDC1BuildState::Preview == BuildState; }
 	const bool						IsCompleted() const { return EDC1BuildState::Completed == BuildState; }
+	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == BuildState; }
 
 	UDC1BuildLinkComponent*			GetLinkComponent() const { return BuildLinkComp; }
 
@@ -147,10 +149,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UStaticMeshComponent>				BuildMesh = { nullptr };
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, SaveGame)
 	FDC1BuildActorData								BuildActorData;
 
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_BuildState)
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_BuildState, SaveGame)
 	EDC1BuildState									BuildState = { EDC1BuildState::Default };
 
 	UPROPERTY()
