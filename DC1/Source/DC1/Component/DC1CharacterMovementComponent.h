@@ -181,9 +181,6 @@ private:
 	// 착지 공간 검사 시 바닥에서 캡슐을 띄우는 높이(붙이면 바닥과 닿아 항상 겹침)
 	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle")
 	float	MantleOverlapLift = { 2.f };
-	// 착지 공간 검사 캡슐 반지름 배율(옆 벽에 스치는 정도로 실패하지 않게 살짝 줄임)
-	UPROPERTY(EditDefaultsOnly, Category = "Climb|Mantle", meta = (ClampMin = "0.1", ClampMax = "1.0"))
-	float	MantleOverlapRadiusScale = { 0.95f };
 
 	// 벽에 붙어 있을 때 캡슐 표면과 벽 사이 간격(딱 붙이면 이동 Sweep이 매번 벽에 걸림)
 	UPROPERTY(EditDefaultsOnly, Category = "Climb|Attach")
