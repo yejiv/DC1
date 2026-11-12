@@ -131,6 +131,8 @@ bool UDC1BuildPlacementComponent::StartPlacement(const FGameplayTag& InBuildTag)
 	// 프리뷰는 복제 X, Only 클라
 	PreviewActor->SetReplicates(false);
 
+	CurrentPlaceDistance = ComputePlaceDistance();
+
 	CurrentBuildTag = InBuildTag;
 	// 모드 전환용
 	LastBuildTag = InBuildTag;
@@ -746,7 +748,7 @@ FVector UDC1BuildPlacementComponent::GetAimPoint(const APawn* InOwnerPawn) const
 	FVector PawnLocation = InOwnerPawn->GetActorLocation();
 
 	// Build Actor가 위치할 지점 ( X, Y 만 사용 )
-	FVector AimPoint = PawnLocation + (FowardDirection * PlaceDistance);
+	FVector AimPoint = PawnLocation + (FowardDirection * ComputeAimDistance());
 
 	return AimPoint;
 }
@@ -876,14 +878,14 @@ float UDC1BuildPlacementComponent::ComputePillarHeightOffset() const
 		return 0.f;
 	}
 
-	float Pitch = FMath::Min(FRotator::NormalizeAxis(Pawn->GetController()->GetControlRotation().Pitch), MaxPillarDegree);
+	float Pitch = FMath::Min(FRotator::NormalizeAxis(Pawn->GetControlRotation().Pitch), MaxPillarDegree);
 
 	if (Pitch < 0.f)
 	{
 		return 0.f;
 	}
 
-	return PlaceDistance * FMath::Tan(FMath::DegreesToRadians(Pitch));
+	return CurrentPlaceDistance * FMath::Tan(FMath::DegreesToRadians(Pitch));
 }
 
 bool UDC1BuildPlacementComponent::IsOwnerDownOrDead() const
@@ -902,4 +904,35 @@ bool UDC1BuildPlacementComponent::IsOwnerDownOrDead() const
 	}
 
 	return false;
+}
+
+float UDC1BuildPlacementComponent::ComputePlaceDistance() const
+{
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn) || false == ::IsValid(PreviewActor))
+	{
+		return 0.f;
+	}
+
+	return PreviewActor->GetMaxCheckRadius2D() + Pawn->GetSimpleCollisionRadius() + PlaceMargin;
+}
+
+float UDC1BuildPlacementComponent::ComputeAimDistance() const
+{
+	if (false == ::IsValid(PreviewActor) || true == PreviewActor->GetHasPillar())
+	{
+		return CurrentPlaceDistance;
+	}
+
+	const APawn* Pawn = GetOwnerPawn();
+	if (false == ::IsValid(Pawn))
+	{
+		return CurrentPlaceDistance;
+	}
+
+	float Pitch = FRotator::NormalizeAxis(Pawn->GetControlRotation().Pitch);
+
+	float FarDistance = FMath::Max(MaxDistance, CurrentPlaceDistance);
+
+	return FMath::GetMappedRangeValueClamped(FVector2f(-30.f, MaxFarDegree), FVector2f(CurrentPlaceDistance, FarDistance), Pitch);;
 }

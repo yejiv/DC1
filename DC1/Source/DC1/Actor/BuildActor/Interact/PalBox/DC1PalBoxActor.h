@@ -66,7 +66,7 @@ private:
 	// 거점 팰 관리
 	UPROPERTY(VisibleAnywhere, Category = "PalBox")
 	TObjectPtr<UDC1PalBaseComponent>		PalBaseComponent = { nullptr };
-	// 거점에 등록된 WorkTarget, BaseRequiredBuilds 관리 ( Chest 추가 예정 )
+	// 거점에 등록된 WorkTarget, BaseRequiredBuilds, Chest 관리
 	UPROPERTY(VisibleAnywhere, Category = "PalBox")
 	TObjectPtr<UDC1BaseRegistryComponent>	RegistryComponent = { nullptr };
 };
