@@ -161,4 +161,7 @@ protected:
 	// 행 개수 읽기 전용
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
 	int32 Rows = 7;
+
+private:
+	bool bLoadedFromSave = { false };
 };

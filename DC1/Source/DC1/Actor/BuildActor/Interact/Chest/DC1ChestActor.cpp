@@ -32,7 +32,7 @@ void ADC1ChestActor::BeginPlay()
 		ChestInventoryComp->SetCapacityAndColumns(ChestCapacity, ChestColumns);
 	}
 
-	AddDefaultItems();
+	//AddDefaultItems();
 }
 
 void ADC1ChestActor::AddDefaultItems()

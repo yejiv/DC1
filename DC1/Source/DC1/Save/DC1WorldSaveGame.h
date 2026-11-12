@@ -21,7 +21,10 @@ public:
 
 public:
 	UPROPERTY()
-	TArray<FDC1ActorSaveRecord> Actors;
+	TArray<FDC1ActorSaveRecord> BuildActors;
+
+	UPROPERTY()
+	TArray<FDC1ActorSaveRecord> PickupActors;
 
 private:
 	UPROPERTY()

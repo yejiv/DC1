@@ -17,7 +17,7 @@ void UDC1InventoryComponentBase::BeginPlay()
 	Super::BeginPlay();
 
 	// 슬롯 초기화 (클라이언트에서도 실행되지만 복제된 데이터로 덮어씌워짐)
-	if (GetOwnerRole() == ROLE_Authority)
+	if (false == bLoadedFromSave && GetOwnerRole() == ROLE_Authority)
 	{
 		InitializeSlots();
 	}
@@ -684,6 +684,7 @@ void UDC1InventoryComponentBase::OnInventoryUpdated_Internal()
 
 void UDC1InventoryComponentBase::OnPostLoad()
 {
+	bLoadedFromSave = true;
 	// 고정 칸 인벤토리는 현재 기획 칸 수에 맞춤 ( 귀중품은 가진 수만큼이라 건드리지 않음 )
 	if (true == IsFixedCapacity())
 	{

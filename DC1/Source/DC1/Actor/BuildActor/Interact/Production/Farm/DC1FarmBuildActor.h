@@ -42,6 +42,9 @@ public:
 	virtual void	GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
 	virtual bool	ShouldKeepOptionsWhileHeld() const override { return false; }
 
+public:
+	virtual void	OnPostLoad() override;
+
 protected:
 	virtual bool	CanAcceptWorker(const ADC1Character* InWorker) const override;
 	virtual void	OnWorkTick(float InWork) override;
@@ -68,7 +71,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Farm", meta = (ClampMin = "1"))
 	int32						HarvestCount = { 1 };
 
-	UPROPERTY(ReplicatedUsing = OnRep_PhaseIndex)
+	UPROPERTY(ReplicatedUsing = OnRep_PhaseIndex, SaveGame)
 	int32						PhaseIndex = { 0 };
 
 	FTimerHandle				GrowthTimerHandle;

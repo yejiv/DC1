@@ -35,6 +35,7 @@ public:
 	bool						RespawnPlayer(AController* InController, const FTransform* InSpawnTransform);
 
 private:
+	void						LoadWorld();
 	void						LoadPlayer(ADC1PlayerState* InPS);
 
 private:

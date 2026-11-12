@@ -6,6 +6,8 @@
 #include "EngineUtils.h"
 
 #include "Actor/BuildActor/DC1BuildActor.h"
+#include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
+#include "Item/Pickup/DC1PickupItem.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
@@ -73,7 +75,7 @@ bool UDC1SaveSubsystem::SaveAll()
 	}
 
 	// World Save
-	//bAllRequested &= SaveWorldData();
+	bAllRequested &= SaveWorldData();
 
 	return bAllRequested;
 }
@@ -104,29 +106,18 @@ bool UDC1SaveSubsystem::SaveWorldData()
 		return false;
 	if (NM_Client == World->GetNetMode())
 		return false;
+
+	// Load 실패 시, Save 진행하지 않음
+	if (false == IsWorldLoadedSuccess)
+		return false;
+
 	UDC1WorldSaveGame* SaveGame = Cast<UDC1WorldSaveGame>(UGameplayStatics::CreateSaveGameObject(UDC1WorldSaveGame::StaticClass()));
 	if (false == IsValid(SaveGame))
 		return false;
 
 	// 1. 저장할 액터 수집
-	for (TActorIterator<ADC1BuildActor> It(World); It; ++It)
-	{
-		ADC1BuildActor* BuildActor = *It;
-
-		// 레벨에 미리 배치된 액터는 저장 X
-		if (false == BuildActor->GetBuildActorData().BuildTag.IsValid())
-			continue;
-
-		// 이미 완성되거나 건설중인 액터만 저장
-		if (false == BuildActor->IsCompleted() && false == BuildActor->IsUnderConstruction())
-			continue;
-
-		// 2. 액터별 ActorClass / Transform / CollectRecords
-		FDC1ActorSaveRecord& ActorRecord = SaveGame->Actors.AddDefaulted_GetRef();
-		ActorRecord.ActorClass = BuildActor->GetClass();
-		ActorRecord.Transform = BuildActor->GetActorTransform();
-		CollectRecords(BuildActor, ActorRecord.Records);
-	}
+	CollectBuildActor(World, SaveGame);
+	CollectPickupActor(World, SaveGame);
 
 	// 3. SaveGameToMemory → LaunchWrite(WorldFileName)
 	SaveGame->SetSaveVersion(CurrentSaveVersion);
@@ -141,18 +132,35 @@ bool UDC1SaveSubsystem::LoadWorldData()
 	if (NM_Client == World->GetNetMode())
 		return false;
 
+	if (false == UGameplayStatics::DoesSaveGameExist(WorldFileName, 0))
+	{
+		// 신규 월드
+		LOG(TEXT("[Load] New World"));
+		return true;
+	}
+
 	// 1. LoadGameFromSlot(WorldFileName)
 	UDC1WorldSaveGame* SaveGame = Cast<UDC1WorldSaveGame>(UGameplayStatics::LoadGameFromSlot(WorldFileName, 0));
 	if (false == IsValid(SaveGame))
 	{
-		LOG_ERROR(TEXT("Create SaveGame is Failed"))
-			return false;
+		LOG_ERROR(TEXT("[Load] World Load Failed"));
+		return false;
 	}
 
-	//World->SpawnActorDeferred()
+	TArray<ADC1BuildActor*> Spawned;
+	SpawnFromRecords<ADC1BuildActor>(World, SaveGame->BuildActors, &Spawned);
+	SpawnFromRecords<ADC1PickupItem>(World, SaveGame->PickupActors);
 
-	// 2. 액터별 스폰 → ApplyRecords
-	return false;
+	Spawned.Sort([](const ADC1BuildActor& Src, const ADC1BuildActor& Dst) {
+		return (true == Src.IsA<ADC1PalBoxActor>()) && (false == Dst.IsA<ADC1PalBoxActor>());
+		});
+
+	for (ADC1BuildActor* Actor : Spawned)
+	{
+		Actor->OnPlaced(nullptr);
+	}
+
+	return true;
 }
 
 bool UDC1SaveSubsystem::SavePlayerData(ADC1PlayerState* PS)
@@ -397,6 +405,71 @@ bool UDC1SaveSubsystem::SaveGameToMemoryAndLaunch(const FString& SlotName, USave
 	LaunchWrite(SlotName, MoveTemp(SaveGameBytes));
 
 	return true;
+}
+
+void UDC1SaveSubsystem::CollectBuildActor(UWorld* World, UDC1WorldSaveGame* SaveGame)
+{
+	for (TActorIterator<ADC1BuildActor> It(World); It; ++It)
+	{
+		ADC1BuildActor* BuildActor = *It;
+
+		// 레벨에 미리 배치된 액터는 저장 X
+		if (false == BuildActor->GetBuildActorData().BuildTag.IsValid())
+			continue;
+
+		// 이미 완성되거나 건설중인 액터만 저장
+		if (false == BuildActor->IsCompleted() && false == BuildActor->IsUnderConstruction())
+			continue;
+
+		// 액터별 ActorClass / Transform / CollectRecords
+		CollectActorRecord(BuildActor, SaveGame->BuildActors);
+	}
+}
+
+void UDC1SaveSubsystem::CollectPickupActor(UWorld* World, UDC1WorldSaveGame* SaveGame)
+{
+	for (TActorIterator<ADC1PickupItem> It(World); It; ++It)
+	{
+		ADC1PickupItem* PickupItem = *It;
+
+		// 액터별 ActorClass / Transform / CollectRecords
+		CollectActorRecord(PickupItem, SaveGame->PickupActors);
+	}
+}
+
+void UDC1SaveSubsystem::CollectActorRecord(AActor* InActor, TArray<FDC1ActorSaveRecord>& OutRecords)
+{
+	FDC1ActorSaveRecord& ActorRecord = OutRecords.AddDefaulted_GetRef();
+	ActorRecord.ActorClass = InActor->GetClass();
+	ActorRecord.Transform = InActor->GetActorTransform();
+	CollectRecords(InActor, ActorRecord.Records);
+}
+
+template<typename T>
+void UDC1SaveSubsystem::SpawnFromRecords(UWorld* World, const TArray<FDC1ActorSaveRecord>& InActorRecord, TArray<T*>* OutSpawned)
+{
+	for (const FDC1ActorSaveRecord& Record : InActorRecord)
+	{
+		UClass* ActorClass = Record.ActorClass.TryLoadClass<T>();
+		if (nullptr == ActorClass)
+			continue;
+
+		// 2. 액터별 스폰 → ApplyRecords
+		T* Actor = World->SpawnActorDeferred<T>(
+			ActorClass, Record.Transform,
+			nullptr, nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+		);
+
+		if (false == IsValid(Actor))
+			continue;
+
+		ApplyRecords(Actor, Record.Records);
+		Actor->FinishSpawning(Record.Transform);
+
+		if(nullptr != OutSpawned)
+			OutSpawned->Add(Actor);
+	}
 }
 
 bool UDC1SaveSubsystem::HasCustomizeLocalData()

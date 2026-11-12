@@ -72,6 +72,29 @@ void ADC1FarmBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptio
 	}
 }
 
+void ADC1FarmBuildActor::OnPostLoad()
+{
+	Super::OnPostLoad();
+
+	// BP에서 Phases 개수가 줄었을 때 대비
+	if (false == Phases.IsValidIndex(PhaseIndex))
+	{
+		PhaseIndex = 0;
+		CurrentProductionWork = 0.f;
+	}
+
+	// 1. 단계별 분모로 진행도 재계산
+	const FDC1FarmPhaseInfo* Phase = GetCurrentPhase();
+	const float Required = (nullptr != Phase && true == Phase->IsGrowthPhase) ? Phase->GrowthDuration : RequiredWorkPerItem;
+	ProductionProgress = (Required > 0.f) ? CurrentProductionWork / Required : 0.f;
+
+	// 2. 성장 중이면 타이머 재시작
+	if (true == IsGrowing())
+	{
+		StartGrowth();
+	}
+}
+
 bool ADC1FarmBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
 {
 	if (true == IsGrowing())
