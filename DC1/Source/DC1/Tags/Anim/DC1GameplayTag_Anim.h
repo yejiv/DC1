@@ -26,5 +26,10 @@ namespace DC1AnimTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Handiwork);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Build);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Deforest);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Mining);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Watering);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Planting);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Gathering);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Anim_Action_Working_Cook);
 #pragma endregion
 }

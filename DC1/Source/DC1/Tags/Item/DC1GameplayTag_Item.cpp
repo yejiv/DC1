@@ -9,6 +9,8 @@ namespace DC1ItemTags
 	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_Hammer, "Item.Tool.Hammer");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_DeforestAxe, "Item.Tool.DeforestAxe");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_MiningPickaxe, "Item.Tool.MiningPickaxe");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_WaterningPot, "Item.Tool.WaterningPot");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Tool_Pan, "Item.Tool.Pan");
 #pragma endregion
 
 #pragma region Type
