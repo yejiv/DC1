@@ -47,6 +47,7 @@ namespace DC1BuildTags
 		
 	#pragma region CRAFTING_MILLING_AND_GRINDING
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_MillingAndGrinding_FlourMill);		// 제분기
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Crafting_MillingAndGrinding_Pulverizer);		// 파쇄기
 	#pragma endregion
 
 	#pragma region PAL_PALMANAGEMENT
@@ -64,6 +65,7 @@ namespace DC1BuildTags
 	
 	#pragma region FOOD_FARM
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Food_Farm_Fruit);								// 열매 농원
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_Food_Farm_Wheat);								// 밀 농원
 	#pragma endregion
 	
 	#pragma region INFRA_BEDDING

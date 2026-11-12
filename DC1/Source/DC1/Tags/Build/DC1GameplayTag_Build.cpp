@@ -43,6 +43,7 @@ namespace DC1BuildTags
 
 	#pragma region CRAFTING_MILLING_AND_GRINDING
 		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_MillingAndGrinding_FlourMill, "Build.Crafting.MillingAndGrinding.FlourMill");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_MillingAndGrinding_Pulverizer, "Build.Crafting.MillingAndGrinding.Pulverizer");
 	#pragma endregion
 
 	#pragma region PAL_PALMANAGEMENT
@@ -59,6 +60,7 @@ namespace DC1BuildTags
 	
 	#pragma region FOOD_FARM
 		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Farm_Fruit, "Build.Food.Farm.Fruit");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Farm_Wheat, "Build.Food.Farm.Wheat");
 	#pragma endregion
 
 	#pragma region INFRA_BEDDING
