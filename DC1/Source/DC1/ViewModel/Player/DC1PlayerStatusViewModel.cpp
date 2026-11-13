@@ -164,6 +164,17 @@ float UDC1PlayerStatusViewModel::GetMaxShield() const
 	return GetAttributeValue(UDC1PlayerSet::GetMaxShieldAttribute());
 }
 
+float UDC1PlayerStatusViewModel::GetShieldPercent() const
+{
+	float MaxShield = GetMaxShield();
+	if (MaxShield <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetShield() / MaxShield;
+}
+
 float UDC1PlayerStatusViewModel::GetDownGauge() const
 {
 	return GetAttributeValue(UDC1PlayerSet::GetDownedGaugeAttribute());
