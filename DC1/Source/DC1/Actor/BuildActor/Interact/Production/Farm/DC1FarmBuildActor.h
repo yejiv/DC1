@@ -6,6 +6,9 @@
 #include "Actor/BuildActor/Interact/Production/DC1ProductionBuildActor.h"
 #include "DC1FarmBuildActor.generated.h"
 
+class UInstancedStaticMeshComponent;
+class UStaticMesh;
+
 USTRUCT(BlueprintType)
 struct FDC1FarmPhaseInfo
 {
@@ -22,6 +25,9 @@ struct FDC1FarmPhaseInfo
 
 	UPROPERTY(EditDefaultsOnly)
 	FText					OptionText;
+	// ISM 작물 메쉬, null == 안보임
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UStaticMesh>	CropMesh = { nullptr };
 };
 
 UCLASS()
@@ -30,12 +36,16 @@ class DC1_API ADC1FarmBuildActor : public ADC1ProductionBuildActor
 	GENERATED_BODY()
 
 public:
+	ADC1FarmBuildActor();
+
+public:
 	const TArray<FDC1FarmPhaseInfo>&	GetPhases() const { return Phases; }
 	int32			GetPhaseIndex() const { return PhaseIndex; }
 
 	virtual FGameplayTag	GetWorkTypeTag() const override;
 
 protected:
+	virtual void	BeginPlay() override;
 	virtual void	GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
@@ -46,6 +56,7 @@ public:
 	virtual void	OnPostLoad() override;
 
 protected:
+	virtual void	ApplyState() override;
 	virtual bool	CanAcceptWorker(const ADC1Character* InWorker) const override;
 	virtual void	OnWorkTick(float InWork) override;
 	virtual bool	CanPalWork() const override;
@@ -64,7 +75,22 @@ private:
 	void			SpawnHarvest();
 	void			ApplyFarmPhase();
 
+	void			BuildCropGrid();
+	void			RefreshCropMesh();
+
 private:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UInstancedStaticMeshComponent>	CropISM = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Farm|Crop", meta = (ClampMin = "1"))
+	int32						CropRows = { 10 };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Farm|Crop", meta = (ClampMin = "1"))
+	int32						CropCols = { 10 };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Farm|Crop", meta = (ClampMin = "0.0"))
+	float						CropSpacing = { 20.f };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Farm")
 	TArray<FDC1FarmPhaseInfo>	Phases;
 

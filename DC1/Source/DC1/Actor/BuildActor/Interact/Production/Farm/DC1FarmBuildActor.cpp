@@ -5,6 +5,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 #include "Item/Pickup/DC1PickupItem.h"
 
@@ -13,6 +14,29 @@
 namespace
 {
 	constexpr float GrowthTickInterval = 0.1f;
+}
+
+ADC1FarmBuildActor::ADC1FarmBuildActor()
+{
+	CropISM = CreateDefaultSubobject<UInstancedStaticMeshComponent>("CropISM");
+	CropISM->SetupAttachment(BuildMesh);
+	CropISM->SetMobility(EComponentMobility::Movable);
+	CropISM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CropISM->SetGenerateOverlapEvents(false);
+	CropISM->SetCanEverAffectNavigation(false);
+}
+
+void ADC1FarmBuildActor::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 클라에서만 ISM 세팅
+	if (NM_DedicatedServer == GetNetMode())
+	{
+		return;
+	}
+
+	BuildCropGrid();
 }
 
 FGameplayTag ADC1FarmBuildActor::GetWorkTypeTag() const
@@ -93,6 +117,13 @@ void ADC1FarmBuildActor::OnPostLoad()
 	{
 		StartGrowth();
 	}
+}
+
+void ADC1FarmBuildActor::ApplyState()
+{
+	Super::ApplyState();
+
+	RefreshCropMesh();
 }
 
 bool ADC1FarmBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
@@ -215,6 +246,45 @@ void ADC1FarmBuildActor::SpawnHarvest()
 
 void ADC1FarmBuildActor::ApplyFarmPhase()
 {
+	RefreshCropMesh();
+
 	OnInteractOptionsChanged.Broadcast();
 	OnProductionChanged.Broadcast();
+}
+
+void ADC1FarmBuildActor::BuildCropGrid()
+{
+	if (false == ::IsValid(CropISM))
+	{
+		return;
+	}
+
+	const float HalfX = (CropRows - 1) * CropSpacing * 0.5f;
+	const float HalfY = (CropCols - 1) * CropSpacing * 0.5f;
+
+	TArray<FTransform> Transforms;
+	Transforms.Reserve(CropRows * CropCols);
+
+	for (int32 Row = 0; Row < CropRows; ++Row)
+	{
+		for (int32 Col = 0; Col < CropCols; ++Col)
+		{
+			Transforms.Emplace(FVector(Row * CropSpacing - HalfX, Col * CropSpacing - HalfY, 0.f));
+		}
+	}
+
+	CropISM->AddInstances(Transforms, false);
+}
+
+void ADC1FarmBuildActor::RefreshCropMesh()
+{
+	if (false == ::IsValid(CropISM))
+	{
+		return;
+	}
+
+	const FDC1FarmPhaseInfo* Phase = GetCurrentPhase();
+	UStaticMesh* Mesh = (true == IsCompleted() && nullptr != Phase) ? Phase->CropMesh.Get() : nullptr;
+
+	CropISM->SetStaticMesh(Mesh);
 }
