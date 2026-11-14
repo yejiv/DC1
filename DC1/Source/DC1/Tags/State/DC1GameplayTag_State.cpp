@@ -33,5 +33,8 @@ namespace DC1StateTags
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Stamina_RegenBlocked, "State.Stamina.RegenBlocked");
 	UE_DEFINE_GAMEPLAY_TAG(State_Shield_RegenBlocked, "State.Shield.RegenBlocked");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Satiety_Full, "State.Satiety.Full");
+	UE_DEFINE_GAMEPLAY_TAG(State_Satiety_Starving, "State.Satiety.Starving");
 #pragma endregion
 }

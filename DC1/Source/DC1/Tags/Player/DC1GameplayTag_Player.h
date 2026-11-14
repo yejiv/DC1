@@ -25,6 +25,9 @@ namespace DC1PlayerTags
 	// 기절한 팀원 치료 ( F 홀드 )
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Revive);
 
+	// 음식 섭취 GA ( Satiety_Full 부여 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Eat);
+
 #pragma endregion
 
 #pragma region Event
@@ -34,6 +37,8 @@ namespace DC1PlayerTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Fired);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Damaged);
+	// 음식 섭취 이벤트 - 서버
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Eat);
 #pragma endregion
 
 #pragma region Cue

@@ -16,12 +16,15 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Downed, "Ability.Player.Downed");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Revive, "Ability.Player.Revive");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Eat, "Ability.Player.Eat");
 #pragma endregion
 
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Hit, "Event.Player.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Fired, "Event.Player.Fired");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Damaged, "Event.Player.Damaged");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Eat, "Event.Player.Eat");
 #pragma endregion
 
 #pragma region Cue
