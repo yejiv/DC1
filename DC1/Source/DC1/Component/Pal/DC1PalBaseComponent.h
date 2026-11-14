@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Data/Pal/DC1PalTypes.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1PalBaseComponent.generated.h"
 
 class ADC1PalCharacter;
@@ -40,7 +41,7 @@ struct FDC1BasePalActivity
 */
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class DC1_API UDC1PalBaseComponent : public UActorComponent
+class DC1_API UDC1PalBaseComponent : public UActorComponent, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -91,7 +92,7 @@ private:
 	void	NotifyBaseChanged() const;
 
 private:
-	UPROPERTY(ReplicatedUsing = OnRep_BasePals)
+	UPROPERTY(ReplicatedUsing = OnRep_BasePals, SaveGame)
 	TArray<FDC1PalInstance>		BasePals;
 	UPROPERTY(ReplicatedUsing = OnRep_BasePalActivities)
 	TArray<FDC1BasePalActivity>	BasePalActivities;

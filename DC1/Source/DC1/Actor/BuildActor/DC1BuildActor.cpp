@@ -142,6 +142,26 @@ const bool ADC1BuildActor::GatherSurfaceSupporters(TArray<ADC1BuildActor*>& OutS
 	return true;
 }
 
+const float ADC1BuildActor::GetMaxCheckRadius2D() const
+{
+	float MaxRadius = 0.f;
+
+	if (true == ::IsValid(BuildCheckComp))
+	{
+		MaxRadius = FMath::Max(MaxRadius, BuildCheckComp->GetScaledBoxExtent().Size2D());
+	}
+
+	for (const UDC1BuildCheckComponent* SubBuildCheckComp : SubBuildCheckComps)
+	{
+		if (true == ::IsValid(SubBuildCheckComp))
+		{
+			MaxRadius = FMath::Max(MaxRadius, SubBuildCheckComp->GetScaledBoxExtent().Size2D());
+		}
+	}
+
+	return MaxRadius;
+}
+
 // Called when the game starts or when spawned
 void ADC1BuildActor::BeginPlay()
 {

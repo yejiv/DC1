@@ -676,9 +676,9 @@ bool UDC1CharacterMovementComponent::FindMantleTarget(FVector& OutTargetLocation
 
 	const float WallDistance = FVector::Dist2D(WallTraceStart, WallHit.ImpactPoint);
 
-	// 2) 꼭대기 바닥: 벽면에서 캡슐 반지름 + 여유만큼 안쪽 지점을 위에서 아래로 쏜다
-	//    모서리에 걸치지 않고 캡슐이 온전히 올라설 위치를 겨눈다
-	const FVector LandingXY = Location + IntoWall * (WallDistance + CapsuleRadius + MantleLandingInset);
+	// 2) 꼭대기 바닥: 벽면에서 여유만큼만 안쪽 지점을 위에서 아래로 쏜다
+	//    발판 넓이는 보지 않는다(좁은 턱이어도 모서리 바로 안쪽에 바닥만 있으면 올라선다)
+	const FVector LandingXY = Location + IntoWall * (WallDistance + MantleLandingInset);
 	const FVector FloorTraceStart = FVector(LandingXY.X, LandingXY.Y, MantleMaxZ);
 	const FVector FloorTraceEnd = FVector(LandingXY.X, LandingXY.Y, MantleMinZ);
 
@@ -697,15 +697,17 @@ bool UDC1CharacterMovementComponent::FindMantleTarget(FVector& OutTargetLocation
 		return false;
 	}
 
-	// 3) 착지 공간: 바닥 위에 캡슐을 살짝 띄워 겹침 검사(붙이면 바닥과 닿아 항상 겹침)
+	// 3) 착지 높이 공간: 바닥에서 캡슐 높이만큼 위로 쏴서 머리 위가 막혔는지만 본다(넓이는 보지 않음)
 	//    시작점이 처마 등 물체 안이라 바닥 Ray가 오판한 경우도 여기서 걸러진다
 	const FVector CapsuleCenter = FloorHit.ImpactPoint + FVector::UpVector * (CapsuleHalfHeight + MantleOverlapLift);
-	const FCollisionShape LandingShape = FCollisionShape::MakeCapsule(CapsuleRadius * MantleOverlapRadiusScale, CapsuleHalfHeight);
+	const FVector HeadroomTraceStart = FloorHit.ImpactPoint + FVector::UpVector * MantleOverlapLift;
+	const FVector HeadroomTraceEnd = HeadroomTraceStart + FVector::UpVector * (CapsuleHalfHeight * 2.f);
 
-	FCollisionQueryParams OverlapQueryParams(SCENE_QUERY_STAT(ClimbMantleOverlap));
-	SetupClimbQueryParams(OverlapQueryParams, ObjectParams);
+	FCollisionQueryParams HeadroomQueryParams(SCENE_QUERY_STAT(ClimbMantleHeadroomTrace));
+	SetupClimbQueryParams(HeadroomQueryParams, ObjectParams);
 
-	if (true == GetWorld()->OverlapAnyTestByObjectType(CapsuleCenter, FQuat::Identity, ObjectParams, LandingShape, OverlapQueryParams))
+	FHitResult HeadroomHit;
+	if (true == GetWorld()->LineTraceSingleByObjectType(HeadroomHit, HeadroomTraceStart, HeadroomTraceEnd, ObjectParams, HeadroomQueryParams))
 	{
 		return false;
 	}
@@ -838,6 +840,6 @@ void UDC1CharacterMovementComponent::SetupClimbQueryParams(FCollisionQueryParams
 	// 임시: 정적/동적 지형만 대상(팰·플레이어 등 Pawn 제외). Climbable 전용 채널을 만들면 교체
 	OutObjectParams = FCollisionObjectQueryParams();
 	OutObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
-	OutObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	OutObjectParams.AddObjectTypesToQuery(ECC_GameTraceChannel9);
 }
 

@@ -32,8 +32,10 @@ void UDC1HUDStatusWidget::BindViewModel()
 			return;
 
 		StatusViewModel->OnHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
+		StatusViewModel->OnShieldChanged.AddUObject(this, &ThisClass::HandleShieldChanged);
 
 		HandleHealthChanged(StatusViewModel->GetHealth(), StatusViewModel->GetMaxHealth());
+		HandleShieldChanged(StatusViewModel->GetShield(), StatusViewModel->GetMaxShield());
 	}
 }
 
@@ -43,6 +45,7 @@ void UDC1HUDStatusWidget::UnbindViewModel()
 		return;
 
 	StatusViewModel->OnHealthChanged.RemoveAll(this);
+	StatusViewModel->OnShieldChanged.RemoveAll(this);
 	StatusViewModel.Reset();
 }
 
@@ -52,4 +55,25 @@ void UDC1HUDStatusWidget::HandleHealthChanged(float Current, float Max)
 	// 정수 단위 표기
 	Text_Health->SetText(FText::AsNumber(FMath::CeilToInt(Current)));
 	Text_MaxHealth->SetText(FText::AsNumber(FMath::RoundToInt(Max)));
+}
+
+void UDC1HUDStatusWidget::HandleShieldChanged(float Current, float Max)
+{
+	// 실드 장착 안함
+	if (0.f >= Max)
+	{
+		// Verticla 위치 유지 Hidden
+		ShieldBox->SetVisibility(ESlateVisibility::Hidden);
+		return;
+	}
+
+	if (ESlateVisibility::Hidden == ShieldBox->GetVisibility())
+	{
+		ShieldBox->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+
+	ShieldBar->SetPercent(StatusViewModel->GetShieldPercent());
+
+	Text_Shield->SetText(FText::AsNumber(FMath::CeilToInt(Current)));
+	Text_MaxShield->SetText(FText::AsNumber(FMath::CeilToInt(Max)));
 }

@@ -29,7 +29,7 @@ public:
 	// 거점 변경( 설치, 해제 ) 시 플레이어들 PalParty에 화면 갱신 전달 ( 서버 직접 / 클라 OnRep )
 	void					NotifyBaseChanged();
 	// PlayerArray 순회하며 찾기, ( 거점 팰 스폰 및 반환 사용 )
-	UDC1PalPartyComponent*	FindPalPartyByPlayerID(int32 InPlayerID) const;
+	UDC1PalPartyComponent*	FindPalPartyBySlotName(const FString& InSlotName) const;
 
 private:
 	UFUNCTION()

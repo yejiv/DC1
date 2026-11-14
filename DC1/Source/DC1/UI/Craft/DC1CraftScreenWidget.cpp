@@ -111,6 +111,9 @@ void UDC1CraftScreenWidget::BuildRecipeList()
 		return;
 	}
 
+	TArray<const FDC1ItemRecipeRow*> CraftableRecipes;
+	TArray<const FDC1ItemRecipeRow*> UncraftableRecipes;
+
 	for (const FDC1ItemRecipeRow& RecipeRow : CachedRecipeRows)
 	{
 		if (false == CurrentStation->CanShowRecipe(RecipeRow, PlayerState))
@@ -118,17 +121,39 @@ void UDC1CraftScreenWidget::BuildRecipeList()
 			continue;
 		}
 
-		UDC1RecipeButton* Entry = RecipeListBox->CreateEntry<UDC1RecipeButton>();
-		if (false == ::IsValid(Entry))
+		if (CurrentStation->GetCraftableCount(RecipeRow, PlayerState) > 0)
 		{
-			continue;
+			CraftableRecipes.Add(&RecipeRow);
 		}
+		else
+		{
+			UncraftableRecipes.Add(&RecipeRow);
+		}
+	}
 
-		ShownRecipes.Add(RecipeRow.RecipeID, &RecipeRow);
-		RecipeButtons.Add(RecipeRow.RecipeID, Entry);
+	auto AddRecipeEntry = [this](const FDC1ItemRecipeRow& InRecipe, bool InCanCraft)
+		{
+			UDC1RecipeButton* Entry = RecipeListBox->CreateEntry<UDC1RecipeButton>();
+			if (false == ::IsValid(Entry))
+			{
+				return;
+			}
 
-		Entry->SetRecipe(RecipeRow, CurrentStation->GetCraftableCount(RecipeRow, PlayerState) > 0);
-		Entry->OnRecipeClicked.AddUObject(this, &ThisClass::SelectRecipe);
+			ShownRecipes.Add(InRecipe.RecipeID, &InRecipe);
+			RecipeButtons.Add(InRecipe.RecipeID, Entry);
+
+			Entry->SetRecipe(InRecipe, InCanCraft);
+			Entry->OnRecipeClicked.AddUObject(this, &ThisClass::SelectRecipe);
+		};
+
+	for (const FDC1ItemRecipeRow* Recipe : CraftableRecipes)
+	{
+		AddRecipeEntry(*Recipe, true);
+	}
+
+	for (const FDC1ItemRecipeRow* Recipe : UncraftableRecipes)
+	{
+		AddRecipeEntry(*Recipe, false);
 	}
 }
 

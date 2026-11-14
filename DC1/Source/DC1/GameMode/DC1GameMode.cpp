@@ -45,6 +45,10 @@ void ADC1GameMode::StartPlay()
 {
 	Super::StartPlay();
 
+	// World Load
+	LoadWorld();
+
+	// Player Load
 	for (ADC1PlayerState* PS : PendingLoadedStates)
 	{
 		if (false == IsValid(PS))
@@ -119,6 +123,21 @@ bool ADC1GameMode::RespawnPlayer(AController* InController, const FTransform* In
 	return nullptr != InController->GetPawn();
 }
 
+void ADC1GameMode::LoadWorld()
+{
+	UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>();
+	if (nullptr == Subsystem)
+		return;
+
+	const bool bLoaded = Subsystem->LoadWorldData();
+	Subsystem->SetWorldLoadedState(bLoaded);
+
+	if (false == bLoaded)
+	{
+		LOG_WARNING(TEXT("[Load] World Load Failed"));
+	}
+}
+
 void ADC1GameMode::LoadPlayer(ADC1PlayerState* InPS)
 {
 	UDC1SaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>();
@@ -130,6 +149,6 @@ void ADC1GameMode::LoadPlayer(ADC1PlayerState* InPS)
 
 	if (false == bLoaded)
 	{
-		LOG_WARNING(TEXT("[Load] Load Failed"));
+		LOG_WARNING(TEXT("[Load] Player Load Failed"));
 	}
 }

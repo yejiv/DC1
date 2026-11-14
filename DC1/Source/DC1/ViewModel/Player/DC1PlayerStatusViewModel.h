@@ -46,7 +46,7 @@ public:
 	FOnHealthChanged			OnHealthChanged;
 	FOnStaminaChanged			OnStaminaChanged;
 	FOnSatietyChanged			OnSatietyChanged;
-	FOnShieldChanged				OnShieldChanged;
+	FOnShieldChanged			OnShieldChanged;
 	FOnDownGaugeChanged		OnDownGaugeChanged;
 	FOnDownStateChanged		OnDownStateChanged;
 	FOnStaminaSourceChanged	OnStaminaSourceChanged;
@@ -96,6 +96,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetMaxShield() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetShieldPercent() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetDownGauge() const;

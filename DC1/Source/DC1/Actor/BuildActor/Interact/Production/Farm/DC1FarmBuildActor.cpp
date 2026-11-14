@@ -5,6 +5,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 #include "Item/Pickup/DC1PickupItem.h"
 
@@ -13,6 +14,29 @@
 namespace
 {
 	constexpr float GrowthTickInterval = 0.1f;
+}
+
+ADC1FarmBuildActor::ADC1FarmBuildActor()
+{
+	CropISM = CreateDefaultSubobject<UInstancedStaticMeshComponent>("CropISM");
+	CropISM->SetupAttachment(BuildMesh);
+	CropISM->SetMobility(EComponentMobility::Movable);
+	CropISM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CropISM->SetGenerateOverlapEvents(false);
+	CropISM->SetCanEverAffectNavigation(false);
+}
+
+void ADC1FarmBuildActor::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 클라에서만 ISM 세팅
+	if (NM_DedicatedServer == GetNetMode())
+	{
+		return;
+	}
+
+	BuildCropGrid();
 }
 
 FGameplayTag ADC1FarmBuildActor::GetWorkTypeTag() const
@@ -70,6 +94,36 @@ void ADC1FarmBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptio
 	{
 		WorkOption->DisplayText = Phase->OptionText;
 	}
+}
+
+void ADC1FarmBuildActor::OnPostLoad()
+{
+	Super::OnPostLoad();
+
+	// BP에서 Phases 개수가 줄었을 때 대비
+	if (false == Phases.IsValidIndex(PhaseIndex))
+	{
+		PhaseIndex = 0;
+		CurrentProductionWork = 0.f;
+	}
+
+	// 1. 단계별 분모로 진행도 재계산
+	const FDC1FarmPhaseInfo* Phase = GetCurrentPhase();
+	const float Required = (nullptr != Phase && true == Phase->IsGrowthPhase) ? Phase->GrowthDuration : RequiredWorkPerItem;
+	ProductionProgress = (Required > 0.f) ? CurrentProductionWork / Required : 0.f;
+
+	// 2. 성장 중이면 타이머 재시작
+	if (true == IsGrowing())
+	{
+		StartGrowth();
+	}
+}
+
+void ADC1FarmBuildActor::ApplyState()
+{
+	Super::ApplyState();
+
+	RefreshCropMesh();
 }
 
 bool ADC1FarmBuildActor::CanAcceptWorker(const ADC1Character* InWorker) const
@@ -192,6 +246,45 @@ void ADC1FarmBuildActor::SpawnHarvest()
 
 void ADC1FarmBuildActor::ApplyFarmPhase()
 {
+	RefreshCropMesh();
+
 	OnInteractOptionsChanged.Broadcast();
 	OnProductionChanged.Broadcast();
+}
+
+void ADC1FarmBuildActor::BuildCropGrid()
+{
+	if (false == ::IsValid(CropISM))
+	{
+		return;
+	}
+
+	const float HalfX = (CropRows - 1) * CropSpacing * 0.5f;
+	const float HalfY = (CropCols - 1) * CropSpacing * 0.5f;
+
+	TArray<FTransform> Transforms;
+	Transforms.Reserve(CropRows * CropCols);
+
+	for (int32 Row = 0; Row < CropRows; ++Row)
+	{
+		for (int32 Col = 0; Col < CropCols; ++Col)
+		{
+			Transforms.Emplace(FVector(Row * CropSpacing - HalfX, Col * CropSpacing - HalfY, 0.f));
+		}
+	}
+
+	CropISM->AddInstances(Transforms, false);
+}
+
+void ADC1FarmBuildActor::RefreshCropMesh()
+{
+	if (false == ::IsValid(CropISM))
+	{
+		return;
+	}
+
+	const FDC1FarmPhaseInfo* Phase = GetCurrentPhase();
+	UStaticMesh* Mesh = (true == IsCompleted() && nullptr != Phase) ? Phase->CropMesh.Get() : nullptr;
+
+	CropISM->SetStaticMesh(Mesh);
 }

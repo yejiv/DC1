@@ -46,7 +46,6 @@ public:
 	ADC1InteractBuildActor();
 
 public:
-	const bool						IsUnderConstruction() const { return EDC1BuildState::Construction == BuildState; }
 	float							GetBuildProgress() const { return BuildProgress; }
 	float							GetCurrentWorkSpeed() const { return CurrentWorkSpeed; }
 	EDC1BuildInfoState				GetInfoState() const { return InfoState; }
@@ -55,6 +54,8 @@ public:
 
 public:
 	virtual void					Tick(float DeltaTime) override;
+
+	virtual void					OnPostLoad() override;
 
 protected:
 	virtual void					GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -193,6 +194,8 @@ private:
 
 private:
 	TSet<TWeakObjectPtr<const ADC1Character>>	Workers;
+
+	UPROPERTY(SaveGame)
 	float									CurrentWork = { 0.f };
 
 	float									FlashAmount = { 0.f };

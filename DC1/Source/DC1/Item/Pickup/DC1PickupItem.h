@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Item/DC1Item.h"
 #include "Interface/DC1InteractableInterface.h"
+#include "Interface/DC1SaveInterface.h"
 #include "DC1PickupItem.generated.h"
 
 class USphereComponent;
@@ -19,7 +20,7 @@ class UDC1PlayerInventoryComponent;
 - 멈추면 물리 off + DORM_DormantAll. 아무도 안 주우면 PickupLifeSpan 뒤 사라진다
 */
 UCLASS()
-class DC1_API ADC1PickupItem : public ADC1Item, public IDC1InteractableInterface
+class DC1_API ADC1PickupItem : public ADC1Item, public IDC1InteractableInterface, public IDC1SaveInterface
 {
 	GENERATED_BODY()
 
@@ -83,12 +84,15 @@ protected:
 	float							PhysicsSettleTimeout = { 5.f };
 
 private:
-	UPROPERTY(ReplicatedUsing = OnRep_ItemID)
+	UPROPERTY(ReplicatedUsing = OnRep_ItemID, SaveGame)
 	FName							ItemID;
 
 	// 서버만 - 복제 안 함
+	UPROPERTY(SaveGame)
 	int32							Count = { 0 };
+	UPROPERTY(SaveGame)
 	bool							IsInteractOnly = { false };
+
 	FTimerHandle					SettleTimer;
 
 	FDC1OnInteractOptionsChanged	OnInteractOptionsChanged;

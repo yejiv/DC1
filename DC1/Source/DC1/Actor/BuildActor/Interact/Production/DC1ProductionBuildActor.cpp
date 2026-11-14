@@ -83,6 +83,15 @@ bool ADC1ProductionBuildActor::ShouldKeepOptionsWhileHeld() const
 	return (true == IsCompleted()) && (StoredCount < MaxStoredCount);
 }
 
+void ADC1ProductionBuildActor::OnPostLoad()
+{
+	Super::OnPostLoad();
+
+	ProductionProgress = (RequiredWorkPerItem > 0.f)
+		? CurrentProductionWork / RequiredWorkPerItem
+		: 0.f;
+}
+
 void ADC1ProductionBuildActor::CollectProduct(ADC1Character* InCollect)
 {
 	if (false == HasAuthority() || false == ::IsValid(InCollect) ||

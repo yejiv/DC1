@@ -108,6 +108,15 @@ void ADC1InteractBuildActor::Tick(float DeltaTime)
 	}
 }
 
+void ADC1InteractBuildActor::OnPostLoad()
+{
+	Super::OnPostLoad();
+
+	BuildProgress = (BuildActorData.RequiredWork > 0.f)
+		? FMath::Clamp(CurrentWork / BuildActorData.RequiredWork, 0.f, 1.f)
+		: 1.f;
+}
+
 void ADC1InteractBuildActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

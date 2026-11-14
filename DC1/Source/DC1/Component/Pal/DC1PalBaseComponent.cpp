@@ -91,7 +91,7 @@ void UDC1PalBaseComponent::ReleaseBase(APlayerState* InDestroyer)
 			continue;
 		}
 
-		UDC1PalPartyComponent* OwnerParty = (true == ::IsValid(GS)) ? GS->FindPalPartyByPlayerID(Pal.OwnerPlayerID) : nullptr;
+		UDC1PalPartyComponent* OwnerParty = (true == ::IsValid(GS)) ? GS->FindPalPartyBySlotName(Pal.OwnerSlotName) : nullptr;
 		if (true == ::IsValid(OwnerParty) && true == OwnerParty->ReceivePal(Pal))
 		{
 			Pal = FDC1PalInstance();
@@ -104,6 +104,7 @@ void UDC1PalBaseComponent::ReleaseBase(APlayerState* InDestroyer)
 			continue;
 		}
 
+		// 넣은 주인 없고, 파괴자 팰 파티 꽉 찼을때 Log
 		UE_LOG(LogTemp, Warning, TEXT("[Pal] Base removed: owner and destroyer cannot take it. Pal %s was dropped."), *Pal.PalID.ToString(EGuidFormats::Digits));
 
 		Pal = FDC1PalInstance();
@@ -179,7 +180,7 @@ void UDC1PalBaseComponent::RefreshBasePals()
 			return;
 		}
 
-		const UDC1PalPartyComponent* OwnerParty = (true == ::IsValid(GS)) ? GS->FindPalPartyByPlayerID(Pal.OwnerPlayerID) : nullptr;
+		const UDC1PalPartyComponent* OwnerParty = (true == ::IsValid(GS)) ? GS->FindPalPartyBySlotName(Pal.OwnerSlotName) : nullptr;
 		ADC1PlayerState* OwnerState = (nullptr != OwnerParty) ? Cast<ADC1PlayerState>(OwnerParty->GetOwner()) : nullptr;
 
 		if (ADC1PalCharacter* Spawned = ADC1PalCharacter::SpawnFromInstanceData(GetWorld(), Pal, FTransform(SpawnLocation.Location), OwnerState, PalBox))
