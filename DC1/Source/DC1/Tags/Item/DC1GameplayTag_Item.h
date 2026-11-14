@@ -37,7 +37,8 @@ namespace DC1ItemTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Consume_Medicine);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Consume_Bait);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Consume_Other);
-
+	// 음식 판전용 부모 태그
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Food);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Food_Ingredient);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Food_Cooked);
 

@@ -2,6 +2,7 @@
 #include "Define/DC1Helper.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Item/DC1GameplayTag_Item.h"
 
 #pragma region Item Helper
 
@@ -65,6 +66,18 @@ bool DC1ItemHelper::IsValuableItem(FName InItemID)
 const FDC1EquipItemRow* DC1ItemHelper::FindEquipItemRow(FName InItemID)
 {
 	return FindRowByItemID<FDC1EquipItemRow>(DC1DataTableTags::DataTable_EquipItem, InItemID);
+}
+
+const FDC1FoodItemRow* DC1ItemHelper::FindFoodItemRow(FName InItemID)
+{
+	// 아이템 타입 확인
+	const FDC1ItemRow* ItemRow = FindItemRow(InItemID);
+	if (nullptr == ItemRow || false == ItemRow->CategoryTag.MatchesTag(DC1ItemTags::Item_Type_Food))
+	{
+		return nullptr;
+	}
+
+	return FindRowByItemID<FDC1FoodItemRow>(DC1DataTableTags::DataTable_FoodItem, InItemID);
 }
 
 #pragma endregion

@@ -8,6 +8,7 @@
 #include "GameFramework/Pawn.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Component/Player/DC1SatietyComponent.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -152,6 +153,30 @@ float UDC1PlayerStatusViewModel::GetSatiety() const
 float UDC1PlayerStatusViewModel::GetMaxSatiety() const
 {
 	return GetAttributeValue(UDC1PlayerSet::GetMaxSatietyAttribute());
+}
+
+float UDC1PlayerStatusViewModel::GetSatietyPercent() const
+{
+	const float MaxSatiety = GetMaxSatiety();
+	if (MaxSatiety <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetSatiety() / MaxSatiety;
+}
+
+float UDC1PlayerStatusViewModel::GetHungryRatio() const
+{
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(BoundPlayerState.Get());
+	if (nullptr == PS)
+	{
+		return 0.f;
+	}
+
+	UDC1SatietyComponent* SatietyComp = PS->GetSatietyComponent();
+
+	return true == ::IsValid(SatietyComp) ? PS->GetSatietyComponent()->GetAutoEatRatio() : 0.f;
 }
 
 float UDC1PlayerStatusViewModel::GetShield() const

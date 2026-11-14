@@ -87,6 +87,9 @@ namespace DC1BuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_WoodBow);								// 오래된 활
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_StoneAxe);								// 돌 도끼
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_StonePickaxe);							// 돌 곡괭이
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_WoodBat);								// 야구 방망이
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Weapon_MetalSword);								// 검
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Consume_Arrow);							// 화살
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Material_WoodPlank);						// 나무 판자
@@ -94,6 +97,9 @@ namespace DC1BuildTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Item_Material_Cloth);							// 천
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Body_ClothClothes);						// 천옷
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Body_MetalArmor);							// 금속 갑옷
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Armor_Head_MetalArmor);							// 금속 투구
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_PalSphere);								// 팰 스피어
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_MegaSphere);								// 메가 스피어
@@ -103,6 +109,10 @@ namespace DC1BuildTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Shiled_Normal);									// 일반 방패
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Shiled_Mega);									// 메가 방패
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Valuable_SmallPouch);							// 소형 확장 파우치
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Valuable_SamllFoodbag);							// 소형 음식 주머니
+
 #pragma endregion
 }
 

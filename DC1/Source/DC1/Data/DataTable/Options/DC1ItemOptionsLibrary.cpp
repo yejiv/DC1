@@ -117,6 +117,15 @@ TArray<FPropertyTextFName> UDC1ItemOptionsLibrary::GetSchematicItemIDOptions()
 #endif
 }
 
+TArray<FPropertyTextFName> UDC1ItemOptionsLibrary::GetFoodItemIDOptions()
+{
+#if WITH_EDITOR
+	return MakeOptions(DC1ItemTags::Item_Type_Food);
+#else
+	return {};
+#endif
+}
+
 #if WITH_EDITOR
 const FDC1ItemRow* UDC1ItemOptionsLibrary::FindItemRowInEditor(FName InItemID)
 {

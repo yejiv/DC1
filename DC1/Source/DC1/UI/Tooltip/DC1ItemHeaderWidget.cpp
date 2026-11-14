@@ -56,6 +56,9 @@ void UDC1ItemHeaderWidget::SetItem(FName InItemID)
 	SetStatLine(AttackBox, Text_Attack, (nullptr != EquipRow) ? EquipRow->AttackPower : 0);
 	SetStatLine(DefenseBox, Text_Defense, (nullptr != EquipRow) ? EquipRow->DefensePower : 0);
 	SetStatLine(HealthBox, Text_Health, (nullptr != EquipRow) ? EquipRow->Health : 0);
+
+	const FDC1FoodItemRow* FoodRow = DC1ItemHelper::FindFoodItemRow(InItemID);
+	SetStatLine(SatietyBox, Text_Satiety, (nullptr != FoodRow) ? FMath::RoundToInt(FoodRow->SatietyAmount) : 0);
 }
 
 void UDC1ItemHeaderWidget::SetStatLine(UPanelWidget* InLineBox, UTextBlock* InValueText, int32 InValue)
