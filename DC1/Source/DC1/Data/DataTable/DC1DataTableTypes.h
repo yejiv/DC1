@@ -190,6 +190,20 @@ struct FDC1EquipItemRow : public FTableRowBase
 	int32 Health = 0;
 };
 
+// 음식 아이템 전용 데이터 ( FDC1ItemRow와 ItemID로 연결, 행이 있어야하고 + Item타입이 Food여야 먹을 수 있음 )
+USTRUCT(BlueprintType)
+struct FDC1FoodItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetFoodItemIDOptions"))
+	FName ItemID;
+
+	// 포만도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float SatietyAmount = 0.f;
+};
+
 // 레시피 재료 - 건축 비용( FDC1ItemCost )과 분리해 에디터 표시를 레시피에만 적용
 USTRUCT(BlueprintType)
 struct FDC1RecipeItem

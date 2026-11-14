@@ -5,6 +5,7 @@
 struct FDC1ItemRow;
 struct FDC1ValuableItemRow;
 struct FDC1EquipItemRow;
+struct FDC1FoodItemRow;
 struct FDC1ItemRecipeRow;
 
 #pragma region Item Helper
@@ -22,6 +23,8 @@ namespace DC1ItemHelper
 
 	// 장비 데이터 조회 함수 (없으면 nullptr = 장비 불가)
 	const FDC1EquipItemRow* FindEquipItemRow(FName InItemID);
+	// 음식 데이터 조회 함수 ( 없으면 nullptr = 섭취 불가 )
+	const FDC1FoodItemRow* FindFoodItemRow(FName InItemID);
 }
 
 #pragma endregion
