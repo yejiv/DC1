@@ -18,6 +18,9 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Revive, "Ability.Player.Revive");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_CallPal, "Ability.Player.CallPal");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Eat, "Ability.Player.Eat");
+
 #pragma endregion
 
 #pragma region Event
@@ -37,6 +40,7 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Shared_Kill, "Event.Exp.Shared.Kill");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Shared_Capture, "Event.Exp.Shared.Capture");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Pal, "Event.Exp.Pal");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Eat, "Event.Player.Eat");
 #pragma endregion
 
 #pragma region Cue

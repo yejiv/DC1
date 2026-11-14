@@ -46,7 +46,7 @@ public:
 	FOnHealthChanged			OnHealthChanged;
 	FOnStaminaChanged			OnStaminaChanged;
 	FOnSatietyChanged			OnSatietyChanged;
-	FOnShieldChanged				OnShieldChanged;
+	FOnShieldChanged			OnShieldChanged;
 	FOnDownGaugeChanged		OnDownGaugeChanged;
 	FOnDownStateChanged		OnDownStateChanged;
 	FOnStaminaSourceChanged	OnStaminaSourceChanged;
@@ -92,10 +92,19 @@ public:
 	float GetMaxSatiety() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetSatietyPercent() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetHungryRatio() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetShield() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetMaxShield() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
+	float GetShieldPercent() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Status")
 	float GetDownGauge() const;

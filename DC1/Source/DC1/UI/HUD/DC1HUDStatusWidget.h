@@ -29,6 +29,8 @@ private:
 
 private:
 	void HandleHealthChanged(float Current, float Max);
+	void HandleShieldChanged(float Current, float Max);
+	void HandleSatietyChanged(float Current, float Max);
 
 private:
 	UPROPERTY(Transient, meta = (BindWidget))
@@ -40,6 +42,20 @@ private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UTextBlock>		Text_MaxHealth = { nullptr };
 
+	// Visible 관리 위한 Shield 부모 위젯
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UWidget>			ShieldBox = { nullptr };
+	
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UDC1StatusBar>	ShieldBar = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_Shield = { nullptr };
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_MaxShield = { nullptr };
+
+	UPROPERTY(Transient, meta = (BindWidget))
+	TObjectPtr<UDC1StatusBar>	HungryBar = { nullptr };
 private:
 	TWeakObjectPtr<UDC1PlayerStatusViewModel> StatusViewModel = { nullptr };
 };

@@ -35,11 +35,17 @@ namespace DC1ItemTags
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Consume_Bait, "Item.Type.Consume.Bait");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Consume_Other, "Item.Type.Consume.Other");
 
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food, "Item.Type.Food");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food_Ingredient, "Item.Type.Food.Ingredient");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food_Cooked, "Item.Type.Food.Cooked");
 
-	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw, "Item.Type.Material.Raw");
-	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Processed, "Item.Type.Material.Processed");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw_Default, "Item.Type.Material.Raw.Default");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw_Wood, "Item.Type.Material.Raw.Wood");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw_Stone, "Item.Type.Material.Raw.Stone");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw_Pal, "Item.Type.Material.Raw.Pal");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Raw_Ore, "Item.Type.Material.Raw.Ore");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Processed_Default, "Item.Type.Material.Processed.Default");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Material_Processed_Ingot, "Item.Type.Material.Processed.Ingot");
 
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Essential, "Item.Type.Essential");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Schematic, "Item.Type.Schematic");

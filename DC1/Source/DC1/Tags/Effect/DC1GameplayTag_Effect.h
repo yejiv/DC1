@@ -13,6 +13,8 @@ namespace DC1EffectTags
 	// 스태미나 소모량을 담는 칸의 이름. 스태미나를 쓰는 모든 GE가 공유
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_StaminaCost);
 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Satiety);
+
 	// 팰 패시브가 스탯에 곱할 배율을 담는 칸. UDC1GameplayEffect_PalPassive 가 읽음.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_PalPassive_Attack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_PalPassive_Defense);

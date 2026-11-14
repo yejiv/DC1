@@ -258,6 +258,14 @@ enum class EDC1RideDirection : uint8
 	Rear = 3 UMETA(DisplayName = "Rear"),
 };
 
+// HUD Warning 전용 Enum
+UENUM(BlueprintType)
+enum class EDC1HUDWarningType : uint8
+{
+	Hunger = 0 UMETA(DisplayName = "Hunger"),
+	Starve = 1 UMETA(DisplayName = "Starve"),
+};
+
 UENUM()
 enum class EDC1CollisionLayer : uint8
 {

@@ -55,6 +55,12 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>		Text_Health = { nullptr };
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UPanelWidget>	SatietyBox = { nullptr };
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock>		Text_Satiety = { nullptr };
+
 	UPROPERTY(EditAnywhere, Category = "Tooltip|Item", meta = (Categories = "Item.Type"))
 	TMap<FGameplayTag, FText>	ItemTypeNamesByTag;
 };

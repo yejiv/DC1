@@ -9,6 +9,9 @@
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Data/DA/Player/DC1PlayerExpData.h"
+
+#include "Component/Player/DC1SatietyComponent.h"
+
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/State/DC1GameplayTag_State.h"
@@ -154,6 +157,30 @@ float UDC1PlayerStatusViewModel::GetMaxSatiety() const
 	return GetAttributeValue(UDC1PlayerSet::GetMaxSatietyAttribute());
 }
 
+float UDC1PlayerStatusViewModel::GetSatietyPercent() const
+{
+	const float MaxSatiety = GetMaxSatiety();
+	if (MaxSatiety <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetSatiety() / MaxSatiety;
+}
+
+float UDC1PlayerStatusViewModel::GetHungryRatio() const
+{
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(BoundPlayerState.Get());
+	if (nullptr == PS)
+	{
+		return 0.f;
+	}
+
+	UDC1SatietyComponent* SatietyComp = PS->GetSatietyComponent();
+
+	return true == ::IsValid(SatietyComp) ? PS->GetSatietyComponent()->GetAutoEatRatio() : 0.f;
+}
+
 float UDC1PlayerStatusViewModel::GetShield() const
 {
 	return GetAttributeValue(UDC1PlayerSet::GetShieldAttribute());
@@ -162,6 +189,17 @@ float UDC1PlayerStatusViewModel::GetShield() const
 float UDC1PlayerStatusViewModel::GetMaxShield() const
 {
 	return GetAttributeValue(UDC1PlayerSet::GetMaxShieldAttribute());
+}
+
+float UDC1PlayerStatusViewModel::GetShieldPercent() const
+{
+	float MaxShield = GetMaxShield();
+	if (MaxShield <= 0.f)
+	{
+		return 0.f;
+	}
+
+	return GetShield() / MaxShield;
 }
 
 float UDC1PlayerStatusViewModel::GetDownGauge() const

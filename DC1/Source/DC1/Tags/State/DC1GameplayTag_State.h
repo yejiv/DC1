@@ -39,5 +39,10 @@ namespace DC1StateTags
 
 	// 실드 자연 회복 대기 상태
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Shield_RegenBlocked);
+
+	// 배부름 ( 음식 먹음 -> 포만도 감소 X 상태 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Satiety_Full);
+	// 배고픔 ( 포만도 0 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Satiety_Starving);
 #pragma endregion
 }
