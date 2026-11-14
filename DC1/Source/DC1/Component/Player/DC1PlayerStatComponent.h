@@ -5,9 +5,11 @@
 #include "AttributeSet.h"
 #include "Define/DC1Enums.h"
 #include "Interface/DC1SaveInterface.h"
+#include "GameplayTagContainer.h"
 #include "DC1PlayerStatComponent.generated.h"
 
 struct FOnAttributeChangeData;
+struct FGameplayEventData;
 
 class UAbilitySystemComponent;
 
@@ -124,6 +126,10 @@ private:
 
 	void	HandleLevelChanged(const FOnAttributeChangeData& InData);
 
+	void	HandleExpEvent(FGameplayTag InEventTag, const FGameplayEventData* InPayload);
+	
+	void	GainExperience(int32 InAmount);
+
 	UAbilitySystemComponent* GetAbilitySystemComponent() const;
 
 private:
@@ -146,4 +152,9 @@ private:
 	// 패널에 표시할 스탯과 강화 규칙
 	UPROPERTY(EditDefaultsOnly, Category = "Stat")
 	TMap<EDC1PlayerStat, FDC1PlayerStatDefinition> StatDefinitions;
+
+private:
+	FGameplayTagContainer ExpFilter = {};
+
+	FDelegateHandle ExpEventHandle;
 };

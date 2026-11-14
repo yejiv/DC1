@@ -13,7 +13,10 @@
 #include "GeometryCollection/GeometryCollectionObject.h"
 #include "Item/Pickup/DC1PickupItem.h"
 #include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Subsystem/DC1ExperienceSubsystem.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -227,6 +230,15 @@ void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData
 
 	if (InData.NewValue <= 0.f)
 	{
+		// 채집 경험치 - 마지막 타격이 플레이어일 때만 ( 팰 작업 제외, TODO 임시값 )
+		ADC1PlayerState* LastPlayerState = Cast<ADC1PlayerState>(LastDamageInstigator.Get());
+		UDC1ExperienceSubsystem* ExpSubsystem = GetWorld()->GetSubsystem<UDC1ExperienceSubsystem>();
+		if (nullptr != LastPlayerState && nullptr != ExpSubsystem)
+		{
+			ExpSubsystem->Grant(LastPlayerState, DC1PlayerTags::Event_Exp_Player_Gather, 10);
+		}
+		LastDamageInstigator.Reset();
+
 		SetResourceState(EDC1ResourceActorState::Depleted);
 	}
 }
@@ -279,6 +291,8 @@ void ADC1ResourceActor::HandleDamageApplied(const FOnAttributeChangeData& InData
 
 	PendingDropOrigin = GetDropOrigin(InData);
 	HasPendingDropOrigin = true;
+
+	LastDamageInstigator = InData.GEModData->EffectSpec.GetContext().GetInstigator();
 }
 
 FVector ADC1ResourceActor::GetDropOrigin(const FOnAttributeChangeData& InData) const

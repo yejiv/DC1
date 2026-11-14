@@ -22,6 +22,7 @@ class UDC1PalRideComponent;
 class UCapsuleComponent;
 class UWidgetComponent;
 struct FInputActionValue;
+struct FGameplayEventData;
 
 DECLARE_MULTICAST_DELEGATE(FDC1OnPalDied);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnPalHealthChanged, float /*Current*/, float /*Max*/);
@@ -119,6 +120,9 @@ protected:
 	virtual void						PostInitializeComponents() override;
 
 	virtual void						BeginPlay() override;
+
+	// Event.Exp 수신. 거점 팰만 적용 ( 서버 )
+	void								HandleExpEvent(FGameplayTag InEventTag, const FGameplayEventData* InPayload);
 
 	virtual void						NotifyControllerChanged() override;
 

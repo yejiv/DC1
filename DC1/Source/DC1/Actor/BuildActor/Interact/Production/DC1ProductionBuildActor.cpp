@@ -19,6 +19,7 @@
 #include "Define/DC1Helper.h"
 #include "Tags/Build/DC1GameplayTag_Build.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 
 ADC1ProductionBuildActor::ADC1ProductionBuildActor()
 {
@@ -178,6 +179,12 @@ void ADC1ProductionBuildActor::OnWorkTick(float InWork)
 	{
 		CurrentProductionWork -= RequiredWorkPerItem;
 		NewCount += ProductCountPerWork;
+	}
+
+	// 작업 경험치 - 생산이 늘었을 때 작업 중인 플레이어 ( 아래 ClearWorkers 전, TODO 임시값 )
+	if (NewCount > StoredCount)
+	{
+		GrantExpToPlayerWorkers(DC1PlayerTags::Event_Exp_Player_Work, 10);
 	}
 
 	if (NewCount >= MaxStoredCount)

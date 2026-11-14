@@ -48,6 +48,11 @@ namespace DC1AssetTags
 	// 외형 선택지 레지스트리. 메시/아이콘은 소프트 레퍼런스로 따라간다
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Appearance_Registry);
 #pragma endregion
+
+#pragma region Player
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_Player_ExpData);
+#pragma endregion
+
 }
 
 

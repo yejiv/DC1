@@ -63,6 +63,7 @@ private:
 	UFUNCTION(Server, Reliable)
 	void			Server_UnlockAncientTech(const FGameplayTag& InTechTag);
 
+public:
 	void			AddTechPoints(int32 InPoints);
 	void			AddAncientTechPoints(int32 InPoints);
 

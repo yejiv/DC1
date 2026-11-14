@@ -10,6 +10,7 @@
 
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 
 UDC1GA_Player_Revive::UDC1GA_Player_Revive(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -33,12 +34,17 @@ void UDC1GA_Player_Revive::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	// 키 입력 취소 Task
-	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true);
-	if (nullptr != ReleaseTask)
+	// Animation
+	if (UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, ReviveMontage, 1.f))
 	{
-		ReleaseTask->OnRelease.AddDynamic(this, &ThisClass::HandleInputReleased);
-		ReleaseTask->ReadyForActivation();
+		PlayMontageTask->ReadyForActivation();
+		// 키 입력 취소 Task
+		UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true);
+		if (nullptr != ReleaseTask)
+		{
+			ReleaseTask->OnRelease.AddDynamic(this, &ThisClass::HandleInputReleased);
+			ReleaseTask->ReadyForActivation();
+		}
 	}
 
 	// 서버 내에선 Target이 지정될 때까지 기다리다가 Target 오면 BeginRevive 호출

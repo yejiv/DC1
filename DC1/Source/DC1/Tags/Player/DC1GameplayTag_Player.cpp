@@ -16,12 +16,27 @@ namespace DC1PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Downed, "Ability.Player.Downed");
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_Revive, "Ability.Player.Revive");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Player_CallPal, "Ability.Player.CallPal");
 #pragma endregion
 
 #pragma region Event
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Hit, "Event.Player.Hit");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Fired, "Event.Player.Fired");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Player_Damaged, "Event.Player.Damaged");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Player_CallPal, "Event.Player.CallPal");
+#pragma endregion
+
+#pragma region Exp
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp, "Event.Exp");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Player, "Event.Exp.Player");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Player_Work, "Event.Exp.Player.Work");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Player_Build, "Event.Exp.Player.Build");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Player_Gather, "Event.Exp.Player.Gather");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Shared, "Event.Exp.Shared");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Shared_Kill, "Event.Exp.Shared.Kill");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Shared_Capture, "Event.Exp.Shared.Capture");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Exp_Pal, "Event.Exp.Pal");
 #pragma endregion
 
 #pragma region Cue

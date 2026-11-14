@@ -30,7 +30,7 @@ ADC1Projectile::ADC1Projectile()
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovement");
 	ProjectileMovement->InitialSpeed = 3000.f;
 	ProjectileMovement->MaxSpeed = 3000.f;
-	ProjectileMovement->ProjectileGravityScale = 1.f;
+	ProjectileMovement->ProjectileGravityScale = 0.5f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 }
 

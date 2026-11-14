@@ -13,6 +13,7 @@
 
 #include "Tags/DC1GamePlayTags.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "UI/Tab/DC1TabWidget.h"
@@ -524,6 +525,10 @@ void ADC1PlayerController::OnThrowReleased(const FInputActionValue& Value)
 
 void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 {
+	ADC1Player* LocalPlayer = Cast<ADC1Player>(GetPawn());
+	if (false == IsValid(LocalPlayer))
+		return;
+
 	const ADC1PlayerState* DC1PlayerState = GetPlayerState<ADC1PlayerState>();
 	if (nullptr == DC1PlayerState)
 	{
@@ -532,7 +537,10 @@ void ADC1PlayerController::OnCallPalPressed(const FInputActionValue& Value)
 
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
-		Party->Server_ToggleDeploy(Party->GetSelectedSlot());
+		FGameplayEventData Payload;
+		Payload.EventMagnitude = static_cast<float>(Party->GetSelectedSlot());
+
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(LocalPlayer, DC1PlayerTags::Event_Player_CallPal, Payload);
 	}
 }
 

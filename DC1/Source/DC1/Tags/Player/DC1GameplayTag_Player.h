@@ -25,6 +25,9 @@ namespace DC1PlayerTags
 	// 기절한 팀원 치료 ( F 홀드 )
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_Revive);
 
+	// 팰 소환/회수 ( E )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Player_CallPal);
+
 #pragma endregion
 
 #pragma region Event
@@ -34,6 +37,29 @@ namespace DC1PlayerTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Fired);
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_Damaged);
+
+	// 팰 소환/회수 GA 활성화. 소유 클라가 보낸다 ( EventMagnitude = 선택 슬롯 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Player_CallPal);
+#pragma endregion
+
+#pragma region Exp
+	// 경험치 지급 ( UDC1ExperienceSubsystem::Grant ). EventMagnitude = 양, Instigator = Earner
+	// AbilityTriggers 로 쓰지 말 것 - 구독으로만 받는다
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp);
+
+	// 플레이어만 ( 행동 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Player);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Player_Work);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Player_Build);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Player_Gather);		// 자원 채집
+
+	// 플레이어 + 팰 ( 처치/포획 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Shared);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Shared_Kill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Shared_Capture);
+
+	// 팰만
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Exp_Pal);
 #pragma endregion
 
 #pragma region Cue

@@ -245,6 +245,9 @@ public:
 	// 경험치
 	int32						GetDropExp(int32 InLevel) const;
 
+	// 처치/포획 시 주는 경험치 ( 알파 배율 포함 ). PalData 가 없으면 배율 1
+	int32						GetDropExpFor(const UDC1PalData* InPalData, int32 InLevel, bool InIsAlpha) const;
+
 	// 다음 레벨 필요량. 최대 레벨이면 0
 	int32						GetExpToNextLevel(int32 InLevel) const;
 

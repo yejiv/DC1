@@ -6,6 +6,7 @@
 #include "DC1GA_Player_Revive.generated.h"
 
 class ADC1Player;
+class UAnimMontage;
 
 /**
  * 기절한 팀원 치료. 상호작용 F 홀드 동안 실행된다.
@@ -38,6 +39,11 @@ private:
 
 private:
 	ADC1Player* FindReviveTarget(const FGameplayAbilityActorInfo* ActorInfo) const;
+
+public:
+	// 치료
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
+	TObjectPtr<UAnimMontage>	ReviveMontage = { nullptr };
 
 private:
 	// 치료 대상

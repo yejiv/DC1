@@ -40,6 +40,10 @@ namespace DC1AssetTags
 #pragma region Appearance
 	UE_DEFINE_GAMEPLAY_TAG(Asset_Appearance_Registry, "Asset.Appearance.Registry");
 #pragma endregion
+
+#pragma region Player
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Player_ExpData, "Asset.Player.ExpData");
+#pragma endregion
 }
 
 namespace DC1DataTableTags

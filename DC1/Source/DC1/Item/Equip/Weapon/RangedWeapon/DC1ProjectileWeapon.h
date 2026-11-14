@@ -46,4 +46,13 @@ public:
 
 private:
 	FVector				GetAimDirection();
+
+private:
+	// 화면 정중앙 트레이스 사거리
+	UPROPERTY(EditDefaultsOnly, Category = "Ranged")
+	float AimTraceDistance = { 10000.f };
+
+	// 목표가 이보다 가까우면 이 거리로 고정
+	UPROPERTY(EditDefaultsOnly, Category = "Ranged")
+	float MinConvergeDistance = { 500.f };
 };

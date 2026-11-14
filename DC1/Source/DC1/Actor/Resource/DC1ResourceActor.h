@@ -161,6 +161,9 @@ private:
 	FVector											PendingDropOrigin = { FVector::ZeroVector };
 	bool											HasPendingDropOrigin = { false };
 
+	// 서버만 - 마지막 타격 GE 의 Instigator ( 플레이어면 PlayerState ). 고갈 시 채집 경험치 대상
+	TWeakObjectPtr<AActor>							LastDamageInstigator;
+
 	float											AccumulatedDropDamage = { 0.f };
 
 	FDC1OnPalWorkersChanged							OnPalWorkersChanged;

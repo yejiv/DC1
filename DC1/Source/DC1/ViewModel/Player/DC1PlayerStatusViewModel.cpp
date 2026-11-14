@@ -8,7 +8,7 @@
 #include "GameFramework/Pawn.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "Character/Player/DC1PlayerState.h"
-#include "Data/DA/Pal/DC1PalRegistryData.h"
+#include "Data/DA/Player/DC1PlayerExpData.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/State/DC1GameplayTag_State.h"
@@ -326,11 +326,11 @@ void UDC1PlayerStatusViewModel::UnbindStaminaSource()
 
 int32 UDC1PlayerStatusViewModel::GetExpToNextLevel() const
 {
-	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-	if (nullptr == Registry)
+	const UDC1PlayerExpData* ExpData = UDC1AssetManager::GetAssetByTag<UDC1PlayerExpData>(DC1AssetTags::Asset_Player_ExpData);
+	if (nullptr == ExpData)
 		return 0;
 
-	return Registry->GetExpToNextLevel(GetLevel());
+	return ExpData->GetExpToNextLevel(GetLevel());
 }
 
 float UDC1PlayerStatusViewModel::GetAttributeValue(const FGameplayAttribute& InAttribute) const
