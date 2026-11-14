@@ -10,6 +10,7 @@
 
 
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1ItemHelper.h"
 
 #include "Component/Inventory/DC1InventoryTypes.h"
 #include "Components/Border.h"
@@ -402,6 +403,12 @@ FReply UDC1InventoryWidget::HandleInventorySlotRightClick(const FVector2D& InScr
 	if (true == CachedViewModel->GetSlot(ClickedSlotIndex).IsEmpty())
 	{
 		return FReply::Unhandled();
+	}
+
+	if (nullptr != DC1ItemHelper::FindFoodItemRow(CachedViewModel->GetSlot(ClickedSlotIndex).ItemID))
+	{
+		CachedViewModel->RequestEatFood(ClickedSlotIndex);
+		return FReply::Handled();
 	}
 
 	// 장비 불가 아이템이면 서버에서 무시됨

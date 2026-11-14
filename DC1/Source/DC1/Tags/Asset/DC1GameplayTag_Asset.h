@@ -63,6 +63,7 @@ namespace DC1DataTableTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_Item);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_ValuableItem);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_EquipItem);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_FoodItem);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DataTable_ItemRecipe);
 #pragma endregion
 }

@@ -149,6 +149,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
 	void RequestEquipItemAuto(int32 SlotIndex);
 
+	void RequestEatFood(int32 SlotIndex);
+
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Equipment")
 	void RequestUnequipItem(int32 EquipSlotIndex, int32 ToSlotIndex = -1);
 
