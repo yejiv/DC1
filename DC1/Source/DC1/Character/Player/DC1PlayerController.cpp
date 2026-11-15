@@ -16,6 +16,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Subsystem/DC1SoundSettingSubsystem.h"
 #include "UI/Tab/DC1TabWidget.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
@@ -160,6 +161,44 @@ void ADC1PlayerController::ReleaseAbilityInput(const FGameplayTag& InAbilityTag)
 	}
 }
 
+
+void ADC1PlayerController::ReturnToTitle()
+{
+	// 중복 클릭 return
+	if (true == IsReturningToTitle)
+	{
+		return;
+	}
+
+	if (true == TitleMap.IsNull())
+	{
+		LOG_WARNING(TEXT("[Travel] TitleMap is not set"));
+		return;
+	}
+
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		return;
+	}
+
+	const FString TitleMapName = TitleMap.GetLongPackageName();
+
+	// 맵 이동 시 PC 파괴 -> false 세팅 불필요
+	IsReturningToTitle = true;
+
+	/*
+		IP가 아닌 로컬 맵 주소를 통해 Travel
+		-> 서버 접속 종료
+		-> Logout ( SavePlayerData )
+		-> 타이틀 맵 Standalone으로 로드
+	*/ 
+	UIManager->BeginLoadingTransition(1.f, FSimpleDelegate::CreateWeakLambda(this, [this, TitleMapName]
+		{
+			ClientTravel(TitleMapName, TRAVEL_Absolute);
+		}));
+}
+
 void ADC1PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -173,6 +212,11 @@ void ADC1PlayerController::BeginPlay()
 	ShowSubsystemLog();
 
 	SetBaseIMC(DC1IMCTags::IMC_Default);
+
+	if (UDC1SoundSettingSubsystem* SoundSubsystem = ULocalPlayer::GetSubsystem<UDC1SoundSettingSubsystem>(GetLocalPlayer()))
+	{
+		SoundSubsystem->ApplyAllVolumes();
+	}
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -1072,6 +1116,12 @@ void ADC1PlayerController::SetUpUIInput(UEnhancedInputComponent* EnhancedInputCo
 	if (const UInputAction* OpenPalBox = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_PalBox))
 	{
 		EnhancedInputComponent->BindAction(OpenPalBox, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_PalBox.GetTag(), FGameplayTag::EmptyTag);
+	}
+
+	// Open Tab - Game Menu
+	if (const UInputAction* OpenGameMenuAction = InputData->FindInputActionbyTag(DC1InputTags::Input_UI_GameMenu))
+	{
+		EnhancedInputComponent->BindAction(OpenGameMenuAction, ETriggerEvent::Started, this, &ThisClass::OpenTabWidget, DC1UITags::UI_Main_Tab.GetTag(), DC1UITags::UI_Main_Tab_GameMenu.GetTag());
 	}
 }
 

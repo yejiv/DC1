@@ -27,6 +27,7 @@ namespace DC1UITags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Tab_Inventory);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Tab_HasPal);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Tab_TechTree);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(UI_Main_Tab_GameMenu);
 #pragma endregion
 
 #pragma region MAIN_BUILD

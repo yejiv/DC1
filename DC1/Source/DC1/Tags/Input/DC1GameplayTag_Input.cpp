@@ -46,6 +46,7 @@ namespace DC1InputTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_Build, "Input.UI.Build");
 	UE_DEFINE_GAMEPLAY_TAG(Input_UI_PalBox, "Input.UI.PalBox");
+	UE_DEFINE_GAMEPLAY_TAG(Input_UI_GameMenu, "Input.UI.GameMenu");
 #pragma endregion
 
 #pragma region Downed

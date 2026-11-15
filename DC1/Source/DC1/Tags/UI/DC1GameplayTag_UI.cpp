@@ -22,6 +22,7 @@ namespace DC1UITags
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_Inventory,	"UI.Main.Tab.Inventory");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_HasPal,		"UI.Main.Tab.HasPal");
 	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_TechTree,	"UI.Main.Tab.TechTree");
+	UE_DEFINE_GAMEPLAY_TAG(UI_Main_Tab_GameMenu,	"UI.Main.Tab.GameMenu");
 #pragma endregion
 
 #pragma region MAIN_BUILD
