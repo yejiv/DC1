@@ -12,7 +12,7 @@ class UButton;
 class UDynamicEntryBox;
 class UEditableTextBox;
 class UImage;
-class USlider;
+class UDC1Slider;
 class UTextBlock;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnCraftRequested, FName, int32);
@@ -70,7 +70,7 @@ private:
 	TObjectPtr<UDynamicEntryBox>	MaterialListBox = { nullptr };
 	// 개수 선택(슬라이드)
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<USlider>				Slider_Count = { nullptr };
+	TObjectPtr<UDC1Slider>			Slider_Count = { nullptr };
 	// 작업량 표시
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock>	RequiredWork_Count = { nullptr };
