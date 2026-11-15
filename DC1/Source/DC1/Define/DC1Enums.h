@@ -280,3 +280,19 @@ enum class EDC1CollisionLayer : uint8
 	ECC_Building = ECC_GameTraceChannel9,			// Object, Build
 	ECC_Item = ECC_GameTraceChannel10,				// Object, PickupItem
 };
+
+#pragma region SOUND ENUM
+// 볼륨 슬라이더 카테고리
+// 최종 볼륨 = 애셋 볼륨 * Master 조절값 * Category 조절값
+UENUM(BlueprintType)
+enum class EDC1SoundCategory : uint8
+{
+	Master = 0,					// 마스터
+	BGM = 1,					// BGM
+	SFX = 2,					// 효과음
+	VOICE_Player = 3,			// 음성(플레이어)
+	VOICE_Pal = 4,				// 음성(팰)
+	UI = 5,						// UI
+	MAX = 6 UMETA(Hidden),		// for문 용
+};
+#pragma endregion

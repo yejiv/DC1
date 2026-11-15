@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Save/DC1SaveTypes.h"
+#include "Define/DC1Enums.h"
 #include "Tasks/Pipe.h"
 #include "DC1SaveSubsystem.generated.h"
 
@@ -51,6 +52,10 @@ public:
 	// Customize Data Save
 	bool SaveCustomizeData(const FDC1AppearanceData& InData);
 	bool LoadCustomizeData(FDC1AppearanceData* OutData);
+
+	// Sound Data Save
+	bool SaveSoundData(const TMap<EDC1SoundCategory, float>& InVolumes);
+	bool LoadSoundData(TMap<EDC1SoundCategory, float>* OutVolumes);
 
 public:
 	// [Client] Customize Local File Check
@@ -105,6 +110,7 @@ private:
 private:
 	FString CustomizeFileName = { "Customize" };
 	FString WorldFileName = { "World" };
+	FString SoundFileName = { "Sound" };
 
 	FTimerHandle	AutoSaveTimerHandle;
 	// 자동 저장 주기

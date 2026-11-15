@@ -32,6 +32,10 @@ namespace DC1AssetTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_UI_Resource_Common);
 #pragma endregion
 
+#pragma region Sound
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_SoundData);
+#pragma endregion
+
 #pragma region DataTable
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Asset_DataTableData);
 #pragma endregion

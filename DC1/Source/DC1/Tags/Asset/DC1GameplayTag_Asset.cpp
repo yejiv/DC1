@@ -28,6 +28,10 @@ namespace DC1AssetTags
 	UE_DEFINE_GAMEPLAY_TAG(Asset_UI_Resource_Common, "Asset.UI.Resource.Common");
 #pragma endregion
 
+#pragma region Sound
+	UE_DEFINE_GAMEPLAY_TAG(Asset_SoundData, "Asset.SoundData");
+#pragma endregion
+
 #pragma region DataTable
 	UE_DEFINE_GAMEPLAY_TAG(Asset_DataTableData, "Asset.DataTableData");
 #pragma endregion
