@@ -73,6 +73,7 @@ public:
 	ADC1Glider*					GetCurrentGlider() const { return CurrentGlider; }
 
 	float						GetCurrentWeaponAttackPower() const;
+	float						GetCurrentWeaponDamageRate(const FGameplayTag& InWorkTypeTag) const;
 	void						SetGliderVisibility(bool IsVisiblity);
 
 	// 무기 표시 최종 판단 (이동 조건 + 도구 + 팰스피어). 조건이 추가되면 여기만 고친다

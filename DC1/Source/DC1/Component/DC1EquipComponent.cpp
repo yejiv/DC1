@@ -158,6 +158,23 @@ float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
 	return EquipRow->AttackPower;
 }
 
+float UDC1EquipComponent::GetCurrentWeaponDamageRate(const FGameplayTag& InWorkTypeTag) const
+{
+	const int32 EquipSlotIndex = GetCurrentWeaponEquipIndex();
+	if (false == EquipSlots.IsValidIndex(EquipSlotIndex)) return 1.f;
+
+	const FName ItemID = EquipSlots[EquipSlotIndex].ItemID;
+	if (NAME_None == ItemID) return 1.f;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(ItemID);
+	if (nullptr == EquipRow) return 1.f;
+
+	if (InWorkTypeTag == DC1WorkTags::Work_Lumbering) return EquipRow->LumberingDamageRate;
+	if (InWorkTypeTag == DC1WorkTags::Work_Mining) return EquipRow->MiningDamageRate;
+
+	return 1.f;
+}
+
 void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
 {
 	if (nullptr == CurrentGlider) return;

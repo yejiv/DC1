@@ -16,6 +16,7 @@ class UNiagaraSystem;
 class ADC1DestroyActor;
 class ADC1PalCharacter;
 struct FOnAttributeChangeData;
+struct FGameplayEffectSpec;
 
 /*
 - 필드 채집 액터 ( 나무, 돌 )
@@ -86,6 +87,7 @@ public:
 
 public:
 	float								GetWorkNumberRange() const { return WorkNumberRange; }
+	FVector								GetDropOrigin(const FGameplayEffectSpec* InSpec) const;
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
@@ -117,7 +119,6 @@ private:
 	void	Respawn();
 	void	WakeForReplication();
 	void	SleepForReplication();
-	FVector	GetDropOrigin(const FOnAttributeChangeData& InData) const;
 	void	AccumulateDrop(float InDamage, const FVector& InOrigin);
 
 	UFUNCTION()

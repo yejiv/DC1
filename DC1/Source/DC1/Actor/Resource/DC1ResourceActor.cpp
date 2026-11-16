@@ -5,9 +5,11 @@
 #include "Actor/Destroy/DC1DestroyActor.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
 #include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1ResourceAttributeSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Define/DC1Enums.h"
+#include "Define/DC1HitHelper.h"
 #include "GameplayEffectExtension.h"
 #include "GameFramework/GameStateBase.h"
 #include "GeometryCollection/GeometryCollectionObject.h"
@@ -54,7 +56,7 @@ ADC1ResourceActor::ADC1ResourceActor()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
-	AttributeSet = CreateDefaultSubobject<UDC1AttributeSet>(TEXT("AttributeSet"));
+	AttributeSet = CreateDefaultSubobject<UDC1ResourceAttributeSet>(TEXT("AttributeSet"));
 }
 
 UAbilitySystemComponent* ADC1ResourceActor::GetAbilitySystemComponent() const
@@ -222,8 +224,8 @@ void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData
 
 	WakeForReplication();
 
-	// Damage 콜백이 먼저 계산해 둔 위치 ( 같은 GE 안에서 Damage → PostGameplayEffectExecute → Health 순 )
-	const FVector DropOrigin = (true == HasPendingDropOrigin) ? PendingDropOrigin : GetDropOrigin(InData);
+	// HandleDamageApplied이 먼저 계산해 둔 위치 ( 같은 GE 안에서 Damage -> PostGameplayEffectExecute -> Health 순 )
+	const FVector DropOrigin = (true == HasPendingDropOrigin) ? PendingDropOrigin : GetDropOrigin((nullptr != InData.GEModData) ? &InData.GEModData->EffectSpec : nullptr);
 	HasPendingDropOrigin = false;
 
 	AccumulateDrop(InData.OldValue - InData.NewValue, DropOrigin);
@@ -289,68 +291,30 @@ void ADC1ResourceActor::HandleDamageApplied(const FOnAttributeChangeData& InData
 		return;
 	}
 
-	PendingDropOrigin = GetDropOrigin(InData);
+	PendingDropOrigin = GetDropOrigin(&InData.GEModData->EffectSpec);
 	HasPendingDropOrigin = true;
 
 	LastDamageInstigator = InData.GEModData->EffectSpec.GetContext().GetInstigator();
 }
 
-FVector ADC1ResourceActor::GetDropOrigin(const FOnAttributeChangeData& InData) const
+FVector ADC1ResourceActor::GetDropOrigin(const FGameplayEffectSpec* InSpec) const
 {
 	const FBoxSphereBounds& Bounds = ResourceMesh->Bounds;
 	const FVector Fallback = Bounds.Origin + FVector::UpVector * Bounds.BoxExtent.Z;
 
-	if (nullptr == InData.GEModData)
+	if (nullptr == InSpec)
 	{
 		return Fallback;
 	}
 
-	const FGameplayEffectContextHandle& Context = InData.GEModData->EffectSpec.GetContext();
-
-	// 히트를 싣는 공격이 Resource를 맞힌 히트면 그 자리
-	const FHitResult* HitResult = Context.GetHitResult();
-	if (nullptr != HitResult && this == HitResult->GetActor() && false == HitResult->bStartPenetrating)
-	{
-		return HitResult->ImpactPoint + HitResult->ImpactNormal * DropSurfaceOffset;
-	}
-
-	const AActor* Causer = Context.GetEffectCauser();
-	if (false == ::IsValid(Causer))
-	{
-		Causer = Context.GetInstigator();
-	}
-
-	if (false == ::IsValid(Causer))
+	FVector HitPoint;
+	FVector HitNormal;
+	if (false == DC1HitHelper::FindHitLocation(*InSpec, this, ResourceMesh, HitPoint, HitNormal))
 	{
 		return Fallback;
 	}
 
-	// 이 Resource 콜리전만 트레이스 - 공격자를 향한 표면
-	// GetClosestPointOnCollision은 볼록 도형만 지원해 복합 콜리전 노드에서 실패 -> LineTraceComponent로 변경
-	FHitResult SurfaceHit;
-	const FCollisionQueryParams Params(SCENE_QUERY_STAT(DC1ResourceDropOrigin), true);
-
-	// 공격자 높이에서 Resource 피벗 축으로 수평 -> 나무처럼 높은 Resource Spawn 위치 맞춤
-	// 범위 중심이 아니라 피벗 - 가지가 한쪽으로 쏠린 나무는 범위 중심이 줄기 밖이라 빗나간다
-	// 높이는 Resource 범위 안으로 - 공격자가 더 높거나 낮아도 표면을 지남
-	const FVector CauserLocation = Causer->GetActorLocation();
-	const FVector Pivot = ResourceMesh->GetComponentLocation();
-	const float TraceZ = FMath::Clamp(CauserLocation.Z, Bounds.Origin.Z - Bounds.BoxExtent.Z, Bounds.Origin.Z + Bounds.BoxExtent.Z);
-	const FVector Start(CauserLocation.X, CauserLocation.Y, TraceZ);
-	const FVector End(Pivot.X, Pivot.Y, TraceZ);
-
-	if (true == ResourceMesh->LineTraceComponent(SurfaceHit, Start, End, Params))
-	{
-		return SurfaceHit.ImpactPoint + SurfaceHit.ImpactNormal * DropSurfaceOffset;
-	}
-
-	// 수평으로 빗나가면 ( 중심축이 비어 있는 모양 ) Resource 중심으로 한 번 더
-	if (true == ResourceMesh->LineTraceComponent(SurfaceHit, CauserLocation, Bounds.Origin, Params))
-	{
-		return SurfaceHit.ImpactPoint + SurfaceHit.ImpactNormal * DropSurfaceOffset;
-	}
-
-	return Fallback;
+	return HitPoint + HitNormal * DropSurfaceOffset;
 }
 
 void ADC1ResourceActor::AccumulateDrop(float InDamage, const FVector& InOrigin)
