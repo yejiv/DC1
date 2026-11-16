@@ -193,6 +193,10 @@ struct FDC1EquipItemRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 Health = 0;
+
+	// 활공 속도 ( 글라이더 칸만 사용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float Speed = 0.f;
 };
 
 // 음식 아이템 전용 데이터 ( FDC1ItemRow와 ItemID로 연결, 행이 있어야하고 + Item타입이 Food여야 먹을 수 있음 )

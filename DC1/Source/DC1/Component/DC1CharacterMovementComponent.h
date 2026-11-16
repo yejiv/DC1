@@ -116,6 +116,9 @@ private:
 	void			ConfirmGlideMovement();
 	void			ConfirmClimbMovement();
 
+	// 장착 글라이더 속도. 없거나 0이면 MaxCustomMovementSpeed
+	float			GetGlideSpeed() const;
+
 	bool			HasWallAtHeadHeight();
 	bool			DetectWall();
 	bool			CheckInputDirectionToWall();

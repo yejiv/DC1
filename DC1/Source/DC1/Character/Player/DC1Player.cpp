@@ -206,12 +206,14 @@ bool ADC1Player::CanClimb() const
 
 bool ADC1Player::CanGlide() const
 {
-	if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
-	{
-		ADC1Glider* Glider = EquipComponent->GetCurrentGlider();
-		if (nullptr == Glider)
-			return false;
-	}
+	UDC1EquipComponent* EquipComponent = GetEquipComponent();
+	if (false == IsValid(EquipComponent))
+		return false;
+
+	ADC1Glider* Glider = EquipComponent->GetCurrentGlider();
+	if (nullptr == Glider)
+		return false;
+	
 
 	return CheckRemainStamina(0.f);
 }

@@ -506,6 +506,11 @@ void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
 
 	if (nullptr == CurrentGlider) return;
 
+	if (const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlots[InEquipSlotIndex].ItemID))
+	{
+		CurrentGlider->SetGlideSpeed(EquipRow->Speed);
+	}
+
 	if (ADC1Player* Player = GetOwningPlayer())
 	{
 		CurrentGlider->AttachToComponent(

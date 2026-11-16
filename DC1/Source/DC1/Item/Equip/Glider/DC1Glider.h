@@ -15,7 +15,18 @@ public:
 	ADC1Glider();
 
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	float	GetGlideSpeed() const { return GlideSpeed; }
+	void	SetGlideSpeed(float InSpeed) { GlideSpeed = InSpeed; }
+
+public:
 	// 캐릭터 메시에 부착할 소켓
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Glider")
 	FName				AttachSocketName;
+
+private:
+	// EquipItemRow::Speed. 서버가 장착 시 넣고 클라로 복제
+	UPROPERTY(Replicated)
+	float	GlideSpeed = { 0.f };
 };
