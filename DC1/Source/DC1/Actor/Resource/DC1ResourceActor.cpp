@@ -369,10 +369,29 @@ void ADC1ResourceActor::AccumulateDrop(float InDamage, const FVector& InOrigin)
 	UE_LOG(LogTemp, Log, TEXT("[DC1] %s drop : damage %.1f -> %d drop(s), remain %.1f"), *GetName(), InDamage, DropTimes, AccumulatedDropDamage);
 
 	// 맞은 지점 ( 공격자 쪽 표면 ) 에서 위로 간격만 둠 - 이후 물리로 떨어지며 겹치면 살짝만 밀림
-	for (int32 Index = 0; Index < DropTimes; ++Index)
+	int32 SpawnIndex = 0;
+
+	for (int32 DropIndex = 0; DropIndex < DropTimes; ++DropIndex)
 	{
-		const FVector Location = InOrigin + FVector::UpVector * (Index * DropStackSpacing);
-		ADC1PickupItem::SpawnDrop(GetWorld(), DropItemID, DropCountPerDrop, Location);
+		const FVector GuaranteedLocation = InOrigin + FVector::UpVector * (SpawnIndex * DropStackSpacing);
+		if (nullptr != ADC1PickupItem::SpawnDrop(GetWorld(), DropTable.Guaranteed.ItemID, DropTable.Guaranteed.Count, GuaranteedLocation))
+		{
+			++SpawnIndex;
+		}
+
+		for (const FDC1ResourceChanceDrop& ChanceDrop : DropTable.ChanceDrops)
+		{
+			if (ChanceDrop.Chance <= FMath::FRand())
+			{
+				continue;
+			}
+
+			const FVector ChanceLocation = InOrigin + FVector::UpVector * (SpawnIndex * DropStackSpacing);
+			if (nullptr != ADC1PickupItem::SpawnDrop(GetWorld(), ChanceDrop.ItemID, ChanceDrop.Count, ChanceLocation))
+			{
+				++SpawnIndex;
+			}
+		}
 	}
 }
 
