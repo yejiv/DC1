@@ -97,8 +97,8 @@ public:
 	// Stamina 잔존량 체크
 	bool	CheckRemainStamina(float Stamina) const;
 
-	// Body, HairEquip Mesh 교체
-	void Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType);
+	// Body, HairEquip Mesh 교체, ( InAttachBoneName + InAttachOffset = HairEquip 전용, Body는 사용안함 )
+	void Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType, FName InAttachBoneName = NAME_None, const FTransform& InAttachOffset = FTransform::Identity);
 
 private:
 	virtual void PostInitializeComponents() override;

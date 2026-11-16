@@ -417,12 +417,14 @@ void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
 
 	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentHairEquipID);
 
-	USkeletalMesh* Mesh = { nullptr };
-	if (nullptr != EquipRow)
+	if (nullptr == EquipRow)
 	{
-		Mesh = EquipRow->EquipMesh.LoadSynchronous();
+		Player->Change_EquipMesh(nullptr, EDC1EquipSlotType::Head);
 	}
-	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Head);
+	else
+	{
+		Player->Change_EquipMesh(EquipRow->EquipMesh.LoadSynchronous(), EDC1EquipSlotType::Head, EquipRow->AttachBoneName, EquipRow->AttachOffset);
+	}
 
 	OnArmorChanged.Broadcast();
 }
