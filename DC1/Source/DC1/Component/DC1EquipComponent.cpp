@@ -640,7 +640,15 @@ void UDC1EquipComponent::EquipTool(const FGameplayTag& ToolTag)
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		CurrentTool->AttachSocketName
 	);
+	// SubTool
+	if (nullptr != CurrentTool->SubToolMesh->GetSkeletalMeshAsset())
+	{
+		// ToolMesh들이 Item Mesh 기준 오프셋을 잡아뒀기에 KeepRelativeTransform
+		CurrentTool->SubToolMesh->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, CurrentTool->SubAttachSocketName);
+	}
+
 	CurrentTool->SetActorHiddenInGame(false);
+
 }
 
 void UDC1EquipComponent::UnequipTool(const FGameplayTag& ToolTag)

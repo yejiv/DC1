@@ -104,7 +104,8 @@ namespace DC1BuildTags
 
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_PalSphere, "Crafting.Sphere.PalSphere");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_MegaSphere, "Crafting.Sphere.MegaSphere");
-
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_GigaSphere, "Crafting.Sphere.GigaSphere");
+		
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Normal, "Crafting.Glider.Normal");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Mega, "Crafting.Glider.Mega");
 

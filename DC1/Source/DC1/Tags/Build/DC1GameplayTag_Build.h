@@ -107,6 +107,7 @@ namespace DC1BuildTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_PalSphere);								// 팰 스피어
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_MegaSphere);								// 메가 스피어
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Sphere_GigaSphere);								// 기가 스피어
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Glider_Normal);									// 일반 낙하산
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Crafting_Glider_Mega);									// 메가 글라이더
