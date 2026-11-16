@@ -607,6 +607,50 @@ bool ADC1Player::CheckRemainStamina(float Stamina) const
 	return true;
 }
 
+void ADC1Player::Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType)
+{
+	switch (InSlotType)
+	{
+	case EDC1EquipSlotType::Body:
+		{
+			USkeletalMeshComponent* BodyMesh = GetMesh();
+			ADC1PlayerState * PS = GetPlayerState<ADC1PlayerState>();
+			if (false == IsValid(PS) || false == IsValid(BodyMesh))
+				return;
+
+			BodyMesh->EmptyOverrideMaterials();
+			if (nullptr == InMesh)
+			{
+				BodyMesh->SetSkeletalMesh(DefaultBodyMesh, false);
+			}
+			else
+			{
+				BodyMesh->SetSkeletalMesh(InMesh, false);
+			}
+			// 색상 재적용
+			UDC1AppearanceComponent* AppearanceComponent = PS->GetAppearanceComponent();
+			if (false == IsValid(AppearanceComponent))
+				return;
+
+			AppearanceComponent->ApplyBodyColor(BodyMesh);
+			break;
+		}
+	case EDC1EquipSlotType::Head:
+		{
+			if (false == IsValid(HairEquipMesh))
+				return;
+			HairEquipMesh->SetSkeletalMesh(InMesh, false);
+
+			// 투구를 쓰면 머리카락이 뚫고 나오지 않게 숨기고, 벗으면 다시 보인다
+			if (true == IsValid(HairMesh))
+			{
+				HairMesh->SetVisibility(nullptr == InMesh);
+			}
+			break;
+		}
+	}
+}
+
 void ADC1Player::ApplyGlideState(bool IsApply)
 {
 	// 보정 후 리플레이로 여러 번 호출될 수 있어 Add/Remove(카운트 누적) 대신 값을 직접 설정한다

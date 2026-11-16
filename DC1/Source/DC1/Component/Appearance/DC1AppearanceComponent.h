@@ -23,6 +23,10 @@ public:
 public:
 	void ApplyAppearance(const FDC1AppearanceData& Data);
 
+	// Body 메시 교체(방어구) 후 피부색만 다시 칠하는 함수
+	// 폰 초기화 순서상 SetParts보다 먼저 불릴 수 있어 캐싱된 메시 대신 직접 받는다
+	void ApplyBodyColor(USkeletalMeshComponent* InBodyMesh);
+
 	UFUNCTION(Server, Reliable)
 	void Server_ChangeAppearance(const FDC1AppearanceData& InData);
 

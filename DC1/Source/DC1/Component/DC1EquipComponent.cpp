@@ -68,6 +68,8 @@ void UDC1EquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 	DOREPLIFETIME(UDC1EquipComponent, CurrentWeapon);
 	DOREPLIFETIME(UDC1EquipComponent, CurrentGlider);
+	DOREPLIFETIME(UDC1EquipComponent, CurrentBodyArmorID);
+	DOREPLIFETIME(UDC1EquipComponent, CurrentHairEquipID);
 }
 
 // Called every frame
@@ -138,6 +140,8 @@ void UDC1EquipComponent::HandlePawnReady()
 	// 클라 포함. PlayerState가 폰보다 먼저 도착하면 OnRep_CurrentWeapon이 폰을 못 찾고
 	// 그냥 지나간다. 그때 놓친 콜라이더 적용을 여기서 만회한다
 	ApplyWeaponCollider();
+	OnRep_CurrentBodyArmor();
+	OnRep_CurrentHairEquipArmor();
 }
 
 float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
@@ -387,6 +391,38 @@ void UDC1EquipComponent::OnRep_CurrentWeapon()
 	OnWeaponChanged.Broadcast();
 }
 
+void UDC1EquipComponent::OnRep_CurrentBodyArmor()
+{
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player))
+		return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentBodyArmorID);
+
+	USkeletalMesh* Mesh = { nullptr };
+	if (nullptr != EquipRow)
+	{
+		Mesh = EquipRow->EquipMesh.LoadSynchronous();
+	}
+	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Body);
+}
+
+void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
+{
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player))
+		return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentHairEquipID);
+
+	USkeletalMesh* Mesh = { nullptr };
+	if (nullptr != EquipRow)
+	{
+		Mesh = EquipRow->EquipMesh.LoadSynchronous();
+	}
+	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Head);
+}
+
 void UDC1EquipComponent::ApplyWeaponCollider()
 {
 	if (ADC1Player* Player = GetOwningPlayer())
@@ -479,6 +515,21 @@ void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
 void UDC1EquipComponent::HandleArmorChanged(int32 InEquipSlotIndex)
 {
 	const FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
+
+	EDC1EquipSlotType SlotType = DC1EquipSlotLayout::GetSlotType(InEquipSlotIndex);
+
+	switch (SlotType)
+	{
+	case EDC1EquipSlotType::Head:
+		CurrentHairEquipID = EquipSlot.ItemID;
+		OnRep_CurrentHairEquipArmor();
+		break;
+	case EDC1EquipSlotType::Body:
+		CurrentBodyArmorID = EquipSlot.ItemID;
+		OnRep_CurrentBodyArmor();
+		break;
+	}
+
 	if (NAME_None == EquipSlot.ItemID) return;
 
 	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlot.ItemID);

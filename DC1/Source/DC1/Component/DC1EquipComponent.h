@@ -111,6 +111,10 @@ private:
 
 	UFUNCTION()
 	void		OnRep_CurrentWeapon();
+	UFUNCTION()
+	void		OnRep_CurrentBodyArmor();
+	UFUNCTION()
+	void		OnRep_CurrentHairEquipArmor();
 
 	void		ApplyWeaponCollider();
 	void		ApplyWeaponStateTag();
@@ -143,6 +147,12 @@ public:
 	// 장착한 글라이더. 클라에서도 활공 모드 전환 시 표시를 토글해야 해서 모두에게 복제한다
 	UPROPERTY(Replicated)
 	TObjectPtr<ADC1Glider>		CurrentGlider = {};
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentBodyArmor)
+	FName							CurrentBodyArmorID = {};
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHairEquipArmor)
+	FName							CurrentHairEquipID = {};
 
 private:
 	enum class WEAPONSTATE { DETACH, ATTACH };

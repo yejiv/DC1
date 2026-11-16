@@ -8,6 +8,7 @@
 #include "DC1DataTableTypes.generated.h"
 
 class ADC1Equip;
+class USkeletalMesh;
 
 USTRUCT(BlueprintType)
 struct FDC1LoadingTipRow : public FTableRowBase
@@ -179,6 +180,10 @@ struct FDC1EquipItemRow : public FTableRowBase
 	// 장착 시 스폰할 액터 ( 현재는 무기 칸만 사용 )
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftClassPtr<ADC1Equip> EquipClass;
+
+	// 장착 시 교체할 메시 ( 방어구 칸만 사용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USkeletalMesh> EquipMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 AttackPower = 0;

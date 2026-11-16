@@ -74,6 +74,22 @@ void UDC1AppearanceComponent::ApplyAppearance(const FDC1AppearanceData& Data)
 	}
 }
 
+void UDC1AppearanceComponent::ApplyBodyColor(USkeletalMeshComponent* InBodyMesh)
+{
+	if (false == IsValid(InBodyMesh))
+	{
+		return;
+	}
+
+	const UDC1AppearanceRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1AppearanceRegistryData>(DC1AssetTags::Asset_Appearance_Registry);
+	if (false == IsValid(Registry))
+	{
+		return;
+	}
+
+	InBodyMesh->SetColorParameterValueOnMaterials(Registry->SkinColorPropertyName, CurrentAppearance.SkinColor);
+}
+
 void UDC1AppearanceComponent::Server_ChangeAppearance_Implementation(const FDC1AppearanceData& InData)
 {
 	CurrentAppearance = InData;
