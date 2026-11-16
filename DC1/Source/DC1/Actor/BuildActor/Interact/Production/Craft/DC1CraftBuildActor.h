@@ -49,12 +49,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Interact")
 	TArray<FDC1InteractOption>		CancelOptions;
 
-	// 제작 가능 타입들
+	// 제작 가능 카테고리들 + 제작 가능 등급 ( 제작 타입 + 랭크로 제작대 등급 구분 )
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Recipe", meta = (Categories = "Item.Type"))
-	FGameplayTagContainer			CraftableCategoryTags;
-	// 제작 가능 등급 ( 제작 타입 + 랭크로 제작대 등급 구분 )
-	UPROPERTY(EditDefaultsOnly, Category = "Production|Recipe", meta = (ClampMin = "1"))
-	int32							CraftableRank = { 1 };
+	TMap<FGameplayTag, int32>		CraftableCategoryRankByTags;
+
 	// 제작 최대 개수
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Recipe", meta = (ClampMin = "1", ClampMax = "9999"))
 	int32							MaxCraftCount = { 9999 };

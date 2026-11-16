@@ -16,7 +16,7 @@ namespace DC1ItemTags
 #pragma endregion
 
 #pragma region Type
-	// FDC1ItemRow::CategoryTag - 작업대는 상위 태그로 제작 가능 분류를 지정
+	// FDC1ItemRow::CategoryTag - 작업대는 상위 태그로 제작 가능 분류를 지정 ( Item_Type_* )
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Weapon_Melee);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Weapon_Bow);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Type_Weapon_Crossbow);
