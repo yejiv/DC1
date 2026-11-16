@@ -6,6 +6,9 @@
 #if !UE_BUILD_SHIPPING
 
 #include "HAL/IConsoleManager.h"
+#include "Misc/DelayedAutoRegister.h"
+#include "ConsoleSettings.h"
+#include "Engine/Console.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -16,8 +19,10 @@
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
 #include "Data/Pal/DC1PalTypes.h"
 #include "Define/DC1CraftHelper.h"
+#include "Define/DC1Helper.h"
 #include "Define/DC1ItemHelper.h"
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -231,6 +236,34 @@ namespace DC1DebugCommands
 			*ItemID.ToString(), Count, (true == IsRemoved) ? TEXT("OK") : TEXT("FAILED"), Player, Total - Player);
 	}
 
+	void AppendItemRows(const FGameplayTag& InTableTag, TArray<FAutoCompleteCommand>& OutList)
+	{
+		TArray<FDC1ItemRow> Rows;
+		if (false == DC1DataTableHelper::GetAllRows<FDC1ItemRow>(InTableTag, Rows))
+		{
+			return;
+		}
+
+		for (const FDC1ItemRow& Row : Rows)
+		{
+			if (true == Row.ItemID.IsNone())
+			{
+				continue;
+			}
+
+			FAutoCompleteCommand Entry;
+			Entry.Command = FString::Printf(TEXT("DC1.AddItem %s"), *Row.ItemID.ToString());
+			Entry.Desc = Row.ItemName.ToString();
+			OutList.Add(MoveTemp(Entry));
+		}
+	}
+
+	void AddItemAutoCompleteEntries(TArray<FAutoCompleteCommand>& OutList)
+	{
+		AppendItemRows(DC1DataTableTags::DataTable_Item, OutList);
+		AppendItemRows(DC1DataTableTags::DataTable_ValuableItem, OutList);
+	}
+
 	FAutoConsoleCommand AddItemCommand(
 		TEXT("DC1.AddItem"),
 		TEXT("DC1.AddItem <ItemID> [Count=1] - add item to local player's inventory"),
@@ -250,6 +283,11 @@ namespace DC1DebugCommands
 		TEXT("DC1.RemoveCraft"),
 		TEXT("DC1.RemoveCraft <ItemID> <Count> - remove craft material (player first, then base chests)"),
 		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&RemoveCraft));
+
+	FDelayedAutoRegisterHelper ItemAutoCompleteRegister(EDelayedRegisterRunPhase::EndOfEngineInit, []()
+	{
+		UConsole::RegisterConsoleAutoCompleteEntries.AddStatic(&AddItemAutoCompleteEntries);
+	});
 }
 
 #endif
