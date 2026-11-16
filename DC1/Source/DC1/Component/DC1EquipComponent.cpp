@@ -405,6 +405,8 @@ void UDC1EquipComponent::OnRep_CurrentBodyArmor()
 		Mesh = EquipRow->EquipMesh.LoadSynchronous();
 	}
 	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Body);
+
+	OnArmorChanged.Broadcast();
 }
 
 void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
@@ -421,6 +423,8 @@ void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
 		Mesh = EquipRow->EquipMesh.LoadSynchronous();
 	}
 	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Head);
+
+	OnArmorChanged.Broadcast();
 }
 
 void UDC1EquipComponent::ApplyWeaponCollider()

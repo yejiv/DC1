@@ -104,7 +104,8 @@ void ADC1PlayerPreviewActor::CopySkeletalMesh(USkeletalMeshComponent* InSource, 
 
 	// 원본 뼈대를 그대로 따라가므로 애니메이션 계산 없이 같은 자세가 됨
 	InCopy->SetLeaderPoseComponent(InSource, true);
-	InCopy->SetVisibility(nullptr != InSource->GetSkeletalMeshAsset());
+	// 메시가 비었거나 원본이 숨겨져 있으면(투구 착용 시 머리카락) 복사본도 숨김
+	InCopy->SetVisibility(nullptr != InSource->GetSkeletalMeshAsset() && true == InSource->GetVisibleFlag());
 
 	SourceToCopy.Add(InSource, InCopy);
 }

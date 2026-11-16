@@ -17,6 +17,7 @@ class UDC1PlayerInventoryComponent;
 class UAbilitySystemComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
+DECLARE_MULTICAST_DELEGATE(FOnEquipArmorChanged);
 
 // 장비 칸 하나에 실제로 적용된 상태. 인벤토리 칸이 바뀌면 이전 적용을 되돌리는 기준이 된다
 USTRUCT()
@@ -81,6 +82,9 @@ public:
 
 public:
 	FOnEquipWeaponChanged		OnWeaponChanged;
+
+	// 방어구 메시가 실제로 교체된 뒤 (미리보기 갱신용)
+	FOnEquipArmorChanged			OnArmorChanged;
 
 private:
 	// 소유자는 PlayerState다. 폰은 아직 없거나 교체됐을 수 있어 캐싱하지 않고 매번 얻는다
