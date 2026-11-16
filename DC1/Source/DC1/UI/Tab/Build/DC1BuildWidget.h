@@ -32,7 +32,7 @@ UCLASS()
 class DC1_API UDC1BuildWidget : public UDC1UserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
 	void	InitBuild(UDC1BuildViewModel* InViewModel);
 

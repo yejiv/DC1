@@ -5,7 +5,7 @@
 
 #include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
 #include "UI/Tab/Build/DC1BuildWidget.h"
-
+#include "UI/Button/DC1UserButton.h"
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
 
@@ -29,6 +29,8 @@ void UDC1BuildTabWidget::NativeOnInitialized()
 	{
 		SetViewModel(ViewModelSubsystem->GetViewModel<UDC1BuildViewModel>());
 	}
+
+	Button_DismantleMode->OnClickedDelegate.AddUObject(this, &ThisClass::HandleDismantleClicked);
 }
 
 void UDC1BuildTabWidget::NativeOnActivated()
@@ -179,4 +181,12 @@ void UDC1BuildTabWidget::HandleBuildUnlocked(const FGameplayTag& InUnlockedTag)
 	}
 
 	EnableTab(TabTag);
+}
+
+void UDC1BuildTabWidget::HandleDismantleClicked()
+{
+	if (true == ::IsValid(CachedViewModel) && true == CachedViewModel->RequestStartDismantle())
+	{
+		PopScreen();
+	}
 }
