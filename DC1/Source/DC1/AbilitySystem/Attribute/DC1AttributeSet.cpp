@@ -7,6 +7,12 @@
 #include "GameplayEffectExtension.h"
 #include "Component/Widget/DC1DamageNumberComponent.h"
 
+namespace
+{
+	constexpr float DamageRandomMin = 0.9f;
+	constexpr float DamageRandomMax = 1.1f;
+}
+
 void UDC1AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -24,6 +30,29 @@ void UDC1AttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	}
+}
+
+bool UDC1AttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data)
+{
+	if (false == Super::PreGameplayEffectExecute(Data))
+	{
+		return false;
+	}
+
+	if (GetDamageAttribute() != Data.EvaluatedData.Attribute)
+	{
+		return true;
+	}
+
+	if (Data.EvaluatedData.Magnitude <= 0.f)
+	{
+		return true;
+	}
+
+	// 데미지 0.9 ~ 1.1 랜덤
+	Data.EvaluatedData.Magnitude *= FMath::FRandRange(DamageRandomMin, DamageRandomMax);
+
+	return true;
 }
 
 void UDC1AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
