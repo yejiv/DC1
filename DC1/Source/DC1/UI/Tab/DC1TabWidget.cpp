@@ -8,6 +8,7 @@
 #include "UI/Tab/TechTree/DC1TechTreeWidget.h"
 
 #include "Tags/UI/DC1GameplayTag_UI.h"
+#include "Kismet/GameplayStatics.h"
 
 UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
 {
@@ -124,6 +125,7 @@ void UDC1TabWidget::CloseWidget(const FKey& InKey)
 	if (true == KeyList->Keys.Contains(InKey))
 	{
 		PopScreen();
+		UGameplayStatics::PlaySound2D(this, CloseSound);
 		// CurrentTab Deactivate
 		if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
 		{
@@ -272,6 +274,7 @@ void UDC1TabWidget::ChangeTab(bool InIsNext)
 
 		if (true == SelectTab(ChangeTab))
 		{
+			UGameplayStatics::PlaySound2D(this, TabChangeSound);
 			break;
 		}
 	}

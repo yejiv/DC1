@@ -216,7 +216,14 @@ void ADC1ResourceActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData)
 {
+	const FVector PrevMeshScale = ResourceMesh->GetRelativeScale3D();
 	ApplyScale();
+
+	// 한 단계 작아질 때 ( 바위 깨짐 ). 고갈은 DestroySound 가 대신함
+	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue > 0.f && ResourceMesh->GetRelativeScale3D().X < PrevMeshScale.X)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, StageBreakSound, ResourceMesh->Bounds.Origin);
+	}
 
 	// 타격음 - 서버 / 클라 공통 ( 고갈 타격은 DestroySound가 대신함 )
 	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue < InData.OldValue && InData.NewValue > 0.f)

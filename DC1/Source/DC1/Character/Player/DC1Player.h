@@ -230,6 +230,11 @@ private:
 private:
 	void	ShowDeathScreen();
 
+	// 사망 징글 DeathSounds 를 순서대로 한 번씩 재생 ( 본인 화면만 )
+	void	PlayDeathSoundAt(int32 InIndex);
+	UFUNCTION()
+	void	HandleDeathSoundFinished();
+
 private:
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent>	ActiveCollider = { nullptr };
@@ -283,8 +288,17 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TObjectPtr<USoundBase>							HitSound = { nullptr };
 
+	// 사망 시 본인 화면에서 배열 순서대로 이어서 한 번 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>					DeathSounds;
+
 	UPROPERTY(Transient)
 	TObjectPtr<UAudioComponent>						GlideLoopAudio = { nullptr };
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent>						DeathAudio = { nullptr };
+
+	int32											DeathSoundIndex = { INDEX_NONE };
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;

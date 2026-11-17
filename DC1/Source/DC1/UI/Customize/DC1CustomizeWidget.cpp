@@ -9,6 +9,7 @@
 #include "UI/Button/Customize/DC1CustomizeMenuButton.h"
 #include "UI/Button/DC1UserButton.h"
 #include "Components/WidgetSwitcher.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Controller/DC1LogoController.h"
 
@@ -18,6 +19,8 @@ void UDC1CustomizeWidget::NativeConstruct()
 
 	BindViewModel();
 	SetupMenuButtons();
+
+	UGameplayStatics::PlaySound2D(this, EnterSound);
 }
 
 void UDC1CustomizeWidget::NativeDestruct()

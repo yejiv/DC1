@@ -20,6 +20,7 @@ class UDC1InteractComponent;
 class UDC1DamageNumberComponent;
 
 class USoundBase;
+class UAudioComponent;
 
 struct FInputActionInstance;
 
@@ -207,6 +208,17 @@ private:
 	// 팰 탑승 / 하차 ( F 홀드 완료 )
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TObjectPtr<USoundBase>	RideToggleSound = { nullptr };
+
+	// 인벤토리 / 팰 / 기술 / 건축 / 팰박스 / 메뉴 키로 화면을 열 때
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	MenuOpenSound = { nullptr };
+
+	// 필드 BGM. 본인 화면에서 BeginPlay 부터 반복 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	MainBGM = { nullptr };
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent>	MainBGMAudio = { nullptr };
 
 private:
 	bool			IsTurn = { true };

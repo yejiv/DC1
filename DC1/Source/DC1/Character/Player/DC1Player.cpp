@@ -635,7 +635,32 @@ void ADC1Player::OnDeath()
 		{
 			UIManager->SetHUDVisibility(false);
 		}
+
+		PlayDeathSoundAt(0);
 	}
+}
+
+void ADC1Player::PlayDeathSoundAt(int32 InIndex)
+{
+	DeathSoundIndex = InIndex;
+	if (false == DeathSounds.IsValidIndex(InIndex))
+	{
+		DeathAudio = nullptr;
+		return;
+	}
+
+	DeathAudio = UGameplayStatics::SpawnSound2D(this, DeathSounds[InIndex]);
+	if (nullptr == DeathAudio)
+	{
+		PlayDeathSoundAt(InIndex + 1);
+		return;
+	}
+	DeathAudio->OnAudioFinished.AddDynamic(this, &ThisClass::HandleDeathSoundFinished);
+}
+
+void ADC1Player::HandleDeathSoundFinished()
+{
+	PlayDeathSoundAt(DeathSoundIndex + 1);
 }
 
 void ADC1Player::ApplyClimbState(bool IsApply)
@@ -964,6 +989,13 @@ void ADC1Player::Clear_Resource()
 
 	if(true == DeathScreenTimerHandle.IsValid())
 		GetWorldTimerManager().ClearTimer(DeathScreenTimerHandle);
+
+	// 징글이 끝나기 전에 사라지면 다음 곡으로 넘어가지 않게 끊는다 ( 재생 중인 곡은 끝까지 )
+	if (true == IsValid(DeathAudio))
+	{
+		DeathAudio->OnAudioFinished.RemoveAll(this);
+		DeathAudio = nullptr;
+	}
 }
 
 void ADC1Player::OnWeaponStateChanged(const FGameplayTag Tag, int32 NewCount)

@@ -325,6 +325,7 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 
 		// 철거음 - 철거한 플레이어 경유로 전원 재생 ( RequestDestroy 전에 위치를 잡아둔다 )
 		const FVector DismantleLocation = InTarget->GetActorLocation();
+		USoundBase* TargetDismantleSound = (nullptr != InTarget->GetDismantleSound()) ? InTarget->GetDismantleSound() : DismantleSound.Get();
 		const bool WasDestroying = InTarget->IsInDestroySequence();
 
 		DestroySubsystem->RequestDestroy(InTarget, PS, EDC1BuildRefundMode::ToInstigator);
@@ -332,7 +333,7 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 		ADC1Player* Dismantler = (nullptr != PC) ? PC->GetPawn<ADC1Player>() : nullptr;
 		if (false == WasDestroying && nullptr != Dismantler)
 		{
-			Dismantler->PlayWorldSound(DismantleSound, DismantleLocation);
+			Dismantler->PlayWorldSound(TargetDismantleSound, DismantleLocation);
 		}
 	}
 }

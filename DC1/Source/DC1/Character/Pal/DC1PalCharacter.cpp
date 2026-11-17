@@ -553,6 +553,16 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	{
 		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Hit);
 	}
+
+	if (nullptr != HitSound)
+	{
+		Multicast_PlayHitSound(GetActorLocation());
+	}
+}
+
+void ADC1PalCharacter::Multicast_PlayHitSound_Implementation(FVector_NetQuantize InLocation)
+{
+	UGameplayStatics::PlaySoundAtLocation(this, HitSound, InLocation);
 }
 
 void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Data)

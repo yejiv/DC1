@@ -15,6 +15,7 @@
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Subsystem/DC1SoundSettingSubsystem.h"
@@ -219,6 +220,12 @@ void ADC1PlayerController::BeginPlay()
 		SoundSubsystem->ApplyAllVolumes();
 	}
 
+	// 필드 BGM ( 사운드 에셋 Looping 켜져 있어야 함 )
+	if (nullptr != MainBGM)
+	{
+		MainBGMAudio = UGameplayStatics::SpawnSound2D(this, MainBGM, 1.f, 1.f, 0.f, nullptr, false, false);
+	}
+
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
 	{
@@ -241,6 +248,12 @@ void ADC1PlayerController::BeginPlay()
 void ADC1PlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+
+	if (true == ::IsValid(MainBGMAudio))
+	{
+		MainBGMAudio->Stop();
+		MainBGMAudio = nullptr;
+	}
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
 	if (false == ::IsValid(UIManager))
@@ -977,7 +990,13 @@ void ADC1PlayerController::OpenTabWidget(FGameplayTag InUITag, FGameplayTag InTa
 		return;
 	}
 
-	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(UIManager->PushScreen(InUITag, true));
+	UDC1UserWidget* PushedWidget = UIManager->PushScreen(InUITag, true);
+	if (nullptr != PushedWidget)
+	{
+		UGameplayStatics::PlaySound2D(this, MenuOpenSound);
+	}
+
+	UDC1TabWidget* TabWidget = Cast<UDC1TabWidget>(PushedWidget);
 	if (nullptr != TabWidget)
 	{
 		if (true == InTab.IsValid())
