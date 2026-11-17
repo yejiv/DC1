@@ -46,7 +46,7 @@ private:
 	// 팰 작업 데미지 표시 여부(거리)
 	static bool IsWorkNumberHidden(const FGameplayEffectModCallbackData& InData, const AActor* InTarget);
 	// 데미지(WidgetComp) 위치 계산 
-	static FVector GetNumberLocation(const AActor* InTarget);
+	static FVector GetNumberLocation(const FGameplayEffectModCallbackData& InData, const AActor* InTarget);
 	// 모든 데미지 표시 여부(거리)
 	bool IsTooFarFromCamera(const FVector& InLocation) const;
 	// 풀 확인 ( Free -> (Activate(상한)) -> New 순서)

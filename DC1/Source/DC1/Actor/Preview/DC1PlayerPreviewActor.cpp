@@ -94,6 +94,8 @@ void ADC1PlayerPreviewActor::CopySkeletalMesh(USkeletalMeshComponent* InSource, 
 	}
 
 	InCopy->SetSkeletalMeshAsset(InSource->GetSkeletalMeshAsset());
+	// Hairequip 붙이기용
+	InCopy->AttachToComponent(InCopy->GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform, InSource->GetAttachSocketName());
 	InCopy->SetRelativeTransform(InSource->GetRelativeTransform());
 
 	// 외형 색상은 원본의 동적 머티리얼에 들어 있으므로 그대로 공유

@@ -72,6 +72,15 @@ void ADC1ProductionBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& Ou
 {
 	Super::GetInteractOptions(OutOptions);
 
+	// 팰만 작업 가능한 건물이면 상호작용 키 숨김
+	if (true == IsCompleted() && true == IsPalOnlyWork)
+	{
+		OutOptions.RemoveAll([](const FDC1InteractOption& Option)
+			{
+				return Option.InteractionTag == DC1InteractTags::Interact_Work;
+			});
+	}
+
 	if (false == IsCompleted() || StoredCount <= 0)
 	{
 		return;
@@ -156,7 +165,7 @@ bool ADC1ProductionBuildActor::CanAcceptWorker(const ADC1Character* InWorker) co
 		return false;
 	}
 
-	return (true == CanProduce()) && (StoredCount <= 0);
+	return (false == IsPalOnlyWork) && (true == CanProduce()) && (StoredCount <= 0);
 }
 
 void ADC1ProductionBuildActor::OnWorkTick(float InWork)

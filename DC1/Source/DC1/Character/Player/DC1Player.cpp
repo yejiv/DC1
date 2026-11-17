@@ -302,7 +302,6 @@ void ADC1Player::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	HairMesh->SetLeaderPoseComponent(GetMesh());
-	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
 }
 
 void ADC1Player::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -720,7 +719,7 @@ bool ADC1Player::CheckRemainStamina(float Stamina) const
 	return true;
 }
 
-void ADC1Player::Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType)
+void ADC1Player::Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType, FName InAttachBoneName, const FTransform& InAttachOffset)
 {
 	switch (InSlotType)
 	{
@@ -753,12 +752,16 @@ void ADC1Player::Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlo
 			if (false == IsValid(HairEquipMesh))
 				return;
 			HairEquipMesh->SetSkeletalMesh(InMesh, false);
+			if (nullptr == InMesh)
+				break;
 
-			// 투구를 쓰면 머리카락이 뚫고 나오지 않게 숨기고, 벗으면 다시 보인다
-			if (true == IsValid(HairMesh))
+			USkeletalMeshComponent* BodyMesh = GetMesh();
+			if (false == BodyMesh->DoesSocketExist(InAttachBoneName))
 			{
-				HairMesh->SetVisibility(nullptr == InMesh);
+				UE_LOG(LogTemp, Warning, TEXT("Change_EquipMesh : Bone '%s' Cant found BodyMesh"), *InAttachBoneName.ToString());
 			}
+			HairEquipMesh->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, InAttachBoneName);
+			HairEquipMesh->SetRelativeTransform(InAttachOffset);
 			break;
 		}
 	}

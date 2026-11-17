@@ -7,6 +7,7 @@
 #include "DC1BuildTabWidget.generated.h"
 
 class UDC1BuildViewModel;
+class UDC1UserButton;
 
 UCLASS()
 class DC1_API UDC1BuildTabWidget : public UDC1TabWidget
@@ -25,14 +26,17 @@ private:
 	void					RefreshAll();
 	void					RefreshCostState();
 	void					HandleBuildUnlocked(const FGameplayTag& InUnlockedTag);
-
+	void					HandleDismantleClicked();
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Build")
-	FDC1KeyList				BuildCloseKeys;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDC1UserButton>		Button_DismantleMode = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "Build")
-	FDC1KeyList				DismantleKeys;
+	FDC1KeyList						BuildCloseKeys;
+
+	UPROPERTY(EditAnywhere, Category = "Build")
+	FDC1KeyList						DismantleKeys;
 
 private:
 	UPROPERTY()

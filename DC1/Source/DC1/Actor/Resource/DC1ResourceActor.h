@@ -17,6 +17,7 @@ class USoundBase;
 class ADC1DestroyActor;
 class ADC1PalCharacter;
 struct FOnAttributeChangeData;
+struct FGameplayEffectSpec;
 
 /*
 - 필드 채집 액터 ( 나무, 돌 )
@@ -38,6 +39,45 @@ enum class EDC1ResourceActorState : uint8
 	Depleted = 1,	// 숨김 + 콜리전 off, 리스폰 대기
 };
 
+USTRUCT(BlueprintType)
+struct FDC1ResourceDropItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName							ItemID;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop", meta = (ClampMin = "1"))
+	int32							Count = { 1 };
+};
+
+USTRUCT(BlueprintType)
+struct FDC1ResourceChanceDrop
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
+	FName							ItemID;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop", meta = (ClampMin = "1"))
+	int32							Count = { 1 };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float							Chance = { 0.5f };
+};
+
+USTRUCT(BlueprintType)
+struct FDC1ResourceDropTable
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop")
+	FDC1ResourceDropItem			Guaranteed;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop")
+	TArray<FDC1ResourceChanceDrop>	ChanceDrops;
+};
+
 UCLASS()
 class DC1_API ADC1ResourceActor : public AActor, public IAbilitySystemInterface, public IDC1WorkTargetInterface
 {
@@ -48,6 +88,7 @@ public:
 
 public:
 	float								GetWorkNumberRange() const { return WorkNumberRange; }
+	FVector								GetDropOrigin(const FGameplayEffectSpec* InSpec) const;
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
@@ -79,7 +120,6 @@ private:
 	void	Respawn();
 	void	WakeForReplication();
 	void	SleepForReplication();
-	FVector	GetDropOrigin(const FOnAttributeChangeData& InData) const;
 	void	AccumulateDrop(float InDamage, const FVector& InOrigin);
 
 	UFUNCTION()
@@ -138,13 +178,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
 	FName											DropItemID;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop")
+	FDC1ResourceDropTable							DropTable;
+
+
 	// DropDamage만큼 HP가 줄 때마다 드랍 1회
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop", meta = (ClampMin = "1"))
 	float											DropDamage = { 10.f };
-
-	// 드랍 1회 당 떨어트릴 개수( Pickup Item 1개가 가지는 개수 ) , ex) DropCountPerDrop == 3이면 DropItem 1개 Spawn -> 획득 시 3개 획득
-	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop", meta = (ClampMin = "1"))
-	int32											DropCountPerDrop = { 1 };
 
 	// 이 노드가 요구하는 작업 종류 - 나무 Work.Lumbering / 돌 Work.Mining
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Work", meta = (Categories = "Work"))

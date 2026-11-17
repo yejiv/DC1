@@ -22,6 +22,7 @@ namespace DC1BuildTags
 
 	#pragma region CRAFTING_CRAFTANDREAPIR
 		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_CraftAndRepair_WorkBench00, "Build.Crafting.CraftAndRepair.WorkBench00");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Crafting_CraftAndRepair_WorkBench01, "Build.Crafting.CraftAndRepair.WorkBench01");
 	#pragma endregion
 	
 	#pragma region CRAFTING_SPHERE
@@ -52,10 +53,12 @@ namespace DC1BuildTags
 
 	#pragma region STORAGE_BOX
 		UE_DEFINE_GAMEPLAY_TAG(Build_Storage_Box_Chest, "Build.Storage.Box.Chest");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Storage_Box_MetalChest, "Build.Storage.Box.MetalChest");
 	#pragma endregion
 	
 	#pragma region FOOD_COOK
-		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Cook_CampFire, "Build.Food.Cook.CampFire");							
+		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Cook_CampFire, "Build.Food.Cook.CampFire");
+		UE_DEFINE_GAMEPLAY_TAG(Build_Food_Cook_CookingPot, "Build.Food.Cook.CookingPot");
 	#pragma endregion
 	
 	#pragma region FOOD_FARM
@@ -85,6 +88,7 @@ namespace DC1BuildTags
 
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_WoodBat, "Crafting.Weapon.WoodBat");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_MetalSword, "Crafting.Weapon.MetalSword");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Weapon_MetalBow, "Crafting.Weapon.MetalBow");
 
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Consume_Arrow, "Crafting.Item.Consume.Arrow");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Material_WoodPlank, "Crafting.Item.Material.WoodPlank");
@@ -92,18 +96,21 @@ namespace DC1BuildTags
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Item_Material_Cloth, "Crafting.Item.Material.Cloth");
 		
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body_ClothClothes, "Crafting.Armor.Body.ClothClothes");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body_LeatherArmor, "Crafting.Armor.Body.LeatherArmor");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Body_MetalArmor, "Crafting.Armor.Body.MetalArmor");
 
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Head_LeatherArmor, "Crafting.Armor.Head.LeatherArmor");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Armor_Head_MetalArmor, "Crafting.Armor.Head.MetalArmor");
 
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_PalSphere, "Crafting.Sphere.PalSphere");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_MegaSphere, "Crafting.Sphere.MegaSphere");
-
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Sphere_GigaSphere, "Crafting.Sphere.GigaSphere");
+		
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Normal, "Crafting.Glider.Normal");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Glider_Mega, "Crafting.Glider.Mega");
 
-		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shiled_Normal, "Crafting.Shiled.Normal");
-		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shiled_Mega, "Crafting.Shiled.Mega");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shield_Normal, "Crafting.Shield.Normal");
+		UE_DEFINE_GAMEPLAY_TAG(Crafting_Shield_Mega, "Crafting.Shield.Mega");
 
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Valuable_SmallPouch, "Crafting.Valuable.SmallPouch");
 		UE_DEFINE_GAMEPLAY_TAG(Crafting_Valuable_SamllFoodbag, "Crafting.Valuable.SamllFoodbag");

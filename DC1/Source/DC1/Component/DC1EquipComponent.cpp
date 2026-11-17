@@ -159,6 +159,23 @@ float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
 	return EquipRow->AttackPower;
 }
 
+float UDC1EquipComponent::GetCurrentWeaponDamageRate(const FGameplayTag& InWorkTypeTag) const
+{
+	const int32 EquipSlotIndex = GetCurrentWeaponEquipIndex();
+	if (false == EquipSlots.IsValidIndex(EquipSlotIndex)) return 1.f;
+
+	const FName ItemID = EquipSlots[EquipSlotIndex].ItemID;
+	if (NAME_None == ItemID) return 1.f;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(ItemID);
+	if (nullptr == EquipRow) return 1.f;
+
+	if (InWorkTypeTag == DC1WorkTags::Work_Lumbering) return EquipRow->LumberingDamageRate;
+	if (InWorkTypeTag == DC1WorkTags::Work_Mining) return EquipRow->MiningDamageRate;
+
+	return 1.f;
+}
+
 void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
 {
 	if (nullptr == CurrentGlider) return;
@@ -425,12 +442,14 @@ void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
 
 	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentHairEquipID);
 
-	USkeletalMesh* Mesh = { nullptr };
-	if (nullptr != EquipRow)
+	if (nullptr == EquipRow)
 	{
-		Mesh = EquipRow->EquipMesh.LoadSynchronous();
+		Player->Change_EquipMesh(nullptr, EDC1EquipSlotType::Head);
 	}
-	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Head);
+	else
+	{
+		Player->Change_EquipMesh(EquipRow->EquipMesh.LoadSynchronous(), EDC1EquipSlotType::Head, EquipRow->AttachBoneName, EquipRow->AttachOffset);
+	}
 
 	OnArmorChanged.Broadcast();
 }
@@ -629,7 +648,15 @@ void UDC1EquipComponent::EquipTool(const FGameplayTag& ToolTag)
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		CurrentTool->AttachSocketName
 	);
+	// SubTool
+	if (nullptr != CurrentTool->SubToolMesh->GetSkeletalMeshAsset())
+	{
+		// ToolMesh들이 Item Mesh 기준 오프셋을 잡아뒀기에 KeepRelativeTransform
+		CurrentTool->SubToolMesh->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, CurrentTool->SubAttachSocketName);
+	}
+
 	CurrentTool->SetActorHiddenInGame(false);
+
 }
 
 void UDC1EquipComponent::UnequipTool(const FGameplayTag& ToolTag)

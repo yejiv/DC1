@@ -185,8 +185,21 @@ struct FDC1EquipItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<USkeletalMesh> EquipMesh;
 
+	// HeadEquip 전용, 어느 뼈에 붙을것인지
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName AttachBoneName;
+	// HeadEquip 전용, Attach Offset
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FTransform AttachOffset;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 AttackPower = 0;
+	// 벌목 데미지 배율 ( 도끼 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float LumberingDamageRate = 1.f;
+	// 채굴 데미지 배율 ( 곡괭이 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float MiningDamageRate = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 DefensePower = 0;
