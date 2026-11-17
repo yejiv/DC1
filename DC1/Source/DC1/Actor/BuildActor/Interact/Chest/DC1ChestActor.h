@@ -7,6 +7,7 @@
 #include "DC1ChestActor.generated.h"
 
 class UDC1ChestInventoryComponent;
+class USoundBase;
 
 /**
  * 상자 액터
@@ -59,4 +60,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Chest")
 	TObjectPtr<UDC1ChestInventoryComponent>	ChestInventoryComp = { nullptr };
+
+	// 열 때 랜덤 재생 ( 연 플레이어 경유로 다른 클라도 들음 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>	OpenSounds;
 };

@@ -15,6 +15,7 @@ struct FDC1BuildSnapInput;
 
 class ADC1BuildActor;
 class UDC1BuildSnapSolver;
+class USoundBase;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDC1OnBuildModeChanged, EDC1BuildMode, const FGameplayTag&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnBuildBlockReasonChanged, EDC1BuildBlockReason);
@@ -114,6 +115,18 @@ private:
 	float				ComputeAimDistance() const;
 
 private:
+	// 철거 - 철거한 플레이어 경유로 전원 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
+	TObjectPtr<USoundBase>	DismantleSound = { nullptr };
+
+	// 설치 불가 상태에서 확정 입력 ( 본인만 )
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
+	TObjectPtr<USoundBase>	PlaceErrorSound = { nullptr };
+
+	// 건축 모드 나가기 / 메뉴로 돌아가기 입력 ( 본인만 )
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
+	TObjectPtr<USoundBase>	CancelSound = { nullptr };
+
 	// 배치 거리
 	UPROPERTY(EditAnywhere, Category = "Build|Placement")
 	float		PlaceMargin = { 30.f };

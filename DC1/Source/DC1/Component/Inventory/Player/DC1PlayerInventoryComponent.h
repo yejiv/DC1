@@ -8,6 +8,7 @@
 
 class UDC1ChestInventoryComponent;
 class UDC1ValuableInventoryComponent;
+class USoundBase;
 
 struct FOnAttributeChangeData;
 
@@ -265,6 +266,21 @@ protected:
 	// 시작할 때 무기 칸에 장착할 아이템 ID (순서대로 무기 1, 2 ...)
 	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Equipment")
 	TArray<FName> DefaultWeaponItemIDs;
+
+	// 장비 착용 / 해제 요청 시 본인 화면에서 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> EquipWearSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> EquipTakeOffSound = { nullptr };
+
+	// 아이템 드랍 / 버리기 요청 시
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> DropSound = { nullptr };
+
+	// 상자로 옮기기 요청 시
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> ChestInSound = { nullptr };
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeight, BlueprintReadOnly, Category = "Inventory|Weight")
 	float CurrentWeight = 0.0f;

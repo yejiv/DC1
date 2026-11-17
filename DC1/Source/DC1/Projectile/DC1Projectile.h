@@ -10,6 +10,7 @@
 class USphereComponent;
 class UStaticMeshComponent;
 class UProjectileMovementComponent;
+class USoundBase;
 
 UCLASS(Abstract)
 class DC1_API ADC1Projectile : public AActor
@@ -35,4 +36,19 @@ public:
 
 	// 발사 시점에 굳어진 데미지. 쏘는 쪽이 채워준다
 	FGameplayEffectSpecHandle						DamageSpec;
+
+protected:
+	// 발사음. 서버 스폰 후 각 클라 BeginPlay에서 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							LaunchSound = { nullptr };
+
+	// 명중음. 클라도 자체 이동 시뮬레이션으로 Hit가 와서 권한 검사 전에 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							HitCharacterSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							HitObjectSound = { nullptr };
+
+	// 튕김 등으로 Hit가 여러 번 와도 한 번만
+	bool											bHitSoundPlayed = { false };
 };

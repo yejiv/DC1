@@ -13,6 +13,8 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 
+#include "Kismet/GameplayStatics.h"
+
 void UDC1InventorySlotWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
@@ -210,6 +212,8 @@ void UDC1InventorySlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, co
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 
 	ShowHoverImage();
+
+	UGameplayStatics::PlaySound2D(this, HoverSound);
 }
 
 void UDC1InventorySlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)

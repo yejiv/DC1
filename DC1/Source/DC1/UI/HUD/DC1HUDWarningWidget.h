@@ -8,6 +8,7 @@
 class UDynamicEntryBox;
 class UDC1HUDWarningRow;
 class UDC1PlayerStatusViewModel;
+class USoundBase;
 
 UCLASS()
 class DC1_API UDC1HUDWarningWidget : public UDC1UserWidget
@@ -47,6 +48,13 @@ private:
 	// 경고 표시 색
 	UPROPERTY(EditAnywhere, Category = "Warning|Hunger")
 	FLinearColor	DangeColor = FLinearColor(1.f, 0.15f, 0.15f, 1.f);
+
+	// 경고가 새로 뜰 때 재생
+	UPROPERTY(EditAnywhere, Category = "Warning|Sound")
+	TObjectPtr<USoundBase>	HungerSound = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = "Warning|Sound")
+	TObjectPtr<USoundBase>	StarveSound = { nullptr };
 
 private:
 	TWeakObjectPtr<UDC1PlayerStatusViewModel> StatusViewModel = { nullptr };

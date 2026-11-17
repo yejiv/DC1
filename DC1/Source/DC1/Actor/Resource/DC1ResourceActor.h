@@ -13,6 +13,7 @@ class UDC1AttributeSet;
 class UStaticMeshComponent;
 class UGeometryCollection;
 class UNiagaraSystem;
+class USoundBase;
 class ADC1DestroyActor;
 class ADC1PalCharacter;
 struct FOnAttributeChangeData;
@@ -125,6 +126,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Destroy")
 	TObjectPtr<UNiagaraSystem>						DestroyDustFX = { nullptr };
+
+	// 고갈 연출과 같이 재생 ( 나무 쓰러짐 / 바위 부서짐 )
+	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
+	TObjectPtr<USoundBase>							DestroySound = { nullptr };
+
+	// 타격마다 랜덤 재생. 클라는 Health 복제 시점에 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
+	TArray<TObjectPtr<USoundBase>>					HitSounds;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
 	FName											DropItemID;

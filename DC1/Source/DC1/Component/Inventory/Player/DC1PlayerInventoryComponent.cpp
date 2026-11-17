@@ -20,6 +20,8 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "Tags/UI/DC1GameplayTag_UI.h"
+
+#include "Kismet/GameplayStatics.h"
 UDC1PlayerInventoryComponent::UDC1PlayerInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -741,6 +743,11 @@ void UDC1PlayerInventoryComponent::Server_MoveChestItem_Implementation(UDC1Chest
 
 void UDC1PlayerInventoryComponent::RequestTransferItem(UDC1ChestInventoryComponent* InChestComp, bool bToChest, int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount /* = -1 */)
 {
+	if (true == bToChest)
+	{
+		UGameplayStatics::PlaySound2D(this, ChestInSound);
+	}
+
 	Server_TransferItem(InChestComp, bToChest, FromSlotIndex, ToSlotIndex, MoveCount);
 }
 
@@ -855,6 +862,8 @@ void UDC1PlayerInventoryComponent::Server_SortValuables_Implementation()
 void UDC1PlayerInventoryComponent::RequestEquipItem(int32 InSlotIndex, int32 InEquipSlotIndex)
 {
 	Server_EquipItem(InSlotIndex, InEquipSlotIndex);
+
+	UGameplayStatics::PlaySound2D(this, EquipWearSound);
 }
 
 bool UDC1PlayerInventoryComponent::Server_EquipItem_Validate(int32 InSlotIndex, int32 InEquipSlotIndex)
@@ -871,6 +880,8 @@ void UDC1PlayerInventoryComponent::Server_EquipItem_Implementation(int32 InSlotI
 void UDC1PlayerInventoryComponent::RequestEquipItemAuto(int32 InSlotIndex)
 {
 	Server_EquipItemAuto(InSlotIndex);
+
+	UGameplayStatics::PlaySound2D(this, EquipWearSound);
 }
 
 bool UDC1PlayerInventoryComponent::Server_EquipItemAuto_Validate(int32 InSlotIndex)
@@ -886,6 +897,8 @@ void UDC1PlayerInventoryComponent::Server_EquipItemAuto_Implementation(int32 InS
 void UDC1PlayerInventoryComponent::RequestUnequipItem(int32 InEquipSlotIndex, int32 InToSlotIndex /* = -1 */)
 {
 	Server_UnequipItem(InEquipSlotIndex, InToSlotIndex);
+
+	UGameplayStatics::PlaySound2D(this, EquipTakeOffSound);
 }
 
 bool UDC1PlayerInventoryComponent::Server_UnequipItem_Validate(int32 InEquipSlotIndex, int32 InToSlotIndex)
@@ -904,6 +917,7 @@ void UDC1PlayerInventoryComponent::Server_UnequipItem_Implementation(int32 InEqu
 
 void UDC1PlayerInventoryComponent::RequestDropItem(int32 InSlotIndex, int32 InCount)
 {
+	UGameplayStatics::PlaySound2D(this, DropSound);
 	Server_DropItem(InSlotIndex, InCount);
 }
 
@@ -919,6 +933,7 @@ void UDC1PlayerInventoryComponent::Server_DropItem_Implementation(int32 InSlotIn
 
 void UDC1PlayerInventoryComponent::RequestDiscardItem(int32 InSlotIndex, int32 InCount)
 {
+	UGameplayStatics::PlaySound2D(this, DropSound);
 	Server_DiscardItem(InSlotIndex, InCount);
 }
 

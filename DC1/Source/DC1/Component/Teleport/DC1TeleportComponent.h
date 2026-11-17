@@ -7,6 +7,8 @@
 #include "Interface/DC1SaveInterface.h"
 #include "DC1TeleportComponent.generated.h"
 
+class USoundBase;
+
 /**
  *
  * 텔레포트 지점 해금 목록. ADC1PlayerState에 붙는다.
@@ -81,6 +83,10 @@ private:
 	// 서버 검증용 지점 상호작용 허용 거리 ( 네트워크 지연을 감안해 상호작용 범위보다 넉넉하게 )
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport", meta = (ClampMin = "0.0"))
 	float					InteractAllowDistance = { 500.f };
+
+	// 순간이동 도착음 ( 서버에서 도착 지점에 Multicast )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Sound")
+	TObjectPtr<USoundBase>	TeleportSound = { nullptr };
 
 	// 부활 요청 후 새 Pawn 대기 중 ( 본인 클라 )
 	bool					bPendingRespawnFade = { false };

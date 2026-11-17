@@ -15,6 +15,7 @@ class UImage;
 class UTextBlock;
 class UWidgetAnimation;
 class UTexture2D;
+class USoundBase;
 
 class UDC1InventoryEntryWidget;
 class UDC1InventoryTooltipWidget;
@@ -113,4 +114,8 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UDC1InventoryTooltipWidget> CachedTooltip = { nullptr };
+
+	// 슬롯은 UButton이 아니라 Style 사운드가 없음 -> MouseEnter에서 직접 재생
+	UPROPERTY(EditAnywhere, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> HoverSound = { nullptr };
 };

@@ -8,6 +8,7 @@
 #include "DC1PalSphere.generated.h"
 
 class UWidgetComponent;
+class USoundBase;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnPalCaptured, const FDC1PalInstance&);
 
@@ -59,6 +60,11 @@ public:
 
 protected:
 	virtual void			BeginPlay() override;
+	// 포획 실패 시 서버가 Destroy -> 클라도 EndPlay에서 실패음 재생
+	virtual void			EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// 포획 단계음 ( 서버 SetCaptureDisplay / 클라 OnRep 공통 )
+	void					PlayCaptureStageSound();
 
 	UFUNCTION()
 	void					OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -114,6 +120,31 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.1"))
 	float					SuccessHoldDuration = { 0.8f };
 
+	// 팰 명중
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	HitPalSound = { nullptr };
+
+	// 팰 외 명중 ( 땅 등 ), 랜덤 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>	HitGroundSounds;
+
+	// 스피어 열림 / 닫힘 ( bSphereOpen 변화를 Tick에서 감지 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureOpenSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureCloseSound = { nullptr };
+
+	// 판정 단계마다 ( 1단계부터 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureShakeSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureSuccessSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureFailSound = { nullptr };
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
 	FDC1CaptureDisplay		CaptureDisplay;
@@ -122,6 +153,12 @@ private:
 	UPROPERTY(Replicated)
 	bool					bSphereOpen = { false }; // 열림 여부. 서버가 정함
 	float					OpenAlpha = { 0.f };
+
+	// 지난 Tick의 bSphereOpen. 열림/닫힘 사운드 감지용 ( 서버 / 클라 각자 )
+	bool					bPrevSphereOpen = { false };
+
+	// 같은 단계 OnRep 중복 재생 방지
+	int8					LastSoundStage = { INDEX_NONE };
 
 	FVector					RiseStart = { FVector::ZeroVector };
 	FVector					RiseEnd = { FVector::ZeroVector };

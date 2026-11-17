@@ -30,6 +30,10 @@
 #include "AbilitySystem/Attribute/DC1CharacterAttributeSet.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 
+#include "Define/DC1Helper.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
+
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
@@ -410,6 +414,8 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 		ApplyGlideState(OnGliding);
 		ApplyClimbState(OnClimbing);
 
+		PlayMovementModeSound(PrevMovementMode, PreviousCustomMode, OnGliding, OnClimbing);
+
 		// Weapon Visiblity Setting
 		if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
 		{
@@ -423,6 +429,111 @@ void ADC1Player::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 Pre
 			ApplyClimbJumpStamina();
 		}
 	}
+}
+
+void ADC1Player::PlayMovementModeSound(EMovementMode PrevMovementMode, uint8 PreviousCustomMode, bool OnGliding, bool OnClimbing)
+{
+	const bool WasGliding = (PrevMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Glide);
+	const bool WasClimbing = (PrevMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Climb);
+
+	// 착지
+	if (PrevMovementMode == MOVE_Falling && true == GetCharacterMovement()->IsMovingOnGround())
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DC1SoundHelper::PickRandom(LandingSounds), GetActorLocation());
+	}
+
+	// 활공 시작 / 종료
+	if (false == WasGliding && true == OnGliding)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GlideStartSound, GetActorLocation());
+		SetGlideLoopSound(true);
+	}
+	else if (true == WasGliding && false == OnGliding)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GlideEndSound, GetActorLocation());
+		SetGlideLoopSound(false);
+	}
+
+	// 벽에 붙는 순간
+	if (false == WasClimbing && true == OnClimbing)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DC1SoundHelper::PickRandom(ClimbStartSounds), GetActorLocation());
+	}
+}
+
+void ADC1Player::SetGlideLoopSound(bool IsPlay)
+{
+	if (true == IsPlay)
+	{
+		if (nullptr == GlideLoopSound || NM_DedicatedServer == GetNetMode())
+		{
+			return;
+		}
+
+		if (false == ::IsValid(GlideLoopAudio))
+		{
+			// 수동으로 멈추므로 자동 파괴 X
+			GlideLoopAudio = UGameplayStatics::SpawnSoundAttached(GlideLoopSound, GetRootComponent(), NAME_None, FVector::ZeroVector, EAttachLocation::KeepRelativeOffset, true, 1.f, 1.f, 0.f, nullptr, nullptr, false);
+		}
+		else
+		{
+			GlideLoopAudio->Play();
+		}
+
+		return;
+	}
+
+	if (true == ::IsValid(GlideLoopAudio))
+	{
+		GlideLoopAudio->Stop();
+	}
+}
+
+void ADC1Player::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	UGameplayStatics::PlaySoundAtLocation(this, CrouchSound, GetActorLocation());
+}
+
+void ADC1Player::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	UGameplayStatics::PlaySoundAtLocation(this, UnCrouchSound, GetActorLocation());
+}
+
+void ADC1Player::PlayWorldSound(USoundBase* InSound, const FVector& InLocation)
+{
+	if (nullptr == InSound)
+	{
+		return;
+	}
+
+	if (true == HasAuthority())
+	{
+		Multicast_PlayWorldSound(InSound, InLocation, false);
+		return;
+	}
+
+	// 본인은 지연 없이 바로 듣고, 다른 클라는 서버 Multicast로 듣는다
+	UGameplayStatics::PlaySoundAtLocation(this, InSound, InLocation);
+	Server_PlayWorldSound(InSound, InLocation);
+}
+
+void ADC1Player::Server_PlayWorldSound_Implementation(USoundBase* InSound, FVector_NetQuantize InLocation)
+{
+	Multicast_PlayWorldSound(InSound, InLocation, true);
+}
+
+void ADC1Player::Multicast_PlayWorldSound_Implementation(USoundBase* InSound, FVector_NetQuantize InLocation, bool InSkipLocal)
+{
+	if (true == InSkipLocal && true == IsLocallyControlled())
+	{
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, InSound, InLocation);
 }
 
 void ADC1Player::OnHealthDepleted()

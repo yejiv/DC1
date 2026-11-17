@@ -11,6 +11,7 @@
 class UStaticMeshComponent;
 class UBoxComponent;
 class UArrowComponent;
+class USoundBase;
 
 UCLASS()
 class DC1_API ADC1TeleportActor : public AActor, public IDC1InteractableInterface, public IDC1TeleportPointInterface
@@ -73,4 +74,8 @@ private:
 	// 해금 / 세이브 키 ( 지점마다 고유 )
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	FName										PointId = { NAME_None };
+
+	// 해금 요청 시 본인 화면에서 재생 ( 서버 검증 실패는 거리 초과뿐이라 요청 시점에 바로 재생 )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Sound")
+	TObjectPtr<USoundBase>						UnlockSound = { nullptr };
 };

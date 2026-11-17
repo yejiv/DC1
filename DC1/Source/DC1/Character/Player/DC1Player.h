@@ -20,6 +20,8 @@ class UWidgetComponent;
 class UDC1ScreenOffsetWidgetComponent;
 
 class UGameplayEffect;
+class USoundBase;
+class UAudioComponent;
 
 class UDC1AbilitySystemComponent;
 class UDC1EquipComponent;
@@ -84,6 +86,22 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_ReleaseClimb();
 
+	// 다른 플레이어도 들어야 하는 월드 사운드 재생 ( 서버 - 전원 Multicast / 클라 - 본인 즉시 재생 + 서버 경유 )
+	void PlayWorldSound(USoundBase* InSound, const FVector& InLocation);
+
+	// 보호막 피격 / 파괴음 ( 서버 PlayerSet 데미지 처리에서 재생 )
+	USoundBase* GetShieldHitSound() const { return ShieldHitSound; }
+	USoundBase* GetShieldBreakSound() const { return ShieldBreakSound; }
+	USoundBase* GetHitSound() const { return HitSound; }
+
+private:
+	UFUNCTION(Server, Unreliable)
+	void Server_PlayWorldSound(USoundBase* InSound, FVector_NetQuantize InLocation);
+
+	// InSkipLocal : 요청한 클라는 이미 재생했으므로 건너뜀
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayWorldSound(USoundBase* InSound, FVector_NetQuantize InLocation, bool InSkipLocal);
+
 public:
 	void ToggleMove();
 	void SetSprint(bool Sprint);
@@ -112,6 +130,10 @@ private:
 	virtual void NotifyControllerChanged() override;
 
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+
+	// 앉기 사운드 ( bIsCrouched 복제로 다른 클라에서도 호출됨 )
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 	virtual void OnHealthDepleted() override;
 	virtual void OnDeath() override;
@@ -188,6 +210,10 @@ private:
 
 	void	ApplyGlideState(bool IsApply);
 
+	// 이동 모드 전환 사운드 ( 착지, 활공 시작/종료, 벽 붙기 ). 시뮬레이티드 프록시도 OnMovementModeChanged를 거친다
+	void	PlayMovementModeSound(EMovementMode PrevMovementMode, uint8 PreviousCustomMode, bool OnGliding, bool OnClimbing);
+	void	SetGlideLoopSound(bool IsPlay);
+
 private:
 	FGameplayTag ConvertWeaponTagToAnimTag(const FGameplayTag& Tag);
 
@@ -220,6 +246,45 @@ private:
 	float											ClimbMovingSpeedThreshold = { 1.f };
 	UPROPERTY(EditDefaultsOnly, Category = "Climb")
 	float											ClimbJumpStaminaCost = { 10.f };
+
+	// 변형 여러 개 중 랜덤 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>					LandingSounds;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							CrouchSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							UnCrouchSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							GlideStartSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							GlideEndSound = { nullptr };
+
+	// 활공 중 반복 재생 ( 사운드 에셋 Looping 켜져 있어야 함 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							GlideLoopSound = { nullptr };
+
+	// 벽에 붙는 순간
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>					ClimbStartSounds;
+
+	// 보호막이 남아 있는 상태로 맞았을 때
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							ShieldHitSound = { nullptr };
+
+	// 보호막이 0이 되는 순간 ( 피격음 대신 재생 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							ShieldBreakSound = { nullptr };
+
+	// 보호막 없이 체력이 깎일 때
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>							HitSound = { nullptr };
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent>						GlideLoopAudio = { nullptr };
 
 	// 판정 창 하나에서 이미 때린 대상. 창이 열릴 때마다 비운다
 	TSet<TWeakObjectPtr<AActor>>		HitTargetsInWindow;

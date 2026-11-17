@@ -4,6 +4,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerState.h"
 #include "Tags/DC1GamePlayTags.h"
 
@@ -367,6 +368,13 @@ void UDC1EquipComponent::Server_ChangeWeapon_Implementation(int32 Delta)
 	else if (CurrentWeaponIndex >= WeaponCount) CurrentWeaponIndex = 0;
 
 	ApplyWeaponAttach();
+
+	// 장착음은 무기 교체 입력일 때만 ( 접속 / 로드 시 초기 장착은 제외 )
+	ADC1Player* Player = GetOwningPlayer();
+	if (nullptr != CurrentWeapon && nullptr != Player)
+	{
+		Player->PlayWorldSound(CurrentWeapon->EquipSound, Player->GetActorLocation());
+	}
 }
 
 int32 UDC1EquipComponent::GetUnlockedWeaponCount() const

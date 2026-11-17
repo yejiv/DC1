@@ -12,6 +12,7 @@ struct FOnAttributeChangeData;
 struct FGameplayEventData;
 
 class UAbilitySystemComponent;
+class USoundBase;
 
 // 가용 포인트 또는 투자 횟수 변경
 DECLARE_MULTICAST_DELEGATE(FDC1OnStatPointsChanged);
@@ -121,6 +122,10 @@ private:
 	UFUNCTION()
 	void	OnRep_InvestedStats();
 
+	// 레벨업 알림음 ( 서버 GainExperience -> 주인 클라 ). 로드로 인한 레벨 변화와 구분하려고 RPC로 보낸다
+	UFUNCTION(Client, Unreliable)
+	void	Client_PlayLevelUpSound();
+
 	// 강화(+횟수)와 이후 초기화(-투자 횟수)가 같이 쓰는 어트리뷰트 반영 함수
 	void	ApplyStatInvestment(EDC1PlayerStat InStat, int32 InDeltaCount);
 
@@ -152,6 +157,9 @@ private:
 	// 패널에 표시할 스탯과 강화 규칙
 	UPROPERTY(EditDefaultsOnly, Category = "Stat")
 	TMap<EDC1PlayerStat, FDC1PlayerStatDefinition> StatDefinitions;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> LevelUpSound = { nullptr };
 
 private:
 	FGameplayTagContainer ExpFilter = {};

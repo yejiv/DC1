@@ -14,6 +14,7 @@
 #include "Tags/DC1GamePlayTags.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Subsystem/DC1SoundSettingSubsystem.h"
@@ -599,6 +600,8 @@ void ADC1PlayerController::OnRidePressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->Server_ToggleRide();
+
+		UGameplayStatics::PlaySound2D(this, RideToggleSound);
 	}
 
 	if (UDC1ViewModelSubsystem* ViewModelSubsystem = GetLocalPlayer()->GetSubsystem<UDC1ViewModelSubsystem>())
@@ -643,6 +646,8 @@ void ADC1PlayerController::OnPalSlotPrevPressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->CycleSlot(-1);
+
+		UGameplayStatics::PlaySound2D(this, PalSlotChangeSound);
 	}
 }
 
@@ -657,6 +662,8 @@ void ADC1PlayerController::OnPalSlotNextPressed(const FInputActionValue& Value)
 	if (UDC1PalPartyComponent* Party = DC1PlayerState->GetPalPartyComponent())
 	{
 		Party->CycleSlot(1);
+
+		UGameplayStatics::PlaySound2D(this, PalSlotChangeSound);
 	}
 }
 
@@ -671,6 +678,8 @@ void ADC1PlayerController::OnSphereNextPressed(const FInputActionValue& Value)
 	if (UDC1PalSphereComponent* SphereComp = DC1PlayerState->GetPalSphereComponent())
 	{
 		SphereComp->CycleSphere();
+
+		UGameplayStatics::PlaySound2D(this, SphereChangeSound);
 	}
 }
 

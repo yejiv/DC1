@@ -16,6 +16,8 @@
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Define/DC1Helper.h"
 
 ADC1PalSphere::ADC1PalSphere()
 	: Super()
@@ -86,6 +88,13 @@ void ADC1PalSphere::Tick(float DeltaSeconds)
 		}
 	}
 
+	// 열림 / 닫힘 순간 ( bSphereOpen은 OnRep이 없어서 여기서 감지 )
+	if (bPrevSphereOpen != bSphereOpen)
+	{
+		bPrevSphereOpen = bSphereOpen;
+		UGameplayStatics::PlaySoundAtLocation(this, (true == bSphereOpen) ? CaptureOpenSound : CaptureCloseSound, GetActorLocation());
+	}
+
 	const float Target = (true == bSphereOpen) ? 1.f : 0.f;
 
 	OpenAlpha = FMath::FInterpConstantTo(OpenAlpha, Target, DeltaSeconds, OpenSpeed);
@@ -130,6 +139,15 @@ float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRa
 
 void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	// 명중음 - 클라도 자체 시뮬레이션 Hit로 재생
+	if (false == bHitSoundPlayed)
+	{
+		bHitSoundPlayed = true;
+
+		USoundBase* HitSound = (nullptr != Cast<ADC1PalCharacter>(OtherActor)) ? HitPalSound.Get() : DC1SoundHelper::PickRandom(HitGroundSounds);
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, Hit.ImpactPoint);
+	}
+
 	if (false == HasAuthority())
 	{
 		return;
@@ -277,12 +295,48 @@ void ADC1PalSphere::SetCaptureDisplay(int32 InStage, float InChance, bool bInSuc
 	ForceNetUpdate();
 	RefreshCaptureWidget();
 	TryRequestCaptureNotice();
+	PlayCaptureStageSound();
 }
 
 void ADC1PalSphere::OnRep_CaptureDisplay()
 {
 	RefreshCaptureWidget();
 	TryRequestCaptureNotice();
+	PlayCaptureStageSound();
+}
+
+void ADC1PalSphere::PlayCaptureStageSound()
+{
+	// 성공은 단계 번호가 마지막 단계와 같으므로 단계보다 먼저 본다 ( INT8_MAX = 성공음 재생함 )
+	if (true == CaptureDisplay.bSuccess)
+	{
+		if (INT8_MAX != LastSoundStage)
+		{
+			LastSoundStage = INT8_MAX;
+			UGameplayStatics::PlaySoundAtLocation(this, CaptureSuccessSound, GetActorLocation());
+		}
+		return;
+	}
+
+	// 0단계는 닫힘음과 겹침
+	if (CaptureDisplay.Stage <= 0 || CaptureDisplay.Stage == LastSoundStage)
+	{
+		return;
+	}
+
+	LastSoundStage = CaptureDisplay.Stage;
+	UGameplayStatics::PlaySoundAtLocation(this, CaptureShakeSound, GetActorLocation());
+}
+
+void ADC1PalSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 판정이 시작된 뒤 성공 없이 사라짐 = 포획 실패
+	if (EEndPlayReason::Destroyed == EndPlayReason && INDEX_NONE != CaptureDisplay.Stage && false == CaptureDisplay.bSuccess)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, CaptureFailSound, GetActorLocation());
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ADC1PalSphere::TryRequestCaptureNotice()

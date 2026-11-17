@@ -6,6 +6,8 @@
 #include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Character/DC1Character.h"
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1Player.h"
+#include "Define/DC1Helper.h"
 #include "UI/Tab/Inventory/Chest/DC1ChestLootScreenWidget.h"
 #include "Subsystem/DC1UIManagerSubsystem.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
@@ -104,6 +106,11 @@ void ADC1ChestActor::OnCompletedInteract(ADC1Character* InInteractOwner, EDC1Int
 	}
 
 	LootScreen->OpenChest(ChestInventoryComp);
+
+	if (ADC1Player* Player = Cast<ADC1Player>(InInteractOwner))
+	{
+		Player->PlayWorldSound(DC1SoundHelper::PickRandom(OpenSounds), GetActorLocation());
+	}
 }
 
 void ADC1ChestActor::OnPlaced(const APlayerState* InBuilder)

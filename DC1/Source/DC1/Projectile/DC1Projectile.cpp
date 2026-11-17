@@ -7,6 +7,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 
 ADC1Projectile::ADC1Projectile()
 	: Super()
@@ -43,12 +45,21 @@ void ADC1Projectile::BeginPlay()
 	{
 		HitCollider->IgnoreActorWhenMoving(ProjectileInstigator, true);
 	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, LaunchSound, GetActorLocation());
 }
 
 void ADC1Projectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (false == HasAuthority()) return;
 	if (false == ::IsValid(OtherActor) || OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
+
+	if (false == bHitSoundPlayed)
+	{
+		bHitSoundPlayed = true;
+		UGameplayStatics::PlaySoundAtLocation(this, (nullptr != Cast<APawn>(OtherActor)) ? HitCharacterSound : HitObjectSound, Hit.ImpactPoint);
+	}
+
+	if (false == HasAuthority()) return;
 
 	// TODO : 팀필터 거르기
 	if (DamageSpec.IsValid())

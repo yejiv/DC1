@@ -207,6 +207,8 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 		CMC->ForceRotation(DestRotation, true);
 	}
 
+	Player->PlayWorldSound(TeleportSound, DestLocation);
+
 	return true;
 }
 

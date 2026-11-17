@@ -6,6 +6,7 @@
 #include "DC1GA_Player_CallPal.generated.h"
 
 class UAnimMontage;
+class USoundBase;
 
 /**
  * 팰 소환/회수 ( E ).
@@ -38,6 +39,13 @@ public:
 	// 회수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
 	TObjectPtr<UAnimMontage>	RetrieveMontage = { nullptr };
+
+	// 소환 / 회수 사운드
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Sound")
+	TObjectPtr<USoundBase>		DeploySound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Sound")
+	TObjectPtr<USoundBase>		RetrieveSound = { nullptr };
 
 private:
 
