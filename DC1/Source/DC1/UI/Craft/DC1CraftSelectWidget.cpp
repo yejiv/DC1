@@ -14,7 +14,7 @@
 #include "Components/DynamicEntryBox.h"
 #include "Components/EditableTextBox.h"
 #include "Components/Image.h"
-#include "Components/Slider.h"
+#include "UI/Bar/DC1Slider.h"
 #include "Components/TextBlock.h"
 
 void UDC1CraftSelectWidget::NativeOnInitialized()
@@ -93,6 +93,7 @@ void UDC1CraftSelectWidget::SetRecipe(const FDC1ItemRecipeRow& InRecipe, int32 I
 		Slider_Count->SetMinValue(1.f);
 		Slider_Count->SetMaxValue(static_cast<float>(FMath::Max(MaxCraftCount, 1)));
 		Slider_Count->SetIsEnabled(CanCraft);
+		Slider_Count->RefreshFill();
 	}
 
 	if (true == ::IsValid(Text_MaxCount))
@@ -151,6 +152,7 @@ void UDC1CraftSelectWidget::ApplyCountWidgets()
 	if (true == ::IsValid(Slider_Count))
 	{
 		Slider_Count->SetValue(static_cast<float>(FMath::Max(CraftCount, 1)));
+		Slider_Count->RefreshFill();
 	}
 
 	if (true == ::IsValid(Text_CurrentCount))

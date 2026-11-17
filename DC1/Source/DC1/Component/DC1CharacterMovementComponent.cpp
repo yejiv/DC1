@@ -8,6 +8,8 @@
 #include "Components/CapsuleComponent.h"
 
 #include "Character/Player/DC1Player.h"
+#include "Component/DC1EquipComponent.h"
+#include "Item/Equip/Glider/DC1Glider.h"
 
 #pragma region SavedMove
 FSavedMove_DC1::FSavedMove_DC1()
@@ -93,6 +95,11 @@ float UDC1CharacterMovementComponent::GetMaxSpeed() const
 		return ClimbSpeed;
 	}
 
+	if (IsGliding())
+	{
+		return GetGlideSpeed();
+	}
+
 	// 기절 상태일 땐 WalkSpeed 고정
 	if (ADC1Player* Player = Cast<ADC1Player>(PawnOwner))
 	{
@@ -119,6 +126,26 @@ float UDC1CharacterMovementComponent::GetMaxSpeed() const
 	}
 
 	return Speed;
+}
+
+float UDC1CharacterMovementComponent::GetGlideSpeed() const
+{
+	if (const ADC1Player* Player = Cast<ADC1Player>(PawnOwner))
+	{
+		if (const UDC1EquipComponent* EquipComponent = Player->GetEquipComponent())
+		{
+			if (const ADC1Glider* Glider = EquipComponent->GetCurrentGlider())
+			{
+				if (Glider->GetGlideSpeed() > 0.f)
+				{
+					return Glider->GetGlideSpeed();
+				}
+			}
+		}
+	}
+
+	// Row에 Speed 0 이거나 글라이더를 못 찾으면 기존 값(MaxCustomMovementSpeed)
+	return Super::GetMaxSpeed();
 }
 
 FNetworkPredictionData_Client* UDC1CharacterMovementComponent::GetPredictionData_Client() const

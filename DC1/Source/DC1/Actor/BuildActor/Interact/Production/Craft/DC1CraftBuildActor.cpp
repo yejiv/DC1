@@ -19,8 +19,8 @@
 #include "Define/DC1ItemHelper.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
-#include "Tags/UI/DC1GameplayTag_UI.h"
 #include "UI/Craft/DC1CraftScreenWidget.h"
+#include "Tags/UI/DC1GameplayTag_UI.h"
 
 namespace
 {
@@ -85,13 +85,25 @@ bool ADC1CraftBuildActor::CanShowRecipe(const FDC1ItemRecipeRow& InRecipe, const
 	}
 
 	// 제작대 제작 가능 확인
-	if (false == ProductRow->CategoryTag.MatchesAny(CraftableCategoryTags))
+	const int32* MaxRank = nullptr;
+	FGameplayTag SearchTag = ProductRow->CategoryTag;
+	int32 Depth = SearchTag.GetGameplayTagParents().Num();
+
+	// Item.Type.* 까지만 검사
+	while (Depth >= 3)
 	{
-		return false;
+		MaxRank = CraftableCategoryRankByTags.Find(SearchTag);
+		
+		if (nullptr != MaxRank)
+		{
+			break;
+		}
+
+		SearchTag = SearchTag.RequestDirectParent();
+		--Depth;
 	}
 
-	// 제작대 등급 확인
-	if (ProductRow->Rank > CraftableRank)
+	if (nullptr == MaxRank || ProductRow->Rank > *MaxRank)
 	{
 		return false;
 	}

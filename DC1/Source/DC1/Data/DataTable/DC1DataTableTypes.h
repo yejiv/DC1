@@ -8,6 +8,7 @@
 #include "DC1DataTableTypes.generated.h"
 
 class ADC1Equip;
+class USkeletalMesh;
 
 USTRUCT(BlueprintType)
 struct FDC1LoadingTipRow : public FTableRowBase
@@ -180,14 +181,49 @@ struct FDC1EquipItemRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSoftClassPtr<ADC1Equip> EquipClass;
 
+	// 장착 시 교체할 메시 ( 방어구 칸만 사용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<USkeletalMesh> EquipMesh;
+
+	// HeadEquip 전용, 어느 뼈에 붙을것인지
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName AttachBoneName;
+	// HeadEquip 전용, Attach Offset
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FTransform AttachOffset;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 AttackPower = 0;
+	// 벌목 데미지 배율 ( 도끼 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float LumberingDamageRate = 1.f;
+	// 채굴 데미지 배율 ( 곡괭이 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float MiningDamageRate = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 DefensePower = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
 	int32 Health = 0;
+
+	// 활공 속도 ( 글라이더 칸만 사용 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float Speed = 0.f;
+};
+
+// 음식 아이템 전용 데이터 ( FDC1ItemRow와 ItemID로 연결, 행이 있어야하고 + Item타입이 Food여야 먹을 수 있음 )
+USTRUCT(BlueprintType)
+struct FDC1FoodItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetFoodItemIDOptions"))
+	FName ItemID;
+
+	// 포만도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	float SatietyAmount = 0.f;
 };
 
 // 레시피 재료 - 건축 비용( FDC1ItemCost )과 분리해 에디터 표시를 레시피에만 적용

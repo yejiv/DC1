@@ -17,6 +17,7 @@ class UDC1PlayerInventoryComponent;
 class UAbilitySystemComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnEquipWeaponChanged);
+DECLARE_MULTICAST_DELEGATE(FOnEquipArmorChanged);
 
 // 장비 칸 하나에 실제로 적용된 상태. 인벤토리 칸이 바뀌면 이전 적용을 되돌리는 기준이 된다
 USTRUCT()
@@ -72,6 +73,7 @@ public:
 	ADC1Glider*					GetCurrentGlider() const { return CurrentGlider; }
 
 	float						GetCurrentWeaponAttackPower() const;
+	float						GetCurrentWeaponDamageRate(const FGameplayTag& InWorkTypeTag) const;
 	void						SetGliderVisibility(bool IsVisiblity);
 
 	// 무기 표시 최종 판단 (이동 조건 + 도구 + 팰스피어). 조건이 추가되면 여기만 고친다
@@ -81,6 +83,9 @@ public:
 
 public:
 	FOnEquipWeaponChanged		OnWeaponChanged;
+
+	// 방어구 메시가 실제로 교체된 뒤 (미리보기 갱신용)
+	FOnEquipArmorChanged			OnArmorChanged;
 
 private:
 	// 소유자는 PlayerState다. 폰은 아직 없거나 교체됐을 수 있어 캐싱하지 않고 매번 얻는다
@@ -111,6 +116,10 @@ private:
 
 	UFUNCTION()
 	void		OnRep_CurrentWeapon();
+	UFUNCTION()
+	void		OnRep_CurrentBodyArmor();
+	UFUNCTION()
+	void		OnRep_CurrentHairEquipArmor();
 
 	void		ApplyWeaponCollider();
 	void		ApplyWeaponStateTag();
@@ -143,6 +152,12 @@ public:
 	// 장착한 글라이더. 클라에서도 활공 모드 전환 시 표시를 토글해야 해서 모두에게 복제한다
 	UPROPERTY(Replicated)
 	TObjectPtr<ADC1Glider>		CurrentGlider = {};
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentBodyArmor)
+	FName							CurrentBodyArmorID = {};
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHairEquipArmor)
+	FName							CurrentHairEquipID = {};
 
 private:
 	enum class WEAPONSTATE { DETACH, ATTACH };

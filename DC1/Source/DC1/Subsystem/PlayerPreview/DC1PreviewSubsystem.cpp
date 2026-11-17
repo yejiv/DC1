@@ -85,7 +85,7 @@ void UDC1PreviewSubsystem::BeginPlayerPreview()
 		return;
 	}
 
-	// 외형은 커스터마이징 화면에서만 바뀌므로 열 때마다 다시 복사하면 충분
+	// 열 때 한 번 복사하고, 열려 있는 동안 바뀌는 방어구는 OnArmorChanged로 다시 복사
 	RefreshPlayerPreview(Player);
 	BindEquipComponent(Player);
 
@@ -242,6 +242,16 @@ void UDC1PreviewSubsystem::HandleWeaponChanged()
 	}));
 }
 
+void UDC1PreviewSubsystem::HandleArmorChanged()
+{
+	// 방어구 OnRep에서 메시 교체가 끝난 뒤 불리므로 바로 복사
+	// 부착물 부모 매핑이 CopyFromPlayer마다 초기화되므로 부착물도 함께 다시 복사
+	if (true == bIsPreviewing && EDC1PreviewType::Player == ActiveType)
+	{
+		RefreshPlayerPreview(GetLocalPlayerPawn());
+	}
+}
+
 void UDC1PreviewSubsystem::BindEquipComponent(ADC1Player* InPlayer)
 {
 	UnbindEquipComponent();
@@ -254,6 +264,7 @@ void UDC1PreviewSubsystem::BindEquipComponent(ADC1Player* InPlayer)
 	}
 
 	Equip->OnWeaponChanged.AddUObject(this, &ThisClass::HandleWeaponChanged);
+	Equip->OnArmorChanged.AddUObject(this, &ThisClass::HandleArmorChanged);
 	BoundEquipComponent = Equip;
 }
 
@@ -262,6 +273,7 @@ void UDC1PreviewSubsystem::UnbindEquipComponent()
 	if (UDC1EquipComponent* Equip = BoundEquipComponent.Get())
 	{
 		Equip->OnWeaponChanged.RemoveAll(this);
+		Equip->OnArmorChanged.RemoveAll(this);
 	}
 
 	BoundEquipComponent.Reset();

@@ -6,9 +6,11 @@
 #include "Character/DC1Character.h"
 #include "Interface/DC1InteractableInterface.h"
 #include "GameplayTagContainer.h"
+#include "Define/DC1Enums.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "DC1Player.generated.h"
 
+class USkeletalMesh;
 class USkeletalMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
@@ -95,6 +97,9 @@ public:
 	// Stamina 잔존량 체크
 	bool	CheckRemainStamina(float Stamina) const;
 
+	// Body, HairEquip Mesh 교체, ( InAttachBoneName + InAttachOffset = HairEquip 전용, Body는 사용안함 )
+	void Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType, FName InAttachBoneName = NAME_None, const FTransform& InAttachOffset = FTransform::Identity);
+
 private:
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
@@ -127,6 +132,9 @@ public:
 	TObjectPtr<USkeletalMeshComponent>	HairMesh = { nullptr };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent>	HairEquipMesh = { nullptr };
+	// Body 방어구 해제(nullptr) 시 되돌릴 기본 메시
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USkeletalMesh>			DefaultBodyMesh = { nullptr };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USpringArmComponent>		SpringArm = { nullptr };
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

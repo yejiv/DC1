@@ -113,6 +113,10 @@ protected:
 	// 일할 수 있는 최대 팰 수
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
 	int32							MaxPalWorkers = { 1 };
+
+	// 팰만 작업 가능 옵션
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal")
+	bool							IsPalOnlyWork = { false };
 	// 생산 진행률
 	UPROPERTY(ReplicatedUsing = OnRep_ProductionProgress)
 	float							ProductionProgress = { 0.f };

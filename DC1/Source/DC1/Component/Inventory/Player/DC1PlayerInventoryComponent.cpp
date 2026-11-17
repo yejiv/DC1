@@ -37,8 +37,10 @@ void UDC1PlayerInventoryComponent::BeginPlay()
 	if (GetOwnerRole() == ROLE_Authority)
 	{
 		InitializeEquipmentSlots();
-		InitializeDefaultEquipment();
-		InitializeDefaultItems();
+
+		// Test - Item 생성
+		//InitializeDefaultEquipment();
+		//InitializeDefaultItems();
 
 		// 먹이 주머니가 귀중품 인벤토리에 있을 수 있으므로 함께 감시
 		if (UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory())
@@ -230,6 +232,12 @@ bool UDC1PlayerInventoryComponent::CanEquipToSlot(FName InItemID, int32 InEquipS
 		return false;
 	}
 
+	// 음식 슬롯 확인
+	if (EDC1EquipSlotType::Food == SlotType)
+	{
+		return nullptr != DC1ItemHelper::FindFoodItemRow(InItemID);
+	}
+
 	// 장비 테이블에 행이 없으면 장비 불가 아이템
 	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(InItemID);
 	if (nullptr == EquipRow)
@@ -290,6 +298,34 @@ void UDC1PlayerInventoryComponent::SetUnlockedSlotCount(EDC1EquipSlotType InSlot
 	}
 
 	OnEquipmentUpdated.Broadcast();
+}
+
+bool UDC1PlayerInventoryComponent::RemoveEquipmentItem(int32 InEquipSlotIndex, int32 InCount /* = 1 */)
+{
+	if (GetOwnerRole() != ROLE_Authority)
+	{
+		return false;
+	}
+
+	if (false == EquipmentSlots.IsValidIndex(InEquipSlotIndex) || InCount <= 0)
+	{
+		return false;
+	}
+
+	FDC1InventorySlotInfo& EquipSlot = EquipmentSlots[InEquipSlotIndex];
+	if (true == EquipSlot.IsEmpty())
+	{
+		return false;
+	}
+
+	EquipSlot.StackCount -= InCount;
+	if (EquipSlot.StackCount <= 0)
+	{
+		EquipSlot.Clear();
+	}
+
+	HandleEquipmentChanged(InEquipSlotIndex);
+	return true;
 }
 
 void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()

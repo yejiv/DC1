@@ -24,6 +24,9 @@ public:
 	UFUNCTION()
 	static TArray<FPropertyTextFName> GetSchematicItemIDOptions();
 
+	UFUNCTION()
+	static TArray<FPropertyTextFName> GetFoodItemIDOptions();
+
 #if WITH_EDITOR
 	// 레시피 요약에 이름 표시용
 	static const FDC1ItemRow* FindItemRowInEditor(FName InItemID);

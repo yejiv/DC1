@@ -3,6 +3,7 @@
 #include "Controller/DC1LogoController.h"
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Subsystem/DC1SoundSettingSubsystem.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 #include "Save/DC1SaveSubsystem.h"
 
@@ -13,6 +14,11 @@ void ADC1LogoController::BeginPlay()
 	if (false == IsLocalController())
 	{
 		return;
+	}
+
+	if (UDC1SoundSettingSubsystem* SoundSubsystem = ULocalPlayer::GetSubsystem<UDC1SoundSettingSubsystem>(GetLocalPlayer()))
+	{
+		SoundSubsystem->ApplyAllVolumes();
 	}
 
 	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();

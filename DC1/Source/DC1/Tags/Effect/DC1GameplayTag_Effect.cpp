@@ -7,6 +7,7 @@ namespace DC1EffectTags
 #pragma region SetByCaller
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Damage, "SetByCaller.Damage");
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_StaminaCost, "SetByCaller.StaminaCost");
+	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_Satiety, "SetByCaller.Satiety");
 
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_PalPassive_Attack, "SetByCaller.PalPassive.Attack");
 	UE_DEFINE_GAMEPLAY_TAG(SetByCaller_PalPassive_Defense, "SetByCaller.PalPassive.Defense");

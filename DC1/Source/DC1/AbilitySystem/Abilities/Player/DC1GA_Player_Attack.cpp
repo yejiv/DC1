@@ -59,6 +59,9 @@ FGameplayEffectSpecHandle UDC1GA_Player_Attack::MakeDamageSpec() const
 		if (UDC1EquipComponent* EquipComp = PS->GetEquipComponent())
 		{
 			WeaponAttackPower = EquipComp->GetCurrentWeaponAttackPower();
+			// Resource Actor 쪽에서 WorkTags로 배율을 꺼내씀
+			Spec.Data->SetSetByCallerMagnitude(DC1WorkTags::Work_Lumbering, EquipComp->GetCurrentWeaponDamageRate(DC1WorkTags::Work_Lumbering));
+			Spec.Data->SetSetByCallerMagnitude(DC1WorkTags::Work_Mining, EquipComp->GetCurrentWeaponDamageRate(DC1WorkTags::Work_Mining));
 		}
 	}
 

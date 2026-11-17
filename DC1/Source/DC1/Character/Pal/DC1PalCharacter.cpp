@@ -41,6 +41,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
 
+#include "Subsystem/DC1ExperienceSubsystem.h"
+#include "Tags/DC1GamePlayTags.h"
+
 namespace DC1PalCharacter
 {
 	// 드랍 방향을 줄 수만큼 나눈 칸 안에서 흔드는 폭(도). 두 줄이 같은 쪽으로 겹쳐 날아가지 않게
@@ -165,6 +168,13 @@ void ADC1PalCharacter::BeginPlay()
 
 	// 서버에선 OnRep_Team 이 안 온다
 	ApplyTeamCollisionProfile();
+
+	// 경험치. 거점 팰만 받지만 거점 배치 시점과 무관하게 걸어두고 핸들러에서 거른다
+	if (true == HasAuthority() && IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->AddGameplayEventTagContainerDelegate(FGameplayTagContainer(DC1PlayerTags::Event_Exp),
+			FGameplayEventTagMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::HandleExpEvent));
+	}
 
 	if (false == IsValid(HealthWidgetComponent))
 	{
@@ -585,6 +595,16 @@ void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Dat
 	}
 }
 
+void ADC1PalCharacter::HandleExpEvent(FGameplayTag InEventTag, const FGameplayEventData* InPayload)
+{
+	if (nullptr == InPayload || nullptr == GetBasePalBox())
+	{
+		return;
+	}
+
+	GainExperience(FMath::RoundToInt(InPayload->EventMagnitude));
+}
+
 void ADC1PalCharacter::GainExperience(int32 InAmount)
 {
 	if (false == HasAuthority() || false == IsValid(PalAttributeSet) || false == IsValid(AbilitySystemComponent) || nullptr == PalData)
@@ -849,12 +869,14 @@ void ADC1PalCharacter::OnDeath()
 	// 처치 경험치, 쓰러뜨림 알림, 드랍
 	if (true == HasAuthority() && EDC1Team::Wild == Team)
 	{
-		const AActor* Killer = LastDamageCauser.Get();
+		AActor* Killer = LastDamageCauser.Get();
 
-		if (UDC1PalPartyComponent* Party = DC1PalCharacter::FindPartyOf(Killer))
+		// 경험치 전송
+		if (UDC1ExperienceSubsystem* ExpSubsystem = GetWorld()->GetSubsystem<UDC1ExperienceSubsystem>())
 		{
-			const float ExpRate = (true == bIsAlpha && nullptr != PalData) ? PalData->AlphaExpRate : 1.f;
-			Party->GrantExperienceFor(GetLevel(), ExpRate);
+			const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+			const int32 Amount = ::IsValid(Registry) ? Registry->GetDropExpFor(PalData, GetLevel(), bIsAlpha) : 0;
+			ExpSubsystem->Grant(Killer, DC1PlayerTags::Event_Exp_Shared_Kill, Amount);
 		}
 
 		// 쓰러뜨린 사람 화면에만. 팰이 쓰러뜨렸으면 그 팰이 주어
@@ -869,6 +891,7 @@ void ADC1PalCharacter::OnDeath()
 			NotificationComponent->Client_NotifyPalDefeated(KillerSpecies, KillerNickname, SpeciesTag);
 		}
 
+		// 드랍아이템 소환
 		SpawnDrops();
 	}
 

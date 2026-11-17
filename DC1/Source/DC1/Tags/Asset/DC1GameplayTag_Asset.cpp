@@ -28,6 +28,10 @@ namespace DC1AssetTags
 	UE_DEFINE_GAMEPLAY_TAG(Asset_UI_Resource_Common, "Asset.UI.Resource.Common");
 #pragma endregion
 
+#pragma region Sound
+	UE_DEFINE_GAMEPLAY_TAG(Asset_SoundData, "Asset.SoundData");
+#pragma endregion
+
 #pragma region DataTable
 	UE_DEFINE_GAMEPLAY_TAG(Asset_DataTableData, "Asset.DataTableData");
 #pragma endregion
@@ -39,6 +43,10 @@ namespace DC1AssetTags
 
 #pragma region Appearance
 	UE_DEFINE_GAMEPLAY_TAG(Asset_Appearance_Registry, "Asset.Appearance.Registry");
+#pragma endregion
+
+#pragma region Player
+	UE_DEFINE_GAMEPLAY_TAG(Asset_Player_ExpData, "Asset.Player.ExpData");
 #pragma endregion
 }
 
@@ -54,6 +62,7 @@ namespace DC1DataTableTags
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_Item, "DataTable.Item");
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_ValuableItem, "DataTable.ValuableItem");
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_EquipItem, "DataTable.EquipItem");
+	UE_DEFINE_GAMEPLAY_TAG(DataTable_FoodItem, "DataTable.FoodItem");
 	UE_DEFINE_GAMEPLAY_TAG(DataTable_ItemRecipe, "DataTable.ItemRecipe");
 #pragma endregion
 }

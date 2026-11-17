@@ -111,7 +111,9 @@ protected:
 
 	void							UpdateInfoState();
 
-	
+	// 지금 작업 중인 플레이어들에게 경험치 ( 서버 )
+	void							GrantExpToPlayerWorkers(const FGameplayTag& InExpTag, int32 InAmount) const;
+
 	UFUNCTION()
 	void							OnRep_BuildProgress();
 

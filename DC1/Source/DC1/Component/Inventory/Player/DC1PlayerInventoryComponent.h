@@ -72,6 +72,8 @@ public:
 
 	// 무기/장신구 열린 칸 수를 바꾸는 함수 (서버, 해금 조건은 추후 연결)
 	void SetUnlockedSlotCount(EDC1EquipSlotType InSlotType, int32 InCount);
+	// 장비 칸 아이템 개수 줄이는 함수 ( 서버, 0이 되면 비움 -> 현재 먹이 주머니 전용 )
+	bool RemoveEquipmentItem(int32 InEquipSlotIndex, int32 InCount = 1);
 
 public:
 	// 아이템 추가 함수 (귀중품은 귀중품 인벤토리로 넘김)

@@ -6,7 +6,10 @@
 #include "Components/ActorComponent.h"
 #include "Data/Pal/DC1PalTypes.h"
 #include "Interface/DC1SaveInterface.h"
+#include "GameplayTagContainer.h"
 #include "DC1PalPartyComponent.generated.h"
+
+struct FGameplayEventData;
 
 class ADC1PalCharacter;
 class ADC1PalBoxActor;
@@ -38,8 +41,8 @@ public:
 	// 스피어가 잡아온 것을 받는다. OnPalCaptured에 바인딩하는 진입점
 	void					HandlePalCaptured(const FDC1PalInstance& InPal);
 
-	// 처치·포획 경험치. 파티 전원 전액. 서버 전용. InExpRate = 알파 배율 (일반 1)
-	void					GrantExperienceFor(int32 InDefeatedLevel, float InExpRate);
+	// PalParty 내 Pal에게 Exp 적용
+	void					GrantExperienceFor(int32 InAmount);
 
 	// 소환/회수 토글. 입력은 클라에서 들어오므로 서버로 넘긴다. 소환할 칸은 클라가 고른 번호를 같이 보낸다
 	UFUNCTION(Server, Reliable)
@@ -114,6 +117,8 @@ public:
 	// 거점에서 돌아온 팰 받기 - [ 우선순위 : 팰 상자 -> 파티 빈칸 ] ( 서버 ), 둘 다 가득이면 false
 	bool					ReceivePal(const FDC1PalInstance& InPal);
 
+	void					ToggleDeploy(int32 InSlotIndex);
+
 public:
 	virtual void			OnPostLoad() override;
 
@@ -129,6 +134,10 @@ public:
 
 protected:
 	virtual void			BeginPlay() override;
+	virtual void			EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Exp.Shared / Exp.Pal 수신 → 파티 전원 분배 ( 서버 )
+	void					HandleExpEvent(FGameplayTag InEventTag, const FGameplayEventData* InPayload);
 
 	// Pals 복제 수신 시점. 클라에서만 불린다.
 	// UI 알림은 여기서 시작하면 된다
@@ -151,8 +160,6 @@ protected:
 	UDC1PalBaseComponent*	GetBasePalComponent() const;
 
 	void					BroadcastChanged(EDC1PalContainer InContainer);
-
-	void					ToggleDeploy(int32 InSlotIndex);
 
 	// 회수 한 번. 목록 반영 + 액터 파괴 + 예약된 타이머 정리.
 	// E 회수와 사망 회수가 같은 일을 하므로 공유한다
@@ -234,6 +241,10 @@ private:
 	TObjectPtr<ADC1PalCharacter>		DeployedPal = { nullptr };
 
 	FTimerHandle						DeathRetrieveTimer;
+
+	// 경험치 이벤트 구독 ( 서버 )
+	FGameplayTagContainer				ExpFilter;
+	FDelegateHandle						ExpEventHandle;
 
 	// 올라타기·내리기가 끝나는 시점
 	FTimerHandle						RideStepTimer;

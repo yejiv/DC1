@@ -5,6 +5,7 @@
 #include "Actor/Resource/DC1ResourceActor.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Define/DC1HitHelper.h"
 #include "Tags/DC1GamePlayTags.h"
 
 #include "AbilitySystemComponent.h"
@@ -42,7 +43,7 @@ void UDC1DamageNumberComponent::NotifyDamage(const FGameplayEffectModCallbackDat
 	// 데미지 + 위치 담아 Cue
 	FGameplayCueParameters Params;
 	Params.RawMagnitude = InAmount;
-	Params.Location = GetNumberLocation(Target);
+	Params.Location = GetNumberLocation(InData, Target);
 
 	// 대상 ASC->ExecuteGameplayCue -> 사본 ASC들이 받음 ( 서버 -> 클라 )
 	const FGameplayTag CueTag = (EDC1DamageNumberType::Shield == InType) ? DC1EffectTags::GameplayCue_DamageNumber_Shield : DC1EffectTags::GameplayCue_DamageNumber_Health;
@@ -139,8 +140,21 @@ bool UDC1DamageNumberComponent::IsWorkNumberHidden(const FGameplayEffectModCallb
 	return FVector::DistSquared(OwnerPawn->GetActorLocation(), Resource->GetActorLocation()) > FMath::Square(Resource->GetWorkNumberRange());
 }
 
-FVector UDC1DamageNumberComponent::GetNumberLocation(const AActor* InTarget)
+FVector UDC1DamageNumberComponent::GetNumberLocation(const FGameplayEffectModCallbackData& InData, const AActor* InTarget)
 {
+	if (const ADC1ResourceActor* Resource = Cast<ADC1ResourceActor>(InTarget))
+	{
+		return Resource->GetDropOrigin(&InData.EffectSpec);
+	}
+
+	FVector HitPoint;
+	FVector HitNormal;
+	UPrimitiveComponent* Surface = Cast<UPrimitiveComponent>(InTarget->GetRootComponent());
+	if (true == DC1HitHelper::FindHitLocation(InData.EffectSpec, InTarget, Surface, HitPoint, HitNormal))
+	{
+		return HitPoint;
+	}
+
 	FVector Origin;
 	FVector Extent;
 	InTarget->GetActorBounds(true, Origin, Extent);

@@ -129,6 +129,13 @@ void UDC1TabWidget::CloseWidget(const FKey& InKey)
 		{
 			CurrentWidget->Deactivate();
 		}
+
+		// CurrentTab 비우기 전에 버튼 비활성화
+		if (UDC1TabHeaderButton* CurrentTabButton = GetTabButton(CurrentTab))
+		{
+			CurrentTabButton->SetState(EDC1TabButtonState::Inactive);
+		}
+
 		// Main Tab 닫히는 경우 CurrentTab 초기화
 		CurrentTab = FGameplayTag::EmptyTag;
 	}

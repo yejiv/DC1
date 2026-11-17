@@ -52,6 +52,9 @@ public:
 	void PressAbilityInput(const FGameplayTag& InAbilityTag);
 	void ReleaseAbilityInput(const FGameplayTag& InAbilityTag);
 
+	// 타이틀 맵으로 이동 ( 서버 Logout이 데이터 저장 )
+	void ReturnToTitle();
+
 public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -187,6 +190,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "UI|DamageNumber")
 	TObjectPtr<UDC1DamageNumberComponent> DamageNumberComponent = { nullptr };
 
+	// 타이틀 화면으로 버튼 누를 시 이동할 맵
+	UPROPERTY(EditDefaultsOnly, Category = "Travel")
+	TSoftObjectPtr<UWorld>	TitleMap;
+
 private:
 	bool			IsTurn = { true };
 	bool			IsActiveScreen = { false };
@@ -194,4 +201,6 @@ private:
 	FGameplayTag	GameplayBaseIMCTag = { };
 
 	float			GiveUpHoldDuration = { 5.f };
+	// 타이틀 이동 중 중복 처리 방지 ( Fade 중 버튼 누르기 )
+	bool			IsReturningToTitle = { false };
 };

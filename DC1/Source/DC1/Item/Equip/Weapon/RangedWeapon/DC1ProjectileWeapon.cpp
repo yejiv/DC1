@@ -52,13 +52,41 @@ FTransform ADC1ProjectileWeapon::GetMuzzleTransform() const
 
 FVector ADC1ProjectileWeapon::GetAimDirection()
 {
-	if (APawn* Pawn = GetInstigator())
+	const FTransform MuzzleTransform = GetMuzzleTransform();
+	const FVector MuzzleLocation = MuzzleTransform.GetLocation();
+
+	APawn* Pawn = GetInstigator();
+	AController* Controller = (nullptr != Pawn) ? Pawn->GetController() : nullptr;
+	if (nullptr == Controller)
 	{
-		if (AController* Controller = Pawn->GetController())
-		{
-			return Controller->GetControlRotation().Vector();
-		}
+		return MuzzleTransform.GetRotation().GetForwardVector();
 	}
 
-	return GetMuzzleTransform().GetRotation().GetForwardVector();
+	// 카메라 위치, 방향 갖고오기
+	FVector ViewLocation;
+	FRotator ViewRotation;
+	Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+	const FVector ViewDir = ViewRotation.Vector();
+
+	// 카메라 방향벡터 위로 Muzzle - 카메라위치를 뺀 벡터를 내적
+	// 방향벡터 위에서 Muzzle 위치와 동일 선상에 위치한 지점을 계산 (TraceStart)
+	const float MuzzleDepth = FMath::Max(FVector::DotProduct(MuzzleLocation - ViewLocation, ViewDir), 0.f);
+	const FVector TraceStart = ViewLocation + ViewDir * MuzzleDepth;
+	const FVector TraceEnd = TraceStart + ViewDir * AimTraceDistance;
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(ArrowAimTrace), false);
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(Pawn);
+
+	FHitResult Hit;
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, Params);
+	FVector AimPoint = bHit ? Hit.ImpactPoint : TraceEnd;
+
+	const float AimDepth = FVector::DotProduct(AimPoint - ViewLocation, ViewDir);
+	if (AimDepth < MuzzleDepth + MinConvergeDistance)
+	{
+		AimPoint = ViewLocation + ViewDir * (MuzzleDepth + MinConvergeDistance);
+	}
+	
+	return (AimPoint - MuzzleLocation).GetSafeNormal();
 }

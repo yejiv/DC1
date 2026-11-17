@@ -206,12 +206,14 @@ bool ADC1Player::CanClimb() const
 
 bool ADC1Player::CanGlide() const
 {
-	if (UDC1EquipComponent* EquipComponent = GetEquipComponent())
-	{
-		ADC1Glider* Glider = EquipComponent->GetCurrentGlider();
-		if (nullptr == Glider)
-			return false;
-	}
+	UDC1EquipComponent* EquipComponent = GetEquipComponent();
+	if (false == IsValid(EquipComponent))
+		return false;
+
+	ADC1Glider* Glider = EquipComponent->GetCurrentGlider();
+	if (nullptr == Glider)
+		return false;
+	
 
 	return CheckRemainStamina(0.f);
 }
@@ -296,7 +298,6 @@ void ADC1Player::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	HairMesh->SetLeaderPoseComponent(GetMesh());
-	HairEquipMesh->SetLeaderPoseComponent(GetMesh());
 }
 
 void ADC1Player::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -605,6 +606,54 @@ bool ADC1Player::CheckRemainStamina(float Stamina) const
 		return false;
 
 	return true;
+}
+
+void ADC1Player::Change_EquipMesh(USkeletalMesh* InMesh, EDC1EquipSlotType InSlotType, FName InAttachBoneName, const FTransform& InAttachOffset)
+{
+	switch (InSlotType)
+	{
+	case EDC1EquipSlotType::Body:
+		{
+			USkeletalMeshComponent* BodyMesh = GetMesh();
+			ADC1PlayerState * PS = GetPlayerState<ADC1PlayerState>();
+			if (false == IsValid(PS) || false == IsValid(BodyMesh))
+				return;
+
+			BodyMesh->EmptyOverrideMaterials();
+			if (nullptr == InMesh)
+			{
+				BodyMesh->SetSkeletalMesh(DefaultBodyMesh, false);
+			}
+			else
+			{
+				BodyMesh->SetSkeletalMesh(InMesh, false);
+			}
+			// 색상 재적용
+			UDC1AppearanceComponent* AppearanceComponent = PS->GetAppearanceComponent();
+			if (false == IsValid(AppearanceComponent))
+				return;
+
+			AppearanceComponent->ApplyBodyColor(BodyMesh);
+			break;
+		}
+	case EDC1EquipSlotType::Head:
+		{
+			if (false == IsValid(HairEquipMesh))
+				return;
+			HairEquipMesh->SetSkeletalMesh(InMesh, false);
+			if (nullptr == InMesh)
+				break;
+
+			USkeletalMeshComponent* BodyMesh = GetMesh();
+			if (false == BodyMesh->DoesSocketExist(InAttachBoneName))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Change_EquipMesh : Bone '%s' Cant found BodyMesh"), *InAttachBoneName.ToString());
+			}
+			HairEquipMesh->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, InAttachBoneName);
+			HairEquipMesh->SetRelativeTransform(InAttachOffset);
+			break;
+		}
+	}
 }
 
 void ADC1Player::ApplyGlideState(bool IsApply)

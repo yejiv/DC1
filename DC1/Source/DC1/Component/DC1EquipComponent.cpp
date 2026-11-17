@@ -68,6 +68,8 @@ void UDC1EquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 	DOREPLIFETIME(UDC1EquipComponent, CurrentWeapon);
 	DOREPLIFETIME(UDC1EquipComponent, CurrentGlider);
+	DOREPLIFETIME(UDC1EquipComponent, CurrentBodyArmorID);
+	DOREPLIFETIME(UDC1EquipComponent, CurrentHairEquipID);
 }
 
 // Called every frame
@@ -138,6 +140,8 @@ void UDC1EquipComponent::HandlePawnReady()
 	// 클라 포함. PlayerState가 폰보다 먼저 도착하면 OnRep_CurrentWeapon이 폰을 못 찾고
 	// 그냥 지나간다. 그때 놓친 콜라이더 적용을 여기서 만회한다
 	ApplyWeaponCollider();
+	OnRep_CurrentBodyArmor();
+	OnRep_CurrentHairEquipArmor();
 }
 
 float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
@@ -152,6 +156,23 @@ float UDC1EquipComponent::GetCurrentWeaponAttackPower() const
 	if (nullptr == EquipRow) return 0.f;
 
 	return EquipRow->AttackPower;
+}
+
+float UDC1EquipComponent::GetCurrentWeaponDamageRate(const FGameplayTag& InWorkTypeTag) const
+{
+	const int32 EquipSlotIndex = GetCurrentWeaponEquipIndex();
+	if (false == EquipSlots.IsValidIndex(EquipSlotIndex)) return 1.f;
+
+	const FName ItemID = EquipSlots[EquipSlotIndex].ItemID;
+	if (NAME_None == ItemID) return 1.f;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(ItemID);
+	if (nullptr == EquipRow) return 1.f;
+
+	if (InWorkTypeTag == DC1WorkTags::Work_Lumbering) return EquipRow->LumberingDamageRate;
+	if (InWorkTypeTag == DC1WorkTags::Work_Mining) return EquipRow->MiningDamageRate;
+
+	return 1.f;
 }
 
 void UDC1EquipComponent::SetGliderVisibility(bool IsVisiblity)
@@ -387,6 +408,44 @@ void UDC1EquipComponent::OnRep_CurrentWeapon()
 	OnWeaponChanged.Broadcast();
 }
 
+void UDC1EquipComponent::OnRep_CurrentBodyArmor()
+{
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player))
+		return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentBodyArmorID);
+
+	USkeletalMesh* Mesh = { nullptr };
+	if (nullptr != EquipRow)
+	{
+		Mesh = EquipRow->EquipMesh.LoadSynchronous();
+	}
+	Player->Change_EquipMesh(Mesh, EDC1EquipSlotType::Body);
+
+	OnArmorChanged.Broadcast();
+}
+
+void UDC1EquipComponent::OnRep_CurrentHairEquipArmor()
+{
+	ADC1Player* Player = GetOwningPlayer();
+	if (false == IsValid(Player))
+		return;
+
+	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(CurrentHairEquipID);
+
+	if (nullptr == EquipRow)
+	{
+		Player->Change_EquipMesh(nullptr, EDC1EquipSlotType::Head);
+	}
+	else
+	{
+		Player->Change_EquipMesh(EquipRow->EquipMesh.LoadSynchronous(), EDC1EquipSlotType::Head, EquipRow->AttachBoneName, EquipRow->AttachOffset);
+	}
+
+	OnArmorChanged.Broadcast();
+}
+
 void UDC1EquipComponent::ApplyWeaponCollider()
 {
 	if (ADC1Player* Player = GetOwningPlayer())
@@ -466,6 +525,11 @@ void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
 
 	if (nullptr == CurrentGlider) return;
 
+	if (const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlots[InEquipSlotIndex].ItemID))
+	{
+		CurrentGlider->SetGlideSpeed(EquipRow->Speed);
+	}
+
 	if (ADC1Player* Player = GetOwningPlayer())
 	{
 		CurrentGlider->AttachToComponent(
@@ -479,6 +543,21 @@ void UDC1EquipComponent::HandleGliderChanged(int32 InEquipSlotIndex)
 void UDC1EquipComponent::HandleArmorChanged(int32 InEquipSlotIndex)
 {
 	const FDC1EquipSlot& EquipSlot = EquipSlots[InEquipSlotIndex];
+
+	EDC1EquipSlotType SlotType = DC1EquipSlotLayout::GetSlotType(InEquipSlotIndex);
+
+	switch (SlotType)
+	{
+	case EDC1EquipSlotType::Head:
+		CurrentHairEquipID = EquipSlot.ItemID;
+		OnRep_CurrentHairEquipArmor();
+		break;
+	case EDC1EquipSlotType::Body:
+		CurrentBodyArmorID = EquipSlot.ItemID;
+		OnRep_CurrentBodyArmor();
+		break;
+	}
+
 	if (NAME_None == EquipSlot.ItemID) return;
 
 	const FDC1EquipItemRow* EquipRow = DC1ItemHelper::FindEquipItemRow(EquipSlot.ItemID);
@@ -561,7 +640,15 @@ void UDC1EquipComponent::EquipTool(const FGameplayTag& ToolTag)
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		CurrentTool->AttachSocketName
 	);
+	// SubTool
+	if (nullptr != CurrentTool->SubToolMesh->GetSkeletalMeshAsset())
+	{
+		// ToolMesh들이 Item Mesh 기준 오프셋을 잡아뒀기에 KeepRelativeTransform
+		CurrentTool->SubToolMesh->AttachToComponent(Player->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, CurrentTool->SubAttachSocketName);
+	}
+
 	CurrentTool->SetActorHiddenInGame(false);
+
 }
 
 void UDC1EquipComponent::UnequipTool(const FGameplayTag& ToolTag)

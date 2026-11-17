@@ -266,6 +266,12 @@ int32 UDC1PalRegistryData::GetDropExp(int32 InLevel) const
 	return (nullptr != Row) ? Row->DropExp : 0;
 }
 
+int32 UDC1PalRegistryData::GetDropExpFor(const UDC1PalData* InPalData, int32 InLevel, bool InIsAlpha) const
+{
+	const float ExpRate = (true == InIsAlpha && nullptr != InPalData) ? InPalData->AlphaExpRate : 1.f;
+	return FMath::RoundToInt(GetDropExp(InLevel) * ExpRate);
+}
+
 int32 UDC1PalRegistryData::GetExpToNextLevel(int32 InLevel) const
 {
 	if (InLevel >= MaxLevel)

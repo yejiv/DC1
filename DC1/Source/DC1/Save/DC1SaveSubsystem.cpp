@@ -22,6 +22,7 @@
 #include "Save/DC1PlayerSaveGame.h"
 #include "Save/DC1WorldSaveGame.h"
 #include "Save/DC1CustomizationSaveGame.h"
+#include "Save/DC1SoundSaveGame.h"
 #include "Character/Player/DC1PlayerState.h"
 
 void UDC1SaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -259,6 +260,43 @@ bool UDC1SaveSubsystem::LoadCustomizeData(FDC1AppearanceData* OutData)
 	{
 		*OutData = SaveGame->Appearance;
 	}
+
+	return true;
+}
+
+bool UDC1SaveSubsystem::SaveSoundData(const TMap<EDC1SoundCategory, float>& InVolumes)
+{
+	UDC1SoundSaveGame* SaveGame = Cast<UDC1SoundSaveGame>(UGameplayStatics::CreateSaveGameObject(UDC1SoundSaveGame::StaticClass()));
+	if (false == IsValid(SaveGame))
+	{
+		LOG_ERROR(TEXT("Create SaveGame is Failed"));
+		return false;
+	}
+
+	SaveGame->Volumes = InVolumes;
+
+	return UGameplayStatics::SaveGameToSlot(SaveGame, SoundFileName, 0);
+}
+
+bool UDC1SaveSubsystem::LoadSoundData(TMap<EDC1SoundCategory, float>* OutVolumes)
+{
+	if (nullptr == OutVolumes)
+	{
+		return false;
+	}
+
+	if (false == UGameplayStatics::DoesSaveGameExist(SoundFileName, 0))
+	{
+		return false;
+	}
+
+	UDC1SoundSaveGame* SaveGame = Cast<UDC1SoundSaveGame>(UGameplayStatics::LoadGameFromSlot(SoundFileName, 0));
+	if (false == IsValid(SaveGame))
+	{
+		return false;
+	}
+
+	OutVolumes->Append(SaveGame->Volumes);
 
 	return true;
 }

@@ -64,13 +64,15 @@ void UDC1InventoryEntryWidget::SetEntryData(const UDC1InventoryViewModel* ViewMo
 
 	// 장착된 아이템은 개수/무게를 표시하지 않음
 	const bool bIsEquipment = (EDC1InventorySource::Equipment == InSlotSource);
+	// 단, 음식은 제외
+	const bool bShowCount = (false == bIsEquipment) || (EDC1EquipSlotType::Food == DC1EquipSlotLayout::GetSlotType(SlotIndex));
 
 	if (IsValid(Text_Count))
 	{
 		if (InventorySlotInfo.StackCount >= 1)
 		{
 			Text_Count->SetText(FText::AsNumber(InventorySlotInfo.StackCount));
-			Text_Count->SetVisibility(bIsEquipment ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
+			Text_Count->SetVisibility(bShowCount ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 		}
 		else
 		{

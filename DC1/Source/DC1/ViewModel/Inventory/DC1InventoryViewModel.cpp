@@ -5,6 +5,7 @@
 #include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
 #include "Component/Inventory/Chest/DC1ChestInventoryComponent.h"
 #include "Component/Inventory/Valuable/DC1ValuableInventoryComponent.h"
+#include "Component/Player/DC1SatietyComponent.h"
 #include "Define/DC1ItemHelper.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Tags/Item/DC1GameplayTag_Item.h"
@@ -481,6 +482,26 @@ void UDC1InventoryViewModel::RequestEquipItemAuto(int32 SlotIndex)
 	}
 
 	MyInventoryComp->RequestEquipItemAuto(SlotIndex);
+}
+
+void UDC1InventoryViewModel::RequestEatFood(int32 SlotIndex)
+{
+	if (false == ::IsValid(MyInventoryComp))
+	{
+		return;
+	}
+
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(MyInventoryComp->GetOwner());
+	if (nullptr == PS)
+	{
+		return;
+	}
+
+	UDC1SatietyComponent* SatietyComp = PS->GetSatietyComponent();
+	if (true == ::IsValid(SatietyComp))
+	{
+		SatietyComp->RequestEatFood(SlotIndex);
+	}
 }
 
 void UDC1InventoryViewModel::RequestUnequipItem(int32 EquipSlotIndex, int32 ToSlotIndex /* = -1 */)

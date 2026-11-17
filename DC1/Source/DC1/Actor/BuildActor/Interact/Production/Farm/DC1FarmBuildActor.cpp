@@ -10,6 +10,7 @@
 #include "Item/Pickup/DC1PickupItem.h"
 
 #include "Tags/Build/DC1GameplayTag_Build.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 
 namespace
 {
@@ -188,6 +189,12 @@ void ADC1FarmBuildActor::AddPhaseWork(float InWork, float InRequiredWork)
 		ProductionProgress = CurrentProductionWork / InRequiredWork;
 		OnProductionChanged.Broadcast();
 		return;
+	}
+
+	// 작업 경험치 - 작업 단계 완료 시 작업 중인 플레이어 ( 성장 단계 제외, AdvancePhase 의 ClearWorkers 전, TODO 임시값 )
+	if (false == IsGrowing())
+	{
+		GrantExpToPlayerWorkers(DC1PlayerTags::Event_Exp_Player_Work, 10);
 	}
 
 	AdvancePhase();

@@ -30,7 +30,7 @@ ADC1Projectile::ADC1Projectile()
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovement");
 	ProjectileMovement->InitialSpeed = 3000.f;
 	ProjectileMovement->MaxSpeed = 3000.f;
-	ProjectileMovement->ProjectileGravityScale = 1.f;
+	ProjectileMovement->ProjectileGravityScale = 0.5f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 }
 
@@ -55,6 +55,8 @@ void ADC1Projectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* 
 	{
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor))
 		{
+			// 박힌 지점을 Damage UI, (Resource - Item 드랍) 위치로 하기 위해 HitResult 추가
+			DamageSpec.Data->GetContext().AddHitResult(Hit, true);
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpec.Data.Get());
 		}
 	}

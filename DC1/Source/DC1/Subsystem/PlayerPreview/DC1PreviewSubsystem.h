@@ -47,6 +47,7 @@ private:
 	void RefreshPalPreview(const FGameplayTag& InPalID);
 
 	void HandleWeaponChanged();
+	void HandleArmorChanged();
 	void BindEquipComponent(ADC1Player* InPlayer);
 	void UnbindEquipComponent();
 

@@ -9,6 +9,10 @@
 #include "Define/DC1Enums.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
+#include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Subsystem/DC1ExperienceSubsystem.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 #include "Component/Interact/DC1InteractComponent.h"
 #include "GameMode/DC1GameState.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
@@ -305,6 +309,9 @@ void ADC1InteractBuildActor::OnWorkTick(float InWork)
 		{
 			BuildProgress = 1.f;
 
+			// 건설 경험치 - 완료 시점에 작업 중인 플레이어 ( TODO 임시값 )
+			GrantExpToPlayerWorkers(DC1PlayerTags::Event_Exp_Player_Build, 10);
+
 			SetState(EDC1BuildState::Completed);
 		}
 
@@ -470,6 +477,27 @@ void ADC1InteractBuildActor::UpdateInfoState()
 	if (true == ::IsValid(Widget))
 	{
 		Widget->SetInfoState(PrevState, InfoState);
+	}
+}
+
+void ADC1InteractBuildActor::GrantExpToPlayerWorkers(const FGameplayTag& InExpTag, int32 InAmount) const
+{
+	UDC1ExperienceSubsystem* ExpSubsystem = GetWorld()->GetSubsystem<UDC1ExperienceSubsystem>();
+	if (false == HasAuthority() || nullptr == ExpSubsystem)
+	{
+		return;
+	}
+
+	for (const TWeakObjectPtr<const ADC1Character>& Worker : Workers)
+	{
+		// 팰 작업은 제외
+		const ADC1Player* Player = Cast<ADC1Player>(Worker.Get());
+		if (nullptr == Player)
+		{
+			continue;
+		}
+
+		ExpSubsystem->Grant(Player->GetPlayerState<ADC1PlayerState>(), InExpTag, InAmount);
 	}
 }
 

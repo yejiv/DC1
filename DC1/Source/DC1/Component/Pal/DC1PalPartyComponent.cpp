@@ -17,9 +17,12 @@
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
 #include "Save/DC1SaveSubsystem.h"
+#include "Subsystem/DC1ExperienceSubsystem.h"
 
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -82,6 +85,35 @@ void UDC1PalPartyComponent::BeginPlay()
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(BoxHealTimer, this, &ThisClass::HealStoredPals, BoxHealInterval, true);
+
+	// 경험치 ( 주인 PS 의 ASC )
+	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
+	{
+		ExpFilter.AddTag(DC1PlayerTags::Event_Exp_Shared);
+		ExpFilter.AddTag(DC1PlayerTags::Event_Exp_Pal);
+		ExpEventHandle = ASC->AddGameplayEventTagContainerDelegate(ExpFilter,
+			FGameplayEventTagMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::HandleExpEvent));
+	}
+}
+
+void UDC1PalPartyComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
+	{
+		ASC->RemoveGameplayEventTagContainerDelegate(ExpFilter, ExpEventHandle);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UDC1PalPartyComponent::HandleExpEvent(FGameplayTag InEventTag, const FGameplayEventData* InPayload)
+{
+	if (nullptr == InPayload)
+	{
+		return;
+	}
+
+	GrantExperienceFor(FMath::RoundToInt(InPayload->EventMagnitude));
 }
 
 void UDC1PalPartyComponent::OnRep_Pals()
@@ -216,18 +248,17 @@ void UDC1PalPartyComponent::HandlePalCaptured(const FDC1PalInstance& InPal)
 	}
 
 	// 포획 경험치 (잡힌 팰 제외)
-	float ExpRate = 1.f;
-	if (true == InPal.bIsAlpha)
+	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
+	if (true == ::IsValid(Registry))
 	{
-		const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
-		const UDC1PalData* PalData = ::IsValid(Registry) ? Registry->FindPalDataByTag(InPal.SpeciesTag).LoadSynchronous() : nullptr;
-		if (nullptr != PalData)
+		const UDC1PalData* PalData = (true == InPal.bIsAlpha) ? Registry->FindPalDataByTag(InPal.SpeciesTag).LoadSynchronous() : nullptr;
+		const int32 Amount = Registry->GetDropExpFor(PalData, InPal.Level, InPal.bIsAlpha);
+
+		if (UDC1ExperienceSubsystem* ExpSubsystem = GetWorld()->GetSubsystem<UDC1ExperienceSubsystem>())
 		{
-			ExpRate = PalData->AlphaExpRate;
+			ExpSubsystem->Grant(GetOwner(), DC1PlayerTags::Event_Exp_Shared_Capture, Amount);
 		}
 	}
-
-	GrantExperienceFor(InPal.Level, ExpRate);
 
 	// 파티 → 상자 순서로 빈칸
 	for (const EDC1PalContainer Container : { EDC1PalContainer::Party, EDC1PalContainer::Box })
@@ -474,21 +505,15 @@ float UDC1PalPartyComponent::GetMaxHealthOf(const FDC1PalInstance& InPal)
 	return Registry->GetMaxHealthFor(*PalData, InPal.Level, InPal.TalentHealth, InPal.bIsAlpha);
 }
 
-void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel, float InExpRate)
+void UDC1PalPartyComponent::GrantExperienceFor(int32 InAmount)
 {
-	if (ROLE_Authority != GetOwnerRole())
+	if (ROLE_Authority != GetOwnerRole() || InAmount <= 0)
 	{
 		return;
 	}
 
 	const UDC1PalRegistryData* Registry = UDC1AssetManager::GetAssetByTag<UDC1PalRegistryData>(DC1AssetTags::Asset_Pal_Registry);
 	if (false == ::IsValid(Registry))
-	{
-		return;
-	}
-
-	const int32 Amount = FMath::RoundToInt(Registry->GetDropExp(InDefeatedLevel) * InExpRate);
-	if (Amount <= 0)
 	{
 		return;
 	}
@@ -503,13 +528,13 @@ void UDC1PalPartyComponent::GrantExperienceFor(int32 InDefeatedLevel, float InEx
 		// 소환 중이면 액터 기준
 		if (true == IsDeployed(Index))
 		{
-			DeployedPal->GainExperience(Amount);
+			DeployedPal->GainExperience(InAmount);
 			Pals[Index].Level = DeployedPal->GetLevel();
 			Pals[Index].Experience = DeployedPal->GetExperience();
 		}
 		else
 		{
-			Registry->ApplyExperience(Pals[Index], Amount);
+			Registry->ApplyExperience(Pals[Index], InAmount);
 		}
 	}
 

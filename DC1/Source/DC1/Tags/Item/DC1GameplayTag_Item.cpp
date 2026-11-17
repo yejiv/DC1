@@ -35,6 +35,7 @@ namespace DC1ItemTags
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Consume_Bait, "Item.Type.Consume.Bait");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Consume_Other, "Item.Type.Consume.Other");
 
+	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food, "Item.Type.Food");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food_Ingredient, "Item.Type.Food.Ingredient");
 	UE_DEFINE_GAMEPLAY_TAG(Item_Type_Food_Cooked, "Item.Type.Food.Cooked");
 
