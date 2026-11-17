@@ -175,6 +175,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
 	TArray<TObjectPtr<USoundBase>>					HitSounds;
 
+	// 체력 단계가 내려가 메시가 작아질 때 ( ScaleType Fixed 면 재생 안 됨 )
+	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
+	TObjectPtr<USoundBase>							StageBreakSound = { nullptr };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Drop", meta = (GetOptions = "DC1.DC1ItemOptionsLibrary.GetItemIDOptions"))
 	FName											DropItemID;
 

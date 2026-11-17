@@ -9,6 +9,7 @@
 #include "DC1TabWidget.generated.h"
 
 class UPanelWidget;
+class USoundBase;
 class UDC1TabHeaderButton;
 class UDC1InventoryWidget;
 class UDC1TechTreeWidget;
@@ -88,6 +89,14 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "TAB")
 	TMap<FGameplayTag, FDC1KeyList> TabCloseKeys;
+
+	// 이전 / 다음 탭 키로 전환될 때
+	UPROPERTY(EditDefaultsOnly, Category = "TAB|Sound")
+	TObjectPtr<USoundBase>			TabChangeSound = { nullptr };
+
+	// 닫기 키로 화면을 닫을 때
+	UPROPERTY(EditDefaultsOnly, Category = "TAB|Sound")
+	TObjectPtr<USoundBase>			CloseSound = { nullptr };
 
 private:
 	TMap<int32, FGameplayTag>		SwitchIndexToTab;

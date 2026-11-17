@@ -20,6 +20,7 @@ class UDC1PalData;
 class UDC1PalRegistryData;
 class UDC1PalRideComponent;
 class UCapsuleComponent;
+class USoundBase;
 class UWidgetComponent;
 struct FInputActionValue;
 struct FGameplayEventData;
@@ -163,6 +164,10 @@ protected:
 
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
+	// 피격음 ( 서버 → 모두 )
+	UFUNCTION(NetMulticast, Unreliable)
+	void								Multicast_PlayHitSound(FVector_NetQuantize InLocation);
+
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
 
 	void								HandleSanityChangedForUI(const struct FOnAttributeChangeData& Data);
@@ -196,6 +201,10 @@ protected:
 	float HealthWidgetCheckInterval = { 0.2f };
 
 	FTimerHandle HealthWidgetVisibilityTimer;
+
+	// 데미지를 받을 때마다 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> HitSound = { nullptr };
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Ride")
 	TObjectPtr<UDC1PalRideComponent> RideComponent = { nullptr };

@@ -87,6 +87,7 @@ public:
 	const bool						GetHasPillar() const { return HasPillar; }
 
 	USoundBase*						GetPlaceSound() const { return PlaceSound; }
+	USoundBase*						GetDismantleSound() const { return DismantleSound; }
 
 	const bool						GetIsBaseRequired() const { return IsBaseRequired; }
 	APlayerState*					GetDestroyInstigator() const { return DestroyInstigator.Get(); }
@@ -223,6 +224,10 @@ private:
 	// 배치 확정 시 재생 ( 서버 Server_PlaceBuild 에서 설치한 플레이어 경유 Multicast )
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
 	TObjectPtr<USoundBase>							PlaceSound = { nullptr };
+
+	// 플레이어가 철거할 때 재생 ( 재질별 ). 비어 있으면 BuildPlacementComponent 의 DismantleSound
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
+	TObjectPtr<USoundBase>							DismantleSound = { nullptr };
 
 private:
 	// Destroy를 요청한 플레이어
