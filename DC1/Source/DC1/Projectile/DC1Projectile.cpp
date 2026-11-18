@@ -71,7 +71,4 @@ void ADC1Projectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* 
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpec.Data.Get());
 		}
 	}
-
-	ProjectileMovement->StopMovementImmediately();
-	ProjectileMovement->Deactivate();
 }
