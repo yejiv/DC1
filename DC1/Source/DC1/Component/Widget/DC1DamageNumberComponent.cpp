@@ -4,14 +4,16 @@
 
 #include "Actor/Resource/DC1ResourceActor.h"
 #include "Character/Pal/DC1PalCharacter.h"
-#include "Character/Player/DC1PlayerState.h"
 #include "Define/DC1HitHelper.h"
 #include "Tags/DC1GamePlayTags.h"
 
 #include "AbilitySystemComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "GameplayEffectExtension.h"
 
 UDC1DamageNumberComponent::UDC1DamageNumberComponent()
@@ -125,19 +127,23 @@ bool UDC1DamageNumberComponent::IsWorkNumberHidden(const FGameplayEffectModCallb
 		return false;
 	}
 
-	const ADC1PlayerState* OwnerPS = Pal->GetOwnerPlayerState();
-	if (false == ::IsValid(OwnerPS))
+	const AGameStateBase* GameState = Resource->GetWorld()->GetGameState();
+	if (false == ::IsValid(GameState))
 	{
 		return true;
 	}
 
-	const APawn* OwnerPawn = OwnerPS->GetPawn();
-	if (false == ::IsValid(OwnerPawn))
+	const float RangeSquared = FMath::Square(Resource->GetWorkNumberRange());
+	for (const TObjectPtr<APlayerState>& PS : GameState->PlayerArray)
 	{
-		return true;
+		const APawn* Pawn = (true == ::IsValid(PS)) ? PS->GetPawn() : nullptr;
+		if (true == ::IsValid(Pawn) && FVector::DistSquared(Pawn->GetActorLocation(), Resource->GetActorLocation()) <= RangeSquared)
+		{
+			return false;
+		}
 	}
 
-	return FVector::DistSquared(OwnerPawn->GetActorLocation(), Resource->GetActorLocation()) > FMath::Square(Resource->GetWorkNumberRange());
+	return true;
 }
 
 FVector UDC1DamageNumberComponent::GetNumberLocation(const FGameplayEffectModCallbackData& InData, const AActor* InTarget)

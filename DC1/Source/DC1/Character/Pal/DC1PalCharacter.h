@@ -9,7 +9,6 @@
 #include "AI/DC1TeamTypes.h"
 #include "Data/Pal/DC1PalTypes.h"
 #include "Interface/DC1WorkTargetInterface.h"
-#include "UObject/WeakInterfacePtr.h"
 #include "DC1PalCharacter.generated.h"
 
 class ADC1PalBoxActor;
@@ -93,9 +92,9 @@ public:
 	float								GetSanity() const;
 	float								GetMaxSanity() const;
 
-	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> Work GA가 GetCurrentWorkTarget으로 읽음. 서버 전용
-	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget) { WorkTarget = InWorkTarget; }
-	virtual IDC1WorkTargetInterface*	GetCurrentWorkTarget() const override { return WorkTarget.Get(); }
+	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> WorkGA / 작업 노티파이가 GetCurrentWorkTarget으로 읽음, 복제됨
+	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget);
+	virtual IDC1WorkTargetInterface*	GetCurrentWorkTarget() const override;
 
 #pragma region Capture
 	float								GetHealthRatio() const;
@@ -260,8 +259,9 @@ protected:
 
 	UPROPERTY(Transient, Replicated)
 	TObjectPtr<ADC1PlayerState> OwnerPlayerState = { nullptr };
-
-	TWeakInterfacePtr<IDC1WorkTargetInterface> WorkTarget;
+	// 클라 작업 노티파이가 대상 종류(리소스 / 작업장 )를 보기 위해 복제
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<AActor> WorkTargetActor = { nullptr };
 
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)

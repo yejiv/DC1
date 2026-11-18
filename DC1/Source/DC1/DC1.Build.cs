@@ -32,6 +32,7 @@ public class DC1 : ModuleRules
 
 			"GeometryCollectionEngine",
 			"Niagara",
+			"NiagaraAnimNotifies",
 
 			"Landscape",
 		});

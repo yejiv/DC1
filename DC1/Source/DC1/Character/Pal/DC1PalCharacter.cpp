@@ -651,6 +651,21 @@ float ADC1PalCharacter::GetMaxSanity() const
 	return IsValid(PalAttributeSet) ? PalAttributeSet->GetMaxSanity() : 0.f;
 }
 
+void ADC1PalCharacter::SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget)
+{
+	WorkTargetActor = Cast<AActor>(InWorkTarget);
+}
+
+IDC1WorkTargetInterface* ADC1PalCharacter::GetCurrentWorkTarget() const
+{
+	if (false == ::IsValid(WorkTargetActor))
+	{
+		return nullptr;
+	}
+
+	return Cast<IDC1WorkTargetInterface>(WorkTargetActor);
+}
+
 void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Data)
 {
 	if (false == IsValid(HealthWidgetComponent))
@@ -1187,6 +1202,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
 	DOREPLIFETIME(ADC1PalCharacter, bIsAlpha);
 	DOREPLIFETIME(ADC1PalCharacter, bSummonFX);
+	DOREPLIFETIME(ADC1PalCharacter, WorkTargetActor);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const
