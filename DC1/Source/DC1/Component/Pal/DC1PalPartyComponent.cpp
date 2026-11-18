@@ -587,6 +587,8 @@ void UDC1PalPartyComponent::ToggleDeploy(int32 InSlotIndex)
 	Spawned->OnPalDied.AddUObject(this, &ThisClass::HandleDeployedPalDied);
 	DeployedPal = Spawned;
 
+	Spawned->BeginSummonFX();
+
 	OnPalSlotChanged.Broadcast();
 }
 
@@ -648,6 +650,9 @@ void UDC1PalPartyComponent::RetrieveDeployed()
 	{
 		return;
 	}
+
+	// 파괴 전에 보냄 - 같은 액터 채널이라 클라에서도 사라지기 전에 도착 ( 잔상이 이 순간 포즈를 복사 )
+	Deployed->Multicast_PlayDismissFX();
 
 	UpdatePal(Deployed->Fold());
 }
