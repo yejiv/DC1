@@ -99,6 +99,8 @@ namespace DC1PalAIController
 ADC1PalAIController::ADC1PalAIController()
 	: Super()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	StateTreeComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("StateTreeComponent"));
 	StateTreeComponent->SetStartLogicAutomatically(false);
 
@@ -126,6 +128,83 @@ void ADC1PalAIController::BeginPlay()
 	if (UAIPerceptionComponent* PerceptionComp = GetAIPerceptionComponent())
 	{
 		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
+	}
+
+	TryStartBehavior();
+}
+
+void ADC1PalAIController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (true == bReturningHome)
+	{
+		return;
+	}
+
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	if (false == IsValid(Pal) || EDC1Team::Wild != Pal->GetTeam() || nullptr != Pal->GetBasePalBox()
+		|| true == DC1PalAIController::IsDead(Pal) || false == IsProvoked() || nullptr == GetCurrentTarget())
+	{
+		return;
+	}
+
+	if (FVector::DistSquared2D(Pal->GetActorLocation(), HomeLocation) >= FMath::Square(CombatLeashDistance))
+	{
+		BeginReturnHome();
+	}
+}
+
+void ADC1PalAIController::BeginReturnHome()
+{
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	const UDC1PalData* PalData = IsValid(Pal) ? Pal->GetPalData() : nullptr;
+	if (nullptr == PalData || true == bReturningHome)
+	{
+		return;
+	}
+
+	bReturningHome = true;
+	if (IsValid(StateTreeComponent))
+	{
+		StateTreeComponent->StopLogic(TEXT("ReturnHome"));
+	}
+
+	ClearTargetState();
+	StopMovement();
+	Pal->SetOrientToMovement(true);
+	Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+
+	const EPathFollowingRequestResult::Type Result = MoveToLocation(HomeLocation, ReturnHomeAcceptanceRadius, true);
+	if (EPathFollowingRequestResult::AlreadyAtGoal == Result)
+	{
+		FinishReturnHome(true);
+		return;
+	}
+
+	if (EPathFollowingRequestResult::RequestSuccessful != Result)
+	{
+		FinishReturnHome(false);
+		return;
+	}
+
+	ReturnHomeRequestID = GetCurrentMoveRequestID();
+}
+
+void ADC1PalAIController::FinishReturnHome(bool bArrived)
+{
+	ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(GetPawn());
+	bReturningHome = false;
+	StopMovement();
+	RefreshPerception();
+
+	if (IsValid(Pal))
+	{
+		Pal->SetOrientToMovement(false);
+		if (const UDC1PalData* PalData = Pal->GetPalData())
+		{
+			Pal->GetCharacterMovement()->MaxWalkSpeed = PalData->RunSpeed;
+		}
 	}
 
 	TryStartBehavior();
@@ -233,6 +312,12 @@ void ADC1PalAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus S
 
 void ADC1PalAIController::UpdateTarget()
 {
+	if (true == bReturningHome)
+	{
+		SetCurrentTarget(nullptr);
+		return;
+	}
+
 	const APawn* SelfPawn = GetPawn();
 	const UWorld* World = GetWorld();
 	if (false == IsValid(SelfPawn) || nullptr == World)
@@ -477,6 +562,9 @@ void ADC1PalAIController::NotifyOwnerHit(AActor* InVictim)
 
 void ADC1PalAIController::StopBehavior()
 {
+	bReturningHome = false;
+	StopMovement();
+
 	// StateTree 정지
 	if (IsValid(StateTreeComponent))
 	{
@@ -691,6 +779,9 @@ AActor* ADC1PalAIController::GetFollowTargetEnemy() const
 
 void ADC1PalAIController::HandleTeamChanged()
 {
+	bReturningHome = false;
+	StopMovement();
+
 	// 진영이 바뀌면 트리가 통째로 달라진다. 멈추고 다시 시작한다
 	if (IsValid(StateTreeComponent))
 	{
@@ -748,6 +839,15 @@ void ADC1PalAIController::CancelRideApproach()
 void ADC1PalAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
 	Super::OnMoveCompleted(RequestID, Result);
+
+	if (true == bReturningHome && RequestID.IsEquivalent(ReturnHomeRequestID))
+	{
+		const APawn* Pal = GetPawn();
+		const bool bArrived = Result.IsSuccess() || (IsValid(Pal)
+			&& FVector::DistSquared2D(Pal->GetActorLocation(), HomeLocation) <= FMath::Square(ReturnHomeAcceptanceRadius));
+		FinishReturnHome(bArrived);
+		return;
+	}
 
 	// 끊긴 Follow 이동 완료도 온다
 	if (false == IsRideApproaching() || false == RequestID.IsEquivalent(RideApproachRequestID))

@@ -20,6 +20,7 @@ class UDC1PalData;
 class UDC1PalRegistryData;
 class UDC1PalRideComponent;
 class UCapsuleComponent;
+class UMaterialInterface;
 class USoundBase;
 class UWidgetComponent;
 struct FInputActionValue;
@@ -62,6 +63,10 @@ public:
 
 	// AttributeSet 의 Level 은 float 이라 표시용으로 정수화해서 돌려준다
 	int32								GetLevel() const;
+
+	// 스포너·저장 데이터가 FinishSpawning 전에 호출한다.
+	void								SetInitialLevel(int32 InLevel);
+	void								SetInitialAlpha(bool bInIsAlpha);
 	EDC1PalGender						GetGender() const { return PalInstance.Gender; }
 
 	// 현재 레벨 누적 경험치
@@ -98,8 +103,11 @@ public:
 	FDC1PalInstance						Fold(); // 데이터화
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패
-	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지
+	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지 ( 숨김은 스피어가 발광 뒤에 )
 	void								CancelCapture();// BeginCapture 되돌리기
+
+	// 포획 연출 발광 ( 메쉬 오버레이 머티리얼, 시각 전용 ) InFadeOut 이면 InDuration 뒤 원래 머티리얼로
+	void								PlayCaptureGlow(UMaterialInterface* InMaterial, bool InFadeOut, float InDuration);
 
 	// InBasePalBox 가 있으면 거점 팰로 나온다
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox = nullptr);
@@ -194,13 +202,20 @@ protected:
 	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
-	float HealthWidgetVisibleDistance = { 1200.f };
+	float HealthWidgetVisibleDistance = { 2000.f };
 
 	// 가시성 검사 주기
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.05"))
 	float HealthWidgetCheckInterval = { 0.2f };
 
 	FTimerHandle HealthWidgetVisibilityTimer;
+
+	// 사망 후 래그돌 시체가 월드에 남아 있는 시간. 서버가 만료 시 액터를 제거한다.
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Death", meta = (ClampMin = "0.0", Units = "s"))
+	float CorpseLifeSpan = { 8.f };
+
+	// 포획 실패 발광이 끝나면 오버레이 해제
+	FTimerHandle CaptureGlowTimer;
 
 	// 데미지를 받을 때마다 재생
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
@@ -244,11 +259,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Drop", meta = (ClampMin = "0.0"))
 	float DropLaunchSpeed = { 350.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level")
-	bool bOverrideLevel = { false };
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pal|Level", meta = (EditCondition = "bOverrideLevel", ClampMin = "1"))
-	int32 LevelOverride = { 1 };
+	// 맵에 직접 배치한 개체의 고정 레벨. 0이면 PalData의 MinLevel~MaxLevel을 사용한다.
+	// BP 클래스 기본값에서는 설정하지 않고, 배치된 인스턴스에서만 편집한다.
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Pal|Level", meta = (ClampMin = "0"))
+	int32 InitialLevel = { 0 };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Team, Category = "Pal|Team")
 	EDC1Team Team = { EDC1Team::Wild };

@@ -8,6 +8,7 @@
 #include "Tags/DC1GamePlayTags.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/Widget/DC1DamageNumberComponent.h"
+#include "AbilitySystem/Cues/DC1GameplayCueNotify_Hit.h"
 #include "Character/Player/DC1Player.h"
 
 UDC1PlayerSet::UDC1PlayerSet()
@@ -163,6 +164,7 @@ void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 	const float OldShield = GetShield();
 	SetShield(FMath::Max(GetShield() - LocalDamage, 0.f));
 	UDC1DamageNumberComponent::NotifyDamage(Data, OldShield - GetShield(), EDC1DamageNumberType::Shield);
+	UDC1GameplayCueNotify_Hit::NotifyShieldHit(Data);
 
 	// 보호막이 깨지는 순간은 파괴음, 남아 있으면 보호막 피격음
 	if (ADC1Player* Player = Cast<ADC1Player>(Data.Target.GetAvatarActor()))
