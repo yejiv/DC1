@@ -25,7 +25,9 @@
 #include "Define/DC1Helper.h"
 #include "Define/DC1ItemHelper.h"
 #include "System/DC1AssetManager.h"
+#include "Subsystem/DC1ExperienceSubsystem.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
+#include "Tags/DC1GamePlayTags.h"
 
 namespace DC1DebugCommands
 {
@@ -227,6 +229,35 @@ namespace DC1DebugCommands
 		Ar.Logf(TEXT("[DC1Debug] Added pal [%s] Lv.1 x%d / %d (box first, then party)."), *TagName, Added, Count);
 	}
 
+	// DC1.AddExp <Amount> - 실제 경험치 경로 ( ExperienceSubsystem -> StatComponent::GainExperience ) 로 지급. 레벨업 소리 · 이펙트 · 테크 포인트까지 그대로 탄다
+	void AddExp(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
+	{
+		if (InArgs.Num() < 1)
+		{
+			Ar.Logf(TEXT("Usage: DC1.AddExp <Amount>   ex) DC1.AddExp 1000"));
+			return;
+		}
+
+		const int32 Amount = FCString::Atoi(*InArgs[0]);
+		if (Amount <= 0)
+		{
+			Ar.Logf(ELogVerbosity::Error, TEXT("[DC1Debug] Amount must be > 0."));
+			return;
+		}
+
+		ADC1PlayerState* PS = FindAuthorityPlayerState(InWorld, Ar);
+		UWorld* ServerWorld = (nullptr != PS) ? PS->GetWorld() : nullptr;
+		UDC1ExperienceSubsystem* ExpSubsystem = (nullptr != ServerWorld) ? ServerWorld->GetSubsystem<UDC1ExperienceSubsystem>() : nullptr;
+		if (nullptr == ExpSubsystem)
+		{
+			Ar.Logf(ELogVerbosity::Error, TEXT("[DC1Debug] Experience subsystem not found."));
+			return;
+		}
+
+		ExpSubsystem->Grant(PS, DC1PlayerTags::Event_Exp_Player, Amount);
+		Ar.Logf(TEXT("[DC1Debug] Granted %d exp."), Amount);
+	}
+
 	void CraftCount(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
 	{
 		if (InArgs.Num() < 1)
@@ -323,6 +354,11 @@ namespace DC1DebugCommands
 		TEXT("DC1.AddPal"),
 		TEXT("DC1.AddPal <Species> [Count=1] - add Lv.1 pals to local player's box (or party)"),
 		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&AddPal));
+
+	FAutoConsoleCommand AddExpCommand(
+		TEXT("DC1.AddExp"),
+		TEXT("DC1.AddExp <Amount> - grant player exp (level up sound / FX / tech points)"),
+		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&AddExp));
 
 	FAutoConsoleCommand CraftCountCommand(
 		TEXT("DC1.CraftCount"),

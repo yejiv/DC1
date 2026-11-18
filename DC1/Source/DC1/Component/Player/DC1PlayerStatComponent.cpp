@@ -14,6 +14,9 @@
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1TechTreeComponent.h"
 
+#include "NiagaraFunctionLibrary.h"
+#include "GameFramework/Character.h"
+
 #pragma region Stat Investment
 
 int32 FDC1StatInvestment::GetCount(EDC1PlayerStat InStat) const
@@ -313,6 +316,7 @@ void UDC1PlayerStatComponent::GainExperience(int32 InAmount)
 		}
 
 		Client_PlayLevelUpSound();
+		Multicast_PlayLevelUpFX();
 	}
 	ASC->SetNumericAttributeBase(UDC1PlayerSet::GetExperienceAttribute(), Experience);
 }
@@ -320,6 +324,20 @@ void UDC1PlayerStatComponent::GainExperience(int32 InAmount)
 void UDC1PlayerStatComponent::Client_PlayLevelUpSound_Implementation()
 {
 	UGameplayStatics::PlaySound2D(this, LevelUpSound);
+}
+
+void UDC1PlayerStatComponent::Multicast_PlayLevelUpFX_Implementation()
+{
+	if (nullptr == LevelUpFX || true == IsRunningDedicatedServer())
+		return;
+
+	const ADC1PlayerState* PS = GetOwner<ADC1PlayerState>();
+	const ACharacter* Character = (nullptr != PS) ? PS->GetPawn<ACharacter>() : nullptr;
+	if (nullptr == Character)
+		return;
+
+	UNiagaraFunctionLibrary::SpawnSystemAttached(LevelUpFX, Character->GetMesh(), NAME_None,
+		FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 }
 
 void UDC1PlayerStatComponent::OnPreSave()

@@ -13,6 +13,7 @@ struct FGameplayEventData;
 
 class UAbilitySystemComponent;
 class USoundBase;
+class UNiagaraSystem;
 
 // 가용 포인트 또는 투자 횟수 변경
 DECLARE_MULTICAST_DELEGATE(FDC1OnStatPointsChanged);
@@ -126,6 +127,10 @@ private:
 	UFUNCTION(Client, Unreliable)
 	void	Client_PlayLevelUpSound();
 
+	// 레벨업 이펙트 ( 서버 GainExperience -> 전원 ). 다른 플레이어에게도 보이도록 Multicast
+	UFUNCTION(NetMulticast, Unreliable)
+	void	Multicast_PlayLevelUpFX();
+
 	// 강화(+횟수)와 이후 초기화(-투자 횟수)가 같이 쓰는 어트리뷰트 반영 함수
 	void	ApplyStatInvestment(EDC1PlayerStat InStat, int32 InDeltaCount);
 
@@ -160,6 +165,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TObjectPtr<USoundBase> LevelUpSound = { nullptr };
+
+	// 레벨업한 플레이어 발밑 ( 메시 원점 ) 에 붙여 재생 ( NS_LevelUp )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem> LevelUpFX = { nullptr };
 
 private:
 	FGameplayTagContainer ExpFilter = {};
