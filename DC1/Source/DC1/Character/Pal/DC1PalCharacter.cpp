@@ -39,6 +39,9 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Components/PoseableMeshComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
@@ -53,6 +56,34 @@ namespace DC1PalCharacter
 
 	// 시체 중심에서 이만큼 위에서 튀어나온다. 래그돌 안에서 시작하지 않게
 	constexpr float DropSpawnHeight = 30.f;
+
+	// 소환 / 해제 공용 FX 스폰
+	//  메쉬에 붙여야 Skeletal Mesh DI 가 그 메쉬를 찾는다. 위치·회전만 Absolute 로 바운드 중심에 고정 ( 메쉬가 움직여도 안 따라감 )
+	//  팰 크기 전달 ( NS 에서 크기·개수에 곱해 씀 ): User.MeshSizeScale = 반지름 / 기준 반지름 ( 0.2 ~ 5 ), User.MeshRadius = 반지름 cm
+	static UNiagaraComponent* SpawnMeshFX(UNiagaraSystem* InFX, USceneComponent* InMesh, const FRotator& InRotation, float InReferenceRadius)
+	{
+		if (false == ::IsValid(InFX) || false == ::IsValid(InMesh))
+		{
+			return nullptr;
+		}
+
+		// 캐시된 Bounds 는 스켈레탈 메쉬 첫 틱 전엔 원점(0,0,0) 이라 스폰 직후엔 못 씀 -> 지금 트랜스폼으로 직접 계산
+		const FBoxSphereBounds Bounds = InMesh->CalcBounds(InMesh->GetComponentTransform());
+		UNiagaraComponent* FX = UNiagaraFunctionLibrary::SpawnSystemAttached(InFX, InMesh, NAME_None,
+			Bounds.Origin, InRotation, EAttachLocation::KeepWorldPosition, true);
+		if (false == ::IsValid(FX))
+		{
+			return nullptr;
+		}
+
+		FX->SetUsingAbsoluteLocation(true);
+		FX->SetUsingAbsoluteRotation(true);
+		FX->SetWorldLocationAndRotation(Bounds.Origin, InRotation);
+
+		FX->SetVariableFloat(TEXT("MeshSizeScale"), FMath::Clamp(Bounds.SphereRadius / InReferenceRadius, 0.2f, 5.f));
+
+		return FX;
+	}
 
 	// 가해자의 플레이어 (파트너면 주인). 야생 팰이면 nullptr
 	static ADC1PlayerState* FindPlayerStateOf(const AActor* InCauser)
@@ -186,6 +217,12 @@ void ADC1PalCharacter::BeginPlay()
 	{
 		AbilitySystemComponent->AddGameplayEventTagContainerDelegate(FGameplayTagContainer(DC1PlayerTags::Event_Exp),
 			FGameplayEventTagMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::HandleExpEvent));
+	}
+
+	// 클라: 소환 직후 복제된 팰이면 소환 연출 ( 서버는 BeginSummonFX 에서 )
+	if (true == bSummonFX && false == HasAuthority())
+	{
+		PlaySummonFX();
 	}
 
 	if (false == IsValid(HealthWidgetComponent))
@@ -802,6 +839,127 @@ void ADC1PalCharacter::PlayCaptureGlow(UMaterialInterface* InMaterial, bool InFa
 	}
 }
 
+void ADC1PalCharacter::BeginSummonFX()
+{
+	bSummonFX = true;
+	PlaySummonFX();
+
+	// 1초 뒤에 꺼서 나중에 이 팰을 본 클라이언트에서 연출 재생 X
+	GetWorldTimerManager().SetTimer(SummonFXResetTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		bSummonFX = false;
+	}), 1.f, false);
+}
+
+void ADC1PalCharacter::PlaySummonFX()
+{
+	const UDC1PalPartyComponent* Party = (true == ::IsValid(OwnerPlayerState)) ? OwnerPlayerState->GetPalPartyComponent() : nullptr;
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(Party))
+	{
+		return;
+	}
+
+	const FDC1PalCallFX& FX = Party->GetCallFX();
+
+	// 팰 메쉬 바운드 중심 + 팰 크기 ( 해제와 같은 구조 )
+	DC1PalCharacter::SpawnMeshFX(FX.SummonFX, GetMesh(), GetActorRotation(), FX.FXReferenceRadius);
+
+	PlayCaptureGlow(FX.SummonGlowMaterial, true, FX.SummonGlowDuration);
+}
+
+void ADC1PalCharacter::Multicast_PlayDismissFX_Implementation()
+{
+	const UDC1PalPartyComponent* Party = (true == ::IsValid(OwnerPlayerState)) ? OwnerPlayerState->GetPalPartyComponent() : nullptr;
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(Party))
+	{
+		return;
+	}
+
+	const FDC1PalCallFX& FX = Party->GetCallFX();
+
+	// 잔상 메쉬 바운드 중심 + 팰 크기 ( 소환과 같은 구조 )
+	UPoseableMeshComponent* Ghost = SpawnDismissGhost(FX.DismissGhostMaterial, FX.DismissGhostDuration, FX.DismissFXHoldTime);
+	DC1PalCharacter::SpawnMeshFX(FX.DismissFX, Ghost, GetActorRotation(), FX.FXReferenceRadius);
+
+	// 트레일은 손 소켓에 붙임 - 끝점 = 이 NS 위치 ( Engine.Owner.Position ) 라 손이 움직여도 매 프레임 따라감. 출발점만 팰 중심으로 고정
+	//  팰은 이 직후 파괴되므로 타이머는 Caller 에 묶고, 람다엔 지금 값만 복사해 넘긴다 ( this / FX 참조 캡처 금지 )
+	ACharacter* Caller = Cast<ACharacter>(OwnerPlayerState->GetPawn());
+	if (true == ::IsValid(FX.ReturnTrailFX) && true == ::IsValid(Caller))
+	{
+		UNiagaraSystem* TrailFX = FX.ReturnTrailFX;
+		const FName Socket = FX.ReturnTrailSocket;
+		const FVector StartPosition = GetActorLocation();
+
+		auto SpawnTrail = [Caller, TrailFX, Socket, StartPosition]()
+			{
+				UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAttached(TrailFX, Caller->GetMesh(), Socket,
+					FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true);
+				if (true == ::IsValid(Trail))
+				{
+					Trail->SetVariablePosition(TEXT("StartPosition"), StartPosition);
+				}
+			};
+
+		if (FX.ReturnTrailDelay <= 0.f)
+		{
+			SpawnTrail();
+		}
+		else
+		{
+			// WeakLambda: Caller 가 그 사이 사라지면 호출 자체가 안 됨
+			FTimerHandle TrailTimer;
+			Caller->GetWorldTimerManager().SetTimer(TrailTimer, FTimerDelegate::CreateWeakLambda(Caller, SpawnTrail), FX.ReturnTrailDelay, false);
+		}
+	}
+}
+
+UPoseableMeshComponent* ADC1PalCharacter::SpawnDismissGhost(UMaterialInterface* InMaterial, float InDuration, float InHoldTime) const
+{
+	USkeletalMeshComponent* Body = GetMesh();
+	if (false == ::IsValid(InMaterial) || nullptr == Body->GetSkinnedAsset())
+	{
+		return nullptr;
+	}
+
+	AActor* GhostActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), Body->GetComponentTransform());
+	if (false == ::IsValid(GhostActor))
+	{
+		return nullptr;
+	}
+
+	// 사라지는 순간의 포즈를 그대로 복사 ( 이후 팰이 파괴돼도 유지 )
+	UPoseableMeshComponent* Ghost = NewObject<UPoseableMeshComponent>(GhostActor);
+	Ghost->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Ghost->SetSkinnedAssetAndUpdate(Body->GetSkinnedAsset());
+	GhostActor->SetRootComponent(Ghost);
+	Ghost->SetWorldTransform(Body->GetComponentTransform());
+	Ghost->RegisterComponent();
+	Ghost->CopyPoseFromSkeletalComponent(Body);
+
+
+	// 슬롯마다 원래 BaseColorTexture 를 가져와 반투명으로. 페이드는 머티리얼이 StartTime 부터 계산
+	const float Now = GetWorld()->GetTimeSeconds();
+	for (int32 Index = 0; Index < Body->GetNumMaterials(); ++Index)
+	{
+		UMaterialInstanceDynamic* Fade = UMaterialInstanceDynamic::Create(InMaterial, Ghost);
+
+		UTexture* BaseColor = nullptr;
+		const UMaterialInterface* Source = Body->GetMaterial(Index);
+		if (nullptr != Source && true == Source->GetTextureParameterValue(FMaterialParameterInfo(TEXT("BaseColorTexture")), BaseColor))
+		{
+			Fade->SetTextureParameterValue(TEXT("BaseColorTexture"), BaseColor);
+		}
+
+		Fade->SetScalarParameterValue(TEXT("StartTime"), Now);
+		Fade->SetScalarParameterValue(TEXT("FadeTime"), InDuration);
+		Ghost->SetMaterial(Index, Fade);
+	}
+
+	// 페이드가 끝나면 투명하지만 파티클이 메쉬를 계속 읽도록 InHoldTime 만큼 더 둔다
+	GhostActor->SetLifeSpan(InDuration + InHoldTime);
+	return Ghost;
+}
+
 void ADC1PalCharacter::CancelCapture()
 {
 	SetActorHiddenInGame(false);
@@ -1028,6 +1186,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADC1PalCharacter, OwnerPlayerState);
 	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
 	DOREPLIFETIME(ADC1PalCharacter, bIsAlpha);
+	DOREPLIFETIME(ADC1PalCharacter, bSummonFX);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const
