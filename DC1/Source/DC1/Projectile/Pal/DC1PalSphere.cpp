@@ -31,6 +31,11 @@ ADC1PalSphere::ADC1PalSphere()
 	// 팀 공용 Projectile 프로필. Pal·지형 Block, 던진 Player Ignore
 	HitCollider->SetCollisionProfileName(TEXT("Projectile"));
 
+	// 조준하는 동안 손에 들고 있다가 Launch 로 던진다. 그 전에는 이동·충돌·수명을 멈춰 둔다
+	HitCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ProjectileMovement->bAutoActivate = false;
+	InitialLifeSpan = 0.f;
+
 	ProjectileMesh->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
 
 	// 반구 2개 사용
@@ -60,6 +65,25 @@ void ADC1PalSphere::BeginPlay()
 
 	// 데디케이티드 서버에서는 만들어지지 않는다
 	CaptureWidgetComponent->InitWidget();
+}
+
+void ADC1PalSphere::Launch(const FRotator& InAimRotation)
+{
+	if (false == HasAuthority() || true == IsLaunched())
+	{
+		return;
+	}
+
+	bLaunched = true;
+
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	SetActorRotation(InAimRotation);
+	HitCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+	ProjectileMovement->Velocity = InAimRotation.Vector() * ProjectileMovement->InitialSpeed;
+	ProjectileMovement->Activate(true);
+
+	SetLifeSpan(LaunchLifeSpan);
 }
 
 void ADC1PalSphere::Tick(float DeltaSeconds)
