@@ -364,6 +364,46 @@ struct FDC1PalSanityDepletedConditionInstanceData
 };
 
 
+USTRUCT()
+struct FDC1PalHasWorkConditionInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<ADC1PalAIController>	AIController = { nullptr };
+
+	// 검사 간격(초). OnTick 전환에서 매 프레임 거점 작업 목록을 훑지 않도록
+	UPROPERTY(EditAnywhere, Category = Parameter, meta = (ClampMin = "0.0"))
+	float							CheckInterval = { 0.5f };
+
+	UPROPERTY(EditAnywhere, Category = Parameter)
+	bool							bInvert = { false };
+
+	UPROPERTY()
+	double							LastCheckTime = { -1.0 };
+
+	UPROPERTY()
+	bool							bLastResult = { false };
+};
+
+
+// 거점 팰에게 지금 배정 가능한 작업이 있는지 ( 배정은 하지 않음 ). 쉬는 중 → Work 전환 조건
+USTRUCT(DisplayName = "Pal Has Work", Category = "Pal")
+struct FDC1PalHasWorkCondition : public FStateTreeConditionCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FDC1PalHasWorkConditionInstanceData;
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual bool TestCondition(FStateTreeExecutionContext& Context) const override;
+};
+
+
 USTRUCT(DisplayName = "Pal Sanity Depleted", Category = "Pal")
 struct FDC1PalSanityDepletedCondition : public FStateTreeConditionCommonBase
 {

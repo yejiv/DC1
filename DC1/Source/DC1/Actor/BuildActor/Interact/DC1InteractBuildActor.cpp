@@ -647,6 +647,17 @@ void ADC1InteractBuildActor::ReleaseInfoWidget()
 	}
 }
 
+bool ADC1InteractBuildActor::CanAcceptPalWorker(const ADC1PalCharacter* InPal) const
+{
+	// AssignPalWorker 와 같은 조건
+	if (true == IsPalWorkerAssigned(InPal))
+	{
+		return true;
+	}
+
+	return (true == CanPalWork() && true == HasPalWorkerSlot() && true == CanAssignPal(InPal));
+}
+
 bool ADC1InteractBuildActor::CanAssignPal(const ADC1PalCharacter* InPal) const
 {
 	return DC1WorkTarget::CanPalWorkAt(InPal, GetWorkTypeTag(), GetActorLocation());

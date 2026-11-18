@@ -98,6 +98,17 @@ bool ADC1ResourceActor::AssignPalWorker(ADC1PalCharacter* InPal)
 	return true;
 }
 
+bool ADC1ResourceActor::CanAcceptPalWorker(const ADC1PalCharacter* InPal) const
+{
+	// AssignPalWorker 와 같은 조건
+	if (true == IsPalWorkerAssigned(InPal))
+	{
+		return true;
+	}
+
+	return (EDC1ResourceActorState::Active == ResourceState && true == DC1WorkTarget::CanPalWorkAt(InPal, WorkTypeTag, GetActorLocation()));
+}
+
 void ADC1ResourceActor::UnassignPalWorker(ADC1PalCharacter* InPal)
 {
 	if (PalWorkers.Remove(InPal) > 0)

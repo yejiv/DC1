@@ -8,9 +8,13 @@
 #include "Tags/State/DC1GameplayTag_State.h"
 #include "Tags/Pal/DC1GameplayTag_Pal.h"
 
+#include "Item/Equip/Tool/DC1Tool.h"
+
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
 
 UDC1GA_Pal_Work::UDC1GA_Pal_Work(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -28,6 +32,8 @@ bool UDC1GA_Pal_Work::StartWork(IDC1WorkTargetInterface* InWorkTarget)
 	PalWorkersChangedHandle = InWorkTarget->GetOnPalWorkersChanged().AddUObject(this, &ThisClass::HandlePalWorkersChanged);
 	InWorkTarget->AddWorker(Pal);
 
+	SpawnWorkTool(InWorkTarget);
+
 	return true;
 }
 
@@ -41,6 +47,46 @@ void UDC1GA_Pal_Work::StopWork()
 	}
 
 	PalWorkersChangedHandle.Reset();
+
+	ADC1Tool* Tool = WorkTool.Get();
+	if (true == ::IsValid(Tool))
+	{
+		Tool->Destroy();
+	}
+	WorkTool.Reset();
+}
+
+void UDC1GA_Pal_Work::SpawnWorkTool(IDC1WorkTargetInterface* InWorkTarget)
+{
+	const TSubclassOf<ADC1Tool>* ToolClass = (nullptr != InWorkTarget) ? WorkTools.Find(InWorkTarget->GetWorkTypeTag()) : nullptr;
+	if (nullptr == ToolClass || nullptr == *ToolClass)
+	{
+		return;
+	}
+
+	ADC1PalCharacter* Pal = GetPal();
+	USkeletalMeshComponent* MeshComp = ::IsValid(Pal) ? Pal->GetMesh() : nullptr;
+	UWorld* World = ::IsValid(Pal) ? Pal->GetWorld() : nullptr;
+	if (nullptr == MeshComp || nullptr == World)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Pal;
+	SpawnParams.Instigator = Pal;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ADC1Tool* Tool = World->SpawnActor<ADC1Tool>(*ToolClass, MeshComp->GetSocketTransform(ToolSocketName), SpawnParams);
+	if (nullptr == Tool)
+	{
+		return;
+	}
+
+	Tool->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ToolSocketName);
+	Tool->SetActorHiddenInGame(false);
+
+	WorkTool = Tool;
 }
 
 void UDC1GA_Pal_Work::OnWorkStarted()

@@ -40,6 +40,8 @@ public:
 	virtual bool						AssignPalWorker(ADC1PalCharacter* InPal) = 0;
 	virtual void						UnassignPalWorker(ADC1PalCharacter* InPal) = 0;
 	virtual bool						IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const = 0;
+	// 지금 배정하면 받아줄지 ( 배정은 하지 않음 ) - 팰 AI 가 쉬는 중에 할 일이 생겼는지 볼 때 쓴다
+	virtual bool						CanAcceptPalWorker(const ADC1PalCharacter* InPal) const = 0;
 
 	// 작업 배정 목록 변경 ( 해제 포함 ) - 팰 Work GA가 구독
 	virtual FDC1OnPalWorkersChanged&	GetOnPalWorkersChanged() = 0;

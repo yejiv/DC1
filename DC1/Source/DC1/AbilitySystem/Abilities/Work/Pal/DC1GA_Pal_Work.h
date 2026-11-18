@@ -6,6 +6,8 @@
 #include "AbilitySystem/Abilities/Work/DC1GA_Base_Work.h"
 #include "DC1GA_Pal_Work.generated.h"
 
+class ADC1Tool;
+
 /**
  * 
  */
@@ -41,12 +43,26 @@ private:
 
 	UAnimMontage*		FindWorkMontage() const;
 
+	// 서버 - 작업 종류에 맞는 도구를 손 소켓에 붙인다 ( 원작 BP_ActionArchitecture 와 같은 방식 )
+	void				SpawnWorkTool(IDC1WorkTargetInterface* InWorkTarget);
+
 	ADC1PalCharacter*	GetPal() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Ability|Anim")
 	TMap<FGameplayTag, FGameplayTag>	WorkToMontageTag;
 
+	// 작업 종류( 대상 GetWorkTypeTag ) → 손에 드는 도구. 없으면 맨손
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Tool")
+	TMap<FGameplayTag, TSubclassOf<ADC1Tool>>	WorkTools;
+
+	// 도구를 붙일 팰 메시 소켓
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Tool")
+	FName								ToolSocketName = { TEXT("Socket_Weapon_R") };
+
 private:
 	FDelegateHandle						PalWorkersChangedHandle;
+
+	// 이번 작업에서 든 도구 ( StopWork 에서 지움 )
+	TWeakObjectPtr<ADC1Tool>			WorkTool;
 };
