@@ -15,6 +15,10 @@ struct FDC1PalDisplayInfo
 {
 	GENERATED_BODY()
 
+	// 표시 대상 개체. 다른 팰로 바뀌었는지 판단해 HP바 감소 연출 여부를 고른다
+	UPROPERTY()
+	FGuid					PalID;
+
 	// 닉네임이 비어 있으면 종 이름
 	UPROPERTY()
 	FText					Name;
@@ -28,4 +32,8 @@ struct FDC1PalDisplayInfo
 
 	UPROPERTY()
 	TObjectPtr<UTexture2D>	ElementIcon = { nullptr };
+
+	// 두 번째 속성이 없으면(Neutral) nullptr
+	UPROPERTY()
+	TObjectPtr<UTexture2D>	ElementIcon2 = { nullptr };
 };

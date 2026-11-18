@@ -10,6 +10,7 @@
 #include "DC1PalViewModel.generated.h"
 
 class UDC1PalPartyComponent;
+class ADC1PalCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnPalSlotShifted, EDC1PalSlotShift);
 DECLARE_MULTICAST_DELEGATE(FOnPalInfoChanged);
@@ -50,8 +51,15 @@ private:
 	// 파티 내 팰 변경
 	void HandlePalChanged();
 
+	// 소환 중인 팰의 체력 변화 구독. 소환/회수 때마다 대상을 갈아끼운다
+	void BindDeployedPal();
+	void UnbindDeployedPal();
+	void HandleDeployedPalHealthChanged(float InCurrent, float InMax);
+
 private:
 	TWeakObjectPtr<UDC1PalPartyComponent>	PalPartyComponent = { nullptr };
+
+	TWeakObjectPtr<ADC1PalCharacter>		BoundDeployedPal = { nullptr };
 
 private:
 	// 방향 판별용 직전 선택 슬롯

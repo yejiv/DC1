@@ -38,10 +38,13 @@ private:
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UDC1StatusBar>	HPBar = {};
 
-	// 속성 아이콘 두 칸. 지금 PalData는 속성이 하나뿐이라 01은 아직 채울 값이 없다
+	// 속성 아이콘 두 칸. 01은 두 번째 속성이 있을 때만 보인다
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UImage>			Image_ElementIcon00 = {};
 
 	UPROPERTY(Transient, meta = (BindWidget))
 	TObjectPtr<UImage>			Image_ElementIcon01 = {};
+
+	// 마지막으로 표시한 팰. 같은 팰일 때만 HP 감소를 피격으로 보고 지연 감소를 보여준다
+	FGuid						DisplayedPalID;
 };
