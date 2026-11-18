@@ -131,6 +131,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	float GetMaxWeight() const;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
+	bool IsOverweight() const;
+
 	// Item.Money 카테고리 아이템 개수 합계 (칸마다 int 최대까지 쌓이므로 int64)
 	int64 GetMoneyCount() const;
 

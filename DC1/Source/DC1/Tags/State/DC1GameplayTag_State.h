@@ -29,6 +29,8 @@ namespace DC1StateTags
 
 	// 팀원에게 치료받는 중 ( 기절 게이지 자연감소 정지 ). State.Downed 하위로 두지 않는다
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_BeingRevived);
+	// 인벤토리 무게 초과
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Overweight);
 #pragma endregion
 
 #pragma region Common

@@ -16,8 +16,6 @@ class UDC1PlayerStatPanelWidget;
 class UBorder;
 class UVerticalBox;
 class UButton;
-class UProgressBar;
-class UTextBlock;
 
 /**
  * I키 인벤토리 패널 (팰월드 형태)
@@ -78,9 +76,6 @@ protected:
 	UFUNCTION()
 	void HandleDiscardButtonClicked();
 
-	// 무게 게이지와 텍스트를 갱신하는 함수
-	void UpdateWeightDisplay();
-
 	void HandleEnhanceModeChanged(bool bInEnhanceMode);
 
 protected:
@@ -113,13 +108,6 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Button_Discard;
-
-	// 총 중량 게이지
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UProgressBar> ProgressBar_Weight;
-
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> TextBlock_Weight;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UDC1PlayerStatPanelWidget> PlayerStatPanel_Stats;

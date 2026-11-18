@@ -409,6 +409,11 @@ float UDC1InventoryViewModel::GetMaxWeight() const
 	return ::IsValid(MyInventoryComp) ? MyInventoryComp->GetMaxWeight() : 0.f;
 }
 
+bool UDC1InventoryViewModel::IsOverweight() const
+{
+	return ::IsValid(MyInventoryComp) ? MyInventoryComp->IsOverweight() : false;
+}
+
 int64 UDC1InventoryViewModel::GetMoneyCount() const
 {
 	if (false == ::IsValid(MyInventoryComp))
