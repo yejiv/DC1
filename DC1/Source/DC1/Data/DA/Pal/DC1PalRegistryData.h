@@ -12,6 +12,7 @@
 class UDC1PalData;
 class UTexture2D;
 class ADC1PalProjectile;
+class USoundBase;
 struct FDC1PalInstance;
 
 // 경험치 표 행. 행 이름 = 레벨
@@ -131,6 +132,10 @@ struct FDC1PalSkillDef
 	// 캡슐 앞에서 판정 중심까지 거리
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Near", meta = (ClampMin = "0.0"))
 	float			HitReach = { 80.f };
+
+	// 스킬 시작 ( 몽타주 시작 ) 시 팰에 붙여 재생. 종별 몽타주를 여러 스킬이 같이 써서 노티파이 대신 여기서 고른다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Sound")
+	TObjectPtr<USoundBase>	ChargeSound = { nullptr };
 };
 
 // 패시브

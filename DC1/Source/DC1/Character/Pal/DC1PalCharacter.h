@@ -118,6 +118,10 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void								Multicast_PlayDismissFX();
 
+	// 스킬 사운드 ( 서버 → 모두 ). InAttach 면 팰에 붙어 따라감 ( 차지 ), 아니면 InLocation 에서 ( 투사체 명중 )
+	UFUNCTION(NetMulticast, Unreliable)
+	void								Multicast_PlaySkillSound(USoundBase* InSound, FVector_NetQuantize InLocation, bool InAttach);
+
 	// 지금 포즈를 복사한 반투명 잔상 ( InDuration 동안 페이드, InHoldTime 더 지나면 제거 - 붙은 파티클용 )
 	UPoseableMeshComponent*				SpawnDismissGhost(UMaterialInterface* InMaterial, float InDuration, float InHoldTime) const;
 

@@ -624,6 +624,22 @@ void ADC1PalCharacter::Multicast_PlayHitSound_Implementation(FVector_NetQuantize
 	UGameplayStatics::PlaySoundAtLocation(this, HitSound, InLocation);
 }
 
+void ADC1PalCharacter::Multicast_PlaySkillSound_Implementation(USoundBase* InSound, FVector_NetQuantize InLocation, bool InAttach)
+{
+	if (nullptr == InSound)
+	{
+		return;
+	}
+
+	if (true == InAttach)
+	{
+		UGameplayStatics::SpawnSoundAttached(InSound, GetRootComponent());
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, InSound, InLocation);
+}
+
 void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Data)
 {
 	if (false == IsValid(PalAttributeSet))

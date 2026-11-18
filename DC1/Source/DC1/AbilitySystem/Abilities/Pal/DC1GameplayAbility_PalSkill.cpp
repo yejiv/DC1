@@ -30,7 +30,7 @@ void UDC1GameplayAbility_PalSkill::ActivateAbility(const FGameplayAbilitySpecHan
 		return;
 	}
 
-	const ADC1PalCharacter* Pal = (nullptr != ActorInfo) ? Cast<ADC1PalCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	ADC1PalCharacter* Pal = (nullptr != ActorInfo) ? Cast<ADC1PalCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
 	const UDC1PalData* PalData = (nullptr != Pal) ? Pal->GetPalData() : nullptr;
 	if (nullptr == PalData)
 	{
@@ -77,6 +77,12 @@ void UDC1GameplayAbility_PalSkill::ActivateAbility(const FGameplayAbilitySpecHan
 	MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
 	MontageTask->ReadyForActivation();
+
+	// 탑승 중엔 클라에서도 활성화되므로 서버에서만 보낸다 ( Multicast 가 클라 포함 전원에게 재생 )
+	if (true == bHasSkillDef && nullptr != SkillDef.ChargeSound && true == ActorInfo->IsNetAuthority())
+	{
+		Pal->Multicast_PlaySkillSound(SkillDef.ChargeSound, Pal->GetActorLocation(), true);
+	}
 }
 
 void UDC1GameplayAbility_PalSkill::CacheSkillDef(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo)
