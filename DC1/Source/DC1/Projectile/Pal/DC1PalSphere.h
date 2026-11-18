@@ -51,6 +51,11 @@ public:
 
 	virtual void			GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	// 서버: 손에서 떼어 조준 방향으로 날린다. 그 전까지는 손 소켓에 붙어 있는 상태 (이동·충돌 꺼짐)
+	void					Launch(const FRotator& InAimRotation);
+
+	bool					IsLaunched() const { return bLaunched; }
+
 	FDC1OnPalCaptured		OnPalCaptured;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Open")
@@ -105,6 +110,10 @@ protected:
 	void					TryRequestCaptureNotice();
 
 protected:
+	// 던진 뒤 사라지기까지. 손에 든 동안에는 수명이 흐르지 않는다
+	UPROPERTY(EditDefaultsOnly, Category = "Launch", meta = (ClampMin = "0.1"))
+	float					LaunchLifeSpan = { 5.f };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "1.0"))
 	float					SphereLevel = { 7.f };
 
@@ -207,6 +216,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	FLinearColor			ThrowColor = { FLinearColor(0.f, 0.3775f, 1.f, 1.f) };
 private:
+	bool					bLaunched = { false };	// 손에서 떠났는지 (서버)
+
 	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
 	FDC1CaptureDisplay		CaptureDisplay;
 

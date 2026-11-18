@@ -98,6 +98,12 @@ void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle H
 		EquipComp->EquipPalSphere();
 	}
 
+	// 조준하는 동안 손에 들고 있을 스피어. 액터·부착이 복제되어 다른 클라에도 보인다
+	if (true == ActorInfo->IsNetAuthority())
+	{
+		HeldSphere = SpawnHeldSphere();
+	}
+
 	// 뗄 때 던지기. ASC가 InputPressed/Released를 전달해줘야 이 태스크가 깨어난다
 	if (UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true))
 	{
@@ -135,6 +141,14 @@ void UDC1GA_Player_PalSphere::EndAbility(const FGameplayAbilitySpecHandle Handle
 		EquipComp->UnequipPalSphere();
 	}
 
+	// 던지기 전에 끝났으면 손에 든 스피어를 지운다
+	ADC1PalSphere* Held = HeldSphere.Get();
+	if (true == ::IsValid(Held) && false == Held->IsLaunched())
+	{
+		Held->Destroy();
+	}
+	HeldSphere.Reset();
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -160,41 +174,22 @@ void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
 	}
 
 	ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
-	UWorld* World = ::IsValid(Player) ? Player->GetWorld() : nullptr;
-	if (nullptr == World)
+	if (false == ::IsValid(Player))
 	{
 		return;
 	}
 
-	const UDC1PalSphereComponent* SphereComp = DC1GAPlayerPalSphere::FindSphereComponent(CurrentActorInfo);
-	const FDC1PalSphereDef* SphereDef = (nullptr != SphereComp) ? SphereComp->FindSphereDef(ThrowItemID) : nullptr;
-	if (nullptr == SphereDef || nullptr == SphereDef->SphereClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No SphereClass for item [%s]. Check PalSphereComponent SphereDefs on the PlayerState BP."), *GetName(), *ThrowItemID.ToString());
-		return;
-	}
-
-	// 조준 중에 다른 데로 옮겼거나 버렸으면 안 던진다
+	// 조준 중에 다른 데로 옮겼거나 버렸으면 안 던진다 (손에 든 스피어는 EndAbility 에서 지워진다)
 	UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerPalSphere::FindInventory(CurrentActorInfo);
 	if (nullptr == Inventory || false == Inventory->RemoveItemByID(ThrowItemID, 1))
 	{
 		return;
 	}
 
-	const FRotator AimRotation = Player->GetControlRotation();
+	ADC1PalSphere* Sphere = HeldSphere.Get();
+	HeldSphere.Reset();
 
-	const USkeletalMeshComponent* MeshComp = Player->GetMesh();
-	const FVector SpawnLocation = (nullptr != MeshComp && true == MeshComp->DoesSocketExist(ThrowSocketName))
-		? MeshComp->GetSocketLocation(ThrowSocketName)
-		: Player->GetPawnViewLocation() + (AimRotation.Vector() * ThrowForwardOffset);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = Player;
-	SpawnParams.Instigator = Player;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(SphereDef->SphereClass, SpawnLocation, AimRotation, SpawnParams);
-	if (nullptr == Sphere)
+	if (false == ::IsValid(Sphere))
 	{
 		return;
 	}
@@ -207,6 +202,42 @@ void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
 			Sphere->OnPalCaptured.AddUObject(Party, &UDC1PalPartyComponent::HandlePalCaptured);
 		}
 	}
+
+	Sphere->Launch(Player->GetControlRotation());
+}
+
+ADC1PalSphere* UDC1GA_Player_PalSphere::SpawnHeldSphere()
+{
+	ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
+	UWorld* World = ::IsValid(Player) ? Player->GetWorld() : nullptr;
+	if (nullptr == World)
+	{
+		return nullptr;
+	}
+
+	const UDC1PalSphereComponent* SphereComp = DC1GAPlayerPalSphere::FindSphereComponent(CurrentActorInfo);
+	const FDC1PalSphereDef* SphereDef = (nullptr != SphereComp) ? SphereComp->FindSphereDef(ThrowItemID) : nullptr;
+	if (nullptr == SphereDef || nullptr == SphereDef->SphereClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No SphereClass for item [%s]. Check PalSphereComponent SphereDefs on the PlayerState BP."), *GetName(), *ThrowItemID.ToString());
+		return nullptr;
+	}
+
+	USkeletalMeshComponent* MeshComp = Player->GetMesh();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Player;
+	SpawnParams.Instigator = Player;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(SphereDef->SphereClass, MeshComp->GetSocketTransform(ThrowSocketName), SpawnParams);
+	if (nullptr != Sphere)
+	{
+		Sphere->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ThrowSocketName);
+		Sphere->SetActorRelativeLocation(HeldSphereOffset);
+	}
+
+	return Sphere;
 }
 
 void UDC1GA_Player_PalSphere::OnMontageCompleted()

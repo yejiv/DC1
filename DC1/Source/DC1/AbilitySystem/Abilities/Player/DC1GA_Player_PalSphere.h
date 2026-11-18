@@ -39,20 +39,26 @@ private:
 
 	UDC1EquipComponent*	GetEquipComponent() const;
 
+	// 서버: 던질 스피어를 만들어 ThrowSocketName 소켓(손)에 붙인다
+	ADC1PalSphere*		SpawnHeldSphere();
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Anim")
 	FGameplayTag	ThrowMontageTag;
 
 public:
-	// 손에서 떠나는 지점. 소켓이 없으면 눈높이 앞쪽에서 나간다
+	// 조준하는 동안 스피어를 들고 있다가 던지는 손 소켓
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
 	FName						ThrowSocketName;
 
-	// 소켓이 없을 때만 쓰는 폴백 오프셋
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere", meta = (ClampMin = "0.0"))
-	float						ThrowForwardOffset = { 80.f };
+	// 손 소켓 기준 위치 보정 (소켓 축 기준). 손바닥 쪽으로 옮길 때 쓴다
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	FVector						HeldSphereOffset = { FVector::ZeroVector };
 
 private:
 	// 발동할 때 정한 스피어. 조준 중에 등급을 바꿔도 이번 투척은 그대로
 	FName						ThrowItemID;
+
+	// 조준하는 동안 손에 들고 있는 스피어 (서버). 던지면 비우고, 던지기 전에 끝나면 지운다
+	TWeakObjectPtr<ADC1PalSphere>	HeldSphere;
 };
