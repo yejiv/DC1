@@ -60,6 +60,33 @@ void UDC1EquipComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		Inventory->OnEquipmentSlotChanged.RemoveAll(this);
 	}
 
+	// 로그아웃 시 폰이 먼저 파괴되면 부착된 장비 액터는 떼어지기만 하고 맵에 남는다
+	// 스폰한 쪽(서버)에서 직접 파괴한다. 클라는 복제로 따라 사라진다
+	if (true == GetOwner()->HasAuthority())
+	{
+		CurrentWeapon = nullptr;
+		CurrentGlider = nullptr;
+		CurrentTool = nullptr;
+
+		for (FDC1EquipSlot& EquipSlot : EquipSlots)
+		{
+			if (true == IsValid(EquipSlot.EquipActor))
+			{
+				EquipSlot.EquipActor->Destroy();
+			}
+			EquipSlot.EquipActor = nullptr;
+		}
+
+		for (ADC1Tool* Tool : ToolSlots)
+		{
+			if (true == IsValid(Tool))
+			{
+				Tool->Destroy();
+			}
+		}
+		ToolSlots.Reset();
+	}
+
 	Super::EndPlay(EndPlayReason);
 }
 
