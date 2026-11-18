@@ -10,6 +10,7 @@
 class UWidgetComponent;
 class USoundBase;
 class UNiagaraSystem;
+class UNiagaraComponent;
 class UMaterialInterface;
 class ADC1PalCharacter;
 
@@ -97,8 +98,8 @@ protected:
 	// 서버: 발광을 보여준 뒤 팰 숨김
 	void					HideCapturePal();
 
-	// 스피어 위치에 FX ( 데디 서버 X )
-	void					SpawnFX(UNiagaraSystem* InFX) const;
+	// 스피어 위치에 FX ( 데디 서버 X ). 스폰 못 하면 nullptr
+	UNiagaraComponent*		SpawnFX(UNiagaraSystem* InFX) const;
 
 	// 성공을 처음 받았을 때 던진 사람 클라에 포획 알림을 한 번 요청한다
 	void					TryRequestCaptureNotice();
@@ -162,7 +163,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TObjectPtr<USoundBase>	CaptureFailSound = { nullptr };
 
-	// 1 / 8 팰 발광 오버레이 ( M_Pal_CaptureGlow )
+	// 팰 발광 오버레이 ( M_Pal_CaptureGlow )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UMaterialInterface>	PalGlowMaterial = { nullptr };
 
@@ -170,34 +171,41 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "FX", meta = (ClampMin = "0.05"))
 	float					PalGlowDuration = { 0.3f };
 
-	// 8 실패 시 팰이 빛나다 원래대로 돌아오기까지
+	// 실패 시 팰이 빛나다 원래대로 돌아오기까지
 	UPROPERTY(EditDefaultsOnly, Category = "FX", meta = (ClampMin = "0.1"))
 	float					FailGlowDuration = { 0.8f };
 
-	// 2 팰 중심 -> 스피어 ( User.TargetPosition )
+	// 팰 중심 -> 스피어 ( User.TargetPosition )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	TrailFX = { nullptr };
 
-	// 3 트레일 도착 ( NS_PalCatch )
+	// 트레일 도착 ( NS_PalCatch )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	AbsorbFX = { nullptr };
 
-	// 4 + 5 닫힘 ( NS_Catch_Close )
+	// 닫힘 ( NS_Catch_Close )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	CloseFX = { nullptr };
 
-	// 6 판정 단계마다 ( NS_Catch_Shake )
+	// 판정 단계마다 ( NS_Catch_Shake )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	ShakeFX = { nullptr };
 
-	// 7 ( NS_PalCatch_Success )
+	// 포획 성공 ( NS_PalCatch_Success )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	SuccessFX = { nullptr };
 
-	// 8 ( NS_Catch_Fail )
+	// 포획 실패 ( NS_Catch_Fail )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	FailFX = { nullptr };
 
+	// 던질 때
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	ThrowFX = { nullptr };
+
+	// ThrowFX 의 User.ThrowColor ( 스피어 종류별 색, BP 에서 설정 )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	FLinearColor			ThrowColor = { FLinearColor(0.f, 0.3775f, 1.f, 1.f) };
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
 	FDC1CaptureDisplay		CaptureDisplay;
