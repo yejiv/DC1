@@ -100,6 +100,12 @@ protected:
 
 	void					SpawnAbsorbFX();
 
+	UFUNCTION()
+	void					OnRep_Launched();
+
+	// 던질 때 FX. 서버 Launch / 클라 OnRep 공통
+	void					PlayThrowFX();
+
 	// 서버: 발광을 보여준 뒤 팰 숨김
 	void					HideCapturePal();
 
@@ -184,7 +190,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "FX", meta = (ClampMin = "0.1"))
 	float					FailGlowDuration = { 0.8f };
 
-	// 팰 중심 -> 스피어 ( User.TargetPosition )
+	// 팰 중심 -> 스피어 ( 스피어에 붙어 끝점이 따라감, 출발점 User.StartPosition )
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem>	TrailFX = { nullptr };
 
@@ -216,7 +222,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	FLinearColor			ThrowColor = { FLinearColor(0.f, 0.3775f, 1.f, 1.f) };
 private:
-	bool					bLaunched = { false };	// 손에서 떠났는지 (서버)
+	UPROPERTY(ReplicatedUsing = OnRep_Launched)
+	bool					bLaunched = { false };	// 손에서 떠났는지. 서버가 정함
 
 	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
 	FDC1CaptureDisplay		CaptureDisplay;
