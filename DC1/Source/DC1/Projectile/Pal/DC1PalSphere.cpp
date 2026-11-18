@@ -65,11 +65,6 @@ void ADC1PalSphere::BeginPlay()
 
 	// 데디케이티드 서버에서는 만들어지지 않는다
 	CaptureWidgetComponent->InitWidget();
-
-	if (UNiagaraComponent* Throw = SpawnFX(ThrowFX))
-	{
-		Throw->SetVariableLinearColor(TEXT("ThrowColor"), ThrowColor);
-	}
 }
 
 void ADC1PalSphere::Launch(const FRotator& InAimRotation)
@@ -89,6 +84,25 @@ void ADC1PalSphere::Launch(const FRotator& InAimRotation)
 	ProjectileMovement->Activate(true);
 
 	SetLifeSpan(LaunchLifeSpan);
+
+	// 서버는 OnRep 이 안 불리므로 직접 ( 데디 서버는 SpawnFX 가 거름 )
+	PlayThrowFX();
+}
+
+void ADC1PalSphere::OnRep_Launched()
+{
+	if (true == bLaunched)
+	{
+		PlayThrowFX();
+	}
+}
+
+void ADC1PalSphere::PlayThrowFX()
+{
+	if (UNiagaraComponent* Throw = SpawnFX(ThrowFX))
+	{
+		Throw->SetVariableLinearColor(TEXT("ThrowColor"), ThrowColor);
+	}
 }
 
 void ADC1PalSphere::Tick(float DeltaSeconds)
@@ -150,6 +164,7 @@ void ADC1PalSphere::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ADC1PalSphere, bLaunched);
 	DOREPLIFETIME(ADC1PalSphere, bSphereOpen);
 	DOREPLIFETIME(ADC1PalSphere, CaptureDisplay);
 	DOREPLIFETIME(ADC1PalSphere, CapturePal);
@@ -387,12 +402,14 @@ void ADC1PalSphere::PlayAbsorbFX()
 
 	CapturePal->PlayCaptureGlow(PalGlowMaterial, false, 0.f);
 
+	// 트레일은 스피어에 붙임 - 끝점 = 스피어 위치 ( Engine.Owner.Position ), 출발점만 팰 중심으로 고정
 	if (true == ::IsValid(TrailFX))
 	{
-		UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, TrailFX, CapturePal->GetActorLocation());
+		UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAttached(TrailFX, GetRootComponent(), NAME_None,
+			FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true);
 		if (true == ::IsValid(Trail))
 		{
-			Trail->SetVariablePosition(TEXT("TargetPosition"), GetActorLocation());
+			Trail->SetVariablePosition(TEXT("StartPosition"), CapturePal->GetActorLocation());
 		}
 	}
 

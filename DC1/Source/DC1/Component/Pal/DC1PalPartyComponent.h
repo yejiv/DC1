@@ -18,6 +18,57 @@ class UDC1PalBaseComponent;
 class ACharacter;
 class AController;
 class APlayerController;
+class UNiagaraSystem;
+class UMaterialInterface;
+
+// 팰 소환 / 해제 연출 ( BP_DC1PlayerState 의 PalPartyComponent 에서 지정 )
+USTRUCT(BlueprintType)
+struct FDC1PalCallFX
+{
+	GENERATED_BODY()
+
+	// 소환 시 팰 메쉬에 붙는 FX
+	UPROPERTY(EditAnywhere, Category = "FX")
+	TObjectPtr<UNiagaraSystem>		SummonFX = { nullptr };
+
+	// 소환 발광 오버레이 ( M_Pal_CaptureGlow 재사용, 빛났다가 원래 머티리얼로 )
+	UPROPERTY(EditAnywhere, Category = "FX")
+	TObjectPtr<UMaterialInterface>	SummonGlowMaterial = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = "FX", meta = (ClampMin = "0.1"))
+	float							SummonGlowDuration = { 0.8f };
+
+	// 해제 잔상 머티리얼 ( M_Pal_DismissGhost ). 사라지는 순간의 포즈를 복사한 메쉬에 씌움
+	UPROPERTY(EditAnywhere, Category = "FX")
+	TObjectPtr<UMaterialInterface>	DismissGhostMaterial = { nullptr };
+
+	// 잔상이 보이다 사라지기까지 ( 머티리얼 페이드 시간 )
+	UPROPERTY(EditAnywhere, Category = "FX", meta = (ClampMin = "0.1"))
+	float							DismissGhostDuration = { 0.8f };
+
+	// 잔상이 다 사라진 뒤에도 메쉬를 남겨두는 시간 ( 붙은 DismissFX 파티클이 끝까지 재생되도록 )
+	UPROPERTY(EditAnywhere, Category = "FX", meta = (ClampMin = "0.0"))
+	float							DismissFXHoldTime = { 1.f };
+
+	// 잔상에 붙는 파티클 ( Skeletal Mesh DI 가 잔상 메쉬를 읽음 )
+	UPROPERTY(EditAnywhere, Category = "FX")
+	TObjectPtr<UNiagaraSystem>		DismissFX = { nullptr };
+
+	// 이 반지름(cm)인 팰이 배율 1. 메쉬 바운드 반지름 / 이 값 -> SummonFX / DismissFX 의 User.MeshSizeScale
+	UPROPERTY(EditAnywhere, Category = "FX", meta = (ClampMin = "1.0"))
+	float							FXReferenceRadius = { 100.f };
+
+	// 팰 중심 -> 플레이어 손 ( 손 소켓에 붙어 끝점이 따라감, 출발점 User.StartPosition )
+	UPROPERTY(EditAnywhere, Category = "FX")
+	TObjectPtr<UNiagaraSystem>		ReturnTrailFX = { nullptr };
+
+	UPROPERTY(EditAnywhere, Category = "FX")
+	FName							ReturnTrailSocket = { TEXT("hand_r") };
+
+	// 회수 트레일 시작 지연 ( 0 이면 즉시 ). 출발점은 해제 순간 팰 위치로 고정
+	UPROPERTY(EditAnywhere, Category = "FX", meta = (ClampMin = "0.0"))
+	float							ReturnTrailDelay = { 0.5f };
+};
 
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotTranslated);
 DECLARE_MULTICAST_DELEGATE(FOnPalSlotChanged);
@@ -105,6 +156,8 @@ public:
 
 	// 소환 중인 팰. 없으면 nullptr
 	ADC1PalCharacter*		GetDeployedPal() const { return DeployedPal; }
+
+	const FDC1PalCallFX&	GetCallFX() const { return CallFX; }
 
 	// 거점 조회 ( GS )
 	bool					HasBase() const;
@@ -209,6 +262,10 @@ protected:
 	// 죽고 나서 회수까지의 유예. 이 시간 동안 래그돌이 보인다.
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Party", meta = (ClampMin = "0.1"))
 	float					DeathRetrieveDelay = { 2.f };
+
+	// 소환 / 해제 연출
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|FX")
+	FDC1PalCallFX			CallFX;
 
 	// 캡슐 표면 간 거리
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Ride", meta = (ClampMin = "0.0"))

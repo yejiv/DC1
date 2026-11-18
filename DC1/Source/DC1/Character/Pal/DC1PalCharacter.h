@@ -21,6 +21,7 @@ class UDC1PalRegistryData;
 class UDC1PalRideComponent;
 class UCapsuleComponent;
 class UMaterialInterface;
+class UPoseableMeshComponent;
 class USoundBase;
 class UWidgetComponent;
 struct FInputActionValue;
@@ -108,6 +109,18 @@ public:
 
 	// 포획 연출 발광 ( 메쉬 오버레이 머티리얼, 시각 전용 ) InFadeOut 이면 InDuration 뒤 원래 머티리얼로
 	void								PlayCaptureGlow(UMaterialInterface* InMaterial, bool InFadeOut, float InDuration);
+
+	// 서버: 소환 직후. 초기 복제에 실어 클라 BeginPlay 에서도 재생
+	void								BeginSummonFX();
+
+	void								PlaySummonFX();
+
+	// 해제 ( 회수 ) 직전. 잔상 + 파티클 + 손까지 트레일 ( 시각 전용 )
+	UFUNCTION(NetMulticast, Reliable)
+	void								Multicast_PlayDismissFX();
+
+	// 지금 포즈를 복사한 반투명 잔상 ( InDuration 동안 페이드, InHoldTime 더 지나면 제거 - 붙은 파티클용 )
+	UPoseableMeshComponent*				SpawnDismissGhost(UMaterialInterface* InMaterial, float InDuration, float InHoldTime) const;
 
 	// InBasePalBox 가 있으면 거점 팰로 나온다
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox = nullptr);
@@ -216,6 +229,12 @@ protected:
 
 	// 포획 실패 발광이 끝나면 오버레이 해제
 	FTimerHandle CaptureGlowTimer;
+
+	// 소환 연출 재생 여부 ( 초기 복제용, 잠시 뒤 꺼서 나중에 보이게 된 클라는 재생 X )
+	UPROPERTY(Transient, Replicated)
+	bool bSummonFX = { false };
+
+	FTimerHandle SummonFXResetTimer;
 
 	// 데미지를 받을 때마다 재생
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
