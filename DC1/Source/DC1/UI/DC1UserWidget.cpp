@@ -1,33 +1,206 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UI/DC1UserWidget.h"
 #include "Animation/WidgetAnimation.h"
+#include "Animation/WidgetAnimationState.h"
+#include "Subsystem/DC1UIManagerSubsystem.h"
+#include "Blueprint/WidgetTree.h"
+
+void UDC1UserWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	// 위젯 단위로 한 번만 바인딩
+	OnAnimationFinishedPlaying().AddUObject(this, &ThisClass::HandleAnimFinished);
+}
+
+void UDC1UserWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	TMap<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo> Snaps = MoveTemp(PendingSnaps);
+	PendingSnaps.Reset();
+
+	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : Snaps)
+	{
+		SnapAnimToEdge(Pair.Key, Pair.Value);
+	}
+}
+
+void UDC1UserWidget::NativeDestruct()
+{
+	TMap<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo> Anims = MoveTemp(PlayingAnims);
+	PlayingAnims.Reset();
+
+	for (const TPair<TObjectPtr<UWidgetAnimation>, FDC1AnimPlayInfo>& Pair : Anims)
+	{
+		SnapAnimToEdge(Pair.Key, Pair.Value);
+	}
+
+	PlayingAnims.Empty();
+
+	Super::NativeDestruct();
+}
+
+void UDC1UserWidget::HandleInputKey(const FKey& InKey)
+{
+}
 
 void UDC1UserWidget::Activate()
 {
-	if (true == :: IsValid(IntroAnim))
+	if (true == bIsActivated)
 	{
-		PlayAnimation(IntroAnim);
+		return;
 	}
+
+	bIsActivated = true;
+
+	FDC1AnimPlayInfo PlayInfo;
+	PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
+
+	PlayAnim(IntroAnim, PlayInfo);
 
 	NativeOnActivated();
 }
 
 void UDC1UserWidget::Deactivate()
 {
-	if (true == ::IsValid(OutroAnim))
+	if (false == bIsActivated)
 	{
-		PlayAnimation(OutroAnim);
+		return;
 	}
+
+	bIsActivated = false;
+
+	FDC1AnimPlayInfo PlayInfo;
+	PlayInfo.PlayMode = EUMGSequencePlayMode::Forward;
+
+	PlayAnim(OutroAnim, PlayInfo);
 
 	NativeOnDeactivated();
 }
 
 void UDC1UserWidget::NativeOnActivated()
 {
+	PropagateActivation(true);
 }
 
 void UDC1UserWidget::NativeOnDeactivated()
 {
+	PropagateActivation(false);
+}
+
+void UDC1UserWidget::PropagateActivation(bool InIsActivate)
+{
+	TArray<UWidget*> ChildWidgets;
+	WidgetTree->GetAllWidgets(ChildWidgets);
+
+	for (UWidget* Widget : ChildWidgets)
+	{
+		UDC1UserWidget* UserWidget = Cast<UDC1UserWidget>(Widget);
+		if (false == ::IsValid(UserWidget) || false == ShouldPropagateTo(UserWidget))
+		{
+			continue;
+		}
+
+		if (true == InIsActivate)
+		{
+			UserWidget->Activate();
+		}
+		else
+		{
+			UserWidget->Deactivate();
+		}
+	}
+}
+
+void UDC1UserWidget::PopScreen()
+{
+	UDC1UIManagerSubsystem* UIManager = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>();
+	if (false == ::IsValid(UIManager))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1UserWidget :: Failed to Find UIManager"));
+		return;
+	}
+
+	UIManager->PopScreen();
+}
+
+void UDC1UserWidget::PlayAnim(UWidgetAnimation* InAnim, const FDC1AnimPlayInfo& InPlayInfo)
+{
+	if (false == ::IsValid(InAnim))
+	{
+		return;
+	}
+
+	if (true == IsAnimationPlaying(InAnim))
+	{
+		const FDC1AnimPlayInfo* CurrentInfo = PlayingAnims.Find(InAnim);
+
+		if (nullptr != CurrentInfo && (CurrentInfo->PlayMode) == (InPlayInfo.PlayMode))
+		{
+			return;
+		}
+
+		ReverseAnimation(InAnim);
+	}
+	else
+	{
+		PlayAnimation(InAnim, 0.f, InPlayInfo.NumLoops, InPlayInfo.PlayMode, 1.f, InPlayInfo.RestoreState);
+	}
+
+	PlayingAnims.Add(InAnim, InPlayInfo);
+}
+
+void UDC1UserWidget::SnapAnimToEdge(UWidgetAnimation* InAnim, const FDC1AnimPlayInfo& InPlayInfo)
+{
+	if (false == ::IsValid(InAnim))
+	{
+		return;
+	}
+
+	if (false == IsConstructed())
+	{
+		PendingSnaps.Add(InAnim, InPlayInfo);
+		return;
+	}
+
+	PendingSnaps.Remove(InAnim);
+
+	StopAnimation(InAnim);
+
+	if (true == InPlayInfo.RestoreState)
+	{
+		return;
+	}
+
+	const float SnapTime = (InPlayInfo.PlayMode == EUMGSequencePlayMode::Forward) ? InAnim->GetEndTime() : InAnim->GetStartTime();
+
+	PlayAnimationTimeRange(InAnim, SnapTime, SnapTime);
+}
+
+void UDC1UserWidget::StopAnim(UWidgetAnimation* InAnim)
+{
+	if (false == ::IsValid(InAnim))
+	{
+		return;
+	}
+
+	StopAnimation(InAnim);
+
+	PlayingAnims.Remove(InAnim);
+}
+
+void UDC1UserWidget::HandleAnimFinished(FWidgetAnimationState& InState)
+{
+	const UWidgetAnimation* FinishedAnim = InState.GetAnimation();
+	if (false == ::IsValid(FinishedAnim))
+	{
+		return;
+	}
+
+	PlayingAnims.Remove(const_cast<UWidgetAnimation*>(FinishedAnim));
+
+	OnAnimFinished(FinishedAnim);
 }

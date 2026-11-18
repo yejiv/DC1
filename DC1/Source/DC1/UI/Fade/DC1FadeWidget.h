@@ -1,10 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UI/DC1UserWidget.h"
-#include "Enum/DC1Enums.h"
+#include "Define/DC1Enums.h"
 #include "DC1FadeWidget.generated.h"
 
 struct FUILoadingEntry;
@@ -21,7 +21,7 @@ public:
 
 protected:
 	virtual void	NativeConstruct() override;
-	virtual void	NativeTick(const FGeometry& MyGeomtry, float InDeltaTime) override;
+	virtual void	NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 public:
 	void			SetFadeType(EDC1FadeType InType, const FUILoadingEntry* InLoadingEntry = nullptr, const FText* InText = nullptr);
@@ -34,16 +34,19 @@ private:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1FadeImage>	FadeImage;
+	TObjectPtr<UDC1FadeImage>	FadeImage = { nullptr };
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UDC1FadeText>	FadeText;
+	TObjectPtr<UDC1FadeText>	FadeText = { nullptr };
 
-	float			StartAlpha = 0.f;
-	float			TargetAlpha = 0.f;
-	float			FadeDuration = 0.f;
-	float			Elapsed = 0.f;
-	bool			bIsFading = false;
+private:
+	float			StartAlpha = { 0.f };
+	float			TargetAlpha = { 0.f };
+
+	float			FadeDuration = { 0.f };
+	float			Elapsed = { 0.f };
+
+	bool			bIsFading = { false };
 
 	FSimpleDelegate	CompleteDelegate;
 };

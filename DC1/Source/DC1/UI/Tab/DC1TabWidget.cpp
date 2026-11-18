@@ -1,0 +1,316 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "UI/Tab/DC1TabWidget.h"
+
+#include "UI/Button/AnimButton/Tab/DC1TabHeaderButton.h"
+#include "UI/Tab/Inventory/DC1InventoryWidget.h"
+#include "UI/Tab/TechTree/DC1TechTreeWidget.h"
+
+#include "Tags/UI/DC1GameplayTag_UI.h"
+#include "Kismet/GameplayStatics.h"
+
+UDC1TabHeaderButton* UDC1TabWidget::GetTabButton(const FGameplayTag& InTab) const
+{
+	UDC1TabHeaderButton* TabButton = TabButtons.FindRef(InTab);
+	if (false == ::IsValid(TabButton))
+	{
+		return nullptr;
+	}
+
+	return TabButton;
+}
+
+
+void UDC1TabWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	for (const TPair<FGameplayTag, int32>& Pair : TabToSwitchIndex)
+	{
+		SwitchIndexToTab.Add(Pair.Value, Pair.Key);
+	}
+
+	if (false == ::IsValid(TabButtonContainer))
+	{
+		return;
+	}
+
+	for (UWidget* Child : TabButtonContainer->GetAllChildren())
+	{
+		UDC1TabHeaderButton* TabButton = Cast<UDC1TabHeaderButton>(Child);
+		if (false == ::IsValid(TabButton))
+		{
+			continue;
+		}
+
+		FGameplayTag TabTag = TabButton->GetTabTag();
+
+		TabButtons.Add(TabTag, TabButton);
+		TabButton->OnClickedDelegate.AddWeakLambda(this, [this, Tag = TabTag]()
+			{
+				SelectTab(Tag);
+			});
+	}
+
+	ButtonInitialize();
+}
+
+void UDC1TabWidget::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+
+	if (UDC1UserWidget* ActivePage = GetActivePage())
+	{
+		ActivePage->Activate();
+	}
+}
+
+void UDC1TabWidget::NativeOnDeactivated()
+{
+	Super::NativeOnDeactivated();
+
+	if (UDC1UserWidget* ActivePage = GetActivePage())
+	{
+		ActivePage->Deactivate();
+	}
+}
+
+bool UDC1TabWidget::ShouldPropagateTo(const UDC1UserWidget* InChild) const
+{
+	// 탭 페이지는 전파에서 제외 - 현재 페이지만 NativeOnActivated에서 넘김
+	if (true == ::IsValid(TabSwitcher) && InChild->GetParent() == TabSwitcher.Get())
+	{
+		return false;
+	}
+
+	return Super::ShouldPropagateTo(InChild);
+}
+
+UDC1UserWidget* UDC1TabWidget::GetActivePage() const
+{
+	if (false == ::IsValid(TabSwitcher))
+	{
+		return nullptr;
+	}
+
+	return Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget());
+}
+
+void UDC1TabWidget::ButtonInitialize()
+{
+	for (const TPair<FGameplayTag, TObjectPtr<UDC1TabHeaderButton>>& Pair : TabButtons)
+	{
+		UDC1TabHeaderButton* TabButton = Pair.Value.Get();
+		if (true == ::IsValid(TabButton))
+		{
+			TabButton->SetState(EDC1TabButtonState::Inactive);
+		}
+	}
+}
+
+void UDC1TabWidget::CloseWidget(const FKey& InKey)
+{
+	if (false == CurrentTab.IsValid())
+	{
+		return;
+	}
+
+	const FDC1KeyList* KeyList = TabCloseKeys.Find(CurrentTab);
+	if (nullptr == KeyList)
+	{
+		return;
+	}
+
+	if (true == KeyList->Keys.Contains(InKey))
+	{
+		PopScreen();
+		UGameplayStatics::PlaySound2D(this, CloseSound);
+		// CurrentTab Deactivate
+		if (UDC1UserWidget* CurrentWidget = Cast<UDC1UserWidget>(TabSwitcher->GetActiveWidget()))
+		{
+			CurrentWidget->Deactivate();
+		}
+
+		// CurrentTab 비우기 전에 버튼 비활성화
+		if (UDC1TabHeaderButton* CurrentTabButton = GetTabButton(CurrentTab))
+		{
+			CurrentTabButton->SetState(EDC1TabButtonState::Inactive);
+		}
+
+		// Main Tab 닫히는 경우 CurrentTab 초기화
+		CurrentTab = FGameplayTag::EmptyTag;
+	}
+}
+
+void UDC1TabWidget::HandleInputKey(const FKey& InKey)
+{
+	if (true == TabToSwitchIndex.IsEmpty())
+	{
+		return;
+	}
+
+	if (true == PrevTabKeys.Keys.Contains(InKey))
+	{
+		ChangeTab(false);
+		return;
+	}
+
+	if (true == NextTabKeys.Keys.Contains(InKey))
+	{
+		ChangeTab(true);
+		return;
+	}
+
+	if (true == CurrentTab.IsValid())
+	{
+		CloseWidget(InKey);
+		return;
+	}
+}
+
+bool UDC1TabWidget::SelectTab(const FGameplayTag& InTab)
+{
+	if (false == CanSelectTab(InTab))
+	{
+		return false;
+	}
+
+	if (CurrentTab == InTab)
+	{
+		return true;
+	}
+
+	int32* Index = TabToSwitchIndex.Find(InTab);
+	if (nullptr == Index)
+	{
+		return false;
+	}
+
+	UDC1TabHeaderButton* ChangeTabButton = GetTabButton(InTab);
+	if (false == ::IsValid(ChangeTabButton))
+	{
+		return false;
+	}
+
+	UDC1TabHeaderButton* CurrentTabButton = GetTabButton(CurrentTab);	
+	if (true == ::IsValid(CurrentTabButton))
+	{
+		CurrentTabButton->SetState(EDC1TabButtonState::Inactive);
+	}
+
+	ChangeTabButton->SetState(EDC1TabButtonState::Active);
+
+	// 이전 Tab Widget Deactivate - 활성이 아니었으면 Deactivate 안에서 무시된다
+	if (UDC1UserWidget* PreWidget = GetActivePage())
+	{
+		PreWidget->Deactivate();
+	}
+
+	CurrentTab = InTab;
+	if (true == ::IsValid(TabSwitcher))
+	{
+		TabSwitcher->SetActiveWidgetIndex(*Index);
+	}
+
+	// 현재 Tab Widget Activate - 화면이 비활성이면 화면 Activate 때 NativeOnActivated가 넘긴다
+	UDC1UserWidget* CurrentWidget = GetActivePage();
+	if (true == bIsActivated && true == ::IsValid(CurrentWidget))
+	{
+		CurrentWidget->Activate();
+	}
+
+	OnTabSelected(InTab);
+
+	return true;
+}
+
+void UDC1TabWidget::EnableTab(const FGameplayTag& InTab)
+{
+	UDC1TabHeaderButton* TabButton = GetTabButton(InTab);
+
+	if (true == ::IsValid(TabButton) && false == TabButton->CanSelect())
+	{
+		TabButton->SetState(EDC1TabButtonState::Inactive);
+	}
+}
+
+bool UDC1TabWidget::CanSelectTab(const FGameplayTag& InTab) const
+{
+	UDC1TabHeaderButton* TabButton = GetTabButton(InTab);
+
+	if (false == ::IsValid(TabButton))
+	{
+		return false;
+	}
+
+	return TabButton->CanSelect();
+}
+
+void UDC1TabWidget::ChangeTab(bool InIsNext)
+{
+	const int32* CurrentIndex = TabToSwitchIndex.Find(CurrentTab);
+	if (nullptr == CurrentIndex)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1TabWidget :: None bind InTab to Index"));
+		return;
+	}
+
+	int32 NumsIndex = TabToSwitchIndex.Num();
+
+	int32 Step = InIsNext ? 1 : -1;
+
+	for (int32 Offset = 1; Offset < NumsIndex; ++Offset)
+	{
+		// 음수 방지 () + NumIndex % NumsIndex
+		int32 ChangeIndex = (((*(CurrentIndex)+(Step * Offset)) % NumsIndex) + NumsIndex) % NumsIndex;
+
+		const FGameplayTag ChangeTab = SwitchIndexToTab.FindRef(ChangeIndex);
+		if (false == ChangeTab.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UDC1TabWidget :: None bind InTab to Index"));
+			continue;
+		}
+
+		if (true == SelectTab(ChangeTab))
+		{
+			UGameplayStatics::PlaySound2D(this, TabChangeSound);
+			break;
+		}
+	}
+}
+
+void UDC1TabWidget::SelectFirstInactiveTab()
+{
+	if (true == CanSelectTab(CurrentTab))
+	{
+		return;
+	}
+
+	int32 NumsIndex = TabToSwitchIndex.Num();
+
+	for (int32 Index = 0; Index < NumsIndex; ++Index)
+	{
+		const FGameplayTag ChangeTab = SwitchIndexToTab.FindRef(Index);
+		if (false == ChangeTab.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UDC1TabWidget :: None bind InTab to Index"));
+			continue;
+		}
+
+		if (true == SelectTab(ChangeTab))
+		{
+			break;
+		}
+	}
+}
+
+UDC1InventoryWidget* UDC1TabWidget::GetInventoryWidget() const
+{
+	return GetTabWidget<UDC1InventoryWidget>(DC1UITags::UI_Main_Tab_Inventory);
+}
+
+UDC1TechTreeWidget* UDC1TabWidget::GetTechTreeWidget() const
+{
+	return GetTabWidget<UDC1TechTreeWidget>(DC1UITags::UI_Main_Tab_TechTree);
+}

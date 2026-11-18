@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "UI/Fade/DC1FadeWidget.h"
@@ -13,9 +13,9 @@ void UDC1FadeWidget::NativeConstruct()
 	SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UDC1FadeWidget::NativeTick(const FGeometry& MyGeomtry, float InDeltaTime)
+void UDC1FadeWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-	Super::NativeTick(MyGeomtry, InDeltaTime);
+	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	if (false == bIsFading)
 	{

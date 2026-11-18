@@ -1,16 +1,15 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Subsystem/DC1UIManagerSubsystem.h"
 
 #include "UI/DC1UserWidget.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 
 #include "Data/DA/UI/DC1UIData.h"
 #include "Data/DA/UI/DC1UILoadingData.h"
-#include "Data/DA/DataTable/DC1DataTableData.h"
 #include "Data/DataTable/DC1DataTableTypes.h"
+#include "Define/DC1Helper.h"
 
 #include "System/DC1AssetManager.h"
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
@@ -18,262 +17,422 @@
 
 void UDC1UIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-    Super::Initialize(Collection);
+	Super::Initialize(Collection);
 
-    FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ThisClass::OnPostLoadMap);
+	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &ThisClass::OnPreLoadMap);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ThisClass::OnPostLoadMap);
 }
 
 void UDC1UIManagerSubsystem::Deinitialize()
 {
-    Super::Deinitialize();
+	Super::Deinitialize();
 
-    FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
+	FCoreUObjectDelegates::PreLoadMap.RemoveAll(this);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& UITag, bool IsPop)
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreen(const FGameplayTag& InUITag, bool InIsPop)
 {
-    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(UITag);
-    if (false == ::IsValid(WidgetClass))
-    {
-        return nullptr;
-    }
+	// Server 확인
+	if (false == ::IsValid(GetLocalPC()))
+	{
+		return nullptr;
+	}
 
-    if (true == IsPop)
-    {
-        PopScreen();
-    }
+	UDC1UserWidget* FoundWidget = CreatedWidget.FindRef(InUITag);
+	bool IsCreated = ::IsValid(FoundWidget);
 
-    return PushScreenInternal(WidgetClass);
+	TSubclassOf<UDC1UserWidget> WidgetClass = nullptr;
+	if (false == IsCreated)
+	{
+		WidgetClass = FindWidgetClass(InUITag);
+		if (false == ::IsValid(WidgetClass))
+		{
+			return nullptr;
+		}
+	}
+
+	if (true == InIsPop)
+	{
+		PopScreen();
+	}
+
+	return IsCreated ? PushScreenInternal(FoundWidget) : PushScreenInternal(InUITag, WidgetClass);
 }
 
 void UDC1UIManagerSubsystem::PopScreen()
 {
-    if (0 >= ScreenStack.Num())
-    {
-        return;
-    }
+	// Server 확인
+	APlayerController* LocalPC = GetLocalPC();
+	if (false == ::IsValid(LocalPC))
+	{
+		return;
+	}
 
-    UDC1UserWidget* TopWidget = ScreenStack.Pop();
-    if (true == ::IsValid(TopWidget))
-    {
-        TopWidget->Deactivate();
-        TopWidget->RemoveFromParent();
-    }
-    
-    UpdateInputMode();
+	if (true == ScreenStack.IsEmpty())
+	{
+		return;
+	}
+
+	UDC1UserWidget* TopWidget = ScreenStack.Pop();
+	if (true == ::IsValid(TopWidget))
+	{
+		TopWidget->Deactivate();
+		TopWidget->RemoveFromParent();
+	}
+
+	UpdateInputMode(LocalPC);
 }
 
-void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType FadeType, FSimpleDelegate OnComplete)
+void UDC1UIManagerSubsystem::PopAllScreen()
 {
-    if (false == ::IsValid(FadeWidget))
-    {
-        FadeWidget = Cast<UDC1FadeWidget>(CreateOverlay(DC1UITags::UI_Fade, FadeZOrder));
+	if (false == IsValid(GetLocalPC()))
+		return;
 
-        if (false == ::IsValid(FadeWidget))
-        {
-            OnComplete.ExecuteIfBound();
-            return;
-        }
-    }
-
-    if (FadeWidget->IsFading())
-    {
-        return;
-    }
-
-    if (false == bIsTraveling)
-    {
-        RollLoadingType(FadeType);
-    }
-
-    FadeWidget->SetFadeType(FadeType, PendingLoadingEntry, PendingTip);
-    FadeWidget->FadeIn(InDuration, OnComplete);
+	while (HasActiveScreen())
+	{
+		PopScreen();
+	}
 }
 
-void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate OnComplete)
+UDC1UserWidget* UDC1UIManagerSubsystem::CreateWidgetWithTag(const FGameplayTag& InUITag)
 {
-    if (false == ::IsValid(FadeWidget))
-    {
-        OnComplete.ExecuteIfBound();
-        return;
-    }
+	// Server 확인
+	APlayerController* LocalPC = GetLocalPC();
+	if (false == ::IsValid(LocalPC))
+	{
+		return nullptr;
+	}
 
-    if (FadeWidget->IsFading())
-    {
-        return;
-    }
+	TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
+	if (false == ::IsValid(WidgetClass))
+	{
+		return nullptr;
+	}
 
-    FadeWidget->FadeOut(InDuration, OnComplete);
+
+	UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(LocalPC, WidgetClass);
+	if (true == ::IsValid(NewWidget))
+	{
+		CreatedWidget.Add(InUITag, NewWidget);
+	}
+	else
+	{
+		return nullptr;
+	}
+
+	return NewWidget;
 }
 
-void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDelegate OnReadyToTravel)
+void UDC1UIManagerSubsystem::FadeIn(float InDuration, EDC1FadeType InFadeType, FSimpleDelegate InOnComplete)
 {
-    FadeIn(InDuration, EDC1FadeType::Loading, FSimpleDelegate::CreateWeakLambda(this, [this, OnReadyToTravel]
-        {
-            while (0 < ScreenStack.Num())
-            {
-                PopScreen();
-            }
+	// Server 확인
+	if (false == ::IsValid(GetLocalPC()))
+	{
+		return;
+	}
 
-            OnReadyToTravel.ExecuteIfBound();
-        }));
+	if (false == ::IsValid(FadeWidget))
+	{
+		FadeWidget = Cast<UDC1FadeWidget>(CreateOverlay(DC1UITags::UI_Fade, FadeZOrder));
 
+		if (false == ::IsValid(FadeWidget))
+		{
+			InOnComplete.ExecuteIfBound();
+			return;
+		}
+	}
 
-    bIsTraveling = true;
+	if (FadeWidget->IsFading())
+	{
+		return;
+	}
+
+	if (false == IsTraveling)
+	{
+		RollLoadingType(InFadeType);
+	}
+
+	FadeWidget->SetFadeType(InFadeType, PendingLoadingEntry, PendingTip);
+	FadeWidget->FadeIn(InDuration, InOnComplete);
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& UITag, int32 ZOrder)
+void UDC1UIManagerSubsystem::FadeOut(float InDuration, FSimpleDelegate InOnComplete)
 {
-    TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(UITag);
-    if (false == ::IsValid(WidgetClass))
-    {
-        return nullptr;
-    }
+	// Server 확인
+	if (false == ::IsValid(GetLocalPC()))
+	{
+		return;
+	}
 
-    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(GetGameInstance(), WidgetClass);
-    if (false == ::IsValid(NewWidget))
-    {
-        return nullptr;
-    }
+	if (false == ::IsValid(FadeWidget))
+	{
+		InOnComplete.ExecuteIfBound();
+		return;
+	}
 
-    NewWidget->AddToViewport(ZOrder);
-    return NewWidget;
+	if (FadeWidget->IsFading())
+	{
+		return;
+	}
+
+	FadeWidget->FadeOut(InDuration, InOnComplete);
 }
 
-UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(TSubclassOf<UDC1UserWidget> WidgetClass)
+void UDC1UIManagerSubsystem::ShowHUD()
 {
-    if (false == ::IsValid(WidgetClass))
-    {
-        return nullptr;
-    }
+	// Server 확인
+	if (false == ::IsValid(GetLocalPC()))
+	{
+		return;
+	}
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (false == ::IsValid(PC))
-    {
-        return nullptr;
-    }
+	if (nullptr != HUDWidget)
+	{
+		return;
+	}
 
-    UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(PC, WidgetClass);
-    if (false == ::IsValid(NewWidget))
-    {
-        return nullptr;
-    }
-
-    NewWidget->AddToViewport(ScreenStack.Num());
-    ScreenStack.Add(NewWidget);
-    NewWidget->Activate();
-
-    UpdateInputMode();
-
-    return NewWidget;
+	HUDWidget = CreateOverlay(DC1UITags::UI_Main_HUD, HUDZOrder);
+	NotificationWidget = CreateOverlay(DC1UITags::UI_Main_Notification, NotificationZOrder);
 }
 
-TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGameplayTag& UITag)
+void UDC1UIManagerSubsystem::SetHUDVisibility(bool IsVisible)
 {
-    if (false == ::IsValid(CachedUIData))
-    {
-        CachedUIData = UDC1AssetManager::GetAssetByTag<UDC1UIData>(DC1AssetTags::Asset_UI_WidgetData);
-        if(false == ::IsValid(CachedUIData))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to Caching UIData"));
-            return nullptr;
-        }
-    }
+	if (false == IsValid(HUDWidget))
+		return;
 
-    return CachedUIData->FindUserWidgetClassByTag(UITag);
+	HUDWidget->SetVisibility(IsVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 }
 
-void UDC1UIManagerSubsystem::UpdateInputMode()
+void UDC1UIManagerSubsystem::RouteInputKey(const FKey& InKey)
 {
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (false == ::IsValid(PC))
-    {
-        return;
-    }
+	if (true == ScreenStack.IsEmpty())
+	{
+		return;
+	}
 
-    if (0 >= ScreenStack.Num())
-    {
-        FInputModeGameOnly InputMode;
-        PC->SetInputMode(InputMode);
-        PC->SetShowMouseCursor(false);
-    }
-    else
-    {
-        FInputModeUIOnly InputMode;
-        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-        PC->SetInputMode(InputMode);
-        PC->SetShowMouseCursor(true);
-    }
+	UDC1UserWidget* TopWidget = ScreenStack.Top();
+	if (true == ::IsValid(TopWidget))
+	{
+		TopWidget->HandleInputKey(InKey);
+	}
+}
+
+void UDC1UIManagerSubsystem::BeginLoadingTransition(float InDuration, FSimpleDelegate InOnReadyToTravel)
+{
+	FadeIn(InDuration, EDC1FadeType::Loading, FSimpleDelegate::CreateWeakLambda(this, [this, InOnReadyToTravel]
+		{
+			while (false == ScreenStack.IsEmpty())
+			{
+				PopScreen();
+			}
+
+			CreatedWidget.Empty();
+
+			InOnReadyToTravel.ExecuteIfBound();
+		}));
+
+
+	IsTraveling  = true;
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::FindWidget(const FGameplayTag& InUITag)
+{
+	return CreatedWidget.FindRef(InUITag);
+}
+
+APlayerController* UDC1UIManagerSubsystem::GetLocalPC() const
+{
+	const UGameInstance* GameInstance = GetGameInstance();
+	if (false == ::IsValid(GameInstance))
+	{
+		return nullptr;
+	}
+
+	const UWorld* World = GetWorld();
+	if (false == ::IsValid(World))
+	{
+		return nullptr;
+	}
+
+	return GameInstance->GetFirstLocalPlayerController(World);
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::CreateOverlay(const FGameplayTag& InUITag, int32 InZOrder)
+{
+	TSubclassOf<UDC1UserWidget> WidgetClass = FindWidgetClass(InUITag);
+	if (false == ::IsValid(WidgetClass))
+	{
+		return nullptr;
+	}
+
+	UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(GetGameInstance(), WidgetClass);
+	if (false == ::IsValid(NewWidget))
+	{
+		return nullptr;
+	}
+
+	NewWidget->AddToViewport(InZOrder);
+	return NewWidget;
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(UDC1UserWidget* InWidget)
+{
+	// Server 확인
+	APlayerController* LocalPC = GetLocalPC();
+	if (false == ::IsValid(LocalPC))
+	{
+		return nullptr;
+	}
+
+	if (false == ::IsValid(InWidget))
+	{
+		return nullptr;
+	}
+
+	InWidget->AddToViewport(ScreenStack.Num());
+	ScreenStack.Add(InWidget);
+	InWidget->Activate();
+
+	UpdateInputMode(LocalPC);
+
+	return InWidget;
+}
+
+UDC1UserWidget* UDC1UIManagerSubsystem::PushScreenInternal(const FGameplayTag& InUITag, TSubclassOf<UDC1UserWidget> InWidgetClass)
+{
+	// 레벨 전환 시점 Player 생성 확인 + Server 확인
+	APlayerController* LocalPC = GetLocalPC();
+	if (false == ::IsValid(LocalPC))
+	{
+		return nullptr;
+	}
+
+	UDC1UserWidget* NewWidget = CreateWidget<UDC1UserWidget>(LocalPC, InWidgetClass);
+	if (true == ::IsValid(NewWidget))
+	{
+		CreatedWidget.Add(InUITag, NewWidget);
+	}
+	else
+	{
+		return nullptr;
+	}
+
+	NewWidget->AddToViewport(ScreenStack.Num());
+	ScreenStack.Add(NewWidget);
+	NewWidget->Activate();
+
+	UpdateInputMode(LocalPC);
+
+	return NewWidget;
+}
+
+TSubclassOf<UDC1UserWidget> UDC1UIManagerSubsystem::FindWidgetClass(const FGameplayTag& InUITag)
+{
+	if (false == ::IsValid(CachedUIData))
+	{
+		CachedUIData = UDC1AssetManager::GetAssetByTag<UDC1UIData>(DC1AssetTags::Asset_UI_WidgetData);
+		if (false == ::IsValid(CachedUIData))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UDC1UIManagerSubsystem :: Failed to Caching UIData"));
+			return nullptr;
+		}
+	}
+
+	return CachedUIData->FindUserWidgetClassByTag(InUITag);
+}
+
+void UDC1UIManagerSubsystem::UpdateInputMode(APlayerController* InLocalPC)
+{
+	if (true == ScreenStack.IsEmpty())
+	{
+		FInputModeGameOnly InputMode;
+		InLocalPC->SetInputMode(InputMode);
+		InLocalPC->SetShowMouseCursor(false);
+	}
+	else
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InLocalPC->SetInputMode(InputMode);
+		InLocalPC->SetShowMouseCursor(true);
+	}
+
+	OnScreenStackChanged.Broadcast();
 }
 
 void UDC1UIManagerSubsystem::RollLoadingType(EDC1FadeType InType)
 {
-    PendingFadeType = InType;
+	PendingFadeType = InType;
 
-    if (EDC1FadeType::Default == PendingFadeType)
-    {
-        PendingLoadingEntry = nullptr;
-        PendingTip = nullptr;
-        return;
-    }
+	if (EDC1FadeType::Default == PendingFadeType)
+	{
+		PendingLoadingEntry = nullptr;
+		PendingTip = nullptr;
+		return;
+	}
 
-    // EDC1FadeType::Spinner 
-    const UDC1UILoadingData* LoadingData = UDC1AssetManager::GetAssetByTag<UDC1UILoadingData>(DC1AssetTags::Asset_UI_LoadingData);
-    if (true == ::IsValid(LoadingData))
-    {
-        const FUILoadingEntry* CachedLoadingEntry = LoadingData->GetRandomSprites();
-        if (nullptr != CachedLoadingEntry)
-        {
-            PendingLoadingEntry = CachedLoadingEntry;
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to Find LoadingData"));
-    }
+	// EDC1FadeType::Spinner 
+	const UDC1UILoadingData* LoadingData = UDC1AssetManager::GetAssetByTag<UDC1UILoadingData>(DC1AssetTags::Asset_UI_LoadingData);
+	if (true == ::IsValid(LoadingData))
+	{
+		const FUILoadingEntry* CachedLoadingEntry = LoadingData->GetRandomSprites();
+		if (nullptr != CachedLoadingEntry)
+		{
+			PendingLoadingEntry = CachedLoadingEntry;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1UIManagerSubsystem :: Failed to Find LoadingData"));
+	}
 
-    if (EDC1FadeType::Spinner == PendingFadeType)
-    {
-        PendingTip = nullptr;
-        return;
-    }
+	if (EDC1FadeType::Spinner == PendingFadeType)
+	{
+		PendingTip = nullptr;
+		return;
+	}
 
-    // EDC1FadeType::Loading
-    const UDC1DataTableData* DataTable = UDC1AssetManager::GetAssetByTag<UDC1DataTableData>(DC1AssetTags::Asset_DataTableData);
-    if (true == ::IsValid(DataTable))
-    {
-        UDataTable* TipTable = DataTable->GetDataTable(DC1DataTableTags::DataTable_UI_LoadingTip);
-        if (true == ::IsValid(TipTable))
-        {
-            TArray<FName> RowNames = TipTable->GetRowNames();
-            if (false == RowNames.IsEmpty())
-            {
-                const FName Picked = RowNames[FMath::RandRange(0, RowNames.Num() - 1)];
-                if (const FDC1LoadingTipRow* Row = TipTable->FindRow<FDC1LoadingTipRow>(Picked, TEXT("RollLoadingContent")))
-                {
-                    PendingTip = &(Row->Tip);
-                }
-            }
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to Find DataTableData"));
-    }
+	// EDC1FadeType::Loading
+
+	const UDataTable* TipTable = DC1DataTableHelper::GetDataTable(DC1DataTableTags::DataTable_UI_LoadingTip);
+	if (true == ::IsValid(TipTable))
+	{
+		TArray<FName> RowNames = TipTable->GetRowNames();
+		if (false == RowNames.IsEmpty())
+		{
+			const FName Picked = RowNames[FMath::RandRange(0, RowNames.Num() - 1)];
+			if (const FDC1LoadingTipRow* Row = TipTable->FindRow<FDC1LoadingTipRow>(Picked, TEXT("RollLoadingContent")))
+			{
+				PendingTip = &(Row->Tip);
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDC1UIManagerSubsystem :: Failed to Find DataTableData"));
+	}
 
 }
 
-void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* LoadedWorld)
+void UDC1UIManagerSubsystem::OnPreLoadMap(const FString& InMapName)
 {
-    ScreenStack.Empty();
-    FadeWidget = nullptr;
+	ScreenStack.Empty();
+	FadeWidget = nullptr;
+	HUDWidget = nullptr;
+	NotificationWidget = nullptr;
 
-    if (false == bIsTraveling)
-    {
-        return;
-    }
+	CreatedWidget.Empty();
+}
 
-    FadeIn(0.f, PendingFadeType);
+void UDC1UIManagerSubsystem::OnPostLoadMap(UWorld* InLoadedWorld)
+{
+	if (false == IsTraveling)
+	{
+		return;
+	}
 
-    bIsTraveling = false;
+	FadeIn(0.f, PendingFadeType);
+
+	IsTraveling = false;
 }

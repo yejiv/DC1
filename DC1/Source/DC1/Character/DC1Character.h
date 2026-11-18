@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -7,7 +7,8 @@
 #include "AbilitySystemInterface.h"
 #include "DC1Character.generated.h"
 
-class UDC1AbilitySystemComponent;
+struct FOnAttributeChangeData;
+class IDC1WorkTargetInterface;
 
 UCLASS()
 class DC1_API ADC1Character : public ACharacter, public IAbilitySystemInterface
@@ -15,15 +16,39 @@ class DC1_API ADC1Character : public ACharacter, public IAbilitySystemInterface
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	ADC1Character();
+	ADC1Character(const FObjectInitializer& ObjectInitializer);
+
+public:
+	bool								IsDownOrDead() const;
+	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
+
+public:
+	virtual void SetAttackCollision(bool OnCollision) {}
+
+	// Work GA 대상 ( 플레이어 = 상호작용 대상, 펠 = 배정된 대상 ) - 일하지 않는 캐릭터는 nullptr
+	virtual IDC1WorkTargetInterface* GetCurrentWorkTarget() const { return nullptr; }
+
+protected:
+	// ASC가 준비된 뒤 자식 클래스가 호출 (펠 = 스폰 시, 플레이어 = PlayerState 확보 시)
+	void BindHealthWatcher();
+
+	void HandleHealthChanged(const FOnAttributeChangeData& Data);
+
+	// HP가 0이 됐을 때. 기본은 바로 사망 ( 플레이어는 기절로 바꿀 수 있게 열어둔다 )
+	virtual void OnHealthDepleted();
+
+	// 사망 확정. bDead, State_Dead, OnDeath
+	void Die();
+
+	// 사망 반응은 자식이 정하기
+	virtual void OnDeath() {}
+
+protected:
+	bool bDead = { false };
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 public:	
 	// Called every frame
@@ -31,12 +56,5 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-public:
-	// Move
-	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1.0f, bool bForce = false) override;
-
-protected:
-	TObjectPtr<UDC1AbilitySystemComponent> AbilitySystemComponent = { nullptr };
 
 };

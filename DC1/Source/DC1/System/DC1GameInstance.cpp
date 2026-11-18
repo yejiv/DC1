@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "System/DC1GameInstance.h"
@@ -26,5 +26,5 @@ void UDC1GameInstance::Shutdown()
 
 void UDC1GameInstance::OnPreloadComplete()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Preload Assets Complete"));
+	UE_LOG(LogTemp, Warning, TEXT("UDC1GameInstance :: Preload Assets Complete"));
 }

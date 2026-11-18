@@ -1,0 +1,513 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Actor/Resource/DC1ResourceActor.h"
+#include "Actor/Destroy/DC1DestroyActor.h"
+#include "AbilitySystem/Effects/DC1GameplayEffect_Damage.h"
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
+#include "AbilitySystem/Attribute/DC1ResourceAttributeSet.h"
+#include "Component/DC1AbilitySystemComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Define/DC1Enums.h"
+#include "Define/DC1HitHelper.h"
+#include "GameplayEffectExtension.h"
+#include "GameFramework/GameStateBase.h"
+#include "GeometryCollection/GeometryCollectionObject.h"
+#include "Item/Pickup/DC1PickupItem.h"
+#include "Character/Pal/DC1PalCharacter.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Subsystem/DC1ExperienceSubsystem.h"
+#include "Tags/Effect/DC1GameplayTag_Effect.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "Define/DC1Helper.h"
+
+namespace
+{
+	// 고갈 후 이 시간 안에 받은 상태 변화만 방금 부서짐으로 보고 연출
+	constexpr double RecentDepleteWindow = 1.0;
+
+	// 한 번에 여러 개 스폰할 때 위로 쌓는 간격
+	constexpr float DropStackSpacing = 20.f;
+
+	// 맞은 지점에서 표면 바깥으로 띄우는 거리 - 픽업 크기 정도. 노드 콜리전에 박혀 스폰되지 않게
+	constexpr float DropSurfaceOffset = 15.f;
+}
+
+ADC1ResourceActor::ADC1ResourceActor()
+	: Super()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
+
+	// 레벨 배치 전제 - 맞기 전까지 복제하지 않음
+	NetDormancy = DORM_Initial;
+	SetNetUpdateFrequency(10.f);
+
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
+
+	ResourceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ResourceMesh"));
+	ResourceMesh->SetupAttachment(SceneRoot);
+	ResourceMesh->SetCollisionProfileName(DC1CollisionProfile::Resource);
+	ResourceMesh->SetGenerateOverlapEvents(true);
+
+	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+
+	AttributeSet = CreateDefaultSubobject<UDC1ResourceAttributeSet>(TEXT("AttributeSet"));
+}
+
+UAbilitySystemComponent* ADC1ResourceActor::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+FGameplayTag ADC1ResourceActor::GetWorkTypeTag() const
+{
+	// Active에서만 작업 가능한 타입 반환
+	return (EDC1ResourceActorState::Active == ResourceState) ? WorkTypeTag : FGameplayTag::EmptyTag;
+}
+
+bool ADC1ResourceActor::AssignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (false == HasAuthority() || false == ::IsValid(InPal))
+	{
+		return false;
+	}
+
+	// 파괴된 펠이 자리를 영구히 먹지 않게 갱신
+	PalWorkers.RemoveAll([](const TWeakObjectPtr<ADC1PalCharacter>& InWorker) { return false == InWorker.IsValid(); });
+
+	if (true == IsPalWorkerAssigned(InPal))
+	{
+		return true;
+	}
+
+	if (EDC1ResourceActorState::Active != ResourceState || false == DC1WorkTarget::CanPalWorkAt(InPal, WorkTypeTag, GetActorLocation()))
+	{
+		return false;
+	}
+
+	PalWorkers.Add(InPal);
+	OnPalWorkersChanged.Broadcast();
+
+	return true;
+}
+
+bool ADC1ResourceActor::CanAcceptPalWorker(const ADC1PalCharacter* InPal) const
+{
+	// AssignPalWorker 와 같은 조건
+	if (true == IsPalWorkerAssigned(InPal))
+	{
+		return true;
+	}
+
+	return (EDC1ResourceActorState::Active == ResourceState && true == DC1WorkTarget::CanPalWorkAt(InPal, WorkTypeTag, GetActorLocation()));
+}
+
+void ADC1ResourceActor::UnassignPalWorker(ADC1PalCharacter* InPal)
+{
+	if (PalWorkers.Remove(InPal) > 0)
+	{
+		OnPalWorkersChanged.Broadcast();
+	}
+}
+
+bool ADC1ResourceActor::IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const
+{
+	return PalWorkers.Contains(InPal);
+}
+
+void ADC1ResourceActor::ApplyWorkHit(const ADC1Character* InWorker, float InMultiplier)
+{
+	// 고갈된 프레임의 남은 타격 return
+	if (false == HasAuthority() || EDC1ResourceActorState::Active != ResourceState)
+	{
+		return;
+	}
+
+	// 배정된 펠만
+	const ADC1PalCharacter* Pal = Cast<ADC1PalCharacter>(InWorker);
+	if (false == ::IsValid(Pal) || false == IsPalWorkerAssigned(Pal))
+	{
+		return;
+	}
+
+	const float WorkerSpeed = DC1WorkTarget::GetWorkerSpeed(Pal, WorkTypeTag);
+	const float Damage = WorkerSpeed * InMultiplier;
+	if (Damage <= 0.f)
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* SourceASC = Pal->GetAbilitySystemComponent();
+	if (false == ::IsValid(SourceASC))
+	{
+		return;
+	}
+
+	// GetDropOrigin이 펠 쪽 표면에 드랍
+	const FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+	const FGameplayEffectSpecHandle Spec = SourceASC->MakeOutgoingSpec(UDC1GameplayEffect_Damage::StaticClass(), 1.f, Context);
+	if (false == Spec.IsValid())
+	{
+		return;
+	}
+
+	// 체력 감소는 AttributeSet의 PostGameplayEffectExecute가
+	Spec.Data->SetSetByCallerMagnitude(DC1EffectTags::SetByCaller_Damage, Damage);
+
+	const float OldHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
+	SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), AbilitySystemComponent);
+	const float NewHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
+
+	UE_LOG(LogTemp, Log, TEXT("[DC1] %s work hit : %s speed %.1f x %.2f = %.1f, HP %.1f -> %.1f"), *GetName(), *GetNameSafe(Pal), WorkerSpeed, InMultiplier, Damage, OldHealth, NewHealth);
+}
+
+void ADC1ResourceActor::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	// 첫 OnRep이 BeginPlay보다 먼저 올 수 있음
+	InitialMeshScale = ResourceMesh->GetRelativeScale3D();
+}
+
+void ADC1ResourceActor::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (true == HasAuthority())
+	{
+		AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetMaxHealthAttribute(), MaxHealth);
+		AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), MaxHealth);
+	}
+
+	HealthChangedHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::HandleHealthChanged);
+
+	// 서버만 - Health 콜백엔 GE 컨텍스트가 없음 ( PostGameplayEffectExecute의 SetHealth라서 GEModData == nullptr )
+	if (true == HasAuthority())
+	{
+		DamageAppliedHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).AddUObject(this, &ThisClass::HandleDamageApplied);
+	}
+
+	ApplyResourceState(false);
+}
+
+void ADC1ResourceActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearTimer(RespawnTimer);
+
+	if (true == ::IsValid(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute()).Remove(HealthChangedHandle);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetDamageAttribute()).Remove(DamageAppliedHandle);
+	}
+	
+	HealthChangedHandle.Reset();
+	DamageAppliedHandle.Reset();
+
+	ClearPalWorkers();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void ADC1ResourceActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, ResourceState);
+	DOREPLIFETIME(ThisClass, DepletedServerTime);
+}
+
+void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData)
+{
+	const FVector PrevMeshScale = ResourceMesh->GetRelativeScale3D();
+	ApplyScale();
+
+	// 한 단계 작아질 때 ( 바위 깨짐 ). 고갈은 DestroySound 가 대신함
+	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue > 0.f && ResourceMesh->GetRelativeScale3D().X < PrevMeshScale.X)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, StageBreakSound, ResourceMesh->Bounds.Origin);
+	}
+
+	// 타격음 - 서버 / 클라 공통 ( 고갈 타격은 DestroySound가 대신함 )
+	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue < InData.OldValue && InData.NewValue > 0.f)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DC1SoundHelper::PickRandom(HitSounds), ResourceMesh->Bounds.Origin);
+	}
+
+	// 같은 프레임 중복 타격, 리스폰 중 Health 복구는 무시
+	if (false == HasAuthority() || EDC1ResourceActorState::Depleted == ResourceState)
+	{
+		return;
+	}
+
+	WakeForReplication();
+
+	// HandleDamageApplied이 먼저 계산해 둔 위치 ( 같은 GE 안에서 Damage -> PostGameplayEffectExecute -> Health 순 )
+	const FVector DropOrigin = (true == HasPendingDropOrigin) ? PendingDropOrigin : GetDropOrigin((nullptr != InData.GEModData) ? &InData.GEModData->EffectSpec : nullptr);
+	HasPendingDropOrigin = false;
+
+	AccumulateDrop(InData.OldValue - InData.NewValue, DropOrigin);
+
+	if (InData.NewValue <= 0.f)
+	{
+		// 채집 경험치 - 마지막 타격이 플레이어일 때만 ( 팰 작업 제외, TODO 임시값 )
+		ADC1PlayerState* LastPlayerState = Cast<ADC1PlayerState>(LastDamageInstigator.Get());
+		UDC1ExperienceSubsystem* ExpSubsystem = GetWorld()->GetSubsystem<UDC1ExperienceSubsystem>();
+		if (nullptr != LastPlayerState && nullptr != ExpSubsystem)
+		{
+			ExpSubsystem->Grant(LastPlayerState, DC1PlayerTags::Event_Exp_Player_Gather, 10);
+		}
+		LastDamageInstigator.Reset();
+
+		SetResourceState(EDC1ResourceActorState::Depleted);
+	}
+}
+
+void ADC1ResourceActor::SetResourceState(EDC1ResourceActorState InNewState)
+{
+	if (ResourceState == InNewState)
+	{
+		return;
+	}
+
+	ResourceState = InNewState;
+
+	const bool IsDepleted = (EDC1ResourceActorState::Depleted == ResourceState);
+	if (true == IsDepleted)
+	{
+		const AGameStateBase* GameState = GetWorld()->GetGameState();
+		DepletedServerTime = (true == ::IsValid(GameState)) ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+
+		GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::Respawn, RespawnTime, false);
+
+		// 배정 전원 해제 → 펠 Work GA 종료
+		ClearPalWorkers();
+	}
+
+	// Standalone 표시
+	ApplyResourceState(IsDepleted);
+
+	ForceNetUpdate();
+}
+
+void ADC1ResourceActor::Respawn()
+{
+	AccumulatedDropDamage = 0.f;
+
+	const float CurrentMaxHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+	AbilitySystemComponent->SetNumericAttributeBase(UDC1AttributeSet::GetHealthAttribute(), CurrentMaxHealth);
+
+	SetResourceState(EDC1ResourceActorState::Active);
+	SleepForReplication();
+}
+
+void ADC1ResourceActor::HandleDamageApplied(const FOnAttributeChangeData& InData)
+{
+	// PostGameplayEffectExecute - SetDamage(0) 재호출 무시
+	if (InData.NewValue <= 0.f || nullptr == InData.GEModData)
+	{
+		return;
+	}
+
+	PendingDropOrigin = GetDropOrigin(&InData.GEModData->EffectSpec);
+	HasPendingDropOrigin = true;
+
+	LastDamageInstigator = InData.GEModData->EffectSpec.GetContext().GetInstigator();
+}
+
+FVector ADC1ResourceActor::GetDropOrigin(const FGameplayEffectSpec* InSpec) const
+{
+	const FBoxSphereBounds& Bounds = ResourceMesh->Bounds;
+	const FVector Fallback = Bounds.Origin + FVector::UpVector * Bounds.BoxExtent.Z;
+
+	if (nullptr == InSpec)
+	{
+		return Fallback;
+	}
+
+	FVector HitPoint;
+	FVector HitNormal;
+	if (false == DC1HitHelper::FindHitLocation(*InSpec, this, ResourceMesh, HitPoint, HitNormal))
+	{
+		return Fallback;
+	}
+
+	return HitPoint + HitNormal * DropSurfaceOffset;
+}
+
+void ADC1ResourceActor::AccumulateDrop(float InDamage, const FVector& InOrigin)
+{
+	// 회복 GE
+	if (InDamage <= 0.f)
+	{
+		return;
+	}
+
+	AccumulatedDropDamage += InDamage;
+
+	const int32 DropTimes = FMath::FloorToInt32(AccumulatedDropDamage / DropDamage);
+	AccumulatedDropDamage -= DropTimes * DropDamage;
+
+	UE_LOG(LogTemp, Log, TEXT("[DC1] %s drop : damage %.1f -> %d drop(s), remain %.1f"), *GetName(), InDamage, DropTimes, AccumulatedDropDamage);
+
+	// 맞은 지점 ( 공격자 쪽 표면 ) 에서 위로 간격만 둠 - 이후 물리로 떨어지며 겹치면 살짝만 밀림
+	int32 SpawnIndex = 0;
+
+	for (int32 DropIndex = 0; DropIndex < DropTimes; ++DropIndex)
+	{
+		const FVector GuaranteedLocation = InOrigin + FVector::UpVector * (SpawnIndex * DropStackSpacing);
+		if (nullptr != ADC1PickupItem::SpawnDrop(GetWorld(), DropTable.Guaranteed.ItemID, DropTable.Guaranteed.Count, GuaranteedLocation))
+		{
+			++SpawnIndex;
+		}
+
+		for (const FDC1ResourceChanceDrop& ChanceDrop : DropTable.ChanceDrops)
+		{
+			if (ChanceDrop.Chance <= FMath::FRand())
+			{
+				continue;
+			}
+
+			const FVector ChanceLocation = InOrigin + FVector::UpVector * (SpawnIndex * DropStackSpacing);
+			if (nullptr != ADC1PickupItem::SpawnDrop(GetWorld(), ChanceDrop.ItemID, ChanceDrop.Count, ChanceLocation))
+			{
+				++SpawnIndex;
+			}
+		}
+	}
+}
+
+void ADC1ResourceActor::WakeForReplication()
+{
+	if (DORM_Awake == NetDormancy)
+	{
+		return;
+	}
+
+	SetNetDormancy(DORM_Awake);
+}
+
+void ADC1ResourceActor::SleepForReplication()
+{
+	SetNetDormancy(DORM_DormantAll);
+}
+
+void ADC1ResourceActor::OnRep_ResourceState()
+{
+	const bool IsDepleted = (EDC1ResourceActorState::Depleted == ResourceState);
+
+	ApplyResourceState(true == IsDepleted && true == IsRecentDeplete());
+}
+
+void ADC1ResourceActor::ApplyResourceState(bool InPlayFX)
+{
+	if (EDC1ResourceActorState::Active == ResourceState)
+	{
+		ResourceMesh->SetHiddenInGame(false);
+		ResourceMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		ApplyScale();
+
+		return;
+	}
+
+	if (true == InPlayFX)
+	{
+		PlayDepleteFX();
+	}
+
+	ResourceMesh->SetHiddenInGame(true);
+	ResourceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ADC1ResourceActor::ApplyScale()
+{
+	if (EDC1ResourceScaleType::Fixed == ScaleType)
+	{
+		return;
+	}
+
+	constexpr float MidThreshold = 0.7f;
+	constexpr float MinThreshold = 0.4f;
+
+	constexpr float MaxRatio = 1.0f;
+	constexpr float MidRatio = 0.8f;
+	constexpr float MinRatio = 0.6f;
+	
+	float Ratio = GetHealthRatio();
+	const float Scale = (Ratio >= MidThreshold) ?	MaxRatio :
+						(Ratio >= MinThreshold) ?	MidRatio : 
+													MinRatio;
+
+	ResourceMesh->SetRelativeScale3D(InitialMeshScale * Scale);
+}
+
+void ADC1ResourceActor::PlayDepleteFX()
+{
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(ResourceMesh))
+	{
+		return;
+	}
+
+	if (true == ::IsValid(DestroyClass) && true == ::IsValid(DestroyGeometryCollection))
+	{
+		const FTransform SpawnTransform = ResourceMesh->GetComponentTransform();
+		ADC1DestroyActor* DestroyActor = GetWorld()->SpawnActorDeferred<ADC1DestroyActor>(DestroyClass, SpawnTransform);
+		if (true == ::IsValid(DestroyActor))
+		{
+			DestroyActor->InitDestroy(DestroyGeometryCollection);
+			DestroyActor->FinishSpawning(SpawnTransform);
+		}
+	}
+
+	if (true == ::IsValid(DestroyDustFX))
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DestroyDustFX, ResourceMesh->Bounds.Origin, GetActorRotation());
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, DestroySound, ResourceMesh->Bounds.Origin);
+}
+
+bool ADC1ResourceActor::IsRecentDeplete() const
+{
+	const AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (false == ::IsValid(GameState) || DepletedServerTime < 0.0)
+	{
+		return false;
+	}
+
+	return (GameState->GetServerWorldTimeSeconds() - DepletedServerTime) <= RecentDepleteWindow;
+}
+
+float ADC1ResourceActor::GetHealthRatio() const
+{
+	const float CurrentMaxHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetMaxHealthAttribute());
+
+	// 클라 첫 복제 전 ( Dormant 중 ) 은 0 나누기
+	if (CurrentMaxHealth <= 0.f)
+	{
+		return 1.f;
+	}
+
+	const float CurrentHealth = AbilitySystemComponent->GetNumericAttribute(UDC1AttributeSet::GetHealthAttribute());
+	return FMath::Clamp(CurrentHealth / CurrentMaxHealth, 0.f, 1.f);
+}
+
+void ADC1ResourceActor::ClearPalWorkers()
+{
+	if (true == PalWorkers.IsEmpty())
+	{
+		return;
+	}
+
+	PalWorkers.Empty();
+	OnPalWorkersChanged.Broadcast();
+}

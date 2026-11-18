@@ -1,0 +1,109 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "UI/Button/AnimButton/Slot/DC1BuildButton.h"
+
+#include "UI/Tooltip/DC1BuildTooltipWidget.h"
+
+#include "Components/Image.h"
+
+void UDC1BuildButton::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (true == ::IsValid(IconBackImage))
+	{
+		IconBackImage->SetBrush(UnHoverIconBackImageBrush);
+	}
+
+	if (true == ::IsValid(ButtonImage))
+	{
+		ButtonImage->SetBrush(UnHoverButtonImageBrush);
+	}
+}
+
+void UDC1BuildButton::HandleHovered()
+{
+	Super::HandleHovered();
+
+	if (true == ::IsValid(IconBackImage))
+	{
+		IconBackImage->SetBrush(HoverIconBackImageBrush);
+	}
+
+	if (true == ::IsValid(ButtonImage))
+	{
+		ButtonImage->SetBrush(HoverButtonImageBrush);
+	}
+
+}
+
+void UDC1BuildButton::HandleUnhovered()
+{
+	Super::HandleUnhovered();
+
+	if (true == ::IsValid(IconBackImage))
+	{
+		IconBackImage->SetBrush(UnHoverIconBackImageBrush);
+	}
+
+	if (true == ::IsValid(ButtonImage))
+	{
+		ButtonImage->SetBrush(UnHoverButtonImageBrush);
+	}
+}
+
+void UDC1BuildButton::RefreshTooltip(UDC1TooltipWidget* InTooltip)
+{
+	UDC1BuildTooltipWidget* BuildTooltip = Cast<UDC1BuildTooltipWidget>(InTooltip);
+	if (false == ::IsValid(BuildTooltip))
+	{
+		return;
+	}
+
+	BuildTooltip->SetBuild(CachedRow);
+}
+
+void UDC1BuildButton::InitBuildButton(const FDC1BuildRow& InBuildRow)
+{
+	CachedRow = InBuildRow;
+
+	if (true == InBuildRow.BuildTag.IsValid())
+	{
+		BuildTag = InBuildRow.BuildTag;
+	}
+	
+	SortOrder = InBuildRow.SortOrder;
+	
+	CachedCosts = InBuildRow.BuildCosts;
+
+	if (true == ::IsValid(BuildIconImage) && false == InBuildRow.Icon.IsNull())
+	{
+		BuildIconImage->SetBrushFromSoftTexture(InBuildRow.Icon);
+	}
+
+	SetVisibility(ESlateVisibility::Collapsed);
+
+	ApplyState();
+}
+
+void UDC1BuildButton::SetState(bool InCanBuild)
+{
+	if (CanBuild == InCanBuild)
+	{
+		return;
+	}
+
+	CanBuild = InCanBuild;
+
+	ApplyState();
+}
+
+void UDC1BuildButton::ApplyState()
+{
+	if (true == ::IsValid(InactiveHoverImage))
+	{
+		float ImageOpacity = CanBuild ? 0.f : InactiveHoverImageOpacity;
+		InactiveHoverImage->SetOpacity(ImageOpacity);
+	}
+}

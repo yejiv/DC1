@@ -1,29 +1,88 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Character/DC1Character.h"
 
+#include "AbilitySystem/Attribute/DC1AttributeSet.h"
 #include "Component/DC1AbilitySystemComponent.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
-// Sets default values
-ADC1Character::ADC1Character()
+ADC1Character::ADC1Character(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+}
 
-	// Add Component
-	AbilitySystemComponent = CreateDefaultSubobject<UDC1AbilitySystemComponent>("AbilitySystemComponent");
+void ADC1Character::BindHealthWatcher()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (nullptr == ASC)
+	{
+		return;
+	}
+
+	FOnGameplayAttributeValueChange& Delegate =
+		ASC->GetGameplayAttributeValueChangeDelegate(UDC1AttributeSet::GetHealthAttribute());
+
+	// ASC가 바뀌어 다시 불려도 중복 등록되지 않게
+	Delegate.RemoveAll(this);
+	Delegate.AddUObject(this, &ThisClass::HandleHealthChanged);
+}
+
+void ADC1Character::HandleHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (Data.NewValue > 0.f)
+	{
+		return;
+	}
+
+	OnHealthDepleted();
+}
+
+void ADC1Character::OnHealthDepleted()
+{
+	Die();
+}
+
+void ADC1Character::Die()
+{
+	if (true == bDead)
+	{
+		return;
+	}
+
+	bDead = true;
+
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (true == HasAuthority())
+		{
+			ASC->SetLooseGameplayTagCount(DC1StateTags::State_Dead, 1, EGameplayTagReplicationState::TagOnly);
+		}
+	}
+
+	OnDeath();
+}
+
+bool ADC1Character::IsDownOrDead() const
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		return ASC->HasMatchingGameplayTag(DC1StateTags::State_Downed) || ASC->HasMatchingGameplayTag(DC1StateTags::State_Dead);
+	}
+
+	return false;
+}
+
+UAbilitySystemComponent* ADC1Character::GetAbilitySystemComponent() const
+{
+	return nullptr;
 }
 
 // Called when the game starts or when spawned
 void ADC1Character::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-UAbilitySystemComponent* ADC1Character::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
 }
 
 // Called every frame
@@ -39,9 +98,3 @@ void ADC1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
-
-void ADC1Character::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
-{
-	Super::AddMovementInput(WorldDirection, ScaleValue, bForce);
-}
-

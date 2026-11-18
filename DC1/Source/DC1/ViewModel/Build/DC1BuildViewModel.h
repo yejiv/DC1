@@ -1,0 +1,76 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Data/DataTable/DC1DataTableTypes.h"
+#include "Component/DC1TechTreeComponent.h"
+#include "Component/Build/DC1BuildPlacementComponent.h"
+#include "ViewModel/DC1ViewModelBase.h"
+#include "DC1BuildViewModel.generated.h"
+
+class UDC1BuildPlacementComponent;
+
+UCLASS()
+class DC1_API UDC1BuildViewModel : public UDC1ViewModelBase
+{
+	GENERATED_BODY()
+
+public:
+	// Widget이 구독
+	FDC1OnTechStateChange			OnBuildStateChanged;
+
+	FDC1OnTechUnlocked				OnBuildUnlocked;
+
+	FDC1OnBuildModeChanged			OnBuildModeChanged;
+	FDC1OnBuildBlockReasonChanged	OnBlockReasonChanged;
+	FDC1OnDismantleTargetChanged	OnDismantleTargetChanged;
+
+public:
+	virtual void				BindSource(ADC1PlayerState* InPlayerState) override;
+	virtual void				ClearSource() override;
+
+public:
+	// 표시에 필요한 건 TechComp 뿐이다. PlacementComp는 액션 시점에 따로 확인한다
+	bool						HasModel() const { return ::IsValid(TechComp); }
+
+	const TArray<FDC1BuildRow>& GetBuildRows() const { return SortedBuildRows; }
+
+	bool						IsTabUnlocked(const FGameplayTag& InTabTag) const;
+	bool						IsBuildUnlocked(const FGameplayTag& InBuildTag) const;
+	void						GetBuildTagsByTechTag(const FGameplayTag& InTechTag, TArray<FGameplayTag>& OutBuildTags) const;
+
+	bool						RequestStartPlacement(const FGameplayTag& InBuildTag);
+	bool						RequestStartDismantle();
+
+	EDC1BuildMode				GetBuildMode() const;
+	EDC1BuildBlockReason		GetBlockReason() const;
+	FGameplayTag				GetCurrentBuildTag() const;
+	ADC1BuildActor*				GetDismantleTarget() const;
+
+	const FDC1BuildRow*			FindBuildRow(const FGameplayTag& InBuildTag) const;
+
+private:
+	void						SetModels(UDC1TechTreeComponent* InTechComp, UDC1BuildPlacementComponent* InPlacementComp);
+
+	void						CacheBuildRows();
+	void						HandleTechStateChanged();
+	void						HandleTechUnlocked(const FGameplayTag& InTechTag);
+
+	void						HandleBuildModeChanged(EDC1BuildMode InMode, const FGameplayTag& InBuildTag);
+	void						HandleBlockReasonChanged(EDC1BuildBlockReason InReason);
+	void						HandleDismantleTargetChanged(ADC1BuildActor* InTarget);
+
+private:
+	UPROPERTY()
+	TObjectPtr<UDC1TechTreeComponent>		TechComp = { nullptr };
+
+	UPROPERTY()
+	TObjectPtr<UDC1BuildPlacementComponent>	PlacementComp = { nullptr };
+
+	TArray<FDC1BuildRow>					SortedBuildRows;
+
+	TMap<FGameplayTag, FGameplayTag>		TechTagByBuildTag;
+
+	TMultiMap<FGameplayTag, FGameplayTag>	BuildTagsByTechTag;
+};

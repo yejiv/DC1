@@ -1,0 +1,251 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "AbilitySystem/Abilities/Player/DC1GA_Player_PalSphere.h"
+
+#include "Animation/AnimMontage.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
+
+#include "Tags/DC1GamePlayTags.h"
+#include "System/DC1AssetManager.h"
+#include "Data/DA/Anim/DC1AnimData.h"
+
+#include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
+#include "Component/DC1EquipComponent.h"
+#include "Component/Pal/DC1PalPartyComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Component/PalSphere/DC1PalSphereComponent.h"
+#include "Projectile/Pal/DC1PalSphere.h"
+
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
+
+namespace DC1GAPlayerPalSphere
+{
+	static UDC1PalSphereComponent* FindSphereComponent(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		return (nullptr != PS) ? PS->GetPalSphereComponent() : nullptr;
+	}
+
+	// 서버는 Q 를 누를 때 받은 등급, 클라는 지금 고른 등급. 리슨 서버 호스트는 둘이 같다
+	static FName FindThrowItemID(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const UDC1PalSphereComponent* SphereComp = FindSphereComponent(InActorInfo);
+		if (nullptr == SphereComp)
+		{
+			return NAME_None;
+		}
+
+		return (true == InActorInfo->IsNetAuthority()) ? SphereComp->GetThrowSphereItemID() : SphereComp->GetSelectedSphereItemID();
+	}
+
+	static UDC1PlayerInventoryComponent* FindInventory(const FGameplayAbilityActorInfo* InActorInfo)
+	{
+		const ADC1PlayerState* PS = (nullptr != InActorInfo) ? Cast<ADC1PlayerState>(InActorInfo->OwnerActor.Get()) : nullptr;
+		return (nullptr != PS) ? PS->GetInventoryComponent() : nullptr;
+	}
+}
+
+UDC1GA_Player_PalSphere::UDC1GA_Player_PalSphere(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	ThrowMontageTag = DC1AnimTags::Anim_Action_Throw;
+
+	// 벽타기 중 조준·던지기 금지(조준 회전이 벽타기 회전을 덮어쓴다)
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
+}
+
+bool UDC1GA_Player_PalSphere::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (false == Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	const FName ItemID = DC1GAPlayerPalSphere::FindThrowItemID(ActorInfo);
+	const UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerPalSphere::FindInventory(ActorInfo);
+	return (false == ItemID.IsNone() && nullptr != Inventory && Inventory->GetItemCount(ItemID) > 0);
+}
+
+void UDC1GA_Player_PalSphere::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+{
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	ThrowItemID = DC1GAPlayerPalSphere::FindThrowItemID(ActorInfo);
+
+	// 상자가 꽉 차면 던지지 않는다
+	if (const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo()))
+	{
+		const UDC1PalPartyComponent* Party = PS->GetPalPartyComponent();
+		if (nullptr != Party && false == Party->CanAcceptPal())
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+	}
+
+	if (false == CommitAbility(Handle, ActorInfo, ActivationInfo))
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
+	// 들고 있던 무기는 넣어두고 팰스피어를 손에 들려준다. 권한 확인은 EquipComponent가 한다
+	if (UDC1EquipComponent* EquipComp = GetEquipComponent())
+	{
+		EquipComp->EquipPalSphere();
+	}
+
+	// 조준하는 동안 손에 들고 있을 스피어. 액터·부착이 복제되어 다른 클라에도 보인다
+	if (true == ActorInfo->IsNetAuthority())
+	{
+		HeldSphere = SpawnHeldSphere();
+	}
+
+	// 뗄 때 던지기. ASC가 InputPressed/Released를 전달해줘야 이 태스크가 깨어난다
+	if (UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this, true))
+	{
+		ReleaseTask->OnRelease.AddDynamic(this, &ThisClass::OnInputReleased);
+		ReleaseTask->ReadyForActivation();
+	}
+
+	// 드로우 몽타주. 끝나도 어빌리티는 유지된다 (뗄 때까지 당긴 채로 대기)
+	if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
+	{
+		if (UAnimMontage* Montage = AnimData->FindMontageByTag(ThrowMontageTag))
+		{
+			if (UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f, "Loop"))
+			{
+				PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageCompleted);
+				PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageCompleted);
+				PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageAborted);
+				PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageAborted);
+				PlayMontageTask->ReadyForActivation();
+			}
+		}
+		else
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+	}
+}
+
+void UDC1GA_Player_PalSphere::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	// 캔슬/피격중단/사망 경로도 여기로 모이므로 무기 복원 누락이 없다
+	if (UDC1EquipComponent* EquipComp = GetEquipComponent())
+	{
+		EquipComp->UnequipPalSphere();
+	}
+
+	// 던지기 전에 끝났으면 손에 든 스피어를 지운다
+	ADC1PalSphere* Held = HeldSphere.Get();
+	if (true == ::IsValid(Held) && false == Held->IsLaunched())
+	{
+		Held->Destroy();
+	}
+	HeldSphere.Reset();
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+UDC1EquipComponent* UDC1GA_Player_PalSphere::GetEquipComponent() const
+{
+	// ASC가 PlayerState에 있으므로 OwningActor가 곧 PlayerState다
+	const ADC1PlayerState* PS = Cast<ADC1PlayerState>(GetOwningActorFromActorInfo());
+	if (false == ::IsValid(PS))
+	{
+		return nullptr;
+	}
+
+	return PS->GetEquipComponent();
+}
+
+void UDC1GA_Player_PalSphere::OnInputReleased(float TimeHeld)
+{
+	MontageJumpToSection("Throw");
+
+	if (nullptr == CurrentActorInfo || false == CurrentActorInfo->IsNetAuthority())
+	{
+		return;
+	}
+
+	ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
+	if (false == ::IsValid(Player))
+	{
+		return;
+	}
+
+	// 조준 중에 다른 데로 옮겼거나 버렸으면 안 던진다 (손에 든 스피어는 EndAbility 에서 지워진다)
+	UDC1PlayerInventoryComponent* Inventory = DC1GAPlayerPalSphere::FindInventory(CurrentActorInfo);
+	if (nullptr == Inventory || false == Inventory->RemoveItemByID(ThrowItemID, 1))
+	{
+		return;
+	}
+
+	ADC1PalSphere* Sphere = HeldSphere.Get();
+	HeldSphere.Reset();
+
+	if (false == ::IsValid(Sphere))
+	{
+		return;
+	}
+
+	// 잡히면 파티에 들어간다. 결과는 명중한 뒤에 나오므로 델리게이트로 받는다
+	if (const ADC1PlayerState* PlayerState = Player->GetPlayerState<ADC1PlayerState>())
+	{
+		if (UDC1PalPartyComponent* Party = PlayerState->GetPalPartyComponent())
+		{
+			Sphere->OnPalCaptured.AddUObject(Party, &UDC1PalPartyComponent::HandlePalCaptured);
+		}
+	}
+
+	Sphere->Launch(Player->GetControlRotation());
+}
+
+ADC1PalSphere* UDC1GA_Player_PalSphere::SpawnHeldSphere()
+{
+	ADC1Player* Player = Cast<ADC1Player>(GetAvatarActorFromActorInfo());
+	UWorld* World = ::IsValid(Player) ? Player->GetWorld() : nullptr;
+	if (nullptr == World)
+	{
+		return nullptr;
+	}
+
+	const UDC1PalSphereComponent* SphereComp = DC1GAPlayerPalSphere::FindSphereComponent(CurrentActorInfo);
+	const FDC1PalSphereDef* SphereDef = (nullptr != SphereComp) ? SphereComp->FindSphereDef(ThrowItemID) : nullptr;
+	if (nullptr == SphereDef || nullptr == SphereDef->SphereClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pal] %s: No SphereClass for item [%s]. Check PalSphereComponent SphereDefs on the PlayerState BP."), *GetName(), *ThrowItemID.ToString());
+		return nullptr;
+	}
+
+	USkeletalMeshComponent* MeshComp = Player->GetMesh();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Player;
+	SpawnParams.Instigator = Player;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(SphereDef->SphereClass, MeshComp->GetSocketTransform(ThrowSocketName), SpawnParams);
+	if (nullptr != Sphere)
+	{
+		Sphere->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ThrowSocketName);
+		Sphere->SetActorRelativeLocation(HeldSphereOffset);
+	}
+
+	return Sphere;
+}
+
+void UDC1GA_Player_PalSphere::OnMontageCompleted()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UDC1GA_Player_PalSphere::OnMontageAborted()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}

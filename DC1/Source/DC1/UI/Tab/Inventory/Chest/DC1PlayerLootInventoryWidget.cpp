@@ -1,0 +1,201 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "UI/Tab/Inventory/Chest/DC1PlayerLootInventoryWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotsWidget.h"
+#include "UI/Tab/Inventory/Slot/DC1InventorySlotWidget.h"
+#include "ViewModel/Inventory/DC1InventoryViewModel.h"
+
+#include "Component/Inventory/DC1InventoryTypes.h"
+
+#include "Components/TextBlock.h"
+#include "Components/Button.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+
+UDC1PlayerLootInventoryWidget::UDC1PlayerLootInventoryWidget(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
+
+void UDC1PlayerLootInventoryWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (IsValid(SortButton))
+	{
+		SortButton->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleSortButtonClicked);
+	}
+
+	// 상단 바 레이블은 상자 패널과 달리 데이터에 따라 바뀌지 않는 고정 텍스트
+	if (ChestNameText)
+	{
+		ChestNameText->SetText(FText::FromString(TEXT("Inventory")));
+	}
+
+	if (CachedViewModel)
+	{
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1PlayerLootInventoryWidget::HandleDragEnded);
+	}
+}
+
+void UDC1PlayerLootInventoryWidget::NativeDestruct()
+{
+	if (CachedViewModel)
+	{
+		CachedViewModel->OnDragEnded.RemoveAll(this);
+	}
+
+	if (IsValid(SortButton))
+	{
+		SortButton->OnClicked.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
+void UDC1PlayerLootInventoryWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	// 드래그 중일 때 항상 마우스 위치를 서서히 따라다님 (버튼 상태와 무관)
+	// DraggedSlotCopy는 이 위젯에서 드래그를 시작했을 때만 존재함
+	if (IsValid(DraggedSlotCopy))
+	{
+		FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
+		const float DragSlotSize = PlayerSlotsWidget->GetSlotSize() * DragSlotScale;
+		FVector2D TargetPos = MousePosition - FVector2D(DragSlotSize / 2.0f, DragSlotSize / 2.0f);
+
+		DraggedSlotCurrentPosition = FMath::Vector2DInterpTo(DraggedSlotCurrentPosition, TargetPos, InDeltaTime, DragFollowSpeed);
+
+		// GetMousePositionOnViewport와 짝을 이루는 뷰포트 좌표계이므로 DPI 재보정을 끔
+		DraggedSlotCopy->SetPositionInViewport(DraggedSlotCurrentPosition, false);
+	}
+}
+
+void UDC1PlayerLootInventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
+{
+	if (CachedViewModel)
+	{
+		CachedViewModel->OnDragEnded.RemoveAll(this);
+	}
+
+	CachedViewModel = NewViewModel;
+
+	if (CachedViewModel)
+	{
+		if (PlayerSlotsWidget)
+		{
+			PlayerSlotsWidget->SetInventoryViewModel(CachedViewModel);
+		}
+
+		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1PlayerLootInventoryWidget::HandleDragEnded);
+	}
+}
+
+void UDC1PlayerLootInventoryWidget::HandleDragEnded()
+{
+	// 이 위젯에서 시작한 드래그였다면 시각 복제본을 정리 (다른 위젯에서 시작한 드래그라면 DraggedSlotCopy가 nullptr이라 무시됨)
+	if (IsValid(DraggedSlotCopy))
+	{
+		DraggedSlotCopy->RemoveFromParent();
+		DraggedSlotCopy = nullptr;
+	}
+}
+
+FReply UDC1PlayerLootInventoryWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+
+	if (!IsValid(PlayerSlotsWidget) || !IsValid(CachedViewModel))
+	{
+		return FReply::Unhandled();
+	}
+
+	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
+	{
+		return FReply::Unhandled();
+	}
+
+	int32 ClickedSlotIndex = PlayerSlotsWidget->CalculateSlotIndex(InMouseEvent.GetScreenSpacePosition());
+	int32 TotalSlots = CachedViewModel->GetSlotCount();
+	if (ClickedSlotIndex < 0 || ClickedSlotIndex >= TotalSlots)
+	{
+		return FReply::Unhandled();
+	}
+
+	if (!CachedViewModel->IsDragging())
+	{
+		const FDC1InventorySlotInfo& InventorySlotInfo = CachedViewModel->GetSlot(ClickedSlotIndex);
+		if (InventorySlotInfo.IsEmpty())
+		{
+			return FReply::Unhandled();
+		}
+
+		// 키 조합에 따른 개수 선택
+		int32 DragStackCount = InventorySlotInfo.StackCount;
+		if (InMouseEvent.IsControlDown())
+		{
+			DragStackCount = 1;
+		}
+		else if (InMouseEvent.IsShiftDown())
+		{
+			DragStackCount = FMath::Max(1, InventorySlotInfo.StackCount / 2);
+		}
+
+		if (!CachedViewModel->GetItemData(InventorySlotInfo.ItemID))
+		{
+			return FReply::Unhandled();
+		}
+
+		CachedViewModel->BeginDrag(false, ClickedSlotIndex, DragStackCount);
+
+		// Slot 위젯 복제
+		if (!DraggedSlotCopy)
+		{
+			DraggedSlotCopy = CreateWidget<UDC1InventorySlotWidget>(GetOwningPlayer(), DragSlotWidgetClass);
+			if (IsValid(DraggedSlotCopy))
+			{
+				// 복제본 초기화: 크기는 원본 슬롯 크기 x DragSlotScale
+				const float DragSlotSize = PlayerSlotsWidget->GetSlotSize() * DragSlotScale;
+				DraggedSlotCopy->InitSlot(ClickedSlotIndex, DragSlotSize, EDC1InventorySource::Player);
+				DraggedSlotCopy->SetSlotData(CachedViewModel);
+
+				// Ctrl/Shift로 선택한 부분 개수를 표시 (원본 슬롯의 전체 개수가 아님)
+				DraggedSlotCopy->OverrideDisplayCount(DragStackCount);
+
+				// 무게 텍스트 비활성화
+				DraggedSlotCopy->SetWeightVisibility(false);
+
+				// 드래그 복제본 스타일 설정
+				DraggedSlotCopy->InitializeDragCopy();
+
+				// 뷰포트에 추가
+				DraggedSlotCopy->AddToViewport(999);
+
+				// 초기 위치를 마우스 위치(복제본 중심 기준)로 설정하여 첫 프레임에 순간이동하지 않도록 함
+				FVector2D MousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
+				DraggedSlotCurrentPosition = MousePos - FVector2D(DragSlotSize / 2.0f, DragSlotSize / 2.0f);
+				DraggedSlotCopy->SetPositionInViewport(DraggedSlotCurrentPosition, false);
+			}
+		}
+
+		return FReply::Handled();
+	}
+	else
+	{
+		// 드래그 중 슬롯 클릭: 드롭 처리
+		// 드래그 시작이 상자였다면 ViewModel이 플레이어<->상자 이전으로 자동 라우팅함
+		CachedViewModel->RequestDrop(false, ClickedSlotIndex);
+
+		return FReply::Handled();
+	}
+}
+
+void UDC1PlayerLootInventoryWidget::HandleSortButtonClicked()
+{
+	if (false == IsValid(CachedViewModel))
+	{
+		return;
+	}
+
+	CachedViewModel->RequestSortInventory();
+}

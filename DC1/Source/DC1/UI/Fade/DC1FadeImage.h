@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -13,21 +13,24 @@ class DC1_API UDC1FadeImage : public UDC1UserWidget
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
 public:
 	void	Play(const FUILoadingEntry& InEntry);
 	void	Stop();
 
-protected:
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
 private:
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UImage>	SpriteImage;
+	TObjectPtr<UImage>	SpriteImage = { nullptr };
 
 private:
+	UPROPERTY()
 	TArray<TObjectPtr<UTexture2D>> SelectFrames;
-	float	FPS = 10.f;
-	float	Elapsed = 0.f;
-	int32	LastFrameIndex = INDEX_NONE;
-	bool	bIsPlaying = false;
+
+	float	FPS = { 10.f };
+	float	Elapsed = { 0.f };
+
+	int32	LastFrameIndex = { INDEX_NONE };
+	bool	bIsPlaying = { false };
 };

@@ -1,9 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Animation/DC1AnimInstance.h"
 
-#include "Helper/DC1Macro.h"
+#include "Define/DC1Macro.h"
 
 #include "Character/DC1Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -41,9 +41,8 @@ void UDC1AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	FVector Velocity = MovementComponent->Velocity;
 	GroundSpeed = Velocity.Size2D();
+	VelocityZ = Velocity.Z;
 
 	IsMove = GroundSpeed > 0.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
 	IsFalling = MovementComponent->IsFalling();
-
-	
 }
