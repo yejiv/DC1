@@ -22,7 +22,7 @@ UDC1PlayerSet::UDC1PlayerSet()
 	InitDefensePower(50.f);
 	InitLevel(1.f);
 	InitWorkSpeed(10.f);
-	InitMaxWeight(100.f);
+	InitMaxWeight(500.f);
 	InitSatiety(100.f);
 	InitMaxSatiety(100.f);
 	InitShield(0.f);

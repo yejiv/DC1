@@ -51,6 +51,12 @@ public:
 	float GetRemainingWeight() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
+	bool IsOverweight() const;
+	// 초과 비율만큼 속도 배율 ( 초과 무게 % 만큼 Player 속도 배율 감소 )
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
+	float GetOverweightSpeedMultiplier() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Weight")
 	bool CanAddItem(FName InItemID, int32 InCount = 1) const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Inventory|Equipment")
@@ -252,7 +258,11 @@ protected:
 	// 귀중품 인벤토리 변경 시 음식 칸 수를 다시 계산하는 함수 (서버)
 	void HandleValuableInventoryUpdated();
 
+	// Attribute MaxWeight 변경 시 호출
 	void HandleMaxWeightChanged(const FOnAttributeChangeData& InData);
+
+	// 무게 초과 시 State_Overweight 부여
+	void RefreshOverweightTag();
 
 	// 열린 칸 수 복제 수신 시 장비 UI 갱신 이벤트를 보내는 함수
 	UFUNCTION()

@@ -20,6 +20,7 @@
 #include "Tags/Asset/DC1GameplayTag_Asset.h"
 
 #include "Tags/UI/DC1GameplayTag_UI.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 
 #include "Kismet/GameplayStatics.h"
 UDC1PlayerInventoryComponent::UDC1PlayerInventoryComponent()
@@ -179,6 +180,24 @@ float UDC1PlayerInventoryComponent::GetWeightPercentage() const
 float UDC1PlayerInventoryComponent::GetRemainingWeight() const
 {
 	return FMath::Max(0.0f, GetMaxWeight() - CurrentWeight);
+}
+
+bool UDC1PlayerInventoryComponent::IsOverweight() const
+{
+	const float MaxWeight = GetMaxWeight();
+	return MaxWeight > 0.0f && CurrentWeight > MaxWeight;
+}
+
+float UDC1PlayerInventoryComponent::GetOverweightSpeedMultiplier() const
+{
+	const float MaxWeight = GetMaxWeight();
+	if (MaxWeight <= 0.0f)
+	{
+		return 1.0f;
+	}
+
+	const float OverRatio = (CurrentWeight - MaxWeight) / MaxWeight;
+	return 1.0f - FMath::Clamp(OverRatio, 0.0f, 1.0f);
 }
 
 bool UDC1PlayerInventoryComponent::CanAddItem(FName InItemID, int32 InCount) const
@@ -391,19 +410,25 @@ void UDC1PlayerInventoryComponent::OnRep_UnlockedSlotCounts()
 
 void UDC1PlayerInventoryComponent::OnRep_CurrentWeight()
 {
+	RefreshOverweightTag();
 	OnInventoryUpdated.Broadcast();
 }
 
 void UDC1PlayerInventoryComponent::HandleMaxWeightChanged(const FOnAttributeChangeData& InData)
 {
-	// CurrentWeight가 한도로 잘려 있으므로 서버는 재계산, 클라는 표시만 갱신 (재계산 결과는 복제로 옴)
-	if (ROLE_Authority == GetOwnerRole())
+	RefreshOverweightTag();
+	OnInventoryUpdated.Broadcast();
+}
+
+void UDC1PlayerInventoryComponent::RefreshOverweightTag()
+{
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	if (nullptr == ASC)
 	{
-		OnInventoryUpdated_Internal();
 		return;
 	}
 
-	OnInventoryUpdated.Broadcast();
+	ASC->SetLooseGameplayTagCount(DC1StateTags::State_Overweight, IsOverweight() ? 1 : 0);
 }
 
 bool UDC1PlayerInventoryComponent::DropItem(int32 InSlotIndex, int32 InCount)
@@ -632,8 +657,7 @@ void UDC1PlayerInventoryComponent::CalculateWeight()
 	AddSlotsWeight(Slots);
 	AddSlotsWeight(EquipmentSlots);
 
-	// 최대 무게 초과 방지
-	CurrentWeight = FMath::Min(CurrentWeight, GetMaxWeight());
+	RefreshOverweightTag();
 }
 
 void UDC1PlayerInventoryComponent::OnRep_EquipmentSlots()
