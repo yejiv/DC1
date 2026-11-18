@@ -44,7 +44,7 @@ protected:
 
 private:
 	const FDC1PalSpawnEntry* PickSpawnEntry() const;
-	bool FindSpawnLocation(FVector& OutLocation) const;
+	bool FindSpawnLocation(FVector& OutLocation, int32& OutCellIndex) const;
 	bool IsAnyPlayerWithin(const FVector& InLocation, float InDistance) const;
 	void HandleSpawnedPalRemoved(TWeakObjectPtr<ADC1PalCharacter> InPal);
 	void CompactSpawnedPals();
@@ -86,7 +86,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn|Distance", meta = (ClampMin = "0.0", Units = "cm"))
 	float MinSpawnDistance = { 3000.f };
 
-	// 활성 플레이어 주변에서 스폰할 최대 거리. 큰 지역 볼륨에서도 팰이 멀리 흩어지지 않게 한다.
+	// 기존 BP 직렬화 호환용. 일반 스폰은 이제 플레이어 거리가 아니라 볼륨 전체 그리드를 사용한다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn|Distance", meta = (ClampMin = "0.0", Units = "cm"))
 	float MaxSpawnDistance = { 7000.f };
 
@@ -97,10 +97,21 @@ protected:
 	float RespawnDelay = { 60.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn", meta = (ClampMin = "1"))
-	int32 SpawnLocationAttempts = { 12 };
+	int32 SpawnLocationAttempts = { 15 };
+
+	// 최초 배치 셀을 기준으로 적은 셀부터 채운다. 팰이 배회해도 소속 셀은 바뀌지 않는다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn|Distribution", meta = (ClampMin = "1", ClampMax = "8"))
+	int32 SpawnGridColumns = { 3 };
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn|Distribution", meta = (ClampMin = "1", ClampMax = "8"))
+	int32 SpawnGridRows = { 3 };
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn|Distribution", meta = (ClampMin = "0.0", Units = "cm"))
+	float MinPalSpawnDistance = { 800.f };
 
 private:
-	TArray<TWeakObjectPtr<ADC1PalCharacter>> SpawnedPals;
+	// Value는 최초 스폰된 그리드 셀 번호다. 현재 위치가 바뀌어도 갱신하지 않는다.
+	TMap<TWeakObjectPtr<ADC1PalCharacter>, int32> SpawnedPals;
 	double NextSpawnTime = { 0.0 };
 
 	// 서버 시작 시 MinAlive~MaxAlive에서 한 번 뽑고, 이 수까지 계속 보충한다.

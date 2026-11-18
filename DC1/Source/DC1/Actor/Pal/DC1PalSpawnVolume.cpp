@@ -59,9 +59,9 @@ void ADC1PalSpawnVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 int32 ADC1PalSpawnVolume::GetLivingPalCount() const
 {
 	int32 Count = 0;
-	for (const TWeakObjectPtr<ADC1PalCharacter>& Pal : SpawnedPals)
+	for (const TPair<TWeakObjectPtr<ADC1PalCharacter>, int32>& Pair : SpawnedPals)
 	{
-		Count += Pal.IsValid() ? 1 : 0;
+		Count += Pair.Key.IsValid() ? 1 : 0;
 	}
 	return Count;
 }
@@ -102,12 +102,8 @@ bool ADC1PalSpawnVolume::HasPlayerInActivationRange() const
 	}
 
 	const FBox WorldBounds = SpawnBounds->Bounds.GetBox();
-	// 플레이어 주변 실제 스폰 반경보다 멀리서 볼륨만 활성화되면,
-	// Active=Yes 인데도 볼륨 내부 후보를 절대 만들 수 없는 구간이 생긴다.
-	const float FinalMinSpawnDistance = FMath::Max(0.f, MinSpawnDistance);
-	const float FinalMaxSpawnDistance = FMath::Max(FinalMinSpawnDistance, MaxSpawnDistance);
-	const float EffectiveActivationDistance = FMath::Min(ActivationDistance, FinalMaxSpawnDistance);
-	const float ActivationDistanceSq = FMath::Square(EffectiveActivationDistance);
+	// 플레이어는 볼륨을 활성화하기만 한다. 실제 스폰 위치는 볼륨 전체에서 고른다.
+	const float ActivationDistanceSq = FMath::Square(FMath::Max(0.f, ActivationDistance));
 	for (FConstPlayerControllerIterator Iter = World->GetPlayerControllerIterator(); Iter; ++Iter)
 	{
 		const APlayerController* PC = Iter->Get();
@@ -166,8 +162,9 @@ const FDC1PalSpawnEntry* ADC1PalSpawnVolume::PickSpawnEntry() const
 	return nullptr;
 }
 
-bool ADC1PalSpawnVolume::FindSpawnLocation(FVector& OutLocation) const
+bool ADC1PalSpawnVolume::FindSpawnLocation(FVector& OutLocation, int32& OutCellIndex) const
 {
+	OutCellIndex = INDEX_NONE;
 	const UNavigationSystemV1* Navigation = UNavigationSystemV1::GetCurrent(GetWorld());
 	if (nullptr == Navigation || false == IsValid(SpawnBounds))
 	{
@@ -183,6 +180,7 @@ bool ADC1PalSpawnVolume::FindSpawnLocation(FVector& OutLocation) const
 		if (true == Navigation->ProjectPointToNavigation(FixedLocation, NavLocation, ProjectionExtent))
 		{
 			OutLocation = NavLocation.Location + FVector::UpVector * BossSpawnOffset.Z;
+			OutCellIndex = 0;
 			return true;
 		}
 
@@ -190,44 +188,58 @@ bool ADC1PalSpawnVolume::FindSpawnLocation(FVector& OutLocation) const
 	}
 
 	const float FinalMinDistance = FMath::Max(0.f, MinSpawnDistance);
-	const float FinalMaxDistance = FMath::Max(FinalMinDistance, MaxSpawnDistance);
-	const float EffectiveActivationDistance = FMath::Min(ActivationDistance, FinalMaxDistance);
-
-	TArray<const APawn*> NearbyPlayers;
-	const FBox WorldBounds = SpawnBounds->Bounds.GetBox();
-	for (FConstPlayerControllerIterator Iter = GetWorld()->GetPlayerControllerIterator(); Iter; ++Iter)
-	{
-		const APlayerController* PC = Iter->Get();
-		const APawn* Pawn = (nullptr != PC) ? PC->GetPawn() : nullptr;
-		if (nullptr == Pawn)
-		{
-			continue;
-		}
-
-		const FVector PlayerLocation = Pawn->GetActorLocation();
-		const FVector ClosestPoint(
-			FMath::Clamp(PlayerLocation.X, WorldBounds.Min.X, WorldBounds.Max.X),
-			FMath::Clamp(PlayerLocation.Y, WorldBounds.Min.Y, WorldBounds.Max.Y),
-			PlayerLocation.Z);
-		if (FVector::DistSquared2D(PlayerLocation, ClosestPoint) <= FMath::Square(EffectiveActivationDistance))
-		{
-			NearbyPlayers.Add(Pawn);
-		}
-	}
-
-	if (0 == NearbyPlayers.Num())
-	{
-		return false;
-	}
-
 	const FTransform BoundsTransform = SpawnBounds->GetComponentTransform();
 	const FVector UnscaledExtent = SpawnBounds->GetUnscaledBoxExtent();
-	const int32 FinalAttemptCount = FMath::Max(32, SpawnLocationAttempts);
+	const int32 GridColumns = FMath::Clamp(SpawnGridColumns, 1, 8);
+	const int32 GridRows = FMath::Clamp(SpawnGridRows, 1, 8);
+	const int32 CellCount = GridColumns * GridRows;
+	TArray<int32> CellOccupancy;
+	CellOccupancy.Init(0, CellCount);
+	for (const TPair<TWeakObjectPtr<ADC1PalCharacter>, int32>& Pair : SpawnedPals)
+	{
+		if (Pair.Key.IsValid() && CellOccupancy.IsValidIndex(Pair.Value))
+		{
+			++CellOccupancy[Pair.Value];
+		}
+	}
+
+	TArray<int32> CellCandidates;
+	TArray<float> CellTieBreakers;
+	CellCandidates.Reserve(CellCount);
+	CellTieBreakers.Reserve(CellCount);
+	for (int32 CellIndex = 0; CellIndex < CellCount; ++CellIndex)
+	{
+		CellCandidates.Add(CellIndex);
+		CellTieBreakers.Add(FMath::FRand());
+	}
+	CellCandidates.Sort([&CellOccupancy, &CellTieBreakers](const int32 A, const int32 B)
+	{
+		return CellOccupancy[A] == CellOccupancy[B]
+			? CellTieBreakers[A] < CellTieBreakers[B]
+			: CellOccupancy[A] < CellOccupancy[B];
+	});
+
+	const float CellSizeX = (UnscaledExtent.X * 2.f) / GridColumns;
+	const float CellSizeY = (UnscaledExtent.Y * 2.f) / GridRows;
+	const float MinPalDistanceSq = FMath::Square(FMath::Max(0.f, MinPalSpawnDistance));
+	// 기존 BP에 직렬화된 12회 값이 남아 있어도 최소 15회는 보장한다.
+	const int32 FinalAttemptCount = FMath::Max(15, SpawnLocationAttempts);
 	for (int32 Attempt = 0; Attempt < FinalAttemptCount; ++Attempt)
 	{
-		const APawn* Player = NearbyPlayers[FMath::RandRange(0, NearbyPlayers.Num() - 1)];
+		const int32 SelectedCellIndex = CellCandidates[Attempt % CellCandidates.Num()];
+		const int32 SelectedCellX = SelectedCellIndex % GridColumns;
+		const int32 SelectedCellY = SelectedCellIndex / GridColumns;
+		const float LocalMinX = -UnscaledExtent.X + SelectedCellX * CellSizeX;
+		const float LocalMinY = -UnscaledExtent.Y + SelectedCellY * CellSizeY;
+		const FVector CandidateLocation = BoundsTransform.TransformPosition(FVector(
+			FMath::FRandRange(LocalMinX, LocalMinX + CellSizeX),
+			FMath::FRandRange(LocalMinY, LocalMinY + CellSizeY),
+			0.f));
+
 		FNavLocation NavLocation;
-		if (false == Navigation->GetRandomReachablePointInRadius(Player->GetActorLocation(), FinalMaxDistance, NavLocation))
+		// 월드에 배치된 볼륨의 Z 스케일까지 반영해야 높낮이가 큰 지형에서도 지면 NavMesh를 찾는다.
+		const FVector ProjectionExtent(200.f, 200.f, SpawnBounds->GetScaledBoxExtent().Z);
+		if (false == Navigation->ProjectPointToNavigation(CandidateLocation, NavLocation, ProjectionExtent))
 		{
 			continue;
 		}
@@ -245,7 +257,25 @@ bool ADC1PalSpawnVolume::FindSpawnLocation(FVector& OutLocation) const
 			continue;
 		}
 
+		bool bIsTooCloseToPal = false;
+		for (const TPair<TWeakObjectPtr<ADC1PalCharacter>, int32>& Pair : SpawnedPals)
+		{
+			const ADC1PalCharacter* ExistingPal = Pair.Key.Get();
+			if (nullptr != ExistingPal && FVector::DistSquared2D(NavLocation.Location, ExistingPal->GetActorLocation()) < MinPalDistanceSq)
+			{
+				bIsTooCloseToPal = true;
+				break;
+			}
+		}
+		if (true == bIsTooCloseToPal)
+		{
+			continue;
+		}
+
+		const int32 CellX = FMath::Clamp(FMath::FloorToInt((LocalLocation.X + UnscaledExtent.X) / CellSizeX), 0, GridColumns - 1);
+		const int32 CellY = FMath::Clamp(FMath::FloorToInt((LocalLocation.Y + UnscaledExtent.Y) / CellSizeY), 0, GridRows - 1);
 		OutLocation = NavLocation.Location;
+		OutCellIndex = CellY * GridColumns + CellX;
 		return true;
 	}
 
@@ -271,7 +301,8 @@ ADC1PalCharacter* ADC1PalSpawnVolume::SpawnOne()
 	}
 
 	FVector SpawnLocation;
-	if (false == FindSpawnLocation(SpawnLocation))
+	int32 SpawnCellIndex = INDEX_NONE;
+	if (false == FindSpawnLocation(SpawnLocation, SpawnCellIndex))
 	{
 		return nullptr;
 	}
@@ -298,7 +329,7 @@ ADC1PalCharacter* ADC1PalSpawnVolume::SpawnOne()
 	Pal->FinishSpawning(SpawnTransform);
 
 	const TWeakObjectPtr<ADC1PalCharacter> WeakPal = Pal;
-	SpawnedPals.Add(WeakPal);
+	SpawnedPals.Add(WeakPal, SpawnCellIndex);
 	Pal->OnPalDied.AddWeakLambda(this, [this, WeakPal]() { HandleSpawnedPalRemoved(WeakPal); });
 	return Pal;
 }
@@ -314,18 +345,24 @@ void ADC1PalSpawnVolume::HandleSpawnedPalRemoved(TWeakObjectPtr<ADC1PalCharacter
 
 void ADC1PalSpawnVolume::CompactSpawnedPals()
 {
-	SpawnedPals.RemoveAll([](const TWeakObjectPtr<ADC1PalCharacter>& Pal) { return false == Pal.IsValid(); });
+	for (auto Iter = SpawnedPals.CreateIterator(); Iter; ++Iter)
+	{
+		if (false == Iter.Key().IsValid())
+		{
+			Iter.RemoveCurrent();
+		}
+	}
 }
 
 void ADC1PalSpawnVolume::CullDistantPals()
 {
 	CompactSpawnedPals();
-	for (int32 Index = SpawnedPals.Num() - 1; Index >= 0; --Index)
+	for (auto Iter = SpawnedPals.CreateIterator(); Iter; ++Iter)
 	{
-		ADC1PalCharacter* Pal = SpawnedPals[Index].Get();
+		ADC1PalCharacter* Pal = Iter.Key().Get();
 		if (nullptr != Pal && false == IsAnyPlayerWithin(Pal->GetActorLocation(), DespawnDistance))
 		{
-			SpawnedPals.RemoveAtSwap(Index);
+			Iter.RemoveCurrent();
 			Pal->Destroy();
 		}
 	}
