@@ -27,6 +27,7 @@ public:
 
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	void					UpdateTarget();
 
@@ -101,6 +102,8 @@ protected:
 	void					ApplyStateTreeForTeam();
 
 	void					ClearTargetState();
+	void					BeginReturnHome();
+	void					FinishReturnHome(bool bArrived);
 
 protected:
 	// 진영별 행동 트리. 컨트롤러 BP에서 지정한다
@@ -164,7 +167,16 @@ protected:
 
 	float							LastBackoffTime = { -1000.f };
 
+	// 야생 팰이 전투 중 배회 중심에서 이 거리 이상 벗어나면 전투를 끊고 복귀한다.
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Combat", meta = (ClampMin = "0.0", Units = "cm"))
+	float							CombatLeashDistance = { 5000.f };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pal|Combat", meta = (ClampMin = "0.0", Units = "cm"))
+	float							ReturnHomeAcceptanceRadius = { 200.f };
+
 	FVector							HomeLocation = { FVector::ZeroVector };
+	bool							bReturningHome = { false };
+	FAIRequestID					ReturnHomeRequestID;
 	float							LastSeenTime = { 0.f };
 
 	// 놓친 뒤 추격 유지하는 시간
