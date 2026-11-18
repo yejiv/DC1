@@ -3,6 +3,7 @@
 #include "Item/Equip/Weapon/RangedWeapon/DC1ProjectileWeapon.h"
 
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Projectile/DC1Projectile.h"
 
 ADC1ProjectileWeapon::ADC1ProjectileWeapon()
@@ -11,6 +12,22 @@ ADC1ProjectileWeapon::ADC1ProjectileWeapon()
 	RangedMesh = CreateDefaultSubobject<USkeletalMeshComponent>("RangedMesh");
 	RangedMesh->SetupAttachment(ItemMesh);
 	RangedMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	NockedArrowMesh = CreateDefaultSubobject<UStaticMeshComponent>("NockedArrowMesh");
+	NockedArrowMesh->SetupAttachment(RangedMesh, TEXT("string1"));
+	NockedArrowMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	NockedArrowMesh->SetGenerateOverlapEvents(false);
+	NockedArrowMesh->SetHiddenInGame(true);
+}
+
+void ADC1ProjectileWeapon::SetArrowNocked(bool bInNocked)
+{
+	if (nullptr == NockedArrowMesh)
+	{
+		return;
+	}
+
+	NockedArrowMesh->SetHiddenInGame(false == bInNocked);
 }
 
 UPrimitiveComponent* ADC1ProjectileWeapon::GetAttackCollider()

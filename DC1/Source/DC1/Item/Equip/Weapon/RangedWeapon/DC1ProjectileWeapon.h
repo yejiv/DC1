@@ -10,6 +10,7 @@
 class ADC1Projectile;
 class UPrimitiveComponent;
 class USkeletalMeshComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class DC1_API ADC1ProjectileWeapon : public ADC1Weapon
@@ -28,6 +29,9 @@ public:
 
 	FTransform			GetMuzzleTransform() const;
 
+	// 당기는 동안 시위에 걸린 화살 표시 ( 몽타주 NockArrow 노티파이 스테이트에서 호출 - 모든 클라 )
+	void				SetArrowNocked(bool bInNocked);
+
 public:
 	// 상속받은 ItemMesh(Static)를 쓰지 않고 스켈레탈 메시를 쓴다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
@@ -36,6 +40,10 @@ public:
 	// RangedMesh 기준 발사 지점. 손에 붙일 때 쓰는 AttackSocketName과는 별개다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
 	FName									MuzzleSocketName;
+
+	// 시위에 걸린 화살 ( 표시용, 발사체와 별개 ). 시위 본(string1)에 붙여서 같이 당겨진다. 메쉬 / 오프셋은 BP에서
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
+	TObjectPtr<UStaticMeshComponent>	NockedArrowMesh = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Ranged")
 	TSubclassOf<ADC1Projectile>		ProjectileClass;
