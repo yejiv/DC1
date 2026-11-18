@@ -16,8 +16,6 @@
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
 #include "Components/Button.h"
-#include "Components/ProgressBar.h"
-#include "Components/TextBlock.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 UDC1InventoryWidget::UDC1InventoryWidget(const FObjectInitializer& ObjectInitializer)
@@ -76,11 +74,7 @@ void UDC1InventoryWidget::NativeConstruct()
 		// SetViewModel에서 이미 구독했을 수 있으므로 중복 구독 방지
 		CachedViewModel->OnDragEnded.RemoveAll(this);
 		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::UpdateWeightDisplay);
 	}
-
-	UpdateWeightDisplay();
 
 	// 선택된 탭 버튼 표시 갱신
 	UpdateTabButtonVisual();
@@ -146,7 +140,6 @@ void UDC1InventoryWidget::NativeDestruct()
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnDragEnded.RemoveAll(this);
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 	}
 
 	if (::IsValid(PlayerStatPanel_Stats))
@@ -170,7 +163,6 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnDragEnded.RemoveAll(this);
-		CachedViewModel->OnInventoryUpdated.RemoveAll(this);
 	}
 
 	CachedViewModel = NewViewModel;
@@ -189,10 +181,7 @@ void UDC1InventoryWidget::SetViewModel(UDC1InventoryViewModel* NewViewModel)
 
 		// 이벤트 구독
 		CachedViewModel->OnDragEnded.AddUObject(this, &UDC1InventoryWidget::HandleDragEnded);
-		CachedViewModel->OnInventoryUpdated.AddUObject(this, &UDC1InventoryWidget::UpdateWeightDisplay);
 	}
-
-	UpdateWeightDisplay();
 }
 
 void UDC1InventoryWidget::ChangeTab(EDC1InventorySource InTab)
@@ -457,26 +446,5 @@ void UDC1InventoryWidget::HandleDiscardButtonClicked()
 	if (IsValid(CachedViewModel))
 	{
 		CachedViewModel->RequestDiscardDraggedItem();
-	}
-}
-
-void UDC1InventoryWidget::UpdateWeightDisplay()
-{
-	if (false == IsValid(CachedViewModel))
-	{
-		return;
-	}
-
-	const float CurrentWeight = CachedViewModel->GetCurrentWeight();
-	const float MaxWeight = CachedViewModel->GetMaxWeight();
-
-	if (IsValid(ProgressBar_Weight))
-	{
-		ProgressBar_Weight->SetPercent(0.f < MaxWeight ? FMath::Clamp(CurrentWeight / MaxWeight, 0.f, 1.f) : 0.f);
-	}
-
-	if (IsValid(TextBlock_Weight))
-	{
-		TextBlock_Weight->SetText(FText::FromString(FString::Printf(TEXT("%.1f / %.1f"), CurrentWeight, MaxWeight)));
 	}
 }

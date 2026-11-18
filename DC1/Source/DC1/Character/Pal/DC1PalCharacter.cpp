@@ -624,6 +624,22 @@ void ADC1PalCharacter::Multicast_PlayHitSound_Implementation(FVector_NetQuantize
 	UGameplayStatics::PlaySoundAtLocation(this, HitSound, InLocation);
 }
 
+void ADC1PalCharacter::Multicast_PlaySkillSound_Implementation(USoundBase* InSound, FVector_NetQuantize InLocation, bool InAttach)
+{
+	if (nullptr == InSound)
+	{
+		return;
+	}
+
+	if (true == InAttach)
+	{
+		UGameplayStatics::SpawnSoundAttached(InSound, GetRootComponent());
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, InSound, InLocation);
+}
+
 void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Data)
 {
 	if (false == IsValid(PalAttributeSet))
@@ -649,6 +665,21 @@ float ADC1PalCharacter::GetSanity() const
 float ADC1PalCharacter::GetMaxSanity() const
 {
 	return IsValid(PalAttributeSet) ? PalAttributeSet->GetMaxSanity() : 0.f;
+}
+
+void ADC1PalCharacter::SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget)
+{
+	WorkTargetActor = Cast<AActor>(InWorkTarget);
+}
+
+IDC1WorkTargetInterface* ADC1PalCharacter::GetCurrentWorkTarget() const
+{
+	if (false == ::IsValid(WorkTargetActor))
+	{
+		return nullptr;
+	}
+
+	return Cast<IDC1WorkTargetInterface>(WorkTargetActor);
 }
 
 void ADC1PalCharacter::HandleLevelChangedForUI(const FOnAttributeChangeData& Data)
@@ -1187,6 +1218,7 @@ void ADC1PalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ADC1PalCharacter, BasePalBox);
 	DOREPLIFETIME(ADC1PalCharacter, bIsAlpha);
 	DOREPLIFETIME(ADC1PalCharacter, bSummonFX);
+	DOREPLIFETIME(ADC1PalCharacter, WorkTargetActor);
 }
 
 ETeamAttitude::Type ADC1PalCharacter::GetTeamAttitudeTowards(const AActor& Other) const

@@ -9,7 +9,6 @@
 #include "AI/DC1TeamTypes.h"
 #include "Data/Pal/DC1PalTypes.h"
 #include "Interface/DC1WorkTargetInterface.h"
-#include "UObject/WeakInterfacePtr.h"
 #include "DC1PalCharacter.generated.h"
 
 class ADC1PalBoxActor;
@@ -93,9 +92,9 @@ public:
 	float								GetSanity() const;
 	float								GetMaxSanity() const;
 
-	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> Work GA가 GetCurrentWorkTarget으로 읽음. 서버 전용
-	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget) { WorkTarget = InWorkTarget; }
-	virtual IDC1WorkTargetInterface*	GetCurrentWorkTarget() const override { return WorkTarget.Get(); }
+	// 작업 대상 - 펠 ST가 AssignPalWorker 성공 후 설정 -> WorkGA / 작업 노티파이가 GetCurrentWorkTarget으로 읽음, 복제됨
+	void								SetWorkTarget(IDC1WorkTargetInterface* InWorkTarget);
+	virtual IDC1WorkTargetInterface*	GetCurrentWorkTarget() const override;
 
 #pragma region Capture
 	float								GetHealthRatio() const;
@@ -118,6 +117,10 @@ public:
 	// 해제 ( 회수 ) 직전. 잔상 + 파티클 + 손까지 트레일 ( 시각 전용 )
 	UFUNCTION(NetMulticast, Reliable)
 	void								Multicast_PlayDismissFX();
+
+	// 스킬 사운드 ( 서버 → 모두 ). InAttach 면 팰에 붙어 따라감 ( 차지 ), 아니면 InLocation 에서 ( 투사체 명중 )
+	UFUNCTION(NetMulticast, Unreliable)
+	void								Multicast_PlaySkillSound(USoundBase* InSound, FVector_NetQuantize InLocation, bool InAttach);
 
 	// 지금 포즈를 복사한 반투명 잔상 ( InDuration 동안 페이드, InHoldTime 더 지나면 제거 - 붙은 파티클용 )
 	UPoseableMeshComponent*				SpawnDismissGhost(UMaterialInterface* InMaterial, float InDuration, float InHoldTime) const;
@@ -260,8 +263,9 @@ protected:
 
 	UPROPERTY(Transient, Replicated)
 	TObjectPtr<ADC1PlayerState> OwnerPlayerState = { nullptr };
-
-	TWeakInterfacePtr<IDC1WorkTargetInterface> WorkTarget;
+	// 클라 작업 노티파이가 대상 종류(리소스 / 작업장 )를 보기 위해 복제
+	UPROPERTY(Transient, Replicated)
+	TObjectPtr<AActor> WorkTargetActor = { nullptr };
 
 	// 이 팰의 데이터. 소환될 때 원본을 통째로 받아두고 회수할 때 그대로 돌려준다.
 	UPROPERTY(Transient)

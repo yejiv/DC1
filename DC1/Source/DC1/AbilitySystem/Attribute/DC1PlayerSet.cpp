@@ -20,9 +20,9 @@ UDC1PlayerSet::UDC1PlayerSet()
 	InitAttackPower(10.f);
 	// 0이면 팰 데미지 계산이 DefenseFlatBase(50)로 대체하므로 같은 값으로 시작
 	InitDefensePower(50.f);
-	InitLevel(3.f);
+	InitLevel(1.f);
 	InitWorkSpeed(10.f);
-	InitMaxWeight(100.f);
+	InitMaxWeight(500.f);
 	InitSatiety(100.f);
 	InitMaxSatiety(100.f);
 	InitShield(0.f);

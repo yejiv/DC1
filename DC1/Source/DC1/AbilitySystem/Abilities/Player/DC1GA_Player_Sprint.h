@@ -31,6 +31,8 @@ private:
 
 	// 스태미나가 바닥나면 스스로 끝난다
 	void			HandleStaminaChanged(const FOnAttributeChangeData& Data);
+	// State_OverWeight가 부여되면 끝난다
+	void			HandleOverweightTagChanged(const FGameplayTag InTag, int32 InNewCount);
 
 	ADC1Player*	GetPlayer() const;
 
@@ -43,4 +45,5 @@ public:
 private:
 	FActiveGameplayEffectHandle	CostEffectHandle;
 	FDelegateHandle			StaminaChangedHandle;
+	FDelegateHandle			OverweightTagChangedHandle;
 };

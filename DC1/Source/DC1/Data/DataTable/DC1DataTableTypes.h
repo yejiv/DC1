@@ -161,6 +161,9 @@ struct FDC1ValuableItemRow : public FDC1ItemRow
 	// 먹이 주머니가 여는 음식 칸 수 (0이면 주머니 아님, 여러 개면 가장 큰 값만 적용)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0", ClampMax = "5"))
 	int32 FoodPouchSlotCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))
+	int32 BagExtraSlotCount = 0;
 };
 
 // 장비 아이템 전용 데이터 (FDC1ItemRow와 ItemID로 연결, 행이 있어야 장착 가능)

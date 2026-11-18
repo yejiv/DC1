@@ -19,6 +19,7 @@ UDC1GA_Player_Sprint::UDC1GA_Player_Sprint(const FObjectInitializer& ObjectIniti
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Aiming);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Dead);
 	ActivationBlockedTags.AddTag(DC1StateTags::State_Climbing);
+	ActivationBlockedTags.AddTag(DC1StateTags::State_Overweight);
 }
 
 bool UDC1GA_Player_Sprint::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
@@ -80,6 +81,9 @@ void UDC1GA_Player_Sprint::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 	StaminaChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(UDC1CharacterAttributeSet::GetStaminaAttribute())
 		.AddUObject(this, &ThisClass::HandleStaminaChanged);
+	// OverWeight Tag 이벤트 구독, State_OverWeight 부여되면 EndAbility
+	OverweightTagChangedHandle = ASC->RegisterGameplayTagEvent(DC1StateTags::State_Overweight, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &ThisClass::HandleOverweightTagChanged);
 
 	// 어트리뷰트 변경은 서버 권한이다
 	if (nullptr != CostEffectClass && true == ASC->IsOwnerActorAuthoritative())
@@ -108,6 +112,9 @@ void UDC1GA_Player_Sprint::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 				StaminaChangedHandle.Reset();
 			}
 
+			ASC->RegisterGameplayTagEvent(DC1StateTags::State_Overweight, EGameplayTagEventType::NewOrRemoved).Remove(OverweightTagChangedHandle);
+			OverweightTagChangedHandle.Reset();
+
 			// 회복 지연은 이 GE의 OnCompleteAlways가 이어받는다
 			if (true == CostEffectHandle.IsValid())
 			{
@@ -123,6 +130,16 @@ void UDC1GA_Player_Sprint::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 void UDC1GA_Player_Sprint::HandleStaminaChanged(const FOnAttributeChangeData& Data)
 {
 	if (Data.NewValue > 0.f)
+	{
+		return;
+	}
+
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}
+
+void UDC1GA_Player_Sprint::HandleOverweightTagChanged(const FGameplayTag InTag, int32 InNewCount)
+{
+	if (InNewCount <= 0)
 	{
 		return;
 	}

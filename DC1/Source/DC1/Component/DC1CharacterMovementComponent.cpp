@@ -7,8 +7,14 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+
 #include "Character/Player/DC1Player.h"
+#include "Character/Player/DC1PlayerState.h"
 #include "Component/DC1EquipComponent.h"
+#include "Component/Inventory/Player/DC1PlayerInventoryComponent.h"
+#include "Tags/State/DC1GameplayTag_State.h"
 #include "Item/Equip/Glider/DC1Glider.h"
 
 #pragma region SavedMove
@@ -123,6 +129,17 @@ float UDC1CharacterMovementComponent::GetMaxSpeed() const
 	else
 	{
 		Speed = Safe_bWantsToWalk ? WalkSpeed : JogSpeed;
+	}
+
+	if (const APawn* Pawn = PawnOwner)
+	{
+		if (const ADC1PlayerState* PS = Pawn->GetPlayerState<ADC1PlayerState>())
+		{
+			if (const UDC1PlayerInventoryComponent* Inventory = PS->GetInventoryComponent())
+			{
+				Speed *= Inventory->GetOverweightSpeedMultiplier();
+			}
+		}
 	}
 
 	return Speed;
@@ -431,7 +448,13 @@ bool UDC1CharacterMovementComponent::CanAttemptJump() const
 	bool CanJump = Super::CanAttemptJump();
 
 	if (IsClimbing())
-		CanJump = true;
+		return true;
+
+	if (const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PawnOwner))
+	{
+		if (true == ASC->HasMatchingGameplayTag(DC1StateTags::State_Overweight))
+			CanJump = false;
+	}
 
 	return CanJump;
 }
