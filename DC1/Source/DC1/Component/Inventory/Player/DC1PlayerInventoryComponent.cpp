@@ -42,7 +42,7 @@ void UDC1PlayerInventoryComponent::BeginPlay()
 
 		// Test - Item 생성
 		//InitializeDefaultEquipment();
-		InitializeDefaultItems();
+		//InitializeDefaultItems();
 
 		// 먹이 주머니가 귀중품 인벤토리에 있을 수 있으므로 함께 감시
 		if (UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory())

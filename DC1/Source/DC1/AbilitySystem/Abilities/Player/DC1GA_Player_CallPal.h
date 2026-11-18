@@ -7,6 +7,7 @@
 
 class UAnimMontage;
 class USoundBase;
+class ADC1PalSphere;
 
 /**
  * 팰 소환/회수 ( E ).
@@ -47,6 +48,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|Sound")
 	TObjectPtr<USoundBase>		RetrieveSound = { nullptr };
 
-private:
+	// 소환 / 회수 몽타주 동안 손에 들고 있을 스피어 ( 표시용, 던지지 않는다 )
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	TSubclassOf<ADC1PalSphere>	HeldSphereClass;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	FName						HeldSocketName;
+
+	// 손 소켓 기준 위치 보정 ( 팰스피어 던지기와 같은 값을 쓰면 된다 )
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability|PalSphere")
+	FVector						HeldSphereOffset = { FVector::ZeroVector };
+
+private:
+	// 서버: 몽타주 동안 들고 있는 스피어. EndAbility 에서 지운다
+	TWeakObjectPtr<ADC1PalSphere>	HeldSphere;
 };
