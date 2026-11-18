@@ -116,6 +116,51 @@ namespace DC1DebugCommands
 		Ar.Logf(TEXT("[DC1Debug] Added [%s] x%d."), *ItemID.ToString(), Count);
 	}
 
+	// DC1.AddAllItems - Item / ValuableItem 테이블의 모든 아이템. MaxStack 1이면 1개, 그 외는 최대 1000개
+	void AddAllItems(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
+	{
+		ADC1PlayerState* PS = FindAuthorityPlayerState(InWorld, Ar);
+		UDC1PlayerInventoryComponent* Inventory = (nullptr != PS) ? PS->GetInventoryComponent() : nullptr;
+		if (false == ::IsValid(Inventory))
+		{
+			return;
+		}
+
+		int32 AddedKinds = 0;
+		int32 FailedKinds = 0;
+
+		const FGameplayTag TableTags[] = { DC1DataTableTags::DataTable_Item, DC1DataTableTags::DataTable_ValuableItem };
+
+		for (const FGameplayTag& TableTag : TableTags)
+		{
+			TArray<FDC1ItemRow> Rows;
+			if (false == DC1DataTableHelper::GetAllRows<FDC1ItemRow>(TableTag, Rows))
+			{
+				continue;
+			}
+
+			for (const FDC1ItemRow& Row : Rows)
+			{
+				if (true == Row.ItemID.IsNone())
+				{
+					continue;
+				}
+
+				const int32 Count = (Row.MaxStack <= 1) ? 1 : FMath::Min(Row.MaxStack, 1000);
+				const int32 RemainCount = Inventory->AddItemPartial(Row.ItemID, Count);
+				if (RemainCount >= Count)
+				{
+					++FailedKinds;
+					continue;
+				}
+
+				++AddedKinds;
+			}
+		}
+
+		Ar.Logf(TEXT("[DC1Debug] AddAllItems: added %d kinds, failed %d kinds (inventory full?)."), AddedKinds, FailedKinds);
+	}
+
 	// DC1.AddPal <Species> [Count]
 	void AddPal(const TArray<FString>& InArgs, UWorld* InWorld, FOutputDevice& Ar)
 	{
@@ -268,6 +313,11 @@ namespace DC1DebugCommands
 		TEXT("DC1.AddItem"),
 		TEXT("DC1.AddItem <ItemID> [Count=1] - add item to local player's inventory"),
 		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&AddItem));
+
+	FAutoConsoleCommand AddAllItemsCommand(
+		TEXT("DC1.AddAllItems"),
+		TEXT("DC1.AddAllItems - add every item (MaxStack 1 -> 1, else up to 1000) to local player's inventory"),
+		FConsoleCommandWithWorldArgsAndOutputDeviceDelegate::CreateStatic(&AddAllItems));
 
 	FAutoConsoleCommand AddPalCommand(
 		TEXT("DC1.AddPal"),

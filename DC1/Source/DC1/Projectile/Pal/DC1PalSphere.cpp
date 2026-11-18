@@ -65,6 +65,11 @@ void ADC1PalSphere::BeginPlay()
 
 	// 데디케이티드 서버에서는 만들어지지 않는다
 	CaptureWidgetComponent->InitWidget();
+
+	if (UNiagaraComponent* Throw = SpawnFX(ThrowFX))
+	{
+		Throw->SetVariableLinearColor(TEXT("ThrowColor"), ThrowColor);
+	}
 }
 
 void ADC1PalSphere::Launch(const FRotator& InAimRotation)
@@ -407,14 +412,14 @@ void ADC1PalSphere::HideCapturePal()
 	}
 }
 
-void ADC1PalSphere::SpawnFX(UNiagaraSystem* InFX) const
+UNiagaraComponent* ADC1PalSphere::SpawnFX(UNiagaraSystem* InFX) const
 {
 	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(InFX))
 	{
-		return;
+		return nullptr;
 	}
 
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), InFX, GetActorLocation());
+	return UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), InFX, GetActorLocation());
 }
 
 void ADC1PalSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
