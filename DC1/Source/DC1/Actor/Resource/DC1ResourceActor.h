@@ -99,6 +99,7 @@ public:
 	virtual bool						AssignPalWorker(ADC1PalCharacter* InPal) override;
 	virtual void						UnassignPalWorker(ADC1PalCharacter* InPal) override;
 	virtual bool						IsPalWorkerAssigned(const ADC1PalCharacter* InPal) const override;
+	virtual bool						CanAcceptPalWorker(const ADC1PalCharacter* InPal) const override;
 	virtual FDC1OnPalWorkersChanged&	GetOnPalWorkersChanged() override { return OnPalWorkersChanged; }
 	virtual void						ApplyWorkHit(const ADC1Character* InWorker, float InMultiplier) override;
 

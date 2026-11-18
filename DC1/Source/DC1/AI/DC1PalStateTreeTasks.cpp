@@ -1093,6 +1093,47 @@ void FDC1PalSleepTask::ExitState(FStateTreeExecutionContext& Context, const FSta
 }
 
 
+bool FDC1PalHasWorkCondition::TestCondition(FStateTreeExecutionContext& Context) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+
+	ADC1PalAIController* AIController = InstanceData.AIController;
+	ADC1PalCharacter* Pal = IsValid(AIController) ? Cast<ADC1PalCharacter>(AIController->GetPawn()) : nullptr;
+	const UWorld* World = IsValid(Pal) ? Pal->GetWorld() : nullptr;
+	if (nullptr == World)
+	{
+		return InstanceData.bInvert;
+	}
+
+	const double Now = World->GetTimeSeconds();
+	if (InstanceData.LastCheckTime >= 0.0 && Now - InstanceData.LastCheckTime < InstanceData.CheckInterval)
+	{
+		return InstanceData.bLastResult != InstanceData.bInvert;
+	}
+	InstanceData.LastCheckTime = Now;
+
+	bool bHasWork = false;
+
+	// Work 태스크 EnterState 와 같은 조건 ( 거점 소속 + SAN 남음 + 받아주는 대상 )
+	const ADC1PalBoxActor* PalBox = Pal->GetBasePalBox();
+	const UAbilitySystemComponent* PalASC = DC1PalTaskHelper::GetASC(Pal);
+	if (nullptr != PalBox && nullptr != PalASC && PalASC->GetNumericAttribute(UDC1PalAttributeSet::GetSanityAttribute()) > 0.f)
+	{
+		for (const TWeakInterfacePtr<IDC1WorkTargetInterface>& Weak : PalBox->GetWorkTargets())
+		{
+			const IDC1WorkTargetInterface* Target = Weak.Get();
+			if (nullptr != Target && true == Target->CanAcceptPalWorker(Pal))
+			{
+				bHasWork = true;
+				break;
+			}
+		}
+	}
+
+	InstanceData.bLastResult = bHasWork;
+	return bHasWork != InstanceData.bInvert;
+}
+
 bool FDC1PalSanityDepletedCondition::TestCondition(FStateTreeExecutionContext& Context) const
 {
 	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
