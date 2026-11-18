@@ -372,6 +372,13 @@ void ADC1PlayerController::OnMove(const FInputActionValue& Value)
 		return;
 	}
 
+	// 작업중인 경우 이동 막기
+	if (UAbilitySystemComponent* ASC = ControlObject->GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(DC1StateTags::State_Working))
+			return;
+	}
+
 	UDC1CharacterMovementComponent* CMC = Cast<UDC1CharacterMovementComponent>(ControlObject->GetCharacterMovement());
 	if (false == IsValid(CMC))
 	{
