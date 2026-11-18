@@ -14,6 +14,7 @@
 
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
+#include "NiagaraFunctionLibrary.h"
 
 #include "Define/DC1Macro.h"
 #include "Subsystem/DC1TeleportSubsystem.h"
@@ -208,8 +209,23 @@ bool UDC1TeleportComponent::TryTeleport(AActor* InSource, AActor* InDest)
 	}
 
 	Player->PlayWorldSound(TeleportSound, DestLocation);
+	Multicast_PlayTeleportFX();
 
 	return true;
+}
+
+void UDC1TeleportComponent::Multicast_PlayTeleportFX_Implementation()
+{
+	if (nullptr == TeleportFX || true == IsRunningDedicatedServer())
+		return;
+
+	const APlayerState* PS = Cast<const APlayerState>(GetOwner());
+	const ACharacter* Character = (nullptr != PS) ? PS->GetPawn<ACharacter>() : nullptr;
+	if (nullptr == Character)
+		return;
+
+	UNiagaraFunctionLibrary::SpawnSystemAttached(TeleportFX, Character->GetMesh(), NAME_None,
+		FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 }
 
 bool UDC1TeleportComponent::ResolveDest(AActor* InDest, FTransform& OutTransform) const

@@ -12,6 +12,8 @@ class UStaticMeshComponent;
 class UBoxComponent;
 class UArrowComponent;
 class USoundBase;
+class UNiagaraComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class DC1_API ADC1TeleportActor : public AActor, public IDC1InteractableInterface, public IDC1TeleportPointInterface
@@ -47,6 +49,9 @@ public:
 private:
 	void	HandlePointsChanged();
 
+	// 이 화면의 플레이어가 해금했는지에 따라 Glow 를 해금 전 / 후 FX 로 맞춘다 ( 해금은 플레이어마다 따로 )
+	void	RefreshGlow();
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	TObjectPtr<UStaticMeshComponent>	Mesh = { nullptr };
@@ -57,6 +62,10 @@ private:
 	// 도착 위치 / 방향
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	TObjectPtr<UArrowComponent>		ArrivalPoint = { nullptr };
+
+	// 석상 상시 발광 ( 해금 전 / 후 FX 를 바꿔 끼운다 )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|FX")
+	TObjectPtr<UNiagaraComponent>		Glow = { nullptr };
 
 	// 해금 전 옵션 - ex) F : 활성화
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Interact")
@@ -78,4 +87,16 @@ private:
 	// 해금 요청 시 본인 화면에서 재생 ( 서버 검증 실패는 거리 초과뿐이라 요청 시점에 바로 재생 )
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Sound")
 	TObjectPtr<USoundBase>						UnlockSound = { nullptr };
+
+	// 해금 전 상시 발광 ( NS_FastTravelPoint )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|FX")
+	TObjectPtr<UNiagaraSystem>					LockedGlowFX = { nullptr };
+
+	// 해금 후 상시 발광 ( NS_FastTravelPoint_Unlocked )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|FX")
+	TObjectPtr<UNiagaraSystem>					UnlockedGlowFX = { nullptr };
+
+	// 해금 순간 한 번 ( NS_FastTravelUnlock ). UnlockSound 와 같이 해금 요청 시 본인 화면에서 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|FX")
+	TObjectPtr<UNiagaraSystem>					UnlockFlashFX = { nullptr };
 };

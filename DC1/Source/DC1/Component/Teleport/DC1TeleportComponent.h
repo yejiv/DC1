@@ -8,6 +8,7 @@
 #include "DC1TeleportComponent.generated.h"
 
 class USoundBase;
+class UNiagaraSystem;
 
 /**
  *
@@ -61,6 +62,10 @@ private:
 	UFUNCTION()
 	void					OnRep_UnlockedPointIds();
 
+	// 도착 이펙트 ( 서버 TryTeleport 성공 -> 전원 ). 플레이어 메시에 붙어야 몸 표면 파티클이 나온다
+	UFUNCTION(NetMulticast, Unreliable)
+	void					Multicast_PlayTeleportFX();
+
 	// 부활 FadeOut 시점 ( 새 Pawn이 PlayerState를 받은 순간 )
 	UFUNCTION()
 	void					HandlePawnSet(APlayerState* InPlayerState, APawn* InNewPawn, APawn* InOldPawn);
@@ -87,6 +92,10 @@ private:
 	// 순간이동 도착음 ( 서버에서 도착 지점에 Multicast )
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Sound")
 	TObjectPtr<USoundBase>	TeleportSound = { nullptr };
+
+	// 순간이동 도착 이펙트 ( NS_Teleport_FadeOut )
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|FX")
+	TObjectPtr<UNiagaraSystem>	TeleportFX = { nullptr };
 
 	// 부활 요청 후 새 Pawn 대기 중 ( 본인 클라 )
 	bool					bPendingRespawnFade = { false };

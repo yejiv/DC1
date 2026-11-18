@@ -21,6 +21,8 @@
 #include "Character/Player/DC1PlayerController.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 ADC1TeleportActor::ADC1TeleportActor()
 {
@@ -36,6 +38,12 @@ ADC1TeleportActor::ADC1TeleportActor()
 
 	ArrivalPoint = CreateDefaultSubobject<UArrowComponent>("ArrivalPoint");
 	ArrivalPoint->SetupAttachment(Mesh);
+
+	// 원작 석상과 같은 위치 ( 루트 + Z 50 )
+	Glow = CreateDefaultSubobject<UNiagaraComponent>("Glow");
+	Glow->SetupAttachment(Mesh);
+	Glow->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
+	Glow->SetAutoActivate(false);
 }
 
 void ADC1TeleportActor::BeginPlay()
@@ -48,6 +56,8 @@ void ADC1TeleportActor::BeginPlay()
 		TeleportSubsystem->RegisterPoint(this);
 		TeleportSubsystem->OnPointsChanged.AddUObject(this, &ThisClass::HandlePointsChanged);
 	}
+
+	RefreshGlow();
 }
 
 void ADC1TeleportActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -99,6 +109,18 @@ void ADC1TeleportActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey
 		PlayerTeleportComponent->Server_UnlockPoint(this);
 
 		UGameplayStatics::PlaySound2D(this, UnlockSound);
+
+		if (nullptr != UnlockFlashFX)
+		{
+			UNiagaraComponent* Flash = UNiagaraFunctionLibrary::SpawnSystemAttached(UnlockFlashFX, Mesh, NAME_None,
+				FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+
+			// 원작은 스케일 없는 루트에 붙인다. 우리 루트는 석상 메시라 메시 스케일을 따라가지 않게 되돌린다
+			if (nullptr != Flash)
+			{
+				Flash->SetWorldScale3D(FVector::OneVector);
+			}
+		}
 	}
 	// 순간이동
 	else
@@ -153,4 +175,26 @@ bool ADC1TeleportActor::CanUse(const APlayerState* InPlayerState) const
 void ADC1TeleportActor::HandlePointsChanged()
 {
 	OnInteractOptionsChanged.Broadcast();
+
+	RefreshGlow();
+}
+
+void ADC1TeleportActor::RefreshGlow()
+{
+	if (nullptr == Glow || true == IsRunningDedicatedServer())
+		return;
+
+	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	const APlayerState* PS = (nullptr != PC) ? PC->GetPlayerState<APlayerState>() : nullptr;
+
+	UNiagaraSystem* GlowFX = (nullptr != PS && true == CanUse(PS)) ? UnlockedGlowFX : LockedGlowFX;
+	if (nullptr == GlowFX)
+		return;
+
+	// 같은 FX 면 다시 시작하지 않는다 ( 다른 지점이 해금될 때도 불림 )
+	if (GlowFX == Glow->GetAsset() && true == Glow->IsActive())
+		return;
+
+	Glow->SetAsset(GlowFX);
+	Glow->Activate(true);
 }
