@@ -20,6 +20,8 @@
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerController.h"
 
+#include "Kismet/GameplayStatics.h"
+
 ADC1TeleportActor::ADC1TeleportActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -95,6 +97,8 @@ void ADC1TeleportActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey
 	{
 		// Interact 함수는 클라이언트에서만 호출되므로 ServerRPC를 통해 서버 검증 진행
 		PlayerTeleportComponent->Server_UnlockPoint(this);
+
+		UGameplayStatics::PlaySound2D(this, UnlockSound);
 	}
 	// 순간이동
 	else

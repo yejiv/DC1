@@ -55,15 +55,18 @@ void UDC1GA_Player_CallPal::ActivateAbility(const FGameplayAbilitySpecHandle Han
 	if (UDC1PalPartyComponent* Component = PS->GetPalPartyComponent())
 	{
 		UAnimMontage* Montage = {};
+		USoundBase* CallSound = {};
 		// 소환
 		if (nullptr == Component->GetDeployedPal())
 		{
 			Montage = DeployMontage;
+			CallSound = DeploySound;
 		}
 		// 해제
 		else
 		{
 			Montage = RetrieveMontage;
+			CallSound = RetrieveSound;
 		}
 
 		if (UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, Montage, 1.f))
@@ -82,6 +85,13 @@ void UDC1GA_Player_CallPal::ActivateAbility(const FGameplayAbilitySpecHandle Han
 
 			const int32 SlotIndex = FMath::RoundToInt(TriggerEventData->EventMagnitude);
 			Component->ToggleDeploy(SlotIndex);
+
+			// 서버에서만 -> 플레이어 Multicast로 전원 재생 ( 예측 실행 클라와 중복 방지 )
+			ADC1Player* Player = Cast<ADC1Player>(ActorInfo->AvatarActor.Get());
+			if (true == ActorInfo->IsNetAuthority() && nullptr != Player)
+			{
+				Player->PlayWorldSound(CallSound, Player->GetActorLocation());
+			}
 		}
 		else
 		{

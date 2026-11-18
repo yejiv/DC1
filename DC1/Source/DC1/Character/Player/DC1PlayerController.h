@@ -19,6 +19,9 @@ class UDC1BuildPlacementComponent;
 class UDC1InteractComponent;
 class UDC1DamageNumberComponent;
 
+class USoundBase;
+class UAudioComponent;
+
 struct FInputActionInstance;
 
 UCLASS()
@@ -193,6 +196,29 @@ private:
 	// 타이틀 화면으로 버튼 누를 시 이동할 맵
 	UPROPERTY(EditDefaultsOnly, Category = "Travel")
 	TSoftObjectPtr<UWorld>	TitleMap;
+
+	// 팰 슬롯 Q/E 전환 시 재생 ( 입력은 로컬에서만 들어오므로 2D 재생 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	PalSlotChangeSound = { nullptr };
+
+	// 스피어 등급 전환 시 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	SphereChangeSound = { nullptr };
+
+	// 팰 탑승 / 하차 ( F 홀드 완료 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	RideToggleSound = { nullptr };
+
+	// 인벤토리 / 팰 / 기술 / 건축 / 팰박스 / 메뉴 키로 화면을 열 때
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	MenuOpenSound = { nullptr };
+
+	// 필드 BGM. 본인 화면에서 BeginPlay 부터 반복 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	MainBGM = { nullptr };
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent>	MainBGMAudio = { nullptr };
 
 private:
 	bool			IsTurn = { true };

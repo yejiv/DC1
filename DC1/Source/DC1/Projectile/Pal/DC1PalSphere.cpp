@@ -16,6 +16,10 @@
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Define/DC1Helper.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 ADC1PalSphere::ADC1PalSphere()
 	: Super()
@@ -80,9 +84,26 @@ void ADC1PalSphere::Tick(float DeltaSeconds)
 			if (true == IsValid(Pal))
 			{
 				Pal->BeginCapture();
+
+				// 발광 + 트레일을 보여준 뒤 숨김
+				CapturePal = Pal;
+				PlayAbsorbFX();
+				GetWorldTimerManager().SetTimer(HidePalTimer, this, &ThisClass::HideCapturePal, PalGlowDuration, false);
 			}
 
 			GetWorldTimerManager().SetTimer(CaptureTimer, this, &ThisClass::BeginShaking, AbsorbDuration, false);
+		}
+	}
+
+	// 열림 / 닫힘 순간 ( bSphereOpen은 OnRep이 없어서 여기서 감지 )
+	if (bPrevSphereOpen != bSphereOpen)
+	{
+		bPrevSphereOpen = bSphereOpen;
+		UGameplayStatics::PlaySoundAtLocation(this, (true == bSphereOpen) ? CaptureOpenSound : CaptureCloseSound, GetActorLocation());
+
+		if (false == bSphereOpen)
+		{
+			SpawnFX(CloseFX);
 		}
 	}
 
@@ -102,6 +123,7 @@ void ADC1PalSphere::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME(ADC1PalSphere, bSphereOpen);
 	DOREPLIFETIME(ADC1PalSphere, CaptureDisplay);
+	DOREPLIFETIME(ADC1PalSphere, CapturePal);
 }
 
 float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRate, float InPalLevel) const
@@ -130,6 +152,15 @@ float ADC1PalSphere::ComputeCaptureChance(float InHealthRatio, float InCaptureRa
 
 void ADC1PalSphere::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	// 명중음 - 클라도 자체 시뮬레이션 Hit로 재생
+	if (false == bHitSoundPlayed)
+	{
+		bHitSoundPlayed = true;
+
+		USoundBase* HitSound = (nullptr != Cast<ADC1PalCharacter>(OtherActor)) ? HitPalSound.Get() : DC1SoundHelper::PickRandom(HitGroundSounds);
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, Hit.ImpactPoint);
+	}
+
 	if (false == HasAuthority())
 	{
 		return;
@@ -242,6 +273,7 @@ void ADC1PalSphere::OnShake()
 void ADC1PalSphere::Resolve(bool bInSuccess)
 {
 	GetWorldTimerManager().ClearTimer(CaptureTimer);
+	GetWorldTimerManager().ClearTimer(HidePalTimer);
 
 	ADC1PalCharacter* Pal = TargetPal.Get();
 	TargetPal = nullptr;
@@ -277,12 +309,106 @@ void ADC1PalSphere::SetCaptureDisplay(int32 InStage, float InChance, bool bInSuc
 	ForceNetUpdate();
 	RefreshCaptureWidget();
 	TryRequestCaptureNotice();
+	PlayCaptureStageSound();
 }
 
 void ADC1PalSphere::OnRep_CaptureDisplay()
 {
 	RefreshCaptureWidget();
 	TryRequestCaptureNotice();
+	PlayCaptureStageSound();
+}
+
+void ADC1PalSphere::PlayCaptureStageSound()
+{
+	// 성공은 단계 번호가 마지막 단계와 같으므로 단계보다 먼저 본다 ( INT8_MAX = 성공음 재생함 )
+	if (true == CaptureDisplay.bSuccess)
+	{
+		if (INT8_MAX != LastSoundStage)
+		{
+			LastSoundStage = INT8_MAX;
+			UGameplayStatics::PlaySoundAtLocation(this, CaptureSuccessSound, GetActorLocation());
+			SpawnFX(SuccessFX);
+		}
+		return;
+	}
+
+	// 0단계는 닫힘음과 겹침
+	if (CaptureDisplay.Stage <= 0 || CaptureDisplay.Stage == LastSoundStage)
+	{
+		return;
+	}
+
+	LastSoundStage = CaptureDisplay.Stage;
+	UGameplayStatics::PlaySoundAtLocation(this, CaptureShakeSound, GetActorLocation());
+	SpawnFX(ShakeFX);
+}
+
+void ADC1PalSphere::OnRep_CapturePal()
+{
+	PlayAbsorbFX();
+}
+
+void ADC1PalSphere::PlayAbsorbFX()
+{
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(CapturePal))
+	{
+		return;
+	}
+
+	CapturePal->PlayCaptureGlow(PalGlowMaterial, false, 0.f);
+
+	if (true == ::IsValid(TrailFX))
+	{
+		UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, TrailFX, CapturePal->GetActorLocation());
+		if (true == ::IsValid(Trail))
+		{
+			Trail->SetVariablePosition(TEXT("TargetPosition"), GetActorLocation());
+		}
+	}
+
+	GetWorldTimerManager().SetTimer(AbsorbFXTimer, this, &ThisClass::SpawnAbsorbFX, PalGlowDuration, false);
+}
+
+void ADC1PalSphere::SpawnAbsorbFX()
+{
+	SpawnFX(AbsorbFX);
+}
+
+void ADC1PalSphere::HideCapturePal()
+{
+	if (true == ::IsValid(CapturePal))
+	{
+		CapturePal->SetActorHiddenInGame(true);
+	}
+}
+
+void ADC1PalSphere::SpawnFX(UNiagaraSystem* InFX) const
+{
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(InFX))
+	{
+		return;
+	}
+
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), InFX, GetActorLocation());
+}
+
+void ADC1PalSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 판정이 시작된 뒤 성공 없이 사라짐 = 포획 실패
+	if (EEndPlayReason::Destroyed == EndPlayReason && INDEX_NONE != CaptureDisplay.Stage && false == CaptureDisplay.bSuccess)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, CaptureFailSound, GetActorLocation());
+		SpawnFX(FailFX);
+
+		// 다시 보이는 팰이 잠깐 빛났다가 원래 머티리얼로
+		if (true == ::IsValid(CapturePal))
+		{
+			CapturePal->PlayCaptureGlow(PalGlowMaterial, true, FailGlowDuration);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ADC1PalSphere::TryRequestCaptureNotice()

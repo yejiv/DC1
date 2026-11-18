@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffectExtension.h"
 #include "Component/Widget/DC1DamageNumberComponent.h"
+#include "AbilitySystem/Cues/DC1GameplayCueNotify_Hit.h"
 
 namespace
 {
@@ -74,6 +75,9 @@ void UDC1AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		const float OldHealth = GetHealth();
 		SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
 		UDC1DamageNumberComponent::NotifyDamage(Data, OldHealth - GetHealth(), EDC1DamageNumberType::Health);
+
+		// Hit Effect Cue
+		UDC1GameplayCueNotify_Hit::NotifyHit(Data);
 
 		UE_LOG(LogTemp, Log, TEXT("[DC1] %s took %.1f damage from %s. Health = %.1f / %.1f"),
 			*GetNameSafe(Data.Target.GetAvatarActor()),

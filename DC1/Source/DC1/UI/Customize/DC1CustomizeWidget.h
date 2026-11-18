@@ -10,6 +10,7 @@ class UDC1CustomizeViewModel;
 class UDC1CustomizeMenuButton;
 class UDC1UserButton;
 class UWidgetSwitcher;
+class USoundBase;
 
 /**
  * 커스터마이징 화면. 타이틀(최초 진입) / 게임 중 재커스터마이징 양쪽에서
@@ -60,6 +61,10 @@ private:
 private:
 	UPROPERTY()
 	TArray<TObjectPtr<UDC1CustomizeMenuButton>>	MenuButtons;
+
+	// 화면에 들어올 때
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>					EnterSound = { nullptr };
 
 	TWeakObjectPtr<UDC1CustomizeViewModel>	CustomizeViewModel = { nullptr };
 };

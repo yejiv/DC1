@@ -22,5 +22,10 @@ namespace DC1EffectTags
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber, "GameplayCue.DamageNumber");
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber_Health, "GameplayCue.DamageNumber.Health");
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_DamageNumber_Shield, "GameplayCue.DamageNumber.Shield");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Hit, "GameplayCue.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Hit_Element, "GameplayCue.Hit.Element");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Hit_Shield, "GameplayCue.Hit.Shield");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Hit_Wood, "GameplayCue.Hit.Wood");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Hit_Stone, "GameplayCue.Hit.Stone");
 #pragma endregion
 }

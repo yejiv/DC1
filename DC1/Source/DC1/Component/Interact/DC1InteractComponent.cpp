@@ -31,6 +31,8 @@
 
 #include "Subsystem/DC1BuildDestroySubsystem.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values for this component's properties
 UDC1InteractComponent::UDC1InteractComponent()
 {
@@ -160,6 +162,8 @@ void UDC1InteractComponent::RequestCollectProduct(ADC1ProductionBuildActor* InPr
 void UDC1InteractComponent::RequestPickupItem(ADC1PickupItem* InPickup)
 {
 	Server_PickupItem(InPickup);
+
+	UGameplayStatics::PlaySound2D(this, PickupSound);
 }
 
 void UDC1InteractComponent::RequestRegisterRecipe(ADC1CraftBuildActor* InCraftTarget, FName InRecipeID, int32 InCraftCount)

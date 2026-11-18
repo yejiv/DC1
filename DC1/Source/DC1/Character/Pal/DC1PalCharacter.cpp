@@ -8,6 +8,7 @@
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
 #include "AbilitySystem/Effects/DC1GameplayEffect_PalPassive.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
 #include "Tags/Effect/DC1GameplayTag_Effect.h"
@@ -37,6 +38,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionSystem.h"
@@ -385,7 +387,10 @@ void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 		if (const APawn* LocalPawn = UGameplayStatics::GetPlayerPawn(this, 0))
 		{
 			const float DistanceSq = FVector::DistSquared(GetActorLocation(), LocalPawn->GetActorLocation());
-			ShouldShow = (DistanceSq <= (HealthWidgetVisibleDistance * HealthWidgetVisibleDistance));
+			// 기존 BP에 직렬화된 1200 값이 dev 병합으로 되살아나도 확장한 가시거리(2000)는 유지한다.
+			constexpr float MinHealthWidgetVisibleDistance = 2000.f;
+			const float EffectiveVisibleDistance = FMath::Max(HealthWidgetVisibleDistance, MinHealthWidgetVisibleDistance);
+			ShouldShow = (DistanceSq <= FMath::Square(EffectiveVisibleDistance));
 		}
 	}
 
@@ -570,6 +575,16 @@ void ADC1PalCharacter::HandleDamaged(const FOnAttributeChangeData& Data)
 	{
 		AbilitySystemComponent->ActivateAbilityByTag(DC1PalTags::Ability_Pal_Hit);
 	}
+
+	if (nullptr != HitSound)
+	{
+		Multicast_PlayHitSound(GetActorLocation());
+	}
+}
+
+void ADC1PalCharacter::Multicast_PlayHitSound_Implementation(FVector_NetQuantize InLocation)
+{
+	UGameplayStatics::PlaySoundAtLocation(this, HitSound, InLocation);
 }
 
 void ADC1PalCharacter::HandleHealthChangedForUI(const FOnAttributeChangeData& Data)
@@ -760,8 +775,31 @@ void ADC1PalCharacter::BeginCapture()
 		Movement->DisableMovement();
 	}
 
-	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
+}
+
+void ADC1PalCharacter::PlayCaptureGlow(UMaterialInterface* InMaterial, bool InFadeOut, float InDuration)
+{
+	GetWorldTimerManager().ClearTimer(CaptureGlowTimer);
+
+	if (NM_DedicatedServer == GetNetMode() || false == ::IsValid(InMaterial) || false == ::IsValid(GetMesh()))
+	{
+		return;
+	}
+
+	// 밝기 변화는 머티리얼이 StartTime 부터 계산 ( 틱 없음 )
+	UMaterialInstanceDynamic* Glow = UMaterialInstanceDynamic::Create(InMaterial, this);
+	Glow->SetScalarParameterValue(TEXT("StartTime"), GetWorld()->GetTimeSeconds());
+	Glow->SetScalarParameterValue(TEXT("FadeOut"), (true == InFadeOut) ? 1.f : 0.f);
+	GetMesh()->SetOverlayMaterial(Glow);
+
+	if (true == InFadeOut)
+	{
+		GetWorldTimerManager().SetTimer(CaptureGlowTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			GetMesh()->SetOverlayMaterial(nullptr);
+		}), InDuration, false);
+	}
 }
 
 void ADC1PalCharacter::CancelCapture()

@@ -21,6 +21,8 @@
 #include "Tags/Player/DC1GameplayTag_Player.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "Define/DC1Helper.h"
 
 namespace
 {
@@ -214,7 +216,20 @@ void ADC1ResourceActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData)
 {
+	const FVector PrevMeshScale = ResourceMesh->GetRelativeScale3D();
 	ApplyScale();
+
+	// 한 단계 작아질 때 ( 바위 깨짐 ). 고갈은 DestroySound 가 대신함
+	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue > 0.f && ResourceMesh->GetRelativeScale3D().X < PrevMeshScale.X)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, StageBreakSound, ResourceMesh->Bounds.Origin);
+	}
+
+	// 타격음 - 서버 / 클라 공통 ( 고갈 타격은 DestroySound가 대신함 )
+	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue < InData.OldValue && InData.NewValue > 0.f)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DC1SoundHelper::PickRandom(HitSounds), ResourceMesh->Bounds.Origin);
+	}
 
 	// 같은 프레임 중복 타격, 리스폰 중 Health 복구는 무시
 	if (false == HasAuthority() || EDC1ResourceActorState::Depleted == ResourceState)
@@ -446,6 +461,8 @@ void ADC1ResourceActor::PlayDepleteFX()
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DestroyDustFX, ResourceMesh->Bounds.Origin, GetActorRotation());
 	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, DestroySound, ResourceMesh->Bounds.Origin);
 }
 
 bool ADC1ResourceActor::IsRecentDeplete() const

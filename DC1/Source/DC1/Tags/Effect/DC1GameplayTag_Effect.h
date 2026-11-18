@@ -31,5 +31,12 @@ namespace DC1EffectTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_DamageNumber);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_DamageNumber_Health);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_DamageNumber_Shield);
+
+	// 피격 이펙트 - 자식 Tag 를 부모 GameplayCue_Hit Notify 가 받음 ( Element = 속성별 NS, Shield = 실드, Wood / Stone = 리소스 )
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Hit_Element);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Hit_Shield);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Hit_Wood);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Hit_Stone);
 #pragma endregion
 }

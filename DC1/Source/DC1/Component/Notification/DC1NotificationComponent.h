@@ -8,6 +8,7 @@
 #include "DC1NotificationComponent.generated.h"
 
 class UDC1NotificationViewModel;
+class USoundBase;
 
 /**
  * 서버에서 정해진 일(아이템 획득, 야생 쓰러뜨림)을 그 플레이어 화면의 알림으로 보낸다. ADC1PlayerState 에 붙는다.
@@ -33,4 +34,9 @@ public:
 private:
 	// 주인 클라의 알림 ViewModel. 로컬 플레이어가 아니면 nullptr
 	UDC1NotificationViewModel*		FindNotificationViewModel() const;
+
+private:
+	// 야생 쓰러뜨림 알림과 함께 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Notification|Sound")
+	TObjectPtr<USoundBase>			DefeatSound = { nullptr };
 };

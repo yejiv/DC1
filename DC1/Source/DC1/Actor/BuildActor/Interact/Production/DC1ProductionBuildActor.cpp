@@ -4,6 +4,7 @@
 #include "Actor/BuildActor/Interact/Production/DC1ProductionBuildActor.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Character/Player/DC1PlayerController.h"
@@ -339,6 +340,12 @@ void ADC1ProductionBuildActor::ApplyStoredCount(int32 InOldCount)
 	if (IsEmptyChanged || IsReachedMax)
 	{
 		OnInteractOptionsChanged.Broadcast();
+	}
+
+	// 생산 완료음 - 첫 복제(늦은 접속) / 저장 로드 값은 BeginPlay 전에 들어오므로 제외
+	if (StoredCount > InOldCount && true == HasActorBegunPlay())
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ProduceSound, GetActorLocation());
 	}
 
 	OnProductionChanged.Broadcast();

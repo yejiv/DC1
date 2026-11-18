@@ -18,6 +18,7 @@ class ADC1PickupItem;
 class UDC1InteractPromptWidget;
 class UDC1UIManagerSubsystem;
 class UWidgetComponent;
+class USoundBase;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DC1_API UDC1InteractComponent : public UActorComponent
@@ -111,6 +112,10 @@ private:
 	// 옵션 활동 태그( Interact.* ) → Character Ability 태그
 	UPROPERTY(EditDefaultsOnly, Category = "Interact|Ability")
 	TMap<FGameplayTag, FGameplayTag>		InteractionToAbility;
+
+	// 아이템 줍기 요청 시 본인 화면에서 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Interact|Sound")
+	TObjectPtr<USoundBase>					PickupSound = { nullptr };
 
 private:
 	TWeakObjectPtr<AActor>				CurrentTarget = { nullptr };

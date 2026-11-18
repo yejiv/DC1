@@ -20,6 +20,8 @@ class UDC1PalData;
 class UDC1PalRegistryData;
 class UDC1PalRideComponent;
 class UCapsuleComponent;
+class UMaterialInterface;
+class USoundBase;
 class UWidgetComponent;
 struct FInputActionValue;
 struct FGameplayEventData;
@@ -101,8 +103,11 @@ public:
 	FDC1PalInstance						Fold(); // 데이터화
 	
 	void								OnCaptureFailed(AActor* InThrower);// 포획 실패
-	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지
+	void								BeginCapture();// 스피어에 빨려 들어감. 결과까지 액터 유지 ( 숨김은 스피어가 발광 뒤에 )
 	void								CancelCapture();// BeginCapture 되돌리기
+
+	// 포획 연출 발광 ( 메쉬 오버레이 머티리얼, 시각 전용 ) InFadeOut 이면 InDuration 뒤 원래 머티리얼로
+	void								PlayCaptureGlow(UMaterialInterface* InMaterial, bool InFadeOut, float InDuration);
 
 	// InBasePalBox 가 있으면 거점 팰로 나온다
 	static ADC1PalCharacter*			SpawnFromInstanceData(UWorld* InWorld, const FDC1PalInstance& InInstance, const FTransform& InTransform, ADC1PlayerState* InOwner, ADC1PalBoxActor* InBasePalBox = nullptr);
@@ -167,6 +172,10 @@ protected:
 
 	void								HandleDamaged(const struct FOnAttributeChangeData& Data);
 
+	// 피격음 ( 서버 → 모두 )
+	UFUNCTION(NetMulticast, Unreliable)
+	void								Multicast_PlayHitSound(FVector_NetQuantize InLocation);
+
 	void								HandleHealthChangedForUI(const struct FOnAttributeChangeData& Data);
 
 	void								HandleSanityChangedForUI(const struct FOnAttributeChangeData& Data);
@@ -204,6 +213,13 @@ protected:
 	// 사망 후 래그돌 시체가 월드에 남아 있는 시간. 서버가 만료 시 액터를 제거한다.
 	UPROPERTY(EditDefaultsOnly, Category = "Pal|Death", meta = (ClampMin = "0.0", Units = "s"))
 	float CorpseLifeSpan = { 8.f };
+
+	// 포획 실패 발광이 끝나면 오버레이 해제
+	FTimerHandle CaptureGlowTimer;
+
+	// 데미지를 받을 때마다 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> HitSound = { nullptr };
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Ride")
 	TObjectPtr<UDC1PalRideComponent> RideComponent = { nullptr };

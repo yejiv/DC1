@@ -8,6 +8,10 @@
 #include "DC1PalSphere.generated.h"
 
 class UWidgetComponent;
+class USoundBase;
+class UNiagaraSystem;
+class UMaterialInterface;
+class ADC1PalCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDC1OnPalCaptured, const FDC1PalInstance&);
 
@@ -59,6 +63,11 @@ public:
 
 protected:
 	virtual void			BeginPlay() override;
+	// 포획 실패 시 서버가 Destroy -> 클라도 EndPlay에서 실패음 재생
+	virtual void			EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// 포획 단계음 ( 서버 SetCaptureDisplay / 클라 OnRep 공통 )
+	void					PlayCaptureStageSound();
 
 	UFUNCTION()
 	void					OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -76,6 +85,20 @@ protected:
 
 	// 던진 사람 화면에만 띄운다
 	void					RefreshCaptureWidget();
+
+	// 흡수 연출 ( 팰 발광 + 팰 -> 스피어 트레일, 도착 시 흡수 FX ). 서버 Tick / 클라 OnRep 공통
+	void					PlayAbsorbFX();
+
+	UFUNCTION()
+	void					OnRep_CapturePal();
+
+	void					SpawnAbsorbFX();
+
+	// 서버: 발광을 보여준 뒤 팰 숨김
+	void					HideCapturePal();
+
+	// 스피어 위치에 FX ( 데디 서버 X )
+	void					SpawnFX(UNiagaraSystem* InFX) const;
 
 	// 성공을 처음 받았을 때 던진 사람 클라에 포획 알림을 한 번 요청한다
 	void					TryRequestCaptureNotice();
@@ -114,6 +137,67 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Capture", meta = (ClampMin = "0.1"))
 	float					SuccessHoldDuration = { 0.8f };
 
+	// 팰 명중
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	HitPalSound = { nullptr };
+
+	// 팰 외 명중 ( 땅 등 ), 랜덤 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TArray<TObjectPtr<USoundBase>>	HitGroundSounds;
+
+	// 스피어 열림 / 닫힘 ( bSphereOpen 변화를 Tick에서 감지 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureOpenSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureCloseSound = { nullptr };
+
+	// 판정 단계마다 ( 1단계부터 )
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureShakeSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureSuccessSound = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase>	CaptureFailSound = { nullptr };
+
+	// 1 / 8 팰 발광 오버레이 ( M_Pal_CaptureGlow )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UMaterialInterface>	PalGlowMaterial = { nullptr };
+
+	// 팰이 빛나는 시간 = 트레일 이동 시간. 끝나면 팰 숨김 + 흡수 FX ( NS_Catch_Trail 의 0.3 과 맞출 것 )
+	UPROPERTY(EditDefaultsOnly, Category = "FX", meta = (ClampMin = "0.05"))
+	float					PalGlowDuration = { 0.3f };
+
+	// 8 실패 시 팰이 빛나다 원래대로 돌아오기까지
+	UPROPERTY(EditDefaultsOnly, Category = "FX", meta = (ClampMin = "0.1"))
+	float					FailGlowDuration = { 0.8f };
+
+	// 2 팰 중심 -> 스피어 ( User.TargetPosition )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	TrailFX = { nullptr };
+
+	// 3 트레일 도착 ( NS_PalCatch )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	AbsorbFX = { nullptr };
+
+	// 4 + 5 닫힘 ( NS_Catch_Close )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	CloseFX = { nullptr };
+
+	// 6 판정 단계마다 ( NS_Catch_Shake )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	ShakeFX = { nullptr };
+
+	// 7 ( NS_PalCatch_Success )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	SuccessFX = { nullptr };
+
+	// 8 ( NS_Catch_Fail )
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem>	FailFX = { nullptr };
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CaptureDisplay)
 	FDC1CaptureDisplay		CaptureDisplay;
@@ -121,7 +205,17 @@ private:
 	
 	UPROPERTY(Replicated)
 	bool					bSphereOpen = { false }; // 열림 여부. 서버가 정함
+
+	// 흡수 중인 팰. 클라 발광 / 트레일 / 실패 발광용 ( TargetPal 은 서버 판정용이라 복제 안 됨 )
+	UPROPERTY(ReplicatedUsing = OnRep_CapturePal)
+	TObjectPtr<ADC1PalCharacter>	CapturePal = { nullptr };
 	float					OpenAlpha = { 0.f };
+
+	// 지난 Tick의 bSphereOpen. 열림/닫힘 사운드 감지용 ( 서버 / 클라 각자 )
+	bool					bPrevSphereOpen = { false };
+
+	// 같은 단계 OnRep 중복 재생 방지
+	int8					LastSoundStage = { INDEX_NONE };
 
 	FVector					RiseStart = { FVector::ZeroVector };
 	FVector					RiseEnd = { FVector::ZeroVector };
@@ -138,4 +232,6 @@ private:
 	int32					ShakeIndex = { 0 };				// 지금까지 버틴 단계 수
 
 	FTimerHandle			CaptureTimer;
+	FTimerHandle			HidePalTimer;
+	FTimerHandle			AbsorbFXTimer;
 };

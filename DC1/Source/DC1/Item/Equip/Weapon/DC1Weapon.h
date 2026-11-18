@@ -8,6 +8,7 @@
 #include "DC1Weapon.generated.h"
 
 class UTexture2D;
+class USoundBase;
 
 UCLASS()
 class DC1_API ADC1Weapon : public ADC1Equip
@@ -35,4 +36,8 @@ public:
 	// 장착 HUD 표시용. 인벤토리 아이콘(FDC1ItemRow::ItemIcon)과는 다른 에셋이다
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Weapon")
 	TSoftObjectPtr<UTexture2D>	EquipIcon;
+
+	// 이 무기로 바꿔 들 때 재생 ( EquipComponent OnRep_CurrentWeapon )
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Sound")
+	TObjectPtr<USoundBase>		EquipSound = { nullptr };
 };

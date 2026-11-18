@@ -8,6 +8,7 @@
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 
 UDC1NotificationComponent::UDC1NotificationComponent()
 {
@@ -28,6 +29,9 @@ void UDC1NotificationComponent::Client_NotifyPalDefeated_Implementation(FGamepla
 	if (UDC1NotificationViewModel* NotificationViewModel = FindNotificationViewModel())
 	{
 		NotificationViewModel->PushPalDefeatNotice(InKillerSpecies, InKillerNickname, InVictimSpecies);
+
+		// 처치음 - 쓰러뜨린 사람 화면에서만
+		UGameplayStatics::PlaySound2D(this, DefeatSound);
 	}
 }
 

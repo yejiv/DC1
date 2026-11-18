@@ -38,3 +38,17 @@ namespace DC1DataTableHelper
 }
 
 #pragma endregion
+
+#pragma region Sound Helper
+
+namespace DC1SoundHelper
+{
+	// 변형 사운드 여러 개 중 하나를 고른다 ( SoundCue 없이 랜덤 재생 ). 비었으면 nullptr
+	template<typename SoundType>
+	SoundType* PickRandom(const TArray<TObjectPtr<SoundType>>& InSounds)
+	{
+		return (true == InSounds.IsEmpty()) ? nullptr : InSounds[FMath::RandHelper(InSounds.Num())].Get();
+	}
+}
+
+#pragma endregion

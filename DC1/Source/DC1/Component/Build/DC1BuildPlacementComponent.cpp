@@ -13,6 +13,7 @@
 
 #include "Character/Player/DC1PlayerController.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Character/Player/DC1Player.h"
 #include "Tags/Input/DC1GameplayTag_Input.h"
 
 #include "EnhancedInputSubsystems.h"
@@ -21,6 +22,7 @@
 #include "Data/DA/Input/DC1InputData.h"
 
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Subsystem/DC1BuildDestroySubsystem.h"
 #include "Character/DC1Character.h"
@@ -199,6 +201,12 @@ void UDC1BuildPlacementComponent::ConfirmPlacement()
 	if (false == ::IsValid(PreviewActor) || EDC1BuildBlockReason::None != CurrentBlockReason)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UDC1BuildPlacementComponent :: ConfirmPlacement - CanBuilding false"));
+
+		if (true == ::IsValid(PreviewActor))
+		{
+			UGameplayStatics::PlaySound2D(this, PlaceErrorSound);
+		}
+
 		return;
 	}
 
@@ -283,6 +291,12 @@ void UDC1BuildPlacementComponent::Server_PlaceBuild_Implementation(const FGamepl
 
 	NewBuild->OnPlaced(PC->PlayerState);
 
+	// 설치음 - 설치한 플레이어 경유로 전원 재생
+	if (ADC1Player* Builder = PC->GetPawn<ADC1Player>())
+	{
+		Builder->PlayWorldSound(NewBuild->GetPlaceSound(), NewBuild->GetActorLocation());
+	}
+
 	DC1CraftHelper::RemoveCraftCosts(PlayerState, BuildRow->BuildCosts);
 }
 
@@ -309,7 +323,18 @@ void UDC1BuildPlacementComponent::Server_DismantleBuild_Implementation(ADC1Build
 		APlayerController* PC = GetOwner<APlayerController>();
 		APlayerState* PS = (nullptr != PC) ? PC->PlayerState : nullptr;
 
+		// 철거음 - 철거한 플레이어 경유로 전원 재생 ( RequestDestroy 전에 위치를 잡아둔다 )
+		const FVector DismantleLocation = InTarget->GetActorLocation();
+		USoundBase* TargetDismantleSound = (nullptr != InTarget->GetDismantleSound()) ? InTarget->GetDismantleSound() : DismantleSound.Get();
+		const bool WasDestroying = InTarget->IsInDestroySequence();
+
 		DestroySubsystem->RequestDestroy(InTarget, PS, EDC1BuildRefundMode::ToInstigator);
+
+		ADC1Player* Dismantler = (nullptr != PC) ? PC->GetPawn<ADC1Player>() : nullptr;
+		if (false == WasDestroying && nullptr != Dismantler)
+		{
+			Dismantler->PlayWorldSound(TargetDismantleSound, DismantleLocation);
+		}
 	}
 }
 
@@ -528,11 +553,13 @@ void UDC1BuildPlacementComponent::OnConfirmInput()
 
 void UDC1BuildPlacementComponent::OnBackInput()
 {
+	UGameplayStatics::PlaySound2D(this, CancelSound);
 	ReturnToBuildMenu();
 }
 
 void UDC1BuildPlacementComponent::OnExitInput()
 {
+	UGameplayStatics::PlaySound2D(this, CancelSound);
 	CancelBuildMode();
 }
 

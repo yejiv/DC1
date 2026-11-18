@@ -110,6 +110,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Production|UI")
 	TSubclassOf<UDC1BuildInfoWidget>	ProductionInfoWidgetClass = { nullptr };
+
+	// 생산품이 늘어날 때 재생 ( 요리 / 분쇄 / 화로 등 시설별 지정 )
+	UPROPERTY(EditDefaultsOnly, Category = "Production|Sound")
+	TObjectPtr<USoundBase>			ProduceSound = { nullptr };
 	// 일할 수 있는 최대 팰 수
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Pal", meta = (ClampMin = "0"))
 	int32							MaxPalWorkers = { 1 };

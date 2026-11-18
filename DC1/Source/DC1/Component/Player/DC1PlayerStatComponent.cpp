@@ -1,6 +1,7 @@
 ﻿#include "Component/Player/DC1PlayerStatComponent.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystem/Attribute/DC1PlayerSet.h"
@@ -310,8 +311,15 @@ void UDC1PlayerStatComponent::GainExperience(int32 InAmount)
 				TechTree->AddTechPoints(LevelsGained * ExpData->TechPointsPerLevel);
 			}
 		}
+
+		Client_PlayLevelUpSound();
 	}
 	ASC->SetNumericAttributeBase(UDC1PlayerSet::GetExperienceAttribute(), Experience);
+}
+
+void UDC1PlayerStatComponent::Client_PlayLevelUpSound_Implementation()
+{
+	UGameplayStatics::PlaySound2D(this, LevelUpSound);
 }
 
 void UDC1PlayerStatComponent::OnPreSave()

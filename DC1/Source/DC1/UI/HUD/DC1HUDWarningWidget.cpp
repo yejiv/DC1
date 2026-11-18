@@ -5,6 +5,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
 #include "ViewModel/Player/DC1PlayerStatusViewModel.h"
+#include "Kismet/GameplayStatics.h"
 
 void UDC1HUDWarningWidget::NativeConstruct()
 {
@@ -84,6 +85,12 @@ void UDC1HUDWarningWidget::HandleSatietyChanged(float Current, float Max)
 {
 	if (StatusViewModel->GetSatietyPercent() <= StatusViewModel->GetHungryRatio())
 	{
+		// 경고가 새로 뜰 때만
+		if (false == ActiveRows.Contains(EDC1HUDWarningType::Hunger))
+		{
+			UGameplayStatics::PlaySound2D(this, HungerSound);
+		}
+
 		SetWarning(EDC1HUDWarningType::Hunger, HungryText, WarningColor);
 	}
 	else
@@ -93,6 +100,11 @@ void UDC1HUDWarningWidget::HandleSatietyChanged(float Current, float Max)
 	
 	if (Current <= 0.f)
 	{
+		if (false == ActiveRows.Contains(EDC1HUDWarningType::Starve))
+		{
+			UGameplayStatics::PlaySound2D(this, StarveSound);
+		}
+
 		SetWarning(EDC1HUDWarningType::Starve, StarvingText, DangeColor);
 	}
 	else

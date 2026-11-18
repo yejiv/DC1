@@ -26,6 +26,7 @@
 #include "UI/World/BuildInfo/DC1BuildInfoWidget.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 ADC1InteractBuildActor::ADC1InteractBuildActor()
 {
@@ -264,6 +265,9 @@ void ADC1InteractBuildActor::ApplyState()
 		{
 			FlashAmount = 1.f;
 			SetActorTickEnabled(true);
+
+			// 건설 완료음 - 서버 / 클라 OnRep 공통 ( 저장 로드·늦은 접속은 MID가 없어 재생 안 함 )
+			UGameplayStatics::PlaySoundAtLocation(this, CompleteSound, GetActorLocation());
 		}
 
 		OnBuildCompleted.Broadcast();

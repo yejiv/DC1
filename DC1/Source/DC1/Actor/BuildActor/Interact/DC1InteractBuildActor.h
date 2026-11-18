@@ -164,6 +164,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|UI")
 	TSubclassOf<UDC1BuildInfoWidget>		ConstructionInfoWidgetClass = { nullptr };
 
+	// 건설 중 -> 완료 전환 시 재생
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Sound")
+	TObjectPtr<USoundBase>					CompleteSound = { nullptr };
+
 	UPROPERTY(ReplicatedUsing = OnRep_PalWorkers)
 	TArray<TWeakObjectPtr<ADC1PalCharacter>>	PalWorkers;
 

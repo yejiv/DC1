@@ -8,6 +8,8 @@
 #include "Tags/DC1GamePlayTags.h"
 #include "Component/DC1AbilitySystemComponent.h"
 #include "Component/Widget/DC1DamageNumberComponent.h"
+#include "AbilitySystem/Cues/DC1GameplayCueNotify_Hit.h"
+#include "Character/Player/DC1Player.h"
 
 UDC1PlayerSet::UDC1PlayerSet()
 {
@@ -131,7 +133,15 @@ void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 
 	if (false == IsDowned && GetShield() <= 0.f)
 	{
+		const float OldHealth = GetHealth();
 		Super::PostGameplayEffectExecute(Data);
+
+		// 일반 피격음 - 체력이 실제로 깎였을 때만
+		ADC1Player* Player = Cast<ADC1Player>(Data.Target.GetAvatarActor());
+		if (nullptr != Player && GetHealth() < OldHealth)
+		{
+			Player->PlayWorldSound(Player->GetHitSound(), Player->GetActorLocation());
+		}
 		return;
 	}
 
@@ -154,6 +164,14 @@ void UDC1PlayerSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 	const float OldShield = GetShield();
 	SetShield(FMath::Max(GetShield() - LocalDamage, 0.f));
 	UDC1DamageNumberComponent::NotifyDamage(Data, OldShield - GetShield(), EDC1DamageNumberType::Shield);
+	UDC1GameplayCueNotify_Hit::NotifyShieldHit(Data);
+
+	// 보호막이 깨지는 순간은 파괴음, 남아 있으면 보호막 피격음
+	if (ADC1Player* Player = Cast<ADC1Player>(Data.Target.GetAvatarActor()))
+	{
+		USoundBase* ShieldSound = (GetShield() <= 0.f) ? Player->GetShieldBreakSound() : Player->GetShieldHitSound();
+		Player->PlayWorldSound(ShieldSound, Player->GetActorLocation());
+	}
 }
 
 void UDC1PlayerSet::OnRep_MaxWeight(const FGameplayAttributeData& OldMaxWeight)
