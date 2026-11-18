@@ -9,6 +9,10 @@
 #include "Character/Player/DC1Player.h"
 #include "Character/Player/DC1PlayerState.h"
 #include "Component/Pal/DC1PalPartyComponent.h"
+#include "Projectile/Pal/DC1PalSphere.h"
+
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/World.h"
 
 
 UDC1GA_Player_CallPal::UDC1GA_Player_CallPal(const FObjectInitializer& ObjectInitializer)
@@ -91,6 +95,25 @@ void UDC1GA_Player_CallPal::ActivateAbility(const FGameplayAbilitySpecHandle Han
 			if (true == ActorInfo->IsNetAuthority() && nullptr != Player)
 			{
 				Player->PlayWorldSound(CallSound, Player->GetActorLocation());
+
+				// 몽타주 동안 손에 스피어를 든다. 액터·부착이 복제되어 다른 클라에도 보인다
+				USkeletalMeshComponent* MeshComp = Player->GetMesh();
+				UWorld* World = Player->GetWorld();
+				if (nullptr != HeldSphereClass && nullptr != MeshComp && nullptr != World)
+				{
+					FActorSpawnParameters SpawnParams;
+					SpawnParams.Owner = Player;
+					SpawnParams.Instigator = Player;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+					ADC1PalSphere* Sphere = World->SpawnActor<ADC1PalSphere>(HeldSphereClass, MeshComp->GetSocketTransform(HeldSocketName), SpawnParams);
+					if (nullptr != Sphere)
+					{
+						Sphere->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HeldSocketName);
+						Sphere->SetActorRelativeLocation(HeldSphereOffset);
+						HeldSphere = Sphere;
+					}
+				}
 			}
 		}
 		else
@@ -106,5 +129,12 @@ void UDC1GA_Player_CallPal::ActivateAbility(const FGameplayAbilitySpecHandle Han
 
 void UDC1GA_Player_CallPal::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	ADC1PalSphere* Sphere = HeldSphere.Get();
+	if (true == ::IsValid(Sphere))
+	{
+		Sphere->Destroy();
+	}
+	HeldSphere.Reset();
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
