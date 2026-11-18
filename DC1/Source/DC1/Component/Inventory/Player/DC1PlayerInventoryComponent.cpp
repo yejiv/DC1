@@ -28,7 +28,7 @@ UDC1PlayerInventoryComponent::UDC1PlayerInventoryComponent()
 	SetIsReplicatedByDefault(true);
 
 	// 플레이어 기본값
-	TotalCapacity = 42;
+	TotalCapacity = BaseCapacity;
 	Columns = 6;
 }
 
@@ -44,13 +44,13 @@ void UDC1PlayerInventoryComponent::BeginPlay()
 		//InitializeDefaultEquipment();
 		//InitializeDefaultItems();
 
-		// 먹이 주머니가 귀중품 인벤토리에 있을 수 있으므로 함께 감시
+		// 주머니들이 귀중품 인벤토리에 있을 수 있으므로 함께 감시
 		if (UDC1ValuableInventoryComponent* ValuableInventory = FindValuableInventory())
 		{
 			ValuableInventory->OnInventoryUpdated.AddUObject(this, &ThisClass::HandleValuableInventoryUpdated);
 		}
 
-		RefreshFoodSlotCount();
+		RefreshPouchSlotCounts();
 	}
 
 	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
@@ -330,7 +330,7 @@ bool UDC1PlayerInventoryComponent::RemoveEquipmentItem(int32 InEquipSlotIndex, i
 	return true;
 }
 
-void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()
+void UDC1PlayerInventoryComponent::RefreshPouchSlotCounts()
 {
 	if (GetOwnerRole() != ROLE_Authority)
 	{
@@ -338,8 +338,9 @@ void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()
 	}
 
 	int32 MaxPouchSlotCount = 0;
+	int32 MaxBagExtraSlotCount = 0;
 
-	const auto CheckSlots = [&MaxPouchSlotCount](const TArray<FDC1InventorySlotInfo>& InSlots)
+	const auto CheckSlots = [&MaxPouchSlotCount, &MaxBagExtraSlotCount](const TArray<FDC1InventorySlotInfo>& InSlots)
 	{
 		for (const FDC1InventorySlotInfo& Slot : InSlots)
 		{
@@ -352,6 +353,7 @@ void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()
 			if (const FDC1ValuableItemRow* ValuableRow = DC1ItemHelper::FindValuableItemRow(Slot.ItemID))
 			{
 				MaxPouchSlotCount = FMath::Max(MaxPouchSlotCount, ValuableRow->FoodPouchSlotCount);
+				MaxBagExtraSlotCount = FMath::Max(MaxBagExtraSlotCount, ValuableRow->BagExtraSlotCount);
 			}
 		}
 	};
@@ -364,18 +366,22 @@ void UDC1PlayerInventoryComponent::RefreshFoodSlotCount()
 	}
 
 	const int32 NewCount = FMath::Clamp(MaxPouchSlotCount, 0, DC1EquipSlotLayout::GetTypeSlotCount(EDC1EquipSlotType::Food));
-	if (NewCount == UnlockedFoodCount)
+	if (NewCount != UnlockedFoodCount)
 	{
-		return;
+		UnlockedFoodCount = NewCount;
+		OnEquipmentUpdated.Broadcast();
 	}
 
-	UnlockedFoodCount = NewCount;
-	OnEquipmentUpdated.Broadcast();
+	const int32 NewCapacity = BaseCapacity + MaxBagExtraSlotCount;
+	if (NewCapacity != TotalCapacity)
+	{
+		SetCapacityAndColumns(NewCapacity, Columns);
+	}
 }
 
 void UDC1PlayerInventoryComponent::HandleValuableInventoryUpdated()
 {
-	RefreshFoodSlotCount();
+	RefreshPouchSlotCounts();
 }
 
 void UDC1PlayerInventoryComponent::OnRep_UnlockedSlotCounts()
@@ -657,8 +663,8 @@ void UDC1PlayerInventoryComponent::OnInventoryUpdated_Internal()
 	// 무게 재계산
 	CalculateWeight();
 
-	// 먹이 주머니를 얻었을 수 있으므로 음식 칸 수 갱신
-	RefreshFoodSlotCount();
+	// 주머니들을 얻었을 수 있으므로 칸 수 갱신
+	RefreshPouchSlotCounts();
 
 	// 부모 이벤트 브로드캐스트
 	Super::OnInventoryUpdated_Internal();
@@ -669,7 +675,10 @@ void UDC1PlayerInventoryComponent::OnPostLoad()
 	// 무게 계산이 장비칸을 볼 수 있으니 먼저 칸 수부터 맞춤
 	EquipmentSlots.SetNum(DC1EquipSlotLayout::SlotCount);
 
-	// 칸 수 맞춤 + CalculateWeight + RefreshFoodSlotCount + OnInventoryUpdated
+	// TotalCapacity가 저장되지 않기 때문에 파우치 기준으로 먼저 슬롯을 갱신
+	RefreshPouchSlotCounts();
+
+	// 칸 수 맞춤 + CalculateWeight + RefreshPouchSlotCounts + OnInventoryUpdated
 	Super::OnPostLoad();
 
 	// EquipComponent가 칸별로 이전 적용을 되돌리고 새로 적용 ( 평소 장착 경로와 동일 )

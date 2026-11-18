@@ -246,8 +246,8 @@ protected:
 	// 장비 칸 변경 후 무게 갱신과 장비 이벤트를 보내는 함수 (서버)
 	void HandleEquipmentChanged(int32 InEquipSlotIndex);
 
-	// 가진 먹이 주머니 중 가장 큰 값으로 음식 칸 수를 다시 계산하는 함수 (서버)
-	void RefreshFoodSlotCount();
+	// 가진 파우치들 중 가장 큰 값으로 음식/인벤토리 칸 수를 다시 계산하는 함수 (서버)
+	void RefreshPouchSlotCounts();
 
 	// 귀중품 인벤토리 변경 시 음식 칸 수를 다시 계산하는 함수 (서버)
 	void HandleValuableInventoryUpdated();
@@ -298,4 +298,7 @@ protected:
 	// 먹이 주머니로 열리는 음식 칸 수
 	UPROPERTY(ReplicatedUsing = OnRep_UnlockedSlotCounts)
 	int32 UnlockedFoodCount = { 0 };
+	// 총 인벤토리 수 = BaseCapacity + 확장 파우치 Slotcount
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Settings", meta = (ClampMin = "1"))
+	int32 BaseCapacity = { 42 };
 };
