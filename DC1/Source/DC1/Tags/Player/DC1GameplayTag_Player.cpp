@@ -45,5 +45,6 @@ namespace DC1PlayerTags
 
 #pragma region Cue
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Player_Hit, "GameplayCue.Player.Hit");
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Player_Pickup, "GameplayCue.Player.Pickup");
 #pragma endregion
 }

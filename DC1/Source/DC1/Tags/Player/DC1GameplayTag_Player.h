@@ -69,5 +69,6 @@ namespace DC1PlayerTags
 
 #pragma region Cue
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Player_Hit);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Player_Pickup);
 #pragma endregion
 }

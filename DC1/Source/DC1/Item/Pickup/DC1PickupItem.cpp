@@ -16,6 +16,9 @@
 #include "Engine/World.h"
 #include "GameMode/DC1GameMode.h"
 #include "Net/UnrealNetwork.h"
+#include "Tags/Player/DC1GameplayTag_Player.h"
+
+#include "Component/DC1AbilitySystemComponent.h"
 
 namespace
 {
@@ -128,6 +131,11 @@ void ADC1PickupItem::TryPickup(ADC1Player* InPlayer, bool InByInteract)
 	if (true == Inventory->AddItem(ItemID, Count))
 	{
 		ReleasePickup();
+		// PickUp Animation 실행을 위한 GameplayCue
+		if (UAbilitySystemComponent* ASC = PlayerState->GetAbilitySystemComponent())
+		{
+			ASC->ExecuteGameplayCue(DC1PlayerTags::GameplayCue_Player_Pickup);
+		}
 	}
 }
 
