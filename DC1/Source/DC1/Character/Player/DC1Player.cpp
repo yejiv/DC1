@@ -888,6 +888,9 @@ void ADC1Player::InitializeAppearance()
 	if (UDC1AppearanceComponent* Appearance = PS->GetAppearanceComponent())
 	{
 		Appearance->SetParts(GetMesh(), HairMesh, HeadMesh);
+
+		// 리스폰 시 새 폰 - PS 값은 그대로라 OnRep이 안 불리므로 현재 값으로 직접 적용
+		Appearance->ApplyAppearance(Appearance->CurrentAppearance);
 	}
 }
 
