@@ -156,6 +156,16 @@ void ADC1PalCharacter::SetOrientToMovement(bool Enable)
 	}
 }
 
+void ADC1PalCharacter::SetInitialLevel(int32 InLevel)
+{
+	InitialLevel = FMath::Max(1, InLevel);
+}
+
+void ADC1PalCharacter::SetInitialAlpha(bool bInIsAlpha)
+{
+	bIsAlpha = bInIsAlpha;
+}
+
 void ADC1PalCharacter::PostInitializeComponents()
 {
 	ApplyPalData(); //PalData 먼저로드
@@ -354,6 +364,13 @@ void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 		return;
 	}
 
+	// 죽은 팰은 체력이 0이라 기존 조건(GetHealthRatio < 1)으로는 오히려 HP바가 계속 켜진다.
+	if (GetHealthRatio() <= 0.f)
+	{
+		HealthWidgetComponent->SetVisibility(false);
+		return;
+	}
+
 	// 알파(보스)는 머리 위 대신 화면 위 보스 HP바 ( UDC1PalBossViewModel )
 	if (true == bIsAlpha)
 	{
@@ -434,8 +451,8 @@ void ADC1PalCharacter::ApplyPalData()
 
 	if (IsValid(PalAttributeSet))
 	{
-		const int32 FinalLevel = (true == bOverrideLevel)
-			? LevelOverride
+		const int32 FinalLevel = (0 < InitialLevel)
+			? InitialLevel
 			: FMath::RandRange(PalData->MinLevel, FMath::Max(PalData->MinLevel, PalData->MaxLevel));
 
 		PalAttributeSet->InitLevel(FinalLevel);
@@ -816,8 +833,7 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 
 	// 원본을 통째로 보관
 	Pal->PalInstance = InInstance;
-	Pal->bOverrideLevel = true;
-	Pal->LevelOverride = FMath::Max(1, InInstance.Level);
+	Pal->SetInitialLevel(InInstance.Level);
 
 	Pal->FinishSpawning(InTransform);
 
@@ -837,6 +853,13 @@ ADC1PalCharacter* ADC1PalCharacter::SpawnFromInstanceData(UWorld* InWorld, const
 void ADC1PalCharacter::OnDeath()
 {
 	StopAndUnregister();
+
+	// 사망 즉시 머리 위 HP바를 끄고 더 이상 가시성 검사를 하지 않는다.
+	GetWorldTimerManager().ClearTimer(HealthWidgetVisibilityTimer);
+	if (IsValid(HealthWidgetComponent))
+	{
+		HealthWidgetComponent->SetVisibility(false);
+	}
 
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
@@ -896,6 +919,12 @@ void ADC1PalCharacter::OnDeath()
 	}
 
 	OnPalDied.Broadcast();
+
+	// 복제 액터는 서버에서 수명을 설정하면 만료 시 클라이언트에서도 함께 제거된다.
+	if (true == HasAuthority())
+	{
+		SetLifeSpan(CorpseLifeSpan);
+	}
 }
 
 void ADC1PalCharacter::SpawnDrops()
