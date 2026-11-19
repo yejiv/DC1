@@ -460,6 +460,8 @@ void ADC1BuildActor::ApplyState()
 		break;
 	}
 	}
+
+	LastAppliedState = BuildState;
 }
 
 void ADC1BuildActor::PlayDestroyFX()
@@ -470,6 +472,17 @@ void ADC1BuildActor::PlayDestroyFX()
 	}
 
 	BuildMesh->SetHiddenInGame(true);
+
+	if (EDC1BuildState::Construction == LastAppliedState && true == ::IsValid(ConstructionDestroyFX))
+	{
+		UNiagaraComponent* FX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ConstructionDestroyFX, BuildMesh->Bounds.Origin, GetActorRotation());
+		if (true == ::IsValid(FX))
+		{
+			FX->SetVariableFloat(TEXT("MeshSizeScale"), FMath::Clamp(BuildMesh->Bounds.SphereRadius / DestroyFXReferenceRadius, 0.2f, 5.f));
+			FX->SetVariableVec3(TEXT("MeshExtent"), BuildMesh->Bounds.BoxExtent);
+		}
+		return;
+	}
 
 	if (true == ::IsValid(DestroyClass) && true == ::IsValid(DestroyGeometryCollection))
 	{

@@ -218,6 +218,12 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
 	TObjectPtr<UNiagaraSystem>						DestroyDustFX = { nullptr };
 
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy")
+	TObjectPtr<UNiagaraSystem>						ConstructionDestroyFX = { nullptr };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy", meta = (ClampMin = "1.0"))
+	float											DestroyFXReferenceRadius = { 100.f };
+
 	UPROPERTY(EditDefaultsOnly, Category = "Build|Destroy", meta = (ClampMin = "0.2"))
 	float											DestroySequenceDuration = { 0.2f };
 
@@ -237,4 +243,5 @@ private:
 	FTimerHandle									DestroySequenceTimer;
 	bool											IsDestroying = { false };
 	bool											HasPillar = { false };
+	EDC1BuildState									LastAppliedState = { EDC1BuildState::Default };
 };
