@@ -51,6 +51,7 @@ public:
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
 	UDC1DamageNumberComponent*		GetDamageNumberComponent() const { return DamageNumberComponent; }
+	USoundBase*						GetMenuOpenSound() const { return MenuOpenSound; }
 
 	void PressAbilityInput(const FGameplayTag& InAbilityTag);
 	void ReleaseAbilityInput(const FGameplayTag& InAbilityTag);

@@ -11,6 +11,8 @@
 #include "Components/ScrollBox.h"
 #include "Components/ScrollBoxSlot.h"
 
+#include "Kismet/GameplayStatics.h"
+
 #include "Define/DC1Macro.h"
 
 void UDC1TeleportScreenWidget::HandleInputKey(const FKey& InKey)
@@ -21,6 +23,7 @@ void UDC1TeleportScreenWidget::HandleInputKey(const FKey& InKey)
 	}
 
 	PopScreen();
+	UGameplayStatics::PlaySound2D(this, CloseSound);
 }
 
 void UDC1TeleportScreenWidget::NativeConstruct()

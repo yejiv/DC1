@@ -74,6 +74,10 @@ protected:
 
 	FGameplayTag										CurrentTab = { FGameplayTag::EmptyTag };
 
+	// 닫기 키로 화면을 닫을 때
+	UPROPERTY(EditDefaultsOnly, Category = "TAB|Sound")
+	TObjectPtr<USoundBase>								CloseSound = { nullptr };
+
 private:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UWidgetSwitcher>		TabSwitcher = { nullptr };
@@ -93,10 +97,6 @@ private:
 	// 이전 / 다음 탭 키로 전환될 때
 	UPROPERTY(EditDefaultsOnly, Category = "TAB|Sound")
 	TObjectPtr<USoundBase>			TabChangeSound = { nullptr };
-
-	// 닫기 키로 화면을 닫을 때
-	UPROPERTY(EditDefaultsOnly, Category = "TAB|Sound")
-	TObjectPtr<USoundBase>			CloseSound = { nullptr };
 
 private:
 	TMap<int32, FGameplayTag>		SwitchIndexToTab;
