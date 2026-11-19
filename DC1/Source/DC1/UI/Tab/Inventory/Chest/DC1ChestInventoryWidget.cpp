@@ -27,6 +27,11 @@ void UDC1ChestInventoryWidget::NativeConstruct()
 		SortButton->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleSortButtonClicked);
 	}
 
+	if (IsValid(MoveAllButton))
+	{
+		MoveAllButton->OnClicked.AddUniqueDynamic(this, &ThisClass::HandleMoveAllButtonClicked);
+	}
+
 	if (CachedViewModel)
 	{
 		CachedViewModel->OnChestInventoryUpdated.AddUObject(this, &UDC1ChestInventoryWidget::HandleChestInventoryUpdated);
@@ -45,6 +50,11 @@ void UDC1ChestInventoryWidget::NativeDestruct()
 	if (IsValid(SortButton))
 	{
 		SortButton->OnClicked.RemoveAll(this);
+	}
+
+	if (IsValid(MoveAllButton))
+	{
+		MoveAllButton->OnClicked.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
@@ -226,4 +236,14 @@ void UDC1ChestInventoryWidget::HandleSortButtonClicked()
 	}
 
 	CachedViewModel->RequestSortChest();
+}
+
+void UDC1ChestInventoryWidget::HandleMoveAllButtonClicked()
+{
+	if (false == IsValid(CachedViewModel))
+	{
+		return;
+	}
+
+	CachedViewModel->RequestMoveAllToChest();
 }

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -50,6 +50,9 @@ protected:
 	UFUNCTION()
 	void HandleSortButtonClicked();
 
+	UFUNCTION()
+	void HandleMoveAllButtonClicked();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> ChestNameText;
@@ -58,7 +61,7 @@ protected:
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UButton> SortButton;
 
-	// 한번에 옮기기 버튼, 분류 버튼 좌측에 배치. 기능은 추후 구현 예정 - 자리만 예약
+	// 한번에 옮기기 버튼, 분류 버튼 좌측에 배치.
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UButton> MoveAllButton;
 

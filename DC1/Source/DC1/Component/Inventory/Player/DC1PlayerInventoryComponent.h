@@ -149,6 +149,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestSortChestItems(UDC1ChestInventoryComponent* InChestComp);
 
+	void MoveAllToChest(UDC1ChestInventoryComponent* InChestComp);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestMoveAllToChest(UDC1ChestInventoryComponent* InChestComp);
+
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
 	void Server_MoveItem(int32 FromSlotIndex, int32 ToSlotIndex, int32 MoveCount);
@@ -191,6 +196,13 @@ protected:
 	bool Server_SortChestItems_Validate(UDC1ChestInventoryComponent* InChestComp);
 
 	void Server_SortChestItems_Implementation(UDC1ChestInventoryComponent* InChestComp);
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory")
+	void Server_MoveAllToChest(UDC1ChestInventoryComponent* InChestComp);
+
+	bool Server_MoveAllToChest_Validate(UDC1ChestInventoryComponent* InChestComp);
+
+	void Server_MoveAllToChest_Implementation(UDC1ChestInventoryComponent* InChestComp);
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Inventory|Equipment")
 	void Server_EquipItem(int32 InSlotIndex, int32 InEquipSlotIndex);
