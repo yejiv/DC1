@@ -45,7 +45,7 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UDC1TechTreePointWidget>			TechPointWidget = { nullptr };
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UDC1TechTreePointWidget>			AncientTechPointWidget = { nullptr };
 
 	UPROPERTY(EditAnywhere, Category = "RowWidget")
