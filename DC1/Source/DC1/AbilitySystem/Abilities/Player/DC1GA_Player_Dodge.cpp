@@ -72,11 +72,31 @@ void UDC1GA_Player_Dodge::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	// 기본 상태일 때, 입력 방향 바라보도록 전환
 	if (false == IsAiming)
 	{
+		// 입력이 없으면 바라보는 방향으로 구른다
+		if (true == InputWorldDirection.IsNearlyZero())
+		{
+			if (ADC1Player* Player = GetPlayer())
+			{
+				InputWorldDirection = Player->GetActorForwardVector().GetSafeNormal2D();
+			}
+		}
+
 		FaceInputDirection();
 		Strength = RollStrength;
 	}
 	else
+	{
+		// 입력이 없으면 뒤로 스텝 (SelectStepSection도 Backward를 고른다)
+		if (true == InputWorldDirection.IsNearlyZero())
+		{
+			if (ADC1Player* Player = GetPlayer())
+			{
+				InputWorldDirection = -Player->GetActorForwardVector().GetSafeNormal2D();
+			}
+		}
+
 		Strength = StepStrength;
+	}
 	
 	// SelectMontageTag / SelectStepSection으로 PlayMontageAndWait 실행
 	if (const UDC1AnimData* AnimData = UDC1AssetManager::GetAssetByTag<UDC1AnimData>(DC1AssetTags::Asset_Anim_Player))
