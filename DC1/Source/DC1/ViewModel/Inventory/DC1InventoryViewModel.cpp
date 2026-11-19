@@ -337,6 +337,16 @@ void UDC1InventoryViewModel::RequestSortChest()
 	MyInventoryComp->RequestSortChestItems(TargetChestComp);
 }
 
+void UDC1InventoryViewModel::RequestMoveAllToChest()
+{
+	if (false == ::IsValid(MyInventoryComp) || false == ::IsValid(TargetChestComp))
+	{
+		return;
+	}
+
+	MyInventoryComp->RequestMoveAllToChest(TargetChestComp);
+}
+
 void UDC1InventoryViewModel::RequestSortValuables()
 {
 	if (!MyInventoryComp)

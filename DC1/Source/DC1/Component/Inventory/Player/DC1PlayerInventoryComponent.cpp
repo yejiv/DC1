@@ -869,6 +869,48 @@ void UDC1PlayerInventoryComponent::Server_SortChestItems_Implementation(UDC1Ches
 	InChestComp->SortSlots();
 }
 
+void UDC1PlayerInventoryComponent::MoveAllToChest(UDC1ChestInventoryComponent* InChestComp)
+{
+	if (false == ::IsValid(InChestComp) || false == InChestComp->CanStoreItems())
+	{
+		return;
+	}
+
+	for (int32 SlotIndex = 0; SlotIndex < Slots.Num(); ++SlotIndex)
+	{
+		const FName ItemID = Slots[SlotIndex].ItemID;
+		const int32 StackCount = Slots[SlotIndex].StackCount;
+
+		if (Slots[SlotIndex].IsEmpty() || InChestComp->GetItemCount(ItemID) <= 0)
+		{
+			continue;
+		}
+
+		const int32 RemainCount = InChestComp->AddItemPartial(ItemID, StackCount);
+		const int32 MovedCount = StackCount - RemainCount;
+
+		if (MovedCount > 0)
+		{
+			RemoveItem(SlotIndex, MovedCount);
+		}
+	}
+}
+
+void UDC1PlayerInventoryComponent::RequestMoveAllToChest(UDC1ChestInventoryComponent* InChestComp)
+{
+	Server_MoveAllToChest(InChestComp);
+}
+
+bool UDC1PlayerInventoryComponent::Server_MoveAllToChest_Validate(UDC1ChestInventoryComponent* InChestComp)
+{
+	return IsValid(InChestComp);
+}
+
+void UDC1PlayerInventoryComponent::Server_MoveAllToChest_Implementation(UDC1ChestInventoryComponent* InChestComp)
+{
+	MoveAllToChest(InChestComp);
+}
+
 void UDC1PlayerInventoryComponent::RequestSortValuables()
 {
 	Server_SortValuables();
