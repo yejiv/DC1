@@ -236,12 +236,6 @@ void ADC1ResourceActor::HandleHealthChanged(const FOnAttributeChangeData& InData
 		UGameplayStatics::PlaySoundAtLocation(this, StageBreakSound, ResourceMesh->Bounds.Origin);
 	}
 
-	// 타격음 - 서버 / 클라 공통 ( 고갈 타격은 DestroySound가 대신함 )
-	if (EDC1ResourceActorState::Active == ResourceState && InData.NewValue < InData.OldValue && InData.NewValue > 0.f)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, DC1SoundHelper::PickRandom(HitSounds), ResourceMesh->Bounds.Origin);
-	}
-
 	// 같은 프레임 중복 타격, 리스폰 중 Health 복구는 무시
 	if (false == HasAuthority() || EDC1ResourceActorState::Depleted == ResourceState)
 	{

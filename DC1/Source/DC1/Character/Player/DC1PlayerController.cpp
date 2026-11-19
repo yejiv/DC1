@@ -343,6 +343,17 @@ void ADC1PlayerController::OnRep_PlayerState()
 	InitPlayerStateBindings();
 }
 
+void ADC1PlayerController::PawnLeavingGame()
+{
+	// Pawn Destroy 전에 위치 캐싱 ( 이후 Logout에서 SavePlayerData )
+	if (ADC1PlayerState* PS = GetPlayerState<ADC1PlayerState>())
+	{
+		PS->CacheLastLocation();
+	}
+
+	Super::PawnLeavingGame();
+}
+
 void ADC1PlayerController::Server_SavePlayerData_Implementation()
 {
 	const bool bSaved = GetGameInstance()->GetSubsystem<UDC1SaveSubsystem>()->SavePlayerData(GetPlayerState<ADC1PlayerState>());

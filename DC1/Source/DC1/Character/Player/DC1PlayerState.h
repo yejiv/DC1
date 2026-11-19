@@ -51,6 +51,12 @@ public:
 	bool IsSuccessLoad() const { return bSaveLoaded; }
 	void SetCompleteLoaded(bool bSuccess);
 
+	// 마지막 Pawn 위치 ( Logout 시점엔 Pawn이 이미 Destroy되어 있어 미리 캐싱 )
+	void			CacheLastLocation();
+	void			SetLastLocation(const FVector& InLocation) { LastLocation = InLocation; bHasLastLocation = true; }
+	bool			HasLastLocation() const { return bHasLastLocation; }
+	const FVector&	GetLastLocation() const { return LastLocation; }
+
 public:
 	// 부활 전 상태 초기화 ( 서버 ) - 사망 태그 제거, 체력 InHealthRatio, 스태미나 최대
 	void ResetForRespawn(float InHealthRatio);
@@ -103,4 +109,7 @@ private:
 
 private:
 	bool bSaveLoaded = { false };
+
+	FVector	LastLocation = { FVector::ZeroVector };
+	bool	bHasLastLocation = { false };
 };

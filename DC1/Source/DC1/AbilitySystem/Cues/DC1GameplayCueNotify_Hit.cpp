@@ -6,12 +6,14 @@
 #include "Actor/Resource/DC1ResourceActor.h"
 #include "Character/Player/DC1Player.h"
 #include "Define/DC1HitHelper.h"
+#include "Define/DC1Helper.h"
 #include "Tags/DC1GamePlayTags.h"
 
 #include "AbilitySystemComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "GameFramework/Character.h"
 #include "GameplayEffectExtension.h"
+#include "Kismet/GameplayStatics.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 
@@ -46,6 +48,12 @@ bool UDC1GameplayCueNotify_Hit::OnExecute_Implementation(AActor* MyTarget, const
 	const bool IsWood = Parameters.OriginalTag.MatchesTagExact(DC1EffectTags::GameplayCue_Hit_Wood);
 	if (true == IsWood || true == Parameters.OriginalTag.MatchesTagExact(DC1EffectTags::GameplayCue_Hit_Stone))
 	{
+		// 타격음 - FX 유무와 무관하게 먼저 ( 고갈 타격은 GetWorkTypeTag 가 비어 Cue 자체가 안 옴 -> DestroySound 가 대신함 )
+		if (const ADC1ResourceActor* Resource = Cast<ADC1ResourceActor>(MyTarget))
+		{
+			UGameplayStatics::PlaySoundAtLocation(MyTarget, DC1SoundHelper::PickRandom(Resource->GetHitSounds()), Parameters.Location);
+		}
+
 		UNiagaraSystem* ResourceFX = (true == IsWood) ? WoodFX : StoneFX;
 		if (false == ::IsValid(ResourceFX))
 		{
