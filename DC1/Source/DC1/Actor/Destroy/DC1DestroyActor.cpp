@@ -29,6 +29,12 @@ void ADC1DestroyActor::BeginPlay()
 	}
 
 	DestroyComp->CrumbleActiveClusters();
+
+	// 분리된 조각들이 같은 속도로 대형을 유지한 채 떨어지지 않도록 바깥으로 밀어준다
+	if (BreakImpulseStrength > 0.f)
+	{
+		DestroyComp->AddRadialImpulse(DestroyComp->Bounds.Origin, DestroyComp->Bounds.SphereRadius, BreakImpulseStrength, ERadialImpulseFalloff::RIF_Constant, true);
+	}
 }
 
 void ADC1DestroyActor::InitDestroy(const UGeometryCollection* InCollection)
