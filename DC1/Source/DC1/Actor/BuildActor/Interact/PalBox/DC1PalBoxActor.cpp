@@ -44,7 +44,8 @@ FTransform ADC1PalBoxActor::GetArrivalTransform() const
 	if (nullptr == ArrivalPoint)
 		return FTransform::Identity;
 
-	return ArrivalPoint->GetComponentTransform();
+	// 위치 / 회전만 ( 액터 스케일이 부활 Pawn에 적용되지 않도록 )
+	return FTransform(ArrivalPoint->GetComponentQuat(), ArrivalPoint->GetComponentLocation());
 }
 
 bool ADC1PalBoxActor::CanUse(const APlayerState* InPlayerState) const

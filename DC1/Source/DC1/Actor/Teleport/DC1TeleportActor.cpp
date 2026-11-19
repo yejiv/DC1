@@ -156,7 +156,8 @@ FTransform ADC1TeleportActor::GetArrivalTransform() const
 	if (nullptr == ArrivalPoint)
 		return FTransform::Identity;
 
-	return ArrivalPoint->GetComponentTransform();
+	// 위치 / 회전만 ( 석상 스케일이 부활 Pawn에 적용되지 않도록 )
+	return FTransform(ArrivalPoint->GetComponentQuat(), ArrivalPoint->GetComponentLocation());
 }
 
 bool ADC1TeleportActor::CanUse(const APlayerState* InPlayerState) const
