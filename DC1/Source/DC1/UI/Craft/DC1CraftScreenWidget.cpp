@@ -18,6 +18,8 @@
 #include "Components/DynamicEntryBox.h"
 #include "Components/TextBlock.h"
 
+#include "Kismet/GameplayStatics.h"
+
 UDC1CraftScreenWidget::UDC1CraftScreenWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -304,4 +306,5 @@ void UDC1CraftScreenWidget::CloseWidget(const FKey& InKey)
 	}
 
 	PopScreen();
+	UGameplayStatics::PlaySound2D(this, CloseSound);
 }

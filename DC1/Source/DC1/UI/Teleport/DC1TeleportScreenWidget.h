@@ -9,6 +9,7 @@
 class UScrollBox;
 class UDC1TeleportViewModel;
 class UDC1TeleportRowWidget;
+class USoundBase;
 
 /**
  * 텔레포트 화면. 이동 가능한 지점 목록
@@ -46,6 +47,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Teleport")
 	FKey								CloseKey = EKeys::Escape;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Teleport|Sound")
+	TObjectPtr<USoundBase>				CloseSound = { nullptr };
 
 	UPROPERTY(EditDefaultsOnly, Category = "Teleport")
 	float								RowSpacing = { 8.f };
