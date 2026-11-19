@@ -6,6 +6,8 @@
 #include "ViewModel/Inventory/DC1InventoryViewModel.h"
 #include "Subsystem/DC1ViewModelSubsystem.h"
 
+#include "Kismet/GameplayStatics.h"
+
 
 UDC1ChestLootScreenWidget::UDC1ChestLootScreenWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -67,4 +69,5 @@ void UDC1ChestLootScreenWidget::HandleInputKey(const FKey& InKey)
 	}
 
 	PopScreen();
+	UGameplayStatics::PlaySound2D(this, CloseSound);
 }

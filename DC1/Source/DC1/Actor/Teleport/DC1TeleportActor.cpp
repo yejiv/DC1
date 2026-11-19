@@ -126,7 +126,7 @@ void ADC1TeleportActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey
 	else
 	{
 		// 화면이 열리면서 목록을 만들기 때문에 PushScreen 전에 출발 지점을 넘긴다
-		const APlayerController* PC = InInteractOwner->GetController<APlayerController>();
+		const ADC1PlayerController* PC = InInteractOwner->GetController<ADC1PlayerController>();
 		const ULocalPlayer* LocalPlayer = (nullptr != PC) ? PC->GetLocalPlayer() : nullptr;
 		if (nullptr == LocalPlayer)
 			return;
@@ -141,7 +141,10 @@ void ADC1TeleportActor::Interact(ADC1Character* InInteractOwner, EDC1InteractKey
 
 		if (UDC1UIManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 		{
-			Subsystem->PushScreen(DC1UITags::UI_Main_Teleport);
+			if (nullptr != Subsystem->PushScreen(DC1UITags::UI_Main_Teleport))
+			{
+				UGameplayStatics::PlaySound2D(this, PC->GetMenuOpenSound());
+			}
 		}
 	}
 }

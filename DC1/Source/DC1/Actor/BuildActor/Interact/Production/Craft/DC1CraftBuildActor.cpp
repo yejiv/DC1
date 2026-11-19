@@ -22,6 +22,8 @@
 #include "UI/Craft/DC1CraftScreenWidget.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
+#include "Kismet/GameplayStatics.h"
+
 namespace
 {
 	void GiveOrDrop(UDC1PlayerInventoryComponent* InInventory, const AActor* InDropAt, FName InItemID, int32 InCount)
@@ -278,6 +280,11 @@ void ADC1CraftBuildActor::OnCompletedInteract(ADC1Character* InInteractOwner, ED
 		if (true == ::IsValid(CraftScreen))
 		{
 			CraftScreen->OpenStation(this);
+
+			if (ADC1PlayerController* PC = InInteractOwner->GetController<ADC1PlayerController>())
+			{
+				UGameplayStatics::PlaySound2D(this, PC->GetMenuOpenSound());
+			}
 		}
 		return;
 	}
