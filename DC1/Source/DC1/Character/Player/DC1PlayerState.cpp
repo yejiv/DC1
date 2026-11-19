@@ -18,6 +18,7 @@
 #include "Component/Notification/DC1NotificationComponent.h"
 
 #include "Save/DC1PlayerSaveGame.h"
+#include "GameFramework/Pawn.h"
 #include "Tags/State/DC1GameplayTag_State.h"
 
 ADC1PlayerState::ADC1PlayerState(const FObjectInitializer& ObjectInitializer)
@@ -67,6 +68,15 @@ UAbilitySystemComponent* ADC1PlayerState::GetAbilitySystemComponent() const
 void ADC1PlayerState::SetCompleteLoaded(bool bSuccess)
 {
 	bSaveLoaded = bSuccess;
+}
+
+void ADC1PlayerState::CacheLastLocation()
+{
+	APawn* CurPawn = GetPawn();
+	if (false == IsValid(CurPawn))
+		return;
+
+	SetLastLocation(CurPawn->GetActorLocation());
 }
 
 void ADC1PlayerState::ResetForRespawn(float InHealthRatio)

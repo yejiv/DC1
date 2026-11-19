@@ -22,6 +22,9 @@
 #include "UI/Craft/DC1CraftScreenWidget.h"
 #include "Tags/UI/DC1GameplayTag_UI.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
+
 namespace
 {
 	void GiveOrDrop(UDC1PlayerInventoryComponent* InInventory, const AActor* InDropAt, FName InItemID, int32 InCount)
@@ -49,6 +52,54 @@ ADC1CraftBuildActor::ADC1CraftBuildActor()
 {
 	RecipeOptions.Emplace(EDC1InteractKey::F, NSLOCTEXT("Interact", "Craft", "제작"), EDC1InteractInputType::Press, FGameplayTag::EmptyTag);
 	CancelOptions.Emplace(EDC1InteractKey::C, NSLOCTEXT("Interact", "Cancel", "취소"), EDC1InteractInputType::HoldConfirm, FGameplayTag::EmptyTag);
+
+	WorkFX = CreateDefaultSubobject<UNiagaraComponent>("WorkFX");
+	WorkFX->SetupAttachment(GetRootComponent());
+	WorkFX->SetAutoActivate(true);
+}
+
+void ADC1CraftBuildActor::BeginPlay()
+{
+	Super::BeginPlay();
+
+	OnWorkProgressChanged.AddUObject(this, &ThisClass::RefreshWorkFX);
+
+	RefreshWorkFX();
+}
+
+void ADC1CraftBuildActor::ApplyState()
+{
+	Super::ApplyState();
+
+	RefreshWorkFX();
+}
+
+void ADC1CraftBuildActor::RefreshWorkFX()
+{
+	if (false == ::IsValid(WorkFX) || nullptr == WorkFX->GetAsset())
+	{
+		return;
+	}
+
+	const bool IsShow = (NM_DedicatedServer != GetNetMode()) && (true == IsCompleted()) && (GetCurrentWorkSpeed() > 0.f);
+	if (false == IsShow)
+	{
+		IsWorkFXShown = false;
+
+		WorkFX->SetPaused(true);
+		WorkFX->SetHiddenInGame(true);
+
+		return;
+	}
+
+	if (true == IsWorkFXShown)
+	{
+		return;
+	}
+
+	IsWorkFXShown = true;
+	WorkFX->SetHiddenInGame(false);
+	WorkFX->SetPaused(false);
 }
 
 void ADC1CraftBuildActor::GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const
@@ -278,6 +329,11 @@ void ADC1CraftBuildActor::OnCompletedInteract(ADC1Character* InInteractOwner, ED
 		if (true == ::IsValid(CraftScreen))
 		{
 			CraftScreen->OpenStation(this);
+
+			if (ADC1PlayerController* PC = InInteractOwner->GetController<ADC1PlayerController>())
+			{
+				UGameplayStatics::PlaySound2D(this, PC->GetMenuOpenSound());
+			}
 		}
 		return;
 	}

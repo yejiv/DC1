@@ -3,6 +3,7 @@
 #include "AI/DC1PalStateTreeTasks.h"
 
 #include "AbilitySystem/Attribute/DC1PalAttributeSet.h"
+#include "Actor/BuildActor/DC1BuildActor.h"
 #include "Actor/BuildActor/Interact/PalBox/DC1PalBoxActor.h"
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Component/DC1AbilitySystemComponent.h"
@@ -853,6 +854,51 @@ namespace DC1PalTaskHelper
 		return nullptr;
 	}
 
+	// 작업 대상 주변 NavMesh 투영 - 건물 바닥 둘레 + 이만큼 더 찾음
+	static constexpr float WorkGoalQueryMargin = 100.f;
+
+	// 작업 대상 주변 NavMesh 투영 - 바닥 높이 위아래로 찾는 범위
+	static constexpr float WorkGoalQueryHalfHeight = 100.f;
+
+	// 큰 건물은 원점이 NavMesh 구멍 깊숙이 있어 MoveToActor 가 끝점을 못 찾음 -> 건물 바닥 둘레의 NavMesh 위 점
+	static bool FindWorkGoalLocation(UWorld* InWorld, const AActor& TargetActor, FVector& OutGoalLocation)
+	{
+		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(InWorld);
+		if (nullptr == NavSystem)
+		{
+			return false;
+		}
+
+		FVector QueryCenter = TargetActor.GetActorLocation();
+		FVector QueryExtent = INVALID_NAVEXTENT;
+
+		// 건물 - 체크 박스 바닥 중심에서 박스 둘레까지 ( 지붕 위 NavMesh 가 더 가깝게 잡히지 않도록 바닥 기준 )
+		const ADC1BuildActor* BuildActor = Cast<ADC1BuildActor>(&TargetActor);
+		if (nullptr != BuildActor)
+		{
+			const FQuat Quat = BuildActor->GetActorQuat();
+			const float HalfX = BuildActor->GetExtentCenterToDirection(BuildActor->GetActorForwardVector(), Quat);
+			const float HalfY = BuildActor->GetExtentCenterToDirection(BuildActor->GetActorRightVector(), Quat);
+			const float HalfZ = BuildActor->GetExtentCenterToDirection(FVector::UpVector, Quat);
+			const float HalfXY = FMath::Max(HalfX, HalfY);
+
+			if (HalfXY > 0.f)
+			{
+				QueryCenter = BuildActor->GetCheckBoxCenter() - FVector(0.f, 0.f, HalfZ);
+				QueryExtent = FVector(HalfXY + WorkGoalQueryMargin, HalfXY + WorkGoalQueryMargin, WorkGoalQueryHalfHeight);
+			}
+		}
+
+		FNavLocation Projected;
+		if (false == NavSystem->ProjectPointToNavigation(QueryCenter, Projected, QueryExtent))
+		{
+			return false;
+		}
+
+		OutGoalLocation = Projected.Location;
+		return true;
+	}
+
 	static bool IsNearWorkTarget(const AActor& Pal, const AActor& TargetActor, float InAcceptanceRadius)
 	{
 		const float SurfaceDistance = FVector::Dist2D(Pal.GetActorLocation(), TargetActor.GetActorLocation())
@@ -893,7 +939,13 @@ EStateTreeRunStatus FDC1PalWorkTask::EnterState(FStateTreeExecutionContext& Cont
 	Pal->SetWorkTarget(Target);
 	Pal->SetOrientToMovement(true);
 
-	if (EPathFollowingRequestResult::Failed == AIController->MoveToActor(TargetActor, InstanceData.AcceptanceRadius))
+	FVector GoalLocation;
+	if (false == DC1PalTaskHelper::FindWorkGoalLocation(Pal->GetWorld(), *TargetActor, GoalLocation))
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	if (EPathFollowingRequestResult::Failed == AIController->MoveToLocation(GoalLocation, InstanceData.AcceptanceRadius))
 	{
 		return EStateTreeRunStatus::Succeeded;
 	}

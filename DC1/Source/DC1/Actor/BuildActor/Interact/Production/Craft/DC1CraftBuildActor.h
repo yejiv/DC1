@@ -9,6 +9,7 @@
 struct FDC1ItemRecipeRow;
 
 class ADC1PlayerState;
+class UNiagaraComponent;
 
 UCLASS()
 class DC1_API ADC1CraftBuildActor : public ADC1ProductionBuildActor
@@ -32,7 +33,12 @@ public:
 
 	virtual void	GetInteractOptions(TArray<FDC1InteractOption>& OutOptions) const override;
 
+protected:
+	virtual void	BeginPlay() override;
+
 private:
+	virtual void	ApplyState() override;
+
 	virtual void	OnCompletedInteract(ADC1Character* InInteractOwner, EDC1InteractKey InKey) override;
 
 	virtual void	OnProductCollected(int32 InCollectedCount) override;
@@ -40,7 +46,12 @@ private:
 private:
 	void			ClearRecipeOrder();
 
+	void			RefreshWorkFX();
+
 private:
+	UPROPERTY(EditDefaultsOnly, Category = "Production|FX")
+	TObjectPtr<UNiagaraComponent>	WorkFX = { nullptr };
+
 	// 제작 중이 아닐때 변경할 옵션(F)
 	UPROPERTY(EditDefaultsOnly, Category = "Production|Interact")
 	TArray<FDC1InteractOption>		RecipeOptions;
@@ -60,4 +71,6 @@ private:
 private:
 	UPROPERTY(SaveGame)
 	FName							CurrentRecipeID = { NAME_None };
+
+	bool							IsWorkFXShown = { false };
 };

@@ -217,8 +217,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UWidgetComponent> HealthWidgetComponent = { nullptr };
 
+	// 체력이 가득일 때 HP바가 보이는 거리
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
-	float HealthWidgetVisibleDistance = { 2000.f };
+	float HealthWidgetVisibleDistance = { 2500.f };
+
+	// 체력이 깎였을 때 HP바가 보이는 거리 ( 전투 중인 팰은 조금 더 멀리서도 보인다 )
+	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.0"))
+	float HealthWidgetDamagedVisibleDistance = { 3500.f };
 
 	// 가시성 검사 주기
 	UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "0.05"))

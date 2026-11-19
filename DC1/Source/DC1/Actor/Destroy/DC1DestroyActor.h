@@ -33,4 +33,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Destroy")
 	float										DestroyLifeTime = { 4.f };
+
+	// Crumble 직후 조각을 중심에서 바깥으로 미는 속도(cm/s). 0이면 밀지 않음
+	UPROPERTY(EditDefaultsOnly, Category = "Destroy")
+	float										BreakImpulseStrength = { 300.f };
 };

@@ -4,6 +4,7 @@
 
 #include "Character/Pal/DC1PalCharacter.h"
 #include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Data/DA/Pal/DC1PalData.h"
 #include "Data/DA/Pal/DC1PalRegistryData.h"
 #include "Engine/World.h"
@@ -305,6 +306,15 @@ ADC1PalCharacter* ADC1PalSpawnVolume::SpawnOne()
 	if (false == FindSpawnLocation(SpawnLocation, SpawnCellIndex))
 	{
 		return nullptr;
+	}
+
+	// NavMesh 지점은 바닥이다. 캡슐 중심을 바닥 위로 올려야 땅에 묻혀 스폰이 취소되지 않는다 ( 보스는 BossSpawnOffset.Z 로 직접 맞춤 )
+	if (false == bBossSpawner)
+	{
+		if (const ADC1PalCharacter* PalCDO = PalClass->GetDefaultObject<ADC1PalCharacter>())
+		{
+			SpawnLocation.Z += PalCDO->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		}
 	}
 
 	const FTransform SpawnTransform(FRotator(0.f, FMath::FRandRange(-180.f, 180.f), 0.f), SpawnLocation);

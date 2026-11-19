@@ -51,6 +51,7 @@ public:
 	UDC1BuildPlacementComponent*	GetBuildPlacementComponent() const { return BuildPlacementComponent; }
 	UDC1InteractComponent*			GetInteractComponent() const { return InteractComponent; }
 	UDC1DamageNumberComponent*		GetDamageNumberComponent() const { return DamageNumberComponent; }
+	USoundBase*						GetMenuOpenSound() const { return MenuOpenSound; }
 
 	void PressAbilityInput(const FGameplayTag& InAbilityTag);
 	void ReleaseAbilityInput(const FGameplayTag& InAbilityTag);
@@ -71,6 +72,9 @@ public:
 	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 
 	virtual void OnRep_PlayerState() override;
+
+	// 원격 플레이어 접속 종료 시 Logout보다 먼저 Pawn을 Destroy함 → 위치 캐싱
+	virtual void PawnLeavingGame() override;
 
 public:
 	UFUNCTION(Server, Reliable)

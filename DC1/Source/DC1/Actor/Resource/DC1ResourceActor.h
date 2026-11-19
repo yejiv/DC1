@@ -89,6 +89,7 @@ public:
 public:
 	float								GetWorkNumberRange() const { return WorkNumberRange; }
 	FVector								GetDropOrigin(const FGameplayEffectSpec* InSpec) const;
+	const TArray<TObjectPtr<USoundBase>>&	GetHitSounds() const { return HitSounds; }
 	virtual UAbilitySystemComponent*	GetAbilitySystemComponent() const override;
 
 public:
@@ -172,7 +173,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
 	TObjectPtr<USoundBase>							DestroySound = { nullptr };
 
-	// 타격마다 랜덤 재생. 클라는 Health 복제 시점에 재생
+	// 타격마다 랜덤 재생. GCN_Hit 의 Wood / Stone Cue 에서 재생 ( Health 복제는 10Hz 로 합쳐져 빠짐 )
 	UPROPERTY(EditDefaultsOnly, Category = "Resource|Sound")
 	TArray<TObjectPtr<USoundBase>>					HitSounds;
 

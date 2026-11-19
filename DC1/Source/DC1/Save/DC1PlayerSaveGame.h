@@ -26,6 +26,13 @@ public:
 	UPROPERTY()
 	TArray<FDC1ObjectSaveRecord> Components;
 
+	// 플레이어 위치 ( 구버전 세이브 / 위치 없음이면 false → PlayerStart 사용 )
+	UPROPERTY()
+	bool		bHasLocation = { false };
+
+	UPROPERTY()
+	FVector	Location = { FVector::ZeroVector };
+
 private:
 	UPROPERTY()
 	int32		SaveVersion = {};

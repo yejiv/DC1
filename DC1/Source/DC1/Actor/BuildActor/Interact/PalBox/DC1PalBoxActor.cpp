@@ -11,6 +11,7 @@
 
 #include "Character/DC1Character.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "Character/Player/DC1PlayerController.h"
 #include "Component/Pal/DC1PalBaseComponent.h"
 #include "Component/Base/DC1BaseRegistryComponent.h"
 #include "GameMode/DC1GameState.h"
@@ -18,6 +19,8 @@
 
 #include "Components/ArrowComponent.h"
 #include "Component/Teleport/DC1TeleportComponent.h"
+
+#include "Kismet/GameplayStatics.h"
 
 ADC1PalBoxActor::ADC1PalBoxActor()
 	: Super()
@@ -44,7 +47,8 @@ FTransform ADC1PalBoxActor::GetArrivalTransform() const
 	if (nullptr == ArrivalPoint)
 		return FTransform::Identity;
 
-	return ArrivalPoint->GetComponentTransform();
+	// 위치 / 회전만 ( 액터 스케일이 부활 Pawn에 적용되지 않도록 )
+	return FTransform(ArrivalPoint->GetComponentQuat(), ArrivalPoint->GetComponentLocation());
 }
 
 bool ADC1PalBoxActor::CanUse(const APlayerState* InPlayerState) const
@@ -130,7 +134,7 @@ void ADC1PalBoxActor::InteractV(ADC1Character* InInteractOwner)
 		return;
 
 	// 화면이 열리면서 목록을 만들기 때문에 PushScreen 전에 출발 지점을 넘긴다
-	const APlayerController* PC = InInteractOwner->GetController<APlayerController>();
+	const ADC1PlayerController* PC = InInteractOwner->GetController<ADC1PlayerController>();
 	const ULocalPlayer* LocalPlayer = (nullptr != PC) ? PC->GetLocalPlayer() : nullptr;
 	if (nullptr == LocalPlayer)
 		return;
@@ -145,7 +149,10 @@ void ADC1PalBoxActor::InteractV(ADC1Character* InInteractOwner)
 
 	if (UDC1UIManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<UDC1UIManagerSubsystem>())
 	{
-		Subsystem->PushScreen(DC1UITags::UI_Main_Teleport);
+		if (nullptr != Subsystem->PushScreen(DC1UITags::UI_Main_Teleport))
+		{
+			UGameplayStatics::PlaySound2D(this, PC->GetMenuOpenSound());
+		}
 	}
 }
 

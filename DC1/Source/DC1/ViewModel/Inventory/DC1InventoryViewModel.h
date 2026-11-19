@@ -187,6 +187,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestSortChest();
 
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RequestMoveAllToChest();
+
 	/** 귀중품 일회성 정렬 요청 (귀중품 탭 분류 버튼) */
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	void RequestSortValuables();

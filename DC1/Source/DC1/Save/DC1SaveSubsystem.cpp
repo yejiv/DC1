@@ -24,6 +24,7 @@
 #include "Save/DC1CustomizationSaveGame.h"
 #include "Save/DC1SoundSaveGame.h"
 #include "Character/Player/DC1PlayerState.h"
+#include "GameFramework/Pawn.h"
 
 void UDC1SaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -185,6 +186,11 @@ bool UDC1SaveSubsystem::SavePlayerData(ADC1PlayerState* PS)
 
 	CollectRecords(PS, SaveGame->Components);
 
+	// 위치 ( Pawn이 없으면 마지막 캐싱 위치 )
+	PS->CacheLastLocation();
+	SaveGame->bHasLocation = PS->HasLastLocation();
+	SaveGame->Location = PS->GetLastLocation();
+
 	FString SlotName = MakeSlotName(PS);
 	if (SlotName.IsEmpty())
 	{
@@ -223,6 +229,17 @@ bool UDC1SaveSubsystem::LoadPlayerData(ADC1PlayerState* PS)
 	else
 	{
 		return false;
+	}
+
+	// 위치 복원 ( PostLogin에서 Pawn이 이미 스폰된 상태 )
+	if (true == SaveGame->bHasLocation)
+	{
+		PS->SetLastLocation(SaveGame->Location);
+
+		if (APawn* Pawn = PS->GetPawn())
+		{
+			Pawn->TeleportTo(SaveGame->Location, Pawn->GetActorRotation());
+		}
 	}
 
 	// SaveVersion에 따른 분기 처리 (추후)

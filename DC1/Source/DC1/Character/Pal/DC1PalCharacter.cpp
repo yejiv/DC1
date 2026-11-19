@@ -417,18 +417,17 @@ void ADC1PalCharacter::UpdateHealthWidgetVisibility()
 		return;
 	}
 
-	bool ShouldShow = (GetHealthRatio() < 1.f);
+	// 체력이 깎였으면 더 먼 거리까지, 가득이면 기본 거리까지만 보인다
+	bool ShouldShow = false;
 
-	if (false == ShouldShow)
+	if (const APawn* LocalPawn = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
-		if (const APawn* LocalPawn = UGameplayStatics::GetPlayerPawn(this, 0))
-		{
-			const float DistanceSq = FVector::DistSquared(GetActorLocation(), LocalPawn->GetActorLocation());
-			// 기존 BP에 직렬화된 1200 값이 dev 병합으로 되살아나도 확장한 가시거리(2000)는 유지한다.
-			constexpr float MinHealthWidgetVisibleDistance = 2000.f;
-			const float EffectiveVisibleDistance = FMath::Max(HealthWidgetVisibleDistance, MinHealthWidgetVisibleDistance);
-			ShouldShow = (DistanceSq <= FMath::Square(EffectiveVisibleDistance));
-		}
+		const float DistanceSq = FVector::DistSquared(GetActorLocation(), LocalPawn->GetActorLocation());
+		// 기존 BP에 직렬화된 1200 값이 dev 병합으로 되살아나도 확장한 가시거리(2500)는 유지한다.
+		constexpr float MinHealthWidgetVisibleDistance = 2500.f;
+		const float FullVisibleDistance = FMath::Max(HealthWidgetVisibleDistance, MinHealthWidgetVisibleDistance);
+		const float VisibleDistance = (GetHealthRatio() < 1.f) ? FMath::Max(HealthWidgetDamagedVisibleDistance, FullVisibleDistance) : FullVisibleDistance;
+		ShouldShow = (DistanceSq <= FMath::Square(VisibleDistance));
 	}
 
 	if (HealthWidgetComponent->IsVisible() != ShouldShow)

@@ -157,10 +157,14 @@ void UDC1TechTreeWidget::UpdateRows(int32 InNewLevel)
 void UDC1TechTreeWidget::UpdatePoint()
 {
 	int32 NumTechPoint = CachedViewModel->GetTechPoints();
-	int32 NumAncientTechPoint = CachedViewModel->GetAncientTechPoints();
 
 	TechPointWidget->SetPoint(NumTechPoint);
-	AncientTechPointWidget->SetPoint(NumAncientTechPoint);
+
+	if (true == ::IsValid(AncientTechPointWidget))
+	{
+		int32 NumAncientTechPoint = CachedViewModel->GetAncientTechPoints();
+		AncientTechPointWidget->SetPoint(NumAncientTechPoint);
+	}
 }
 
 void UDC1TechTreeWidget::UpdateSlots()

@@ -11,6 +11,7 @@ class UDC1InventoryViewModel;
 class UDC1PlayerLootInventoryWidget;
 class UDC1ChestInventoryWidget;
 class UDC1ChestInventoryComponent;
+class USoundBase;
 
 /**
  * 상자 개방 시 UDC1UIManagerSubsystem::PushScreen으로 열리는 화면(Screen) 위젯
@@ -46,6 +47,9 @@ protected:
 	// 화면을 닫는 키 목록 (상호작용 키 F를 다시 눌러도 닫히도록 기본 포함)
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	FDC1KeyList CloseKeys;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|Sound")
+	TObjectPtr<USoundBase> CloseSound = { nullptr };
 
 private:
 	UPROPERTY()
