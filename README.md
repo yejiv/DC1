@@ -1,4 +1,4 @@
-# 팰월드 모작: 팰(몬스터) 전투 AI
+# Palworld 모작
 
 <div align="center">
   <a href="https://youtu.be/1EZR6WACutA"><img src="images/00_thumbnail.jpg" width="800" alt="팰월드 모작 시연 영상"></a>
@@ -14,7 +14,7 @@
 - **Unreal Engine 5.8을 사용한 “팰월드” 모작 (멀티플레이)**
 - **GAS, StateTree, AI Perception 기반으로 팰 22종의 AI, 전투, 포획, 탑승 구현**
 - **팰 22종이 하나의 C++ 클래스를 공유하고, 종별 차이는 데이터 에셋으로 관리**
-- **개발 기간 : 2026. 00. 00 ~ 2026. 00. 00**
+- **개발 기간 : 2026. 08. 03 ~ 2026. 11. 19**
 
 <br/><br/>
 
