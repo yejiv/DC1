@@ -22,7 +22,7 @@
 
 <div align="center">
 
-| [<img src="https://imgur.com/Dmve5hf.png" width="180" alt="김정훈">](https://github.com/kimjunghon) | [<img src="https://github.com/user-attachments/assets/cd8214ae-16f3-42d7-88a3-43abc75a6a99" width="180" alt="박지호">](https://github.com/PJH1998) | [<img src="https://imgur.com/MmLkGDO.png" width="180" alt="탁예지">](https://github.com/yejiv) | [<img src=""https://github.com/user-attachments/assets/29b46e19-17b6-4608-ae04-af670fe628a9"" width="180" alt="정승현">](https://github.com/ClientSeungHyun) |
+| [<img src="https://imgur.com/Dmve5hf.png" width="180" alt="김정훈">](https://github.com/kimjunghon) | [<img src="https://github.com/user-attachments/assets/cd8214ae-16f3-42d7-88a3-43abc75a6a99" width="180" alt="박지호">](https://github.com/PJH1998) | [<img src="https://imgur.com/MmLkGDO.png" width="180" alt="탁예지">](https://github.com/yejiv) | [<img src="https://github.com/user-attachments/assets/29b46e19-17b6-4608-ae04-af670fe628a9" width="180" alt="정승현">](https://github.com/ClientSeungHyun) |
 | :---: | :---: | :---: | :---: |
 | 김정훈 | 박지호 | 탁예지 | 정승현 |
 | 빌딩시스템, 크래프팅 | 플레이어 | Pal(몬스터)AI | 아이템, 인벤토리 |
