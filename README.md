@@ -26,8 +26,7 @@
 | :---: | :---: | :---: | :---: |
 | 김정훈 | 박지호 | 탁예지 | 정승현 |
 | 빌딩시스템, 크래프팅 | 플레이어 | Pal(몬스터)AI | 아이템, 인벤토리 |
-| [<img src="https://imgur.com/yoldESr.png" width="60" alt="김정훈 깃허브">](https://github.com/kimjunghon) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="박지호 깃허브">](https://github.com/PJH1998![Uploading 135578483.png…]()
-) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="탁예지 깃허브">](https://github.com/yejiv) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="정승현 깃허브">](https://github.com/ClientSeungHyun) |
+| [<img src="https://imgur.com/yoldESr.png" width="60" alt="김정훈 깃허브">](https://github.com/kimjunghon) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="박지호 깃허브">](https://github.com/PJH1998) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="탁예지 깃허브">](https://github.com/yejiv) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="정승현 깃허브">](https://github.com/ClientSeungHyun) |
 
 </div>
 
