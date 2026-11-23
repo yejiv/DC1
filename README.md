@@ -22,11 +22,12 @@
 
 <div align="center">
 
-| [<img src="팀원1_사진" width="180" alt="팀원1">](팀원1_깃허브) | [<img src="팀원2_사진" width="180" alt="팀원2">](팀원2_깃허브) | [<img src="팀원3_사진" width="180" alt="팀원3">](팀원3_깃허브) | [<img src="팀원4_사진" width="180" alt="팀원4">](팀원4_깃허브) |
+| [<img src="https://imgur.com/Dmve5hf.png" width="180" alt="김정훈">](https://github.com/kimjunghon) | [<img src="https://github.com/user-attachments/assets/cd8214ae-16f3-42d7-88a3-43abc75a6a99" width="180" alt="박지호">](https://github.com/PJH1998) | [<img src="https://imgur.com/MmLkGDO.png" width="180" alt="탁예지">](https://github.com/yejiv) | [<img src=""https://github.com/user-attachments/assets/29b46e19-17b6-4608-ae04-af670fe628a9"" width="180" alt="정승현">](https://github.com/ClientSeungHyun) |
 | :---: | :---: | :---: | :---: |
-| 팀원1 | 팀원2 | 팀원3 | 팀원4 |
-| 담당 | 담당 | 담당 | 담당 |
-| [<img src="https://imgur.com/yoldESr.png" width="60" alt="팀원1 깃허브">](팀원1_깃허브) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="팀원2 깃허브">](팀원2_깃허브) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="팀원3 깃허브">](팀원3_깃허브) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="팀원4 깃허브">](팀원4_깃허브) |
+| 김정훈 | 박지호 | 탁예지 | 정승현 |
+| 빌딩시스템, 크래프팅 | 플레이어 | Pal(몬스터)AI | 아이템, 인벤토리 |
+| [<img src="https://imgur.com/yoldESr.png" width="60" alt="김정훈 깃허브">](https://github.com/kimjunghon) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="박지호 깃허브">](https://github.com/PJH1998![Uploading 135578483.png…]()
+) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="탁예지 깃허브">](https://github.com/yejiv) | [<img src="https://imgur.com/yoldESr.png" width="60" alt="정승현 깃허브">](https://github.com/ClientSeungHyun) |
 
 </div>
 
