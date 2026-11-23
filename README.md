@@ -51,16 +51,6 @@
 </div>
 <br/>
 
-> 표적과 스킬 선택은 AI 컨트롤러가, 상태 전이와 행동은 StateTree가 담당하도록 분리. 컨트롤러가 매 틱 표적과 사용할 스킬을 결정하고, StateTree는 평가자가 전달한 결과값을 기준으로 상태를 전환.
-
-<div align="center">
-  <img src="images/03_combat_state_diagram.png" width="800" alt="ST_PalCombat 전투 상태 전이">
-  <br><br>
-  <img src="images/03b_statetree_editor.png" width="49%" alt="ST_PalCombat 에디터 화면">
-  <img src="images/03c_wild_partner_combat.jpg" width="49%" alt="야생 팰과 파트너 팰 전투">
-</div>
-<br/>
-
 ~~~cpp
 // ADC1PalAIController::UpdateSelectedSkill (발췌)
 if (true == SelectedSkillTag.IsValid()) { return; }   // 이미 선택했으면 유지 (접근 중 재선택 방지)
