@@ -229,19 +229,14 @@ void UDC1PalMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 
 ~~~cpp
 // ADC1PalSphere::ComputeCaptureChance (발췌)
-// ① 레벨 차: 스피어 등급과 팰 레벨을 비교해 0~1로 정규화
+// 1. 레벨 차: 스피어 등급과 팰 레벨을 비교해 0~1로 정규화
 const float LevelGap = SphereLevel + (CapturePower * 0.5f) - InPalLevel;
 const float NormalizedLevel = FMath::Clamp((LevelGap + 50.f) / 99.f, 0.f, 1.f);
 
-// ② 체력 보정: 최대 체력 0.769 ~ 빈사 1.0
+// 2. 체력 보정
 const float Combined = FMath::Pow(1.3f, -InHealthRatio) * NormalizedLevel;
 
-// ③ 9제곱 S자 곡선: 0.35~0.55 구간에서 기울기가 급해 체력을 깎을수록 확률이 크게 상승
-const float BaseChance = (Combined >= 0.5f)
-    ? (1.f - (FMath::Pow(2.f - (2.f * Combined), 9.f) / 2.f))
-    : (256.f * FMath::Pow(Combined, 9.f));
-
-// ④ 종별 포획률 보정
+// 3. 종별 포획률 보정
 return FMath::Clamp(BaseChance * InCaptureRate, 0.f, 1.f);
 ~~~
 
@@ -271,7 +266,7 @@ FDC1PalInstance ADC1PalCharacter::Fold()
     return Instance;
 }
 
-// SpawnFromInstanceData: 데이터 → 액터 (발췌)
+// SpawnFromInstanceData: 데이터 -> 액터 (발췌)
 ADC1PalCharacter* Pal = InWorld->SpawnActorDeferred<ADC1PalCharacter>(PalClass, InTransform, nullptr, nullptr,
     ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 Pal->SpeciesTag = InInstance.SpeciesTag;
